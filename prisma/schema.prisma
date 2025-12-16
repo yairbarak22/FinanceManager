@@ -1,0 +1,207 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================
+// NextAuth.js Models
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts              Account[]
+  sessions              Session[]
+  transactions          Transaction[]
+  recurringTransactions RecurringTransaction[]
+  assets                Asset[]
+  liabilities           Liability[]
+  holdings              Holding[]
+  documents             Document[]
+  netWorthHistory       NetWorthHistory[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================
+// Finance App Models
+// ============================================
+
+// עסקה
+model Transaction {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // 'income' | 'expense'
+  amount      Float
+  category    String
+  description String
+  date        DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// עסקה קבועה חודשית
+model RecurringTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // 'income' | 'expense'
+  amount    Float
+  category  String
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// נכס
+model Asset {
+  id           String              @id @default(cuid())
+  userId       String
+  name         String
+  category     String              // 'apartment' | 'stocks' | 'crypto' | 'education_fund' | 'pension'
+  value        Float
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  valueHistory AssetValueHistory[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// היסטוריית שווי נכס (לכל חודש)
+model AssetValueHistory {
+  id        String   @id @default(cuid())
+  assetId   String
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  value     Float
+  monthKey  String   // "2025-12" format
+  createdAt DateTime @default(now())
+
+  @@unique([assetId, monthKey])
+}
+
+// התחייבות
+model Liability {
+  id                String   @id @default(cuid())
+  userId            String
+  name              String
+  type              String   // 'loan' | 'mortgage'
+  totalAmount       Float    // סכום ההלוואה המקורי
+  monthlyPayment    Float    // תשלום חודשי קבוע (לשפיצר)
+  interestRate      Float    @default(0)  // ריבית שנתית באחוזים
+  loanTermMonths    Int      @default(0)  // תקופת ההלוואה בחודשים
+  startDate         DateTime @default(now()) // תאריך תחילת ההלוואה
+  remainingAmount   Float?   // יתרת החוב הנוכחית
+  loanMethod        String   @default("spitzer") // 'spitzer' | 'equal_principal'
+  hasInterestRebate Boolean  @default(false) // זיכוי על הריבית
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// היסטוריית שווי נקי (לגרף)
+model NetWorthHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  date        DateTime
+  netWorth    Float
+  assets      Float
+  liabilities Float
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// מסמך מצורף לנכס או התחייבות
+model Document {
+  id         String   @id @default(cuid())
+  userId     String
+  filename   String   // Original filename
+  storedName String   // UUID-based stored filename
+  mimeType   String
+  size       Int      // File size in bytes
+  entityType String   // 'asset' | 'liability'
+  entityId   String
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// אחזקה בתיק השקעות
+model Holding {
+  id               String   @id @default(cuid())
+  userId           String
+  name             String   // שם הנכס (למשל "S&P 500 ETF")
+  symbol           String?  // סימול (אופציונלי, למשל "VOO")
+  type             String   // 'etf' | 'index_fund'
+  currentValue     Float    // שווי נוכחי בשקלים
+  targetAllocation Float    // אחוז יעד (0-100)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

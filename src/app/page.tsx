@@ -1,65 +1,661 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import Header from '@/components/Header';
+import MonthFilter from '@/components/MonthFilter';
+import SummaryCards from '@/components/SummaryCards';
+import RecurringTransactions from '@/components/RecurringTransactions';
+import NetWorthSection from '@/components/NetWorthSection';
+import AssetsSection from '@/components/AssetsSection';
+import LiabilitiesSection from '@/components/LiabilitiesSection';
+import NetWorthChart from '@/components/NetWorthChart';
+import MonthlySummary from '@/components/MonthlySummary';
+import MonthlyTrendsCharts from '@/components/MonthlyTrendsCharts';
+import ExpensesPieChart from '@/components/ExpensesPieChart';
+import RecentTransactions from '@/components/RecentTransactions';
+import TransactionModal from '@/components/modals/TransactionModal';
+import RecurringModal from '@/components/modals/RecurringModal';
+import AssetModal from '@/components/modals/AssetModal';
+import LiabilityModal from '@/components/modals/LiabilityModal';
+import AmortizationModal from '@/components/modals/AmortizationModal';
+import ImportModal from '@/components/modals/ImportModal';
+import DocumentsModal from '@/components/modals/DocumentsModal';
+import InvestmentsTab from '@/components/investments/InvestmentsTab';
+import { LayoutDashboard, TrendingUp } from 'lucide-react';
+import {
+  Transaction,
+  RecurringTransaction,
+  Asset,
+  Liability,
+  NetWorthHistory,
+  MonthlySummary as MonthlySummaryType,
+} from '@/lib/types';
+import { getMonthKey, calculateSavingsRate } from '@/lib/utils';
+import { getEffectiveMonthlyExpense } from '@/lib/loanCalculations';
 
 export default function Home() {
+  // Data state
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [liabilities, setLiabilities] = useState<Liability[]>([]);
+  const [netWorthHistory, setNetWorthHistory] = useState<NetWorthHistory[]>([]);
+  
+  // Filter state
+  const [selectedMonth, setSelectedMonth] = useState('all');
+  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
+  
+  // Generate 6 future months from current date
+  const generateFutureMonths = (): string[] => {
+    const months: string[] = [];
+    const now = new Date();
+    for (let i = 1; i <= 6; i++) {
+      const futureDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const monthKey = `${futureDate.getFullYear()}-${String(futureDate.getMonth() + 1).padStart(2, '0')}`;
+      months.push(monthKey);
+    }
+    return months;
+  };
+  const futureMonths = generateFutureMonths();
+  
+  // Modal state
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false);
+  const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
+  const [isLiabilityModalOpen, setIsLiabilityModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  
+  // Edit state
+  const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
+  const [editingLiability, setEditingLiability] = useState<Liability | null>(null);
+  
+  // Amortization modal state
+  const [isAmortizationModalOpen, setIsAmortizationModalOpen] = useState(false);
+  const [viewingLiability, setViewingLiability] = useState<Liability | null>(null);
+  
+  // Documents modal state
+  const [isDocumentsModalOpen, setIsDocumentsModalOpen] = useState(false);
+  const [documentsEntity, setDocumentsEntity] = useState<{
+    type: 'asset' | 'liability';
+    id: string;
+    name: string;
+  } | null>(null);
+  
+  // Loading state
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSeeded, setIsSeeded] = useState(false);
+  
+  // Tab navigation state
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'investments'>('dashboard');
+
+  // Fetch all data
+  const fetchData = useCallback(async () => {
+    try {
+      const [txRes, recRes, assetsRes, liabRes, historyRes] = await Promise.all([
+        fetch('/api/transactions'),
+        fetch('/api/recurring'),
+        fetch('/api/assets'),
+        fetch('/api/liabilities'),
+        fetch('/api/assets/history'),
+      ]);
+
+      const [txData, recData, assetsData, liabData, historyData] = await Promise.all([
+        txRes.json(),
+        recRes.json(),
+        assetsRes.json(),
+        liabRes.json(),
+        historyRes.json(),
+      ]);
+
+      setTransactions(txData);
+      setRecurringTransactions(recData);
+      setAssets(assetsData);
+      setLiabilities(liabData);
+
+      // Calculate available months
+      const months = new Set<string>();
+      txData.forEach((tx: Transaction) => {
+        months.add(getMonthKey(tx.date));
+      });
+      setAvailableMonths(Array.from(months).sort().reverse());
+
+      // Calculate current liabilities total
+      const totalLiabilities = liabData.reduce((sum: number, l: Liability) => sum + l.totalAmount, 0);
+      
+      // Build net worth history from actual asset history data
+      const netWorthData: NetWorthHistory[] = historyData.map((item: { monthKey: string; totalAssets: number }, index: number) => {
+        // Parse month key to create date (first day of month)
+        const [year, month] = item.monthKey.split('-');
+        const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+        
+        return {
+          id: String(index + 1),
+          date: date.toISOString(),
+          netWorth: item.totalAssets - totalLiabilities,
+          assets: item.totalAssets,
+          liabilities: totalLiabilities,
+        };
+      });
+      
+      // If no history data, create a single entry with current values
+      if (netWorthData.length === 0) {
+        const totalAssets = assetsData.reduce((sum: number, a: Asset) => sum + a.value, 0);
+        netWorthData.push({
+          id: '1',
+          date: new Date().toISOString(),
+          netWorth: totalAssets - totalLiabilities,
+          assets: totalAssets,
+          liabilities: totalLiabilities,
+        });
+      }
+      
+      setNetWorthHistory(netWorthData);
+
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Seed database on first load if completely empty
+  useEffect(() => {
+    const seedAndFetch = async () => {
+      try {
+        // Check if we have ANY data in the database
+        const [txRes, recRes, assetsRes, liabRes] = await Promise.all([
+          fetch('/api/transactions'),
+          fetch('/api/recurring'),
+          fetch('/api/assets'),
+          fetch('/api/liabilities'),
+        ]);
+
+        const [txData, recData, assetsData, liabData] = await Promise.all([
+          txRes.json(),
+          recRes.json(),
+          assetsRes.json(),
+          liabRes.json(),
+        ]);
+
+        // Only seed if ALL tables are empty
+        const isCompletelyEmpty = 
+          txData.length === 0 && 
+          recData.length === 0 && 
+          assetsData.length === 0 && 
+          liabData.length === 0;
+        
+        if (isCompletelyEmpty && !isSeeded) {
+          // Seed the database
+          await fetch('/api/seed', { method: 'POST' });
+          setIsSeeded(true);
+        }
+        
+        await fetchData();
+      } catch (error) {
+        console.error('Error:', error);
+        setIsLoading(false);
+      }
+    };
+
+    seedAndFetch();
+  }, [fetchData, isSeeded]);
+
+  // Calculate recurring totals (only active ones)
+  const fixedIncome = recurringTransactions
+    .filter((t) => t.type === 'income' && t.isActive)
+    .reduce((sum, t) => sum + t.amount, 0);
+    
+  const fixedExpenses = recurringTransactions
+    .filter((t) => t.type === 'expense' && t.isActive)
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  // Calculate liability payments using effective expense (considering interest rebate)
+  const monthlyLiabilityPayments = liabilities.reduce((sum, l) => sum + getEffectiveMonthlyExpense(l), 0);
+
+  // Calculate totals
+  const filteredTransactions = selectedMonth === 'all'
+    ? transactions
+    : transactions.filter((tx) => getMonthKey(tx.date) === selectedMonth);
+
+  // Count how many months to multiply recurring by
+  const monthsCount = selectedMonth === 'all' ? Math.max(availableMonths.length, 1) : 1;
+
+  const transactionIncome = filteredTransactions
+    .filter((tx) => tx.type === 'income')
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
+  const transactionExpenses = filteredTransactions
+    .filter((tx) => tx.type === 'expense')
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
+  // Total includes: regular transactions + recurring + liability payments (all multiplied by months)
+  const totalIncome = transactionIncome + (fixedIncome * monthsCount);
+  const totalExpenses = transactionExpenses + ((fixedExpenses + monthlyLiabilityPayments) * monthsCount);
+  const totalBalance = totalIncome - totalExpenses;
+
+  const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
+  const totalLiabilities = liabilities.reduce((sum, l) => sum + l.totalAmount, 0);
+  const netWorth = totalAssets - totalLiabilities;
+
+  // Calculate monthly summaries (including recurring transactions)
+  const monthlySummaries: MonthlySummaryType[] = availableMonths.map((monthKey) => {
+    const [year, month] = monthKey.split('-');
+    const monthTransactions = transactions.filter((tx) => getMonthKey(tx.date) === monthKey);
+    
+    // Regular transactions for this month
+    const txIncome = monthTransactions
+      .filter((tx) => tx.type === 'income')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+    const txExpenses = monthTransactions
+      .filter((tx) => tx.type === 'expense')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+
+    // Add recurring transactions + liability payments to each month
+    const income = txIncome + fixedIncome;
+    const expenses = txExpenses + fixedExpenses + monthlyLiabilityPayments;
+
+    return {
+      month,
+      year: parseInt(year),
+      income,
+      expenses,
+      balance: income - expenses,
+      transactionCount: monthTransactions.length,
+      savingsRate: calculateSavingsRate(income, expenses),
+    };
+  });
+
+  // Transaction handlers
+  const handleAddTransaction = async (data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      await fetchData();
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+    }
+  };
+
+  const handleDeleteTransaction = async (id: string) => {
+    try {
+      await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+      await fetchData();
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+    }
+  };
+
+  // Recurring transaction handlers
+  const handleAddRecurring = async (data: Omit<RecurringTransaction, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const url = editingRecurring
+        ? `/api/recurring/${editingRecurring.id}`
+        : '/api/recurring';
+      const method = editingRecurring ? 'PUT' : 'POST';
+
+      await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      setEditingRecurring(null);
+      await fetchData();
+    } catch (error) {
+      console.error('Error saving recurring transaction:', error);
+    }
+  };
+
+  const handleToggleRecurring = async (id: string, isActive: boolean) => {
+    try {
+      await fetch(`/api/recurring/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive }),
+      });
+      await fetchData();
+    } catch (error) {
+      console.error('Error toggling recurring transaction:', error);
+    }
+  };
+
+  const handleDeleteRecurring = async (id: string) => {
+    try {
+      await fetch(`/api/recurring/${id}`, { method: 'DELETE' });
+      await fetchData();
+    } catch (error) {
+      console.error('Error deleting recurring transaction:', error);
+    }
+  };
+
+  // Asset handlers
+  const handleAddAsset = async (data: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const url = editingAsset ? `/api/assets/${editingAsset.id}` : '/api/assets';
+      const method = editingAsset ? 'PUT' : 'POST';
+
+      await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      setEditingAsset(null);
+      await fetchData();
+    } catch (error) {
+      console.error('Error saving asset:', error);
+    }
+  };
+
+  const handleDeleteAsset = async (id: string) => {
+    try {
+      await fetch(`/api/assets/${id}`, { method: 'DELETE' });
+      await fetchData();
+    } catch (error) {
+      console.error('Error deleting asset:', error);
+    }
+  };
+
+  // Liability handlers
+  const handleAddLiability = async (data: Omit<Liability, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const url = editingLiability
+        ? `/api/liabilities/${editingLiability.id}`
+        : '/api/liabilities';
+      const method = editingLiability ? 'PUT' : 'POST';
+
+      await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      setEditingLiability(null);
+      await fetchData();
+    } catch (error) {
+      console.error('Error saving liability:', error);
+    }
+  };
+
+  const handleDeleteLiability = async (id: string) => {
+    try {
+      await fetch(`/api/liabilities/${id}`, { method: 'DELETE' });
+      await fetchData();
+    } catch (error) {
+      console.error('Error deleting liability:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500">טוען נתונים...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <main className="min-h-screen py-6 px-4 md:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        
+        {/* ============================================
+            TAB NAVIGATION
+            ============================================ */}
+        <div className="flex items-center gap-2 bg-white rounded-xl p-1.5 shadow-sm border border-gray-100 w-fit">
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              activeTab === 'dashboard'
+                ? 'bg-pink-500 text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            ראשי
+          </button>
+          <button
+            onClick={() => setActiveTab('investments')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+              activeTab === 'investments'
+                ? 'bg-pink-500 text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            השקעות
+          </button>
+        </div>
+
+        {/* ============================================
+            INVESTMENTS TAB
+            ============================================ */}
+        {activeTab === 'investments' && <InvestmentsTab />}
+
+        {/* ============================================
+            DASHBOARD TAB
+            ============================================ */}
+        {activeTab === 'dashboard' && (
+          <>
+        {/* ============================================
+            SECTION 1: Header + Filter (Single Row)
+            ============================================ */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <Header 
+            onNewTransaction={() => setIsTransactionModalOpen(true)} 
+            onImport={() => setIsImportModalOpen(true)}
+          />
+          <MonthFilter
+            selectedMonth={selectedMonth}
+            onMonthChange={setSelectedMonth}
+            availableMonths={availableMonths}
+            futureMonths={futureMonths}
+          />
+        </div>
+
+        {/* ============================================
+            SECTION 2: Summary Cards (Full Width)
+            ============================================ */}
+        <SummaryCards
+          totalBalance={totalBalance}
+          totalIncome={totalIncome}
+          totalExpenses={totalExpenses}
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        {/* ============================================
+            SECTION 3: Net Worth + Charts (Summary Graphs)
+            ============================================ */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Net Worth Main Card */}
+          <div className="lg:col-span-1">
+            <NetWorthSection
+              netWorth={netWorth}
+              totalAssets={totalAssets}
+              totalLiabilities={totalLiabilities}
+              monthlyLiabilityPayments={monthlyLiabilityPayments}
+              fixedIncome={fixedIncome}
+              fixedExpenses={fixedExpenses}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          </div>
+          
+          {/* Net Worth Chart */}
+          <div className="lg:col-span-2">
+            <NetWorthChart
+              data={netWorthHistory}
+              currentNetWorth={netWorth + totalBalance}
+              transactionBalance={totalBalance}
+            />
+          </div>
         </div>
-      </main>
-    </div>
+
+        {/* Monthly Trends Chart (Full Width) */}
+        <MonthlyTrendsCharts data={monthlySummaries} />
+
+        {/* ============================================
+            SECTION 4: Assets, Liabilities, Recurring (3 Columns)
+            ============================================ */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Assets */}
+          <div className="card p-4 max-h-[500px] overflow-y-auto">
+            <AssetsSection
+              assets={assets}
+              onAdd={() => {
+                setEditingAsset(null);
+                setIsAssetModalOpen(true);
+              }}
+              onEdit={(asset) => {
+                setEditingAsset(asset);
+                setIsAssetModalOpen(true);
+              }}
+              onDelete={handleDeleteAsset}
+              onViewDocuments={(asset) => {
+                setDocumentsEntity({ type: 'asset', id: asset.id, name: asset.name });
+                setIsDocumentsModalOpen(true);
+              }}
+            />
+          </div>
+
+          {/* Liabilities */}
+          <div className="card p-4 max-h-[500px] overflow-y-auto">
+            <LiabilitiesSection
+              liabilities={liabilities}
+              onAdd={() => {
+                setEditingLiability(null);
+                setIsLiabilityModalOpen(true);
+              }}
+              onEdit={(liability) => {
+                setEditingLiability(liability);
+                setIsLiabilityModalOpen(true);
+              }}
+              onDelete={handleDeleteLiability}
+              onViewAmortization={(liability) => {
+                setViewingLiability(liability);
+                setIsAmortizationModalOpen(true);
+              }}
+              onViewDocuments={(liability) => {
+                setDocumentsEntity({ type: 'liability', id: liability.id, name: liability.name });
+                setIsDocumentsModalOpen(true);
+              }}
+            />
+          </div>
+
+          {/* Recurring Transactions */}
+          <div className="card p-4 max-h-[500px] overflow-y-auto">
+            <RecurringTransactions
+              transactions={recurringTransactions}
+              onAdd={() => {
+                setEditingRecurring(null);
+                setIsRecurringModalOpen(true);
+              }}
+              onEdit={(tx) => {
+                setEditingRecurring(tx);
+                setIsRecurringModalOpen(true);
+              }}
+              onDelete={handleDeleteRecurring}
+              onToggle={handleToggleRecurring}
+            />
+          </div>
+        </div>
+
+        {/* ============================================
+            SECTION 5: Charts (2 Columns)
+            ============================================ */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Expenses Pie Chart */}
+          <div className="max-h-[500px]">
+            <ExpensesPieChart transactions={filteredTransactions} />
+          </div>
+          
+          <MonthlySummary
+            summaries={monthlySummaries}
+            totalIncome={totalIncome}
+            totalExpenses={totalExpenses}
+            totalBalance={totalBalance}
+          />
+        </div>
+
+        {/* ============================================
+            SECTION 6: Recent Transactions (Full Width)
+            ============================================ */}
+        <div className="card p-4 max-h-[500px] overflow-hidden flex flex-col">
+          <RecentTransactions
+            transactions={filteredTransactions}
+            onDelete={handleDeleteTransaction}
+          />
+        </div>
+          </>
+        )}
+      </div>
+
+      {/* ============================================
+          MODALS
+          ============================================ */}
+      <TransactionModal
+        isOpen={isTransactionModalOpen}
+        onClose={() => setIsTransactionModalOpen(false)}
+        onSave={handleAddTransaction}
+      />
+
+      <RecurringModal
+        isOpen={isRecurringModalOpen}
+        onClose={() => {
+          setIsRecurringModalOpen(false);
+          setEditingRecurring(null);
+        }}
+        onSave={handleAddRecurring}
+        transaction={editingRecurring}
+      />
+
+      <AssetModal
+        isOpen={isAssetModalOpen}
+        onClose={() => {
+          setIsAssetModalOpen(false);
+          setEditingAsset(null);
+        }}
+        onSave={handleAddAsset}
+        asset={editingAsset}
+      />
+
+      <LiabilityModal
+        isOpen={isLiabilityModalOpen}
+        onClose={() => {
+          setIsLiabilityModalOpen(false);
+          setEditingLiability(null);
+        }}
+        onSave={handleAddLiability}
+        liability={editingLiability}
+      />
+
+      <AmortizationModal
+        isOpen={isAmortizationModalOpen}
+        onClose={() => {
+          setIsAmortizationModalOpen(false);
+          setViewingLiability(null);
+        }}
+        liability={viewingLiability}
+      />
+
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={() => fetchData()}
+      />
+
+      {documentsEntity && (
+        <DocumentsModal
+          isOpen={isDocumentsModalOpen}
+          onClose={() => {
+            setIsDocumentsModalOpen(false);
+            setDocumentsEntity(null);
+          }}
+          entityType={documentsEntity.type}
+          entityId={documentsEntity.id}
+          entityName={documentsEntity.name}
+        />
+      )}
+    </main>
   );
 }

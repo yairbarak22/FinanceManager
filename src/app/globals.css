@@ -1,26 +1,284 @@
 @import "tailwindcss";
 
+/* ============================================
+   KNAFAIM - Personal Finance Manager
+   RTL Hebrew Finance Dashboard
+   ============================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Main Colors */
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
+  
+  /* Card Colors */
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  
+  /* Primary - Pink/Magenta for buttons */
+  --primary: 330 81% 60%;
+  --primary-foreground: 0 0% 100%;
+  
+  /* Secondary */
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222 47% 11%;
+  
+  /* Muted */
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  
+  /* Border */
+  --border: 214 32% 91%;
+  
+  /* Finance Colors */
+  --income: 160 84% 39%;      /* Teal for income */
+  --expense: 330 81% 60%;     /* Pink for expenses */
+  --balance: 142 71% 45%;     /* Green for balance */
+  
+  --radius: 1rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ============================================
+   BASE STYLES
+   ============================================ */
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  
+  html {
+    direction: rtl;
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    background: linear-gradient(135deg, hsl(210 40% 98%) 0%, hsl(220 30% 95%) 100%);
+    color: hsl(var(--foreground));
+    font-feature-settings: "rlig" 1, "calt" 1, "tnum" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ============================================
+   CARD STYLES
+   ============================================ */
+@layer components {
+  .card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-100;
+  }
+  
+  .card-balance {
+    background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+    @apply rounded-2xl text-white;
+  }
+  
+  .card-income {
+    background: linear-gradient(135deg, #14b8a6 0%, #2dd4bf 100%);
+    @apply rounded-2xl text-white;
+  }
+  
+  .card-expense {
+    background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+    @apply rounded-2xl text-white;
+  }
 }
+
+/* ============================================
+   BUTTON STYLES
+   ============================================ */
+@layer components {
+  .btn-primary {
+    @apply bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-xl font-medium transition-all duration-200 flex items-center gap-2;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl font-medium transition-all duration-200 flex items-center gap-2;
+  }
+  
+  .btn-icon {
+    @apply p-2 rounded-lg hover:bg-gray-100 transition-colors;
+  }
+  }
+  
+/* ============================================
+   FORM STYLES
+   ============================================ */
+@layer components {
+  .input {
+    @apply w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 transition-all;
+  }
+  
+  .select {
+    @apply w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500 transition-all appearance-none cursor-pointer;
+  }
+  
+  .label {
+    @apply block text-sm font-medium text-gray-700 mb-1.5;
+  }
+}
+
+/* ============================================
+   TOGGLE SWITCH
+   ============================================ */
+@layer components {
+  .toggle {
+    @apply relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer;
+  }
+  
+  .toggle-checked {
+    @apply bg-teal-500;
+  }
+  
+  .toggle-unchecked {
+    @apply bg-gray-300;
+  }
+  
+  .toggle-thumb {
+    @apply inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm;
+  }
+  
+  .toggle-thumb-checked {
+    @apply translate-x-1;
+  }
+  
+  .toggle-thumb-unchecked {
+    @apply -translate-x-5;
+  }
+}
+
+/* ============================================
+   MODAL STYLES
+   ============================================ */
+@layer components {
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4;
+  }
+  
+  .modal-content {
+    @apply bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto;
+  }
+  
+  .modal-header {
+    @apply flex items-center justify-between p-6 border-b border-gray-100;
+  }
+  
+  .modal-body {
+    @apply p-6 space-y-4;
+  }
+  
+  .modal-footer {
+    @apply flex gap-3 p-6 border-t border-gray-100;
+  }
+}
+
+/* ============================================
+   CATEGORY ICON STYLES
+   ============================================ */
+@layer components {
+  .category-icon {
+    @apply w-10 h-10 rounded-xl flex items-center justify-center;
+  }
+}
+
+/* ============================================
+   TRANSACTION ITEM STYLES
+   ============================================ */
+@layer components {
+  .transaction-item {
+    @apply flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors;
+  }
+}
+
+/* ============================================
+   CHART CONTAINER
+   ============================================ */
+@layer components {
+  .chart-container {
+    @apply w-full h-64;
+  }
+}
+
+/* ============================================
+   SECTION HEADER
+   ============================================ */
+@layer components {
+  .section-header {
+    @apply flex items-center justify-between mb-4;
+  }
+  
+  .section-title {
+    @apply text-lg font-semibold text-gray-900 flex items-center gap-2;
+  }
+}
+
+/* ============================================
+   SCROLLBAR
+   ============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 3px;
+  }
+  
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 30%);
+  }
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out;
+}
+
+/* Staggered animation delays */
+.delay-1 { animation-delay: 50ms; }
+.delay-2 { animation-delay: 100ms; }
+.delay-3 { animation-delay: 150ms; }
+.delay-4 { animation-delay: 200ms; }
+.delay-5 { animation-delay: 250ms; }

@@ -1,0 +1,86 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { useSession, signOut } from 'next-auth/react';
+import { LogOut, User, ChevronDown } from 'lucide-react';
+
+export default function UserMenu() {
+  const { data: session } = useSession();
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  if (!session?.user) {
+    return null;
+  }
+
+  const { name, email, image } = session.user;
+
+  return (
+    <div className="relative" ref={menuRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all"
+      >
+        {image ? (
+          <img
+            src={image}
+            alt={name || 'User'}
+            className="w-8 h-8 rounded-full"
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
+            <User className="w-4 h-4 text-pink-600" />
+          </div>
+        )}
+        <span className="text-sm font-medium text-gray-700 hidden sm:block max-w-[120px] truncate">
+          {name || email}
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-gray-400 transition-transform ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <div className="absolute left-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-scale-in">
+          {/* User Info */}
+          <div className="px-4 py-3 border-b border-gray-100">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {name || 'משתמש'}
+            </p>
+            <p className="text-xs text-gray-500 truncate">{email}</p>
+          </div>
+
+          {/* Menu Items */}
+          <div className="py-1">
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                signOut({ callbackUrl: '/login' });
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              התנתק
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
