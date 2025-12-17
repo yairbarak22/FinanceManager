@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { writeFile, mkdir } from 'fs/promises';
-import { existsSync } from 'fs';
-import path from 'path';
+import { put } from '@vercel/blob';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, withUserId } from '@/lib/authHelpers';
 
@@ -86,7 +84,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Upload a document
+// POST - Upload a document to Vercel Blob
 export async function POST(request: NextRequest) {
   try {
     const { userId, error } = await requireAuth();
@@ -150,28 +148,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create directory if it doesn't exist
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', entityType === 'asset' ? 'assets' : 'liabilities', entityId);
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
+    // Generate unique filename for blob storage
+    const ext = file.name.split('.').pop() || '';
+    const storedName = `documents/${entityType}/${entityId}/${uuidv4()}.${ext}`;
 
-    // Generate unique filename
-    const ext = path.extname(file.name);
-    const storedName = `${uuidv4()}${ext}`;
-    const filePath = path.join(uploadDir, storedName);
+    // Upload to Vercel Blob
+    const blob = await put(storedName, file, {
+      access: 'public',
+      contentType: file.type,
+    });
 
-    // Write file to disk
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
-
-    // Save to database with userId
+    // Save to database with userId and blob URL
     const document = await prisma.document.create({
       data: {
         userId,
         filename: file.name,
         storedName,
+        url: blob.url,
         mimeType: file.type,
         size: file.size,
         entityType,

@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { unlink } from 'fs/promises';
-import { existsSync } from 'fs';
-import path from 'path';
+import { del } from '@vercel/blob';
 import { requireAuth, withIdAndUserId } from '@/lib/authHelpers';
 
-// DELETE - Delete a document
+// DELETE - Delete a document from Vercel Blob and database
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -28,19 +26,14 @@ export async function DELETE(
       );
     }
 
-    // Delete file from filesystem
-    const folderType = document.entityType === 'asset' ? 'assets' : 'liabilities';
-    const filePath = path.join(
-      process.cwd(),
-      'public',
-      'uploads',
-      folderType,
-      document.entityId,
-      document.storedName
-    );
-
-    if (existsSync(filePath)) {
-      await unlink(filePath);
+    // Delete from Vercel Blob if URL exists
+    if (document.url) {
+      try {
+        await del(document.url);
+      } catch (blobError) {
+        console.error('Error deleting from Vercel Blob:', blobError);
+        // Continue with database deletion even if blob deletion fails
+      }
     }
 
     // Delete from database (with user check for IDOR prevention)

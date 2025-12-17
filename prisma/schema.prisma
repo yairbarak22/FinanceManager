@@ -154,6 +154,7 @@ model Document {
   userId     String
   filename   String
   storedName String
+  url        String?  // Vercel Blob URL - optional for migration from local files
   mimeType   String
   size       Int
   entityType String
