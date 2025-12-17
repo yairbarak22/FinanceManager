@@ -104,29 +104,29 @@ export default function Home() {
   // Tab navigation state
   const [activeTab, setActiveTab] = useState<'dashboard' | 'investments'>('dashboard');
 
-  // Categories hook
-  const { categories, addCustomCategory } = useCategories();
+  // Categories hook - custom categories from API
+  const { getCustomByType, addCustomCategory } = useCategories();
 
-  // Memoized categories with fallback to defaults
+  // Memoized categories: defaults from client-side + custom from API
   const expenseCats = useMemo(() => ({
-    default: categories?.expense?.default || defaultExpenseCategories,
-    custom: categories?.expense?.custom || [],
-  }), [categories]);
+    default: defaultExpenseCategories,
+    custom: getCustomByType('expense'),
+  }), [getCustomByType]);
 
   const incomeCats = useMemo(() => ({
-    default: categories?.income?.default || defaultIncomeCategories,
-    custom: categories?.income?.custom || [],
-  }), [categories]);
+    default: defaultIncomeCategories,
+    custom: getCustomByType('income'),
+  }), [getCustomByType]);
 
   const assetCats = useMemo(() => ({
-    default: categories?.asset?.default || defaultAssetCategories,
-    custom: categories?.asset?.custom || [],
-  }), [categories]);
+    default: defaultAssetCategories,
+    custom: getCustomByType('asset'),
+  }), [getCustomByType]);
 
   const liabilityCats = useMemo(() => ({
-    default: categories?.liability?.default || defaultLiabilityTypes,
-    custom: categories?.liability?.custom || [],
-  }), [categories]);
+    default: defaultLiabilityTypes,
+    custom: getCustomByType('liability'),
+  }), [getCustomByType]);
 
   // Fetch all data
   const fetchData = useCallback(async () => {

@@ -1,17 +1,32 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { CategoryInfo } from '@/lib/categories';
+import { CategoryInfo, customCategoryToInfo } from '@/lib/categories';
 
-interface CategoriesData {
-  expense: { default: CategoryInfo[]; custom: CategoryInfo[] };
-  income: { default: CategoryInfo[]; custom: CategoryInfo[] };
-  asset: { default: CategoryInfo[]; custom: CategoryInfo[] };
-  liability: { default: CategoryInfo[]; custom: CategoryInfo[] };
+// API response type (serializable)
+interface CustomCategoryResponse {
+  id: string;
+  name: string;
+  type: string;
+  icon: string | null;
+  color: string | null;
+  isCustom: boolean;
+}
+
+interface CustomCategoriesData {
+  expense: CustomCategoryResponse[];
+  income: CustomCategoryResponse[];
+  asset: CustomCategoryResponse[];
+  liability: CustomCategoryResponse[];
 }
 
 export function useCategories() {
-  const [categories, setCategories] = useState<CategoriesData | null>(null);
+  const [customCategories, setCustomCategories] = useState<CustomCategoriesData>({
+    expense: [],
+    income: [],
+    asset: [],
+    liability: [],
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,7 +35,7 @@ export function useCategories() {
       const response = await fetch('/api/categories');
       if (!response.ok) throw new Error('Failed to fetch categories');
       const data = await response.json();
-      setCategories(data);
+      setCustomCategories(data);
       setError(null);
     } catch (err) {
       console.error('Error fetching categories:', err);
@@ -33,6 +48,25 @@ export function useCategories() {
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
+
+  // Convert API response to CategoryInfo with actual icon components
+  const convertToInfo = useCallback((cat: CustomCategoryResponse): CategoryInfo => {
+    return customCategoryToInfo({
+      id: cat.id,
+      name: cat.name,
+      type: cat.type,
+      icon: cat.icon,
+      color: cat.color,
+    });
+  }, []);
+
+  // Get custom categories as CategoryInfo for a specific type
+  const getCustomByType = useCallback(
+    (type: 'expense' | 'income' | 'asset' | 'liability'): CategoryInfo[] => {
+      return customCategories[type].map(convertToInfo);
+    },
+    [customCategories, convertToInfo]
+  );
 
   const addCustomCategory = useCallback(
     async (
@@ -50,23 +84,17 @@ export function useCategories() {
         throw new Error(data.error || 'Failed to create category');
       }
 
-      const newCategory = await response.json();
-      
-      // Update local state
-      setCategories((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          [type]: {
-            ...prev[type],
-            custom: [...prev[type].custom, newCategory],
-          },
-        };
-      });
+      const newCategory: CustomCategoryResponse = await response.json();
 
-      return newCategory;
+      // Update local state
+      setCustomCategories((prev) => ({
+        ...prev,
+        [type]: [...prev[type], newCategory],
+      }));
+
+      return convertToInfo(newCategory);
     },
-    []
+    [convertToInfo]
   );
 
   const deleteCustomCategory = useCallback(
@@ -80,37 +108,21 @@ export function useCategories() {
       }
 
       // Update local state
-      setCategories((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          [type]: {
-            ...prev[type],
-            custom: prev[type].custom.filter((c) => c.id !== id),
-          },
-        };
-      });
+      setCustomCategories((prev) => ({
+        ...prev,
+        [type]: prev[type].filter((c) => c.id !== id),
+      }));
     },
     []
   );
 
-  // Helper to get categories by type
-  const getByType = useCallback(
-    (type: 'expense' | 'income' | 'asset' | 'liability') => {
-      if (!categories) return { default: [], custom: [] };
-      return categories[type];
-    },
-    [categories]
-  );
-
   return {
-    categories,
+    customCategories,
     loading,
     error,
     fetchCategories,
     addCustomCategory,
     deleteCustomCategory,
-    getByType,
+    getCustomByType,
   };
 }
-

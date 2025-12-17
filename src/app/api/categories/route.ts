@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth, withUserId } from '@/lib/authHelpers';
-import {
-  expenseCategories,
-  incomeCategories,
-  assetCategories,
-  liabilityTypes,
-  customCategoryToInfo,
-  CategoryInfo,
-} from '@/lib/categories';
 
-// GET - Fetch all categories (default + custom) for the user
+// Serializable custom category type for API response
+interface CustomCategoryResponse {
+  id: string;
+  name: string;
+  type: string;
+  icon: string | null;
+  color: string | null;
+  isCustom: boolean;
+}
+
+// GET - Fetch only custom categories for the user
+// Default categories are handled client-side (they contain non-serializable icon components)
 export async function GET(request: NextRequest) {
   const { userId, error } = await requireAuth();
   if (error) return error;
@@ -22,48 +25,44 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'asc' },
     });
 
-    // Convert custom categories to CategoryInfo format
-    const customExpense: CategoryInfo[] = [];
-    const customIncome: CategoryInfo[] = [];
-    const customAsset: CategoryInfo[] = [];
-    const customLiability: CategoryInfo[] = [];
+    // Group custom categories by type (return only serializable data)
+    const customExpense: CustomCategoryResponse[] = [];
+    const customIncome: CustomCategoryResponse[] = [];
+    const customAsset: CustomCategoryResponse[] = [];
+    const customLiability: CustomCategoryResponse[] = [];
 
     customCategories.forEach((cat) => {
-      const categoryInfo = customCategoryToInfo(cat);
+      const categoryResponse: CustomCategoryResponse = {
+        id: cat.id,
+        name: cat.name,
+        type: cat.type,
+        icon: cat.icon,
+        color: cat.color,
+        isCustom: true,
+      };
+
       switch (cat.type) {
         case 'expense':
-          customExpense.push(categoryInfo);
+          customExpense.push(categoryResponse);
           break;
         case 'income':
-          customIncome.push(categoryInfo);
+          customIncome.push(categoryResponse);
           break;
         case 'asset':
-          customAsset.push(categoryInfo);
+          customAsset.push(categoryResponse);
           break;
         case 'liability':
-          customLiability.push(categoryInfo);
+          customLiability.push(categoryResponse);
           break;
       }
     });
 
-    // Return merged categories
+    // Return only custom categories (default categories are on client-side)
     return NextResponse.json({
-      expense: {
-        default: expenseCategories,
-        custom: customExpense,
-      },
-      income: {
-        default: incomeCategories,
-        custom: customIncome,
-      },
-      asset: {
-        default: assetCategories,
-        custom: customAsset,
-      },
-      liability: {
-        default: liabilityTypes,
-        custom: customLiability,
-      },
+      expense: customExpense,
+      income: customIncome,
+      asset: customAsset,
+      liability: customLiability,
     });
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -125,7 +124,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(customCategoryToInfo(customCategory));
+    // Return serializable response
+    return NextResponse.json({
+      id: customCategory.id,
+      name: customCategory.name,
+      type: customCategory.type,
+      icon: customCategory.icon,
+      color: customCategory.color,
+      isCustom: true,
+    });
   } catch (error) {
     console.error('Error creating custom category:', error);
     return NextResponse.json(
@@ -134,4 +141,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
