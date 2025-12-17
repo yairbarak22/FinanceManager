@@ -29,6 +29,7 @@ export default function Header({ onNewTransaction, onImport }: HeaderProps) {
         </button>
         <button
           onClick={onNewTransaction}
+          data-tour="add-transaction-btn"
           className="btn-primary"
         >
           <Plus className="w-5 h-5" />

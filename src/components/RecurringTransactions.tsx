@@ -37,7 +37,7 @@ export default function RecurringTransactions({
     .reduce((sum, t) => sum + t.amount, 0);
 
   return (
-    <div className="card p-5">
+    <div className="card p-5" data-tour="recurring-transactions">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">

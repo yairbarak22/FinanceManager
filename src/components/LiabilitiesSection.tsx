@@ -34,7 +34,7 @@ export default function LiabilitiesSection({
   const monthlyPayments = liabilities.reduce((sum, l) => sum + l.monthlyPayment, 0);
 
   return (
-    <div>
+    <div data-tour="liabilities-section">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">

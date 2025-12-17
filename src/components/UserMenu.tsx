@@ -2,12 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { LogOut, User, ChevronDown } from 'lucide-react';
+import { LogOut, User, ChevronDown, HelpCircle, RotateCcw } from 'lucide-react';
+import { useOnboarding } from '@/hooks/useOnboarding';
 
 export default function UserMenu() {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { startTour } = useOnboarding();
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -67,6 +69,29 @@ export default function UserMenu() {
 
           {/* Menu Items */}
           <div className="py-1">
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                startTour();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <HelpCircle className="w-4 h-4 text-pink-500" />
+              הצג סיור מודרך
+            </button>
+            <button
+              onClick={async () => {
+                setIsOpen(false);
+                // Reset onboarding status and start tour
+                await fetch('/api/user/onboarding', { method: 'DELETE' });
+                startTour();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <RotateCcw className="w-4 h-4 text-teal-500" />
+              אפס והתחל מחדש
+            </button>
+            <div className="my-1 border-t border-gray-100" />
             <button
               onClick={() => {
                 setIsOpen(false);

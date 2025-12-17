@@ -487,7 +487,10 @@ export default function Home() {
             ============================================ */}
         <div className="flex items-center justify-between">
           {/* Tabs */}
-          <div className="flex items-center gap-2 bg-white rounded-xl p-1.5 shadow-sm border border-gray-100">
+          <div 
+            data-tour="navigation-tabs"
+            className="flex items-center gap-2 bg-white rounded-xl p-1.5 shadow-sm border border-gray-100"
+          >
             <button
               onClick={() => {
                 setActiveTab('dashboard');
@@ -507,6 +510,7 @@ export default function Home() {
                 setActiveTab('investments');
                 analytics.trackTabChange('investments');
               }}
+              data-tour="investments-tab"
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
                 activeTab === 'investments'
                   ? 'bg-pink-500 text-white shadow-sm'
