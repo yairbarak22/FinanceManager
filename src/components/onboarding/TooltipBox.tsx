@@ -35,10 +35,12 @@ export default function TooltipBox({
     left: 0,
     position: 'center',
   });
+  const [isVisible, setIsVisible] = useState(true);
+  const prevIndexRef = useRef(currentIndex);
 
   const calculatePosition = useCallback(() => {
     if (!step.target) {
-      // Center position for welcome/final screens
+      // Center position for welcome/final screens (fixed in viewport)
       setTooltipPosition({
         top: window.innerHeight / 2,
         left: window.innerWidth / 2,
@@ -56,7 +58,7 @@ export default function TooltipBox({
     const tooltipRect = tooltip.getBoundingClientRect();
     const padding = 16;
 
-    // Calculate available space in each direction
+    // Calculate available space in each direction (viewport-relative)
     const spaceTop = targetRect.top;
     const spaceBottom = window.innerHeight - targetRect.bottom;
     const spaceLeft = targetRect.left;
@@ -68,41 +70,51 @@ export default function TooltipBox({
     let left = 0;
 
     if (spaceBottom >= tooltipRect.height + padding) {
-      // Position below
       position = 'bottom';
-      top = targetRect.bottom + padding + window.scrollY;
+      top = targetRect.bottom + padding;
       left = targetRect.left + targetRect.width / 2 - tooltipRect.width / 2;
     } else if (spaceTop >= tooltipRect.height + padding) {
-      // Position above
       position = 'top';
-      top = targetRect.top - tooltipRect.height - padding + window.scrollY;
+      top = targetRect.top - tooltipRect.height - padding;
       left = targetRect.left + targetRect.width / 2 - tooltipRect.width / 2;
     } else if (spaceRight >= tooltipRect.width + padding) {
-      // Position right
       position = 'right';
-      top = targetRect.top + targetRect.height / 2 - tooltipRect.height / 2 + window.scrollY;
+      top = targetRect.top + targetRect.height / 2 - tooltipRect.height / 2;
       left = targetRect.right + padding;
     } else if (spaceLeft >= tooltipRect.width + padding) {
-      // Position left
       position = 'left';
-      top = targetRect.top + targetRect.height / 2 - tooltipRect.height / 2 + window.scrollY;
+      top = targetRect.top + targetRect.height / 2 - tooltipRect.height / 2;
       left = targetRect.left - tooltipRect.width - padding;
     } else {
-      // Default to bottom with scroll
+      // Default to bottom
       position = 'bottom';
-      top = targetRect.bottom + padding + window.scrollY;
+      top = targetRect.bottom + padding;
       left = targetRect.left + targetRect.width / 2 - tooltipRect.width / 2;
     }
 
     // Ensure tooltip stays within viewport
     left = Math.max(padding, Math.min(left, window.innerWidth - tooltipRect.width - padding));
+    top = Math.max(padding, Math.min(top, window.innerHeight - tooltipRect.height - padding));
 
     setTooltipPosition({ top, left, position });
   }, [step.target]);
 
+  // Handle step change with fade animation
   useEffect(() => {
-    // Initial calculation with a small delay
-    const timeout = setTimeout(calculatePosition, 150);
+    if (prevIndexRef.current !== currentIndex) {
+      setIsVisible(false);
+      const fadeOutTimeout = setTimeout(() => {
+        calculatePosition();
+        setIsVisible(true);
+        prevIndexRef.current = currentIndex;
+      }, 200);
+      return () => clearTimeout(fadeOutTimeout);
+    }
+  }, [currentIndex, calculatePosition]);
+
+  useEffect(() => {
+    // Initial calculation with a small delay for scroll to complete
+    const timeout = setTimeout(calculatePosition, 350);
 
     window.addEventListener('resize', calculatePosition);
     window.addEventListener('scroll', calculatePosition);
@@ -122,12 +134,16 @@ export default function TooltipBox({
   return (
     <div
       ref={tooltipRef}
-      className={`fixed z-[10000] animate-tooltip-in ${
+      className={`fixed z-[10000] transition-all duration-300 ease-out ${
         isWelcomeOrFinal ? 'transform -translate-x-1/2 -translate-y-1/2' : ''
       }`}
       style={{
         top: tooltipPosition.top,
         left: tooltipPosition.left,
+        opacity: isVisible ? 1 : 0,
+        transform: isWelcomeOrFinal 
+          ? `translate(-50%, -50%) scale(${isVisible ? 1 : 0.95})`
+          : `scale(${isVisible ? 1 : 0.95})`,
       }}
     >
       <div
