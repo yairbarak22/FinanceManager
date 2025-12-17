@@ -1,7 +1,6 @@
 'use client';
 
 import { Plus, Upload } from 'lucide-react';
-import UserMenu from './UserMenu';
 
 interface HeaderProps {
   onNewTransaction: () => void;
@@ -35,7 +34,6 @@ export default function Header({ onNewTransaction, onImport }: HeaderProps) {
           <Plus className="w-5 h-5" />
           <span className="hidden sm:inline">עסקה חדשה</span>
         </button>
-        <UserMenu />
       </div>
     </div>
   );

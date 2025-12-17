@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Header from '@/components/Header';
 import MonthFilter from '@/components/MonthFilter';
 import SummaryCards from '@/components/SummaryCards';
@@ -21,6 +21,7 @@ import AmortizationModal from '@/components/modals/AmortizationModal';
 import ImportModal from '@/components/modals/ImportModal';
 import DocumentsModal from '@/components/modals/DocumentsModal';
 import InvestmentsTab from '@/components/investments/InvestmentsTab';
+import UserMenu from '@/components/UserMenu';
 import { LayoutDashboard, TrendingUp } from 'lucide-react';
 import {
   Transaction,
@@ -43,20 +44,28 @@ export default function Home() {
   
   // Filter state
   const [selectedMonth, setSelectedMonth] = useState('all');
-  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
+  const [monthsWithData, setMonthsWithData] = useState<Set<string>>(new Set());
   
-  // Generate 6 future months from current date
-  const generateFutureMonths = (): string[] => {
+  // Generate all months (past 12 + current + future 6 = 19 months)
+  const allMonths = useMemo(() => {
     const months: string[] = [];
     const now = new Date();
-    for (let i = 1; i <= 6; i++) {
-      const futureDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
-      const monthKey = `${futureDate.getFullYear()}-${String(futureDate.getMonth() + 1).padStart(2, '0')}`;
-      months.push(monthKey);
+    
+    for (let i = -12; i <= 6; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      months.push(`${year}-${month}`);
     }
+    
     return months;
-  };
-  const futureMonths = generateFutureMonths();
+  }, []);
+  
+  // Get current month key
+  const currentMonthKey = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }, []);
   
   // Modal state
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
@@ -112,12 +121,12 @@ export default function Home() {
       setAssets(assetsData);
       setLiabilities(liabData);
 
-      // Calculate available months
-      const months = new Set<string>();
+      // Track which months have transaction data
+      const dataMonths = new Set<string>();
       txData.forEach((tx: Transaction) => {
-        months.add(getMonthKey(tx.date));
+        dataMonths.add(getMonthKey(tx.date));
       });
-      setAvailableMonths(Array.from(months).sort().reverse());
+      setMonthsWithData(dataMonths);
 
       // Calculate current liabilities total
       const totalLiabilities = liabData.reduce((sum: number, l: Liability) => sum + l.totalAmount, 0);
@@ -181,7 +190,7 @@ export default function Home() {
     : transactions.filter((tx) => getMonthKey(tx.date) === selectedMonth);
 
   // Count how many months to multiply recurring by
-  const monthsCount = selectedMonth === 'all' ? Math.max(availableMonths.length, 1) : 1;
+  const monthsCount = selectedMonth === 'all' ? Math.max(monthsWithData.size, 1) : 1;
 
   const transactionIncome = filteredTransactions
     .filter((tx) => tx.type === 'income')
@@ -201,7 +210,8 @@ export default function Home() {
   const netWorth = totalAssets - totalLiabilities;
 
   // Calculate monthly summaries (including recurring transactions)
-  const monthlySummaries: MonthlySummaryType[] = availableMonths.map((monthKey) => {
+  const monthsWithDataArray = Array.from(monthsWithData).sort().reverse();
+  const monthlySummaries: MonthlySummaryType[] = monthsWithDataArray.map((monthKey) => {
     const [year, month] = monthKey.split('-');
     const monthTransactions = transactions.filter((tx) => getMonthKey(tx.date) === monthKey);
     
@@ -365,31 +375,37 @@ export default function Home() {
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* ============================================
-            TAB NAVIGATION
+            TOP NAVIGATION BAR (Tabs + User Menu)
             ============================================ */}
-        <div className="flex items-center gap-2 bg-white rounded-xl p-1.5 shadow-sm border border-gray-100 w-fit">
-          <button
-            onClick={() => setActiveTab('dashboard')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-              activeTab === 'dashboard'
-                ? 'bg-pink-500 text-white shadow-sm'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <LayoutDashboard className="w-4 h-4" />
-            ראשי
-          </button>
-          <button
-            onClick={() => setActiveTab('investments')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-              activeTab === 'investments'
-                ? 'bg-pink-500 text-white shadow-sm'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <TrendingUp className="w-4 h-4" />
-            השקעות
-          </button>
+        <div className="flex items-center justify-between">
+          {/* Tabs */}
+          <div className="flex items-center gap-2 bg-white rounded-xl p-1.5 shadow-sm border border-gray-100">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                activeTab === 'dashboard'
+                  ? 'bg-pink-500 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              ראשי
+            </button>
+            <button
+              onClick={() => setActiveTab('investments')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                activeTab === 'investments'
+                  ? 'bg-pink-500 text-white shadow-sm'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4" />
+              השקעות
+            </button>
+          </div>
+          
+          {/* User Menu */}
+          <UserMenu />
         </div>
 
         {/* ============================================
@@ -413,7 +429,9 @@ export default function Home() {
           <MonthFilter
             selectedMonth={selectedMonth}
             onMonthChange={setSelectedMonth}
-            availableMonths={availableMonths}
+            allMonths={allMonths}
+            monthsWithData={monthsWithData}
+            currentMonth={currentMonthKey}
           />
         </div>
 
