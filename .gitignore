@@ -44,3 +44,9 @@ next-env.d.ts
 
 # uploaded documents
 /public/uploads
+
+# SQLite database files
+*.db
+
+# Debug logs
+.cursor/debug.log
