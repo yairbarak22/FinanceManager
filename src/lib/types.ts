@@ -97,6 +97,16 @@ export interface Holding {
   updatedAt?: string;
 }
 
+// קטגוריה מותאמת אישית
+export interface CustomCategory {
+  id: string;
+  name: string;
+  type: 'expense' | 'income' | 'asset' | 'liability';
+  icon?: string;
+  color?: string;
+  createdAt?: string;
+}
+
 // חישוב פילוח השקעה
 export interface InvestmentCalculation {
   holdingId: string;

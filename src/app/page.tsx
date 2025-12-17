@@ -33,6 +33,13 @@ import {
 } from '@/lib/types';
 import { getMonthKey, calculateSavingsRate } from '@/lib/utils';
 import { getEffectiveMonthlyExpense } from '@/lib/loanCalculations';
+import { useCategories } from '@/hooks/useCategories';
+import {
+  expenseCategories as defaultExpenseCategories,
+  incomeCategories as defaultIncomeCategories,
+  assetCategories as defaultAssetCategories,
+  liabilityTypes as defaultLiabilityTypes,
+} from '@/lib/categories';
 
 export default function Home() {
   // Data state
@@ -96,6 +103,30 @@ export default function Home() {
   
   // Tab navigation state
   const [activeTab, setActiveTab] = useState<'dashboard' | 'investments'>('dashboard');
+
+  // Categories hook
+  const { categories, addCustomCategory } = useCategories();
+
+  // Memoized categories with fallback to defaults
+  const expenseCats = useMemo(() => ({
+    default: categories?.expense?.default || defaultExpenseCategories,
+    custom: categories?.expense?.custom || [],
+  }), [categories]);
+
+  const incomeCats = useMemo(() => ({
+    default: categories?.income?.default || defaultIncomeCategories,
+    custom: categories?.income?.custom || [],
+  }), [categories]);
+
+  const assetCats = useMemo(() => ({
+    default: categories?.asset?.default || defaultAssetCategories,
+    custom: categories?.asset?.custom || [],
+  }), [categories]);
+
+  const liabilityCats = useMemo(() => ({
+    default: categories?.liability?.default || defaultLiabilityTypes,
+    custom: categories?.liability?.custom || [],
+  }), [categories]);
 
   // Fetch all data
   const fetchData = useCallback(async () => {
@@ -576,6 +607,9 @@ export default function Home() {
         isOpen={isTransactionModalOpen}
         onClose={() => setIsTransactionModalOpen(false)}
         onSave={handleAddTransaction}
+        expenseCategories={expenseCats}
+        incomeCategories={incomeCats}
+        onAddCategory={addCustomCategory}
       />
 
       <RecurringModal
@@ -586,6 +620,9 @@ export default function Home() {
         }}
         onSave={handleAddRecurring}
         transaction={editingRecurring}
+        expenseCategories={expenseCats}
+        incomeCategories={incomeCats}
+        onAddCategory={addCustomCategory}
       />
 
       <AssetModal
@@ -596,6 +633,8 @@ export default function Home() {
         }}
         onSave={handleAddAsset}
         asset={editingAsset}
+        assetCategories={assetCats}
+        onAddCategory={(name) => addCustomCategory(name, 'asset')}
       />
 
       <LiabilityModal
@@ -606,6 +645,8 @@ export default function Home() {
         }}
         onSave={handleAddLiability}
         liability={editingLiability}
+        liabilityTypes={liabilityCats}
+        onAddCategory={(name) => addCustomCategory(name, 'liability')}
       />
 
       <AmortizationModal
