@@ -25,7 +25,7 @@ export interface RecurringTransaction {
 export interface Asset {
   id: string;
   name: string;
-  category: 'apartment' | 'stocks' | 'crypto' | 'education_fund' | 'pension';
+  category: string; // 'investments' | 'real_estate' etc.
   value: number;
   createdAt?: string;
   updatedAt?: string;

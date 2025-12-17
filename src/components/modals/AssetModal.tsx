@@ -19,7 +19,7 @@ export default function AssetModal({
   asset,
 }: AssetModalProps) {
   const [name, setName] = useState('');
-  const [category, setCategory] = useState<'investments' | 'real_estate'>('investments');
+  const [category, setCategory] = useState('investments');
   const [value, setValue] = useState('');
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function AssetModal({
               <label className="label">סוג נכס</label>
               <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value as 'investments' | 'real_estate')}
+                onChange={(e) => setCategory(e.target.value)}
                 className="select"
                 required
               >

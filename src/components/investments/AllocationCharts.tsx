@@ -50,9 +50,9 @@ export default function AllocationCharts({ holdings }: AllocationChartsProps) {
     );
   }
 
-  const renderCustomLabel = ({ name, percentage }: { name: string; percentage: number }) => {
-    if (percentage < 5) return null;
-    return `${percentage.toFixed(0)}%`;
+  const renderCustomLabel = ({ percent }: { percent?: number }) => {
+    if (!percent || percent < 0.05) return null;
+    return `${(percent * 100).toFixed(0)}%`;
   };
 
   return (
