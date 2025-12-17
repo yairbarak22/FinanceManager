@@ -360,7 +360,7 @@ export default function Home() {
       await fetchData();
       // Track analytics event (only for new assets)
       if (!editingAsset) {
-        analytics.trackAddAsset(data.category, data.currentValue);
+        analytics.trackAddAsset(data.category, data.value);
       }
     } catch (error) {
       console.error('Error saving asset:', error);
@@ -394,7 +394,7 @@ export default function Home() {
       await fetchData();
       // Track analytics event (only for new liabilities)
       if (!editingLiability) {
-        analytics.trackAddLiability(data.type, data.currentBalance);
+        analytics.trackAddLiability(data.type, data.totalAmount);
       }
     } catch (error) {
       console.error('Error saving liability:', error);
