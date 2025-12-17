@@ -143,6 +143,11 @@ export default function Home() {
         fetch('/api/assets/history'),
       ]);
 
+      // Check all responses before parsing
+      if (!txRes.ok || !recRes.ok || !assetsRes.ok || !liabRes.ok || !historyRes.ok) {
+        throw new Error('Failed to fetch data from one or more endpoints');
+      }
+
       const [txData, recData, assetsData, liabData, historyData] = await Promise.all([
         txRes.json(),
         recRes.json(),
@@ -301,6 +306,9 @@ export default function Home() {
 
   // Recurring transaction handlers
   const handleAddRecurring = async (data: Omit<RecurringTransaction, 'id' | 'createdAt' | 'updatedAt'>) => {
+    // Capture editing state before any changes
+    const isNewRecurring = !editingRecurring;
+    
     try {
       const url = editingRecurring
         ? `/api/recurring/${editingRecurring.id}`
@@ -315,7 +323,7 @@ export default function Home() {
       setEditingRecurring(null);
       await fetchData();
       // Track analytics event (only for new recurring transactions)
-      if (!editingRecurring) {
+      if (isNewRecurring) {
         analytics.trackAddRecurring(data.type, data.category, data.amount);
       }
     } catch (error) {
