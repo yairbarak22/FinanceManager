@@ -34,6 +34,7 @@ import {
 import { getMonthKey, calculateSavingsRate } from '@/lib/utils';
 import { getEffectiveMonthlyExpense } from '@/lib/loanCalculations';
 import { useCategories } from '@/hooks/useCategories';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import {
   expenseCategories as defaultExpenseCategories,
   incomeCategories as defaultIncomeCategories,
@@ -106,6 +107,9 @@ export default function Home() {
 
   // Categories hook - custom categories from API
   const { getCustomByType, addCustomCategory } = useCategories();
+
+  // Analytics hook
+  const analytics = useAnalytics();
 
   // Memoized categories: defaults from client-side + custom from API
   const expenseCats = useMemo(() => ({
@@ -278,6 +282,8 @@ export default function Home() {
         body: JSON.stringify(data),
       });
       await fetchData();
+      // Track analytics event
+      analytics.trackAddTransaction(data.type, data.category, data.amount);
     } catch (error) {
       console.error('Error adding transaction:', error);
     }
@@ -287,6 +293,7 @@ export default function Home() {
     try {
       await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
       await fetchData();
+      analytics.trackDeleteTransaction();
     } catch (error) {
       console.error('Error deleting transaction:', error);
     }
@@ -307,6 +314,10 @@ export default function Home() {
       });
       setEditingRecurring(null);
       await fetchData();
+      // Track analytics event (only for new recurring transactions)
+      if (!editingRecurring) {
+        analytics.trackAddRecurring(data.type, data.category, data.amount);
+      }
     } catch (error) {
       console.error('Error saving recurring transaction:', error);
     }
@@ -347,6 +358,10 @@ export default function Home() {
       });
       setEditingAsset(null);
       await fetchData();
+      // Track analytics event (only for new assets)
+      if (!editingAsset) {
+        analytics.trackAddAsset(data.category, data.currentValue);
+      }
     } catch (error) {
       console.error('Error saving asset:', error);
     }
@@ -356,6 +371,7 @@ export default function Home() {
     try {
       await fetch(`/api/assets/${id}`, { method: 'DELETE' });
       await fetchData();
+      analytics.trackDeleteAsset();
     } catch (error) {
       console.error('Error deleting asset:', error);
     }
@@ -376,6 +392,10 @@ export default function Home() {
       });
       setEditingLiability(null);
       await fetchData();
+      // Track analytics event (only for new liabilities)
+      if (!editingLiability) {
+        analytics.trackAddLiability(data.type, data.currentBalance);
+      }
     } catch (error) {
       console.error('Error saving liability:', error);
     }
@@ -385,6 +405,7 @@ export default function Home() {
     try {
       await fetch(`/api/liabilities/${id}`, { method: 'DELETE' });
       await fetchData();
+      analytics.trackDeleteLiability();
     } catch (error) {
       console.error('Error deleting liability:', error);
     }
@@ -412,7 +433,10 @@ export default function Home() {
           {/* Tabs */}
           <div className="flex items-center gap-2 bg-white rounded-xl p-1.5 shadow-sm border border-gray-100">
             <button
-              onClick={() => setActiveTab('dashboard')}
+              onClick={() => {
+                setActiveTab('dashboard');
+                analytics.trackTabChange('dashboard');
+              }}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
                 activeTab === 'dashboard'
                   ? 'bg-pink-500 text-white shadow-sm'
@@ -423,7 +447,10 @@ export default function Home() {
               ראשי
             </button>
             <button
-              onClick={() => setActiveTab('investments')}
+              onClick={() => {
+                setActiveTab('investments');
+                analytics.trackTabChange('investments');
+              }}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
                 activeTab === 'investments'
                   ? 'bg-pink-500 text-white shadow-sm'

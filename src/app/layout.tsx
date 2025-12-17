@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Heebo } from "next/font/google";
 import Providers from "@/components/Providers";
+import Analytics from "@/components/Analytics";
+import CookieConsent from "@/components/CookieConsent";
 import "./globals.css";
 
 const heebo = Heebo({
@@ -23,7 +25,11 @@ export default function RootLayout({
   return (
     <html lang="he" dir="rtl">
       <body className={`${heebo.variable} font-sans antialiased`}>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <Analytics />
+          <CookieConsent />
+        </Providers>
       </body>
     </html>
   );
