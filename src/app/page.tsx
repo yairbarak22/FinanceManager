@@ -452,7 +452,6 @@ export default function Home() {
             selectedMonth={selectedMonth}
             onMonthChange={setSelectedMonth}
             availableMonths={availableMonths}
-            futureMonths={futureMonths}
           />
         </div>
 
