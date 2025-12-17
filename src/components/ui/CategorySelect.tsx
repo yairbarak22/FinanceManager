@@ -48,8 +48,9 @@ export default function CategorySelect({
   };
 
   const renderCategoryOption = (category: CategoryInfo, showCheckmark: boolean) => {
-    const Icon = category.icon;
     const isSelected = value === category.id;
+    // Ensure we have a valid icon component - fallback to Star if not
+    const IconComponent = typeof category.icon === 'function' ? category.icon : Star;
 
     return (
       <button
@@ -65,7 +66,7 @@ export default function CategorySelect({
           className={cn('category-option-icon', category.bgColor)}
           style={{ color: category.color }}
         >
-          <Icon className="w-4 h-4" />
+          <IconComponent className="w-4 h-4" />
         </div>
         <span className="flex-1 text-right">{category.nameHe}</span>
         {showCheckmark && isSelected && (
@@ -95,7 +96,11 @@ export default function CategorySelect({
               className={cn('category-option-icon', selectedCategory.bgColor)}
               style={{ color: selectedCategory.color }}
             >
-              <selectedCategory.icon className="w-4 h-4" />
+              {typeof selectedCategory.icon === 'function' ? (
+                <selectedCategory.icon className="w-4 h-4" />
+              ) : (
+                <Star className="w-4 h-4" />
+              )}
             </div>
             <span className="flex-1 text-right text-gray-900">
               {selectedCategory.nameHe}
