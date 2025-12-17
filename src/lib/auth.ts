@@ -9,13 +9,25 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          prompt: 'select_account', // Force showing account selection on every login
+        },
+      },
     }),
   ],
   callbacks: {
-    async session({ session, user }) {
-      // Add user.id to the session
-      if (session.user) {
-        session.user.id = user.id;
+    async jwt({ token, user }) {
+      // On initial sign in, add user id to token
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      // Add user.id to the session from the JWT token
+      if (session.user && token.id) {
+        session.user.id = token.id as string;
       }
       return session;
     },
@@ -25,7 +37,7 @@ export const authOptions: NextAuthOptions = {
     error: '/login',
   },
   session: {
-    strategy: 'database',
+    strategy: 'jwt', // Use JWT for sessions (works with middleware)
   },
 };
 

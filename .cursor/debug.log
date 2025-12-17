@@ -1,0 +1,140 @@
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958018008,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/transactions","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958020668,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/recurring","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958020671,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/liabilities","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958020676,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/assets","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958020674,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958021078,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958021078,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958021080,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958021080,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958021082,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958021082,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958021084,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958021084,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958021477,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958021477,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/transactions","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958023963,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/recurring","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958023965,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/assets","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958023966,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/liabilities","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958023968,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/assets/history","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958023974,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958023987,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958023987,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958023987,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958023988,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958023988,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958023988,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958023989,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958023990,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958024054,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958024055,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958050098,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958050099,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"UserMenu.tsx:signOut","message":"SignOut clicked","data":{"userId":"cmj8phrqa0000zf4374r18w73","cookies":"__next_hmr_refresh_hash__=279"},"timestamp":1765958053070,"sessionId":"debug-session","hypothesisId":"A"}
+{"location":"login/page.tsx:render","message":"Login page rendered","data":{"error":null,"callbackUrl":"/","cookies":"SSR"},"timestamp":1765958053405,"sessionId":"debug-session","hypothesisId":"A,C"}
+{"location":"login/page.tsx:render","message":"Login page rendered","data":{"error":null,"callbackUrl":"/","cookies":"__next_hmr_refresh_hash__=279"},"timestamp":1765958053521,"sessionId":"debug-session","hypothesisId":"A,C"}
+{"location":"login/page.tsx:render","message":"Login page rendered","data":{"error":null,"callbackUrl":"/","cookies":"__next_hmr_refresh_hash__=279"},"timestamp":1765958053522,"sessionId":"debug-session","hypothesisId":"A,C"}
+{"location":"login/page.tsx:signIn","message":"SignIn button clicked","data":{"callbackUrl":"/","cookies":"__next_hmr_refresh_hash__=279"},"timestamp":1765958054889,"sessionId":"debug-session","hypothesisId":"B,C"}
+{"location":"auth.ts:signIn","message":"SignIn callback triggered","data":{"userId":"cmj8phrqa0000zf4374r18w73","email":"yairbarak22@gmail.com","provider":"google"},"timestamp":1765958056820,"sessionId":"debug-session","hypothesisId":"B,D"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"userId":"cmj8phrqa0000zf4374r18w73","trigger":"signIn"},"timestamp":1765958057143,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057163,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/transactions","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057331,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057340,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057340,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/recurring","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057343,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/assets","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057344,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/liabilities","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057344,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057356,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057356,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057357,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057357,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057359,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057359,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057360,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057360,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/transactions","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057866,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/recurring","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057867,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/assets","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057867,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/liabilities","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057870,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/assets/history","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057871,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057881,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057881,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057881,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057881,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057882,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057882,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057885,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057885,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057886,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958057886,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958106010,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/transactions","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958108193,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/recurring","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958108194,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/assets","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958108197,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/liabilities","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958108201,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958108653,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958108654,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958108654,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958108654,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958108659,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958108659,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958108659,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958108659,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958109045,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958109045,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/transactions","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958111495,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/recurring","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958111496,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/assets","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958111497,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/liabilities","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958111498,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/assets/history","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958111499,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958111521,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958111521,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958111522,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958111522,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958111522,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958111522,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958111522,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958111522,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958111582,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958111582,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958126204,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958126205,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"UserMenu.tsx:signOut","message":"SignOut clicked","data":{"userId":"cmj8phrqa0000zf4374r18w73","cookies":"__next_hmr_refresh_hash__=279"},"timestamp":1765958128437,"sessionId":"debug-session","hypothesisId":"A"}
+{"location":"login/page.tsx:render","message":"Login page rendered","data":{"error":null,"callbackUrl":"/","cookies":"SSR"},"timestamp":1765958128727,"sessionId":"debug-session","hypothesisId":"A,C"}
+{"location":"login/page.tsx:render","message":"Login page rendered","data":{"error":null,"callbackUrl":"/","cookies":"__next_hmr_refresh_hash__=279"},"timestamp":1765958128834,"sessionId":"debug-session","hypothesisId":"A,C"}
+{"location":"login/page.tsx:render","message":"Login page rendered","data":{"error":null,"callbackUrl":"/","cookies":"__next_hmr_refresh_hash__=279"},"timestamp":1765958128835,"sessionId":"debug-session","hypothesisId":"A,C"}
+{"location":"login/page.tsx:signIn","message":"SignIn button clicked","data":{"callbackUrl":"/","cookies":"__next_hmr_refresh_hash__=279"},"timestamp":1765958129954,"sessionId":"debug-session","hypothesisId":"B,C"}
+{"location":"auth.ts:signIn","message":"SignIn callback triggered","data":{"userId":"cmj8phrqa0000zf4374r18w73","email":"yairbarak22@gmail.com","provider":"google"},"timestamp":1765958135634,"sessionId":"debug-session","hypothesisId":"B,D"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"userId":"cmj8phrqa0000zf4374r18w73","trigger":"signIn"},"timestamp":1765958135958,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958135979,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/transactions","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136237,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/recurring","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136238,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/assets","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136239,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/liabilities","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136239,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136255,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136255,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136255,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136255,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136255,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136255,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136257,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136257,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136258,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136258,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/transactions","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136765,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/recurring","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136766,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/assets","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136767,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/liabilities","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136767,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"middleware.ts","message":"Middleware check","data":{"pathname":"/api/assets/history","hasToken":true,"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136768,"sessionId":"debug-session","hypothesisId":"C,D"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136777,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136777,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136778,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136778,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136780,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136781,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136781,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136781,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136781,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958136781,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:jwt","message":"JWT callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958155750,"sessionId":"debug-session","hypothesisId":"C"}
+{"location":"auth.ts:session","message":"Session callback triggered","data":{"tokenId":"cmj8phrqa0000zf4374r18w73"},"timestamp":1765958155751,"sessionId":"debug-session","hypothesisId":"C"}
