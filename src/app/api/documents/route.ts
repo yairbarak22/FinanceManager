@@ -152,18 +152,21 @@ export async function POST(request: NextRequest) {
     const ext = file.name.split('.').pop() || '';
     const storedName = `documents/${entityType}/${entityId}/${uuidv4()}.${ext}`;
 
-    // Upload to Vercel Blob
+    // Upload to Vercel Blob with random suffix for extra security
+    // The blob URL is never exposed to clients - downloads go through our authenticated proxy
     const blob = await put(storedName, file, {
       access: 'public',
       contentType: file.type,
+      addRandomSuffix: true, // Adds random suffix to make URLs unguessable
     });
 
     // Save to database with userId and blob URL
+    // Use blob.pathname (includes random suffix) for storedName so we can delete it later
     const document = await prisma.document.create({
       data: {
         userId,
         filename: file.name,
-        storedName,
+        storedName: blob.pathname, // Use actual blob pathname for deletion
         url: blob.url,
         mimeType: file.type,
         size: file.size,

@@ -84,7 +84,6 @@ export default function Home() {
   
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
-  const [isSeeded, setIsSeeded] = useState(false);
   
   // Tab navigation state
   const [activeTab, setActiveTab] = useState<'dashboard' | 'investments'>('dashboard');
@@ -159,47 +158,10 @@ export default function Home() {
     }
   }, []);
 
-  // Seed database on first load if completely empty
+  // Fetch data on mount - new users start with empty data
   useEffect(() => {
-    const seedAndFetch = async () => {
-      try {
-        // Check if we have ANY data in the database
-        const [txRes, recRes, assetsRes, liabRes] = await Promise.all([
-          fetch('/api/transactions'),
-          fetch('/api/recurring'),
-          fetch('/api/assets'),
-          fetch('/api/liabilities'),
-        ]);
-
-        const [txData, recData, assetsData, liabData] = await Promise.all([
-          txRes.json(),
-          recRes.json(),
-          assetsRes.json(),
-          liabRes.json(),
-        ]);
-
-        // Only seed if ALL tables are empty
-        const isCompletelyEmpty = 
-          txData.length === 0 && 
-          recData.length === 0 && 
-          assetsData.length === 0 && 
-          liabData.length === 0;
-        
-        if (isCompletelyEmpty && !isSeeded) {
-          // Seed the database
-          await fetch('/api/seed', { method: 'POST' });
-          setIsSeeded(true);
-        }
-        
-        await fetchData();
-      } catch (error) {
-        console.error('Error:', error);
-        setIsLoading(false);
-      }
-    };
-
-    seedAndFetch();
-  }, [fetchData, isSeeded]);
+    fetchData();
+  }, [fetchData]);
 
   // Calculate recurring totals (only active ones)
   const fixedIncome = recurringTransactions
