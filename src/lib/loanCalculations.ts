@@ -9,6 +9,11 @@ export function calculateSpitzerPayment(
   annualRate: number,
   termMonths: number
 ): number {
+  // Guard against division by zero
+  if (termMonths <= 0) {
+    return 0;
+  }
+  
   if (annualRate === 0) {
     return principal / termMonths;
   }
@@ -28,6 +33,11 @@ export function generateAmortizationSchedule(
   startDate: Date,
   method: 'spitzer' | 'equal_principal' = 'spitzer'
 ): AmortizationRow[] {
+  // Guard against invalid inputs
+  if (termMonths <= 0 || principal <= 0) {
+    return [];
+  }
+  
   const schedule: AmortizationRow[] = [];
   const monthlyRate = annualRate / 100 / 12;
   let balance = principal;

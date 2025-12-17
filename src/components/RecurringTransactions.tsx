@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { Plus, Pencil, Trash2, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
 import { RecurringTransaction } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
+import ConfirmDialog from './modals/ConfirmDialog';
 
 interface RecurringTransactionsProps {
   transactions: RecurringTransaction[];
@@ -20,6 +22,12 @@ export default function RecurringTransactions({
   onDelete,
   onToggle,
 }: RecurringTransactionsProps) {
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; name: string }>({
+    isOpen: false,
+    id: '',
+    name: '',
+  });
+
   const fixedIncome = transactions
     .filter((t) => t.type === 'income' && t.isActive)
     .reduce((sum, t) => sum + t.amount, 0);
@@ -128,7 +136,7 @@ export default function RecurringTransactions({
                   <Pencil className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => onDelete(transaction.id)}
+                  onClick={() => setDeleteConfirm({ isOpen: true, id: transaction.id, name: transaction.name })}
                   className="p-1.5 rounded hover:bg-red-100 text-gray-400 hover:text-red-500"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -142,6 +150,15 @@ export default function RecurringTransactions({
           <p className="text-center text-gray-400 text-sm py-4">אין עסקאות קבועות</p>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: '', name: '' })}
+        onConfirm={() => onDelete(deleteConfirm.id)}
+        title="מחיקת עסקה קבועה"
+        message={`האם אתה בטוח שברצונך למחוק את "${deleteConfirm.name}"?`}
+      />
     </div>
   );
 }

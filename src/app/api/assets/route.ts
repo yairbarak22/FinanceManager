@@ -26,10 +26,23 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     
+    // Validate required fields
+    if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    }
+    
+    if (!body.category || typeof body.category !== 'string') {
+      return NextResponse.json({ error: 'Category is required' }, { status: 400 });
+    }
+    
+    if (typeof body.value !== 'number' || body.value < 0) {
+      return NextResponse.json({ error: 'Value must be a non-negative number' }, { status: 400 });
+    }
+    
     const asset = await prisma.asset.create({
       data: {
         userId,
-        name: body.name,
+        name: body.name.trim(),
         category: body.category,
         value: body.value,
       },

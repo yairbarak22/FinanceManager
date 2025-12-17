@@ -44,13 +44,34 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     
+    // Validate required fields
+    if (!body.type || !['income', 'expense'].includes(body.type)) {
+      return NextResponse.json({ error: 'Invalid type. Must be "income" or "expense"' }, { status: 400 });
+    }
+    
+    if (typeof body.amount !== 'number' || body.amount <= 0) {
+      return NextResponse.json({ error: 'Amount must be a positive number' }, { status: 400 });
+    }
+    
+    if (!body.category || typeof body.category !== 'string') {
+      return NextResponse.json({ error: 'Category is required' }, { status: 400 });
+    }
+    
+    if (!body.description || typeof body.description !== 'string') {
+      return NextResponse.json({ error: 'Description is required' }, { status: 400 });
+    }
+    
+    if (!body.date) {
+      return NextResponse.json({ error: 'Date is required' }, { status: 400 });
+    }
+    
     const transaction = await prisma.transaction.create({
       data: {
         userId,
         type: body.type,
         amount: body.amount,
-        category: body.category,
-        description: body.description,
+        category: body.category.trim(),
+        description: body.description.trim(),
         date: new Date(body.date),
       },
     });

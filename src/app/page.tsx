@@ -35,6 +35,8 @@ import { getMonthKey, calculateSavingsRate } from '@/lib/utils';
 import { getEffectiveMonthlyExpense } from '@/lib/loanCalculations';
 import { useCategories } from '@/hooks/useCategories';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { useToast } from '@/hooks/useToast';
+import ToastContainer from '@/components/ui/Toast';
 import {
   expenseCategories as defaultExpenseCategories,
   incomeCategories as defaultIncomeCategories,
@@ -110,6 +112,9 @@ export default function Home() {
 
   // Analytics hook
   const analytics = useAnalytics();
+
+  // Toast notifications
+  const toast = useToast();
 
   // Memoized categories: defaults from client-side + custom from API
   const expenseCats = useMemo(() => ({
@@ -281,26 +286,34 @@ export default function Home() {
   // Transaction handlers
   const handleAddTransaction = async (data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      await fetch('/api/transactions', {
+      const res = await fetch('/api/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to add transaction');
+      }
       await fetchData();
-      // Track analytics event
+      toast.success('העסקה נוספה בהצלחה');
       analytics.trackAddTransaction(data.type, data.category, data.amount);
     } catch (error) {
       console.error('Error adding transaction:', error);
+      toast.error(error instanceof Error ? error.message : 'שגיאה בהוספת עסקה');
     }
   };
 
   const handleDeleteTransaction = async (id: string) => {
     try {
-      await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
       await fetchData();
+      toast.success('העסקה נמחקה');
       analytics.trackDeleteTransaction();
     } catch (error) {
       console.error('Error deleting transaction:', error);
+      toast.error('שגיאה במחיקת עסקה');
     }
   };
 
@@ -315,107 +328,142 @@ export default function Home() {
         : '/api/recurring';
       const method = editingRecurring ? 'PUT' : 'POST';
 
-      await fetch(url, {
+      const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to save');
+      }
       setEditingRecurring(null);
       await fetchData();
+      toast.success(isNewRecurring ? 'העסקה הקבועה נוספה' : 'העסקה הקבועה עודכנה');
       // Track analytics event (only for new recurring transactions)
       if (isNewRecurring) {
         analytics.trackAddRecurring(data.type, data.category, data.amount);
       }
     } catch (error) {
       console.error('Error saving recurring transaction:', error);
+      toast.error(error instanceof Error ? error.message : 'שגיאה בשמירת עסקה קבועה');
     }
   };
 
   const handleToggleRecurring = async (id: string, isActive: boolean) => {
     try {
-      await fetch(`/api/recurring/${id}`, {
+      const res = await fetch(`/api/recurring/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive }),
       });
+      if (!res.ok) throw new Error('Failed to toggle');
       await fetchData();
     } catch (error) {
       console.error('Error toggling recurring transaction:', error);
+      toast.error('שגיאה בעדכון סטטוס');
     }
   };
 
   const handleDeleteRecurring = async (id: string) => {
     try {
-      await fetch(`/api/recurring/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/recurring/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
       await fetchData();
+      toast.success('העסקה הקבועה נמחקה');
     } catch (error) {
       console.error('Error deleting recurring transaction:', error);
+      toast.error('שגיאה במחיקה');
     }
   };
 
   // Asset handlers
   const handleAddAsset = async (data: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>) => {
+    // Capture editing state before any changes
+    const isNewAsset = !editingAsset;
+    
     try {
       const url = editingAsset ? `/api/assets/${editingAsset.id}` : '/api/assets';
       const method = editingAsset ? 'PUT' : 'POST';
 
-      await fetch(url, {
+      const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to save');
+      }
       setEditingAsset(null);
       await fetchData();
+      toast.success(isNewAsset ? 'הנכס נוסף בהצלחה' : 'הנכס עודכן');
       // Track analytics event (only for new assets)
-      if (!editingAsset) {
+      if (isNewAsset) {
         analytics.trackAddAsset(data.category, data.value);
       }
     } catch (error) {
       console.error('Error saving asset:', error);
+      toast.error(error instanceof Error ? error.message : 'שגיאה בשמירת נכס');
     }
   };
 
   const handleDeleteAsset = async (id: string) => {
     try {
-      await fetch(`/api/assets/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/assets/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
       await fetchData();
+      toast.success('הנכס נמחק');
       analytics.trackDeleteAsset();
     } catch (error) {
       console.error('Error deleting asset:', error);
+      toast.error('שגיאה במחיקת נכס');
     }
   };
 
   // Liability handlers
   const handleAddLiability = async (data: Omit<Liability, 'id' | 'createdAt' | 'updatedAt'>) => {
+    // Capture editing state before any changes
+    const isNewLiability = !editingLiability;
+    
     try {
       const url = editingLiability
         ? `/api/liabilities/${editingLiability.id}`
         : '/api/liabilities';
       const method = editingLiability ? 'PUT' : 'POST';
 
-      await fetch(url, {
+      const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to save');
+      }
       setEditingLiability(null);
       await fetchData();
+      toast.success(isNewLiability ? 'ההתחייבות נוספה' : 'ההתחייבות עודכנה');
       // Track analytics event (only for new liabilities)
-      if (!editingLiability) {
+      if (isNewLiability) {
         analytics.trackAddLiability(data.type, data.totalAmount);
       }
     } catch (error) {
       console.error('Error saving liability:', error);
+      toast.error(error instanceof Error ? error.message : 'שגיאה בשמירת התחייבות');
     }
   };
 
   const handleDeleteLiability = async (id: string) => {
     try {
-      await fetch(`/api/liabilities/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/liabilities/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
       await fetchData();
+      toast.success('ההתחייבות נמחקה');
       analytics.trackDeleteLiability();
     } catch (error) {
       console.error('Error deleting liability:', error);
+      toast.error('שגיאה במחיקה');
     }
   };
 
@@ -711,6 +759,9 @@ export default function Home() {
           entityName={documentsEntity.name}
         />
       )}
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
     </main>
   );
 }

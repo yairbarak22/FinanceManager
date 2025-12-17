@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { Trash2, Receipt } from 'lucide-react';
 import { Transaction } from '@/lib/types';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
+import ConfirmDialog from './modals/ConfirmDialog';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -11,6 +13,12 @@ interface RecentTransactionsProps {
 }
 
 export default function RecentTransactions({ transactions, onDelete }: RecentTransactionsProps) {
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; description: string }>({
+    isOpen: false,
+    id: '',
+    description: '',
+  });
+
   return (
     <div className="card p-6">
       {/* Header */}
@@ -78,7 +86,7 @@ export default function RecentTransactions({ transactions, onDelete }: RecentTra
 
               {/* Delete Button */}
               <button
-                onClick={() => onDelete(transaction.id)}
+                onClick={() => setDeleteConfirm({ isOpen: true, id: transaction.id, description: transaction.description })}
                 className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
               >
                 <Trash2 className="w-4 h-4" />
@@ -102,6 +110,15 @@ export default function RecentTransactions({ transactions, onDelete }: RecentTra
           </p>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: '', description: '' })}
+        onConfirm={() => onDelete(deleteConfirm.id)}
+        title="מחיקת עסקה"
+        message={`האם אתה בטוח שברצונך למחוק את העסקה "${deleteConfirm.description}"?`}
+      />
     </div>
   );
 }
