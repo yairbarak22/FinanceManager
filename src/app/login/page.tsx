@@ -15,22 +15,20 @@ function LoginContent() {
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto mb-4">
-            {/* #region agent log */}
-            <img
-              src="/icon.png"
-              alt="פלוס"
-              width={64}
-              height={64}
-              className="w-16 h-16 rounded-2xl shadow-lg object-cover"
-              onLoad={() => {
-                fetch('http://127.0.0.1:7242/ingest/b8de791a-b92e-4d32-afea-6bca7e0f2680',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:img',message:'Image loaded successfully',data:{src:'/icon.png'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-              }}
-              onError={(e) => {
-                fetch('http://127.0.0.1:7242/ingest/b8de791a-b92e-4d32-afea-6bca7e0f2680',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:img',message:'Image failed to load',data:{src:'/icon.png',error:String(e)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
-              }}
-            />
-            {/* #endregion */}
+          <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
+            <svg
+              className="w-8 h-8 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+              />
+            </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-1">פלוס</h1>
           <p className="text-gray-500 text-sm">להוציא את המקסימום מהכסף שלך</p>
