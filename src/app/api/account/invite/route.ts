@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth, getOrCreateSharedAccount } from '@/lib/authHelpers';
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // GET - Get all invites for the user's shared account
 export async function GET() {
@@ -85,9 +88,63 @@ export async function POST(request: Request) {
       },
     });
 
+    const inviteUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/invite/${invite.token}`;
+
+    // Get inviter name
+    const inviter = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, email: true },
+    });
+
+    // Send email invitation
+    try {
+      await resend.emails.send({
+        from: 'Finance Manager <onboarding@resend.dev>',
+        to: email.toLowerCase(),
+        subject: 'הוזמנת לשתף חשבון ב-Finance Manager',
+        html: `
+          <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #ec4899; margin: 0;">Finance Manager</h1>
+              <p style="color: #6b7280; margin-top: 5px;">ניהול פיננסי חכם</p>
+            </div>
+            
+            <div style="background: #f9fafb; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+              <h2 style="color: #111827; margin-top: 0;">הוזמנת לשתף חשבון!</h2>
+              <p style="color: #4b5563; line-height: 1.6;">
+                <strong>${inviter?.name || inviter?.email || 'משתמש'}</strong> מזמין אותך להצטרף לחשבון המשותף שלו ב-Finance Manager.
+              </p>
+              <p style="color: #4b5563; line-height: 1.6;">
+                שיתוף חשבון מאפשר לכם לנהל יחד את התקציב, לעקוב אחרי הוצאות והכנסות, ולצפות במצב הפיננסי המשותף.
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 24px;">
+              <a href="${inviteUrl}" style="display: inline-block; background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: bold; font-size: 16px;">
+                הצטרף לחשבון
+              </a>
+            </div>
+            
+            <p style="color: #9ca3af; font-size: 14px; text-align: center;">
+              הקישור תקף עד ${new Date(invite.expiresAt).toLocaleDateString('he-IL')}
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+            
+            <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+              אם לא ביקשת הזמנה זו, ניתן להתעלם ממייל זה.
+            </p>
+          </div>
+        `,
+      });
+    } catch (emailError) {
+      console.error('Failed to send invite email:', emailError);
+      // Continue even if email fails - user can still copy the link
+    }
+
     return NextResponse.json({
       ...invite,
-      inviteUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/invite/${invite.token}`,
+      inviteUrl,
     });
   } catch (error) {
     console.error('Error creating invite:', error);
