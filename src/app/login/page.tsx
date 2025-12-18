@@ -16,13 +16,21 @@ function LoginContent() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto mb-4">
+            {/* #region agent log */}
             <img
               src="/icon.png"
               alt="פלוס"
               width={64}
               height={64}
               className="w-16 h-16 rounded-2xl shadow-lg object-cover"
+              onLoad={() => {
+                fetch('http://127.0.0.1:7242/ingest/b8de791a-b92e-4d32-afea-6bca7e0f2680',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:img',message:'Image loaded successfully',data:{src:'/icon.png'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+              }}
+              onError={(e) => {
+                fetch('http://127.0.0.1:7242/ingest/b8de791a-b92e-4d32-afea-6bca7e0f2680',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'login/page.tsx:img',message:'Image failed to load',data:{src:'/icon.png',error:String(e)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+              }}
             />
+            {/* #endregion */}
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-1">פלוס</h1>
           <p className="text-gray-500 text-sm">להוציא את המקסימום מהכסף שלך</p>
