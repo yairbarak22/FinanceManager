@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, withIdAndUserId } from '@/lib/authHelpers';
+import { requireAuth, withSharedAccountId } from '@/lib/authHelpers';
 
 export async function PUT(
   request: NextRequest,
@@ -13,9 +13,12 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
     
-    // Get current liability to check if totalAmount changed (with user check)
+    // Use shared account to allow editing records from all members
+    const sharedWhere = await withSharedAccountId(id, userId);
+    
+    // Get current liability to check if totalAmount changed
     const currentLiability = await prisma.liability.findFirst({
-      where: withIdAndUserId(id, userId),
+      where: sharedWhere,
     });
 
     if (!currentLiability) {
@@ -36,9 +39,8 @@ export async function PUT(
       }
     }
 
-    // Use updateMany with userId to prevent IDOR attacks
     const result = await prisma.liability.updateMany({
-      where: withIdAndUserId(id, userId),
+      where: sharedWhere,
       data: {
         name: body.name,
         type: body.type,
@@ -58,7 +60,7 @@ export async function PUT(
     }
     
     const liability = await prisma.liability.findFirst({
-      where: withIdAndUserId(id, userId),
+      where: sharedWhere,
     });
     
     return NextResponse.json(liability);
@@ -78,9 +80,11 @@ export async function DELETE(
 
     const { id } = await params;
     
-    // Use deleteMany with userId to prevent IDOR attacks
+    // Use shared account to allow deleting records from all members
+    const sharedWhere = await withSharedAccountId(id, userId);
+    
     const result = await prisma.liability.deleteMany({
-      where: withIdAndUserId(id, userId),
+      where: sharedWhere,
     });
     
     if (result.count === 0) {

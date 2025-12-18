@@ -53,10 +53,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Already a member of this account' }, { status: 400 });
     }
 
+    // Get user's current shared account (if any) before removing membership
+    const currentMembership = await prisma.sharedAccountMember.findFirst({
+      where: { userId },
+      select: { sharedAccountId: true },
+    });
+
     // Remove user from their current shared account (if they have one)
     await prisma.sharedAccountMember.deleteMany({
       where: { userId },
     });
+
+    // Clean up orphaned shared account (if it has no more members)
+    if (currentMembership) {
+      const remainingMembers = await prisma.sharedAccountMember.count({
+        where: { sharedAccountId: currentMembership.sharedAccountId },
+      });
+
+      if (remainingMembers === 0) {
+        // Delete orphaned shared account and its invites
+        await prisma.accountInvite.deleteMany({
+          where: { sharedAccountId: currentMembership.sharedAccountId },
+        });
+        await prisma.sharedAccount.delete({
+          where: { id: currentMembership.sharedAccountId },
+        });
+      }
+    }
 
     // Add user to the invited shared account
     await prisma.sharedAccountMember.create({

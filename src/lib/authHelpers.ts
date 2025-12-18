@@ -128,3 +128,16 @@ export function withIdAndUserId(
   return { id, userId };
 }
 
+/**
+ * Build a where clause for single record operations in shared accounts
+ * Allows access to records owned by ANY member of the user's shared account
+ * Use this for PUT/DELETE operations on shared data
+ */
+export async function withSharedAccountId(
+  id: string,
+  userId: string
+): Promise<{ id: string; userId: { in: string[] } }> {
+  const userIds = await getSharedUserIds(userId);
+  return { id, userId: { in: userIds } };
+}
+

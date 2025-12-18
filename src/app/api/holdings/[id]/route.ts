@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAuth, withIdAndUserId } from '@/lib/authHelpers';
+import { requireAuth, withSharedAccountId } from '@/lib/authHelpers';
 
 // GET single holding
 export async function GET(
@@ -12,8 +12,12 @@ export async function GET(
     if (error) return error;
 
     const { id } = await params;
+    
+    // Use shared account to allow viewing records from all members
+    const sharedWhere = await withSharedAccountId(id, userId);
+    
     const holding = await prisma.holding.findFirst({
-      where: withIdAndUserId(id, userId),
+      where: sharedWhere,
     });
 
     if (!holding) {
@@ -62,9 +66,11 @@ export async function PUT(
       );
     }
 
-    // Use updateMany with userId to prevent IDOR attacks
+    // Use shared account to allow editing records from all members
+    const sharedWhere = await withSharedAccountId(id, userId);
+    
     const result = await prisma.holding.updateMany({
-      where: withIdAndUserId(id, userId),
+      where: sharedWhere,
       data: {
         name: data.name,
         symbol: data.symbol,
@@ -82,7 +88,7 @@ export async function PUT(
     }
 
     const holding = await prisma.holding.findFirst({
-      where: withIdAndUserId(id, userId),
+      where: sharedWhere,
     });
 
     return NextResponse.json(holding);
@@ -106,9 +112,11 @@ export async function DELETE(
 
     const { id } = await params;
     
-    // Use deleteMany with userId to prevent IDOR attacks
+    // Use shared account to allow deleting records from all members
+    const sharedWhere = await withSharedAccountId(id, userId);
+    
     const result = await prisma.holding.deleteMany({
-      where: withIdAndUserId(id, userId),
+      where: sharedWhere,
     });
 
     if (result.count === 0) {
