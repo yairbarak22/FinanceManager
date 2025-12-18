@@ -31,7 +31,7 @@ function LoginContent() {
         {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4">
           <h2 className="text-lg font-semibold text-gray-900 text-center mb-6">
-            התחבר והתחל לנהל
+            התחבר והתחל לנהל את הכסף שלך
           </h2>
 
           {/* Error Message */}
