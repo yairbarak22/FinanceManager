@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Loader2, ChevronDown, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface UserProfile {
   militaryStatus: string | null;
@@ -19,8 +20,91 @@ interface ProfileModalProps {
   onClose: () => void;
 }
 
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
+interface StyledSelectProps {
+  value: string | null;
+  onChange: (value: string | null) => void;
+  options: SelectOption[];
+  placeholder: string;
+}
+
+// Styled Select Component matching CategorySelect design
+function StyledSelect({ value, onChange, options, placeholder }: StyledSelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const selectedOption = options.find((opt) => opt.value === value);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (optionValue: string) => {
+    onChange(optionValue || null);
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      {/* Trigger Button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          'category-select-trigger',
+          !selectedOption && 'text-gray-400'
+        )}
+      >
+        <span className={cn('flex-1 text-right', selectedOption ? 'text-gray-900' : 'text-gray-400')}>
+          {selectedOption?.label || placeholder}
+        </span>
+        <ChevronDown
+          className={cn(
+            'w-4 h-4 text-gray-400 transition-transform',
+            isOpen && 'rotate-180'
+          )}
+        />
+      </button>
+
+      {/* Dropdown */}
+      {isOpen && (
+        <div className="category-dropdown animate-scale-in">
+          <div className="category-options-list">
+            {options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleSelect(option.value)}
+                className={cn(
+                  'category-option',
+                  value === option.value && 'selected'
+                )}
+              >
+                <span className="flex-1 text-right">{option.label}</span>
+                {value === option.value && (
+                  <Check className="w-4 h-4 text-pink-500" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Options
-const AGE_OPTIONS = [
+const AGE_OPTIONS: SelectOption[] = [
   { value: '', label: 'בחר טווח גיל' },
   { value: '18-25', label: '18-25 שנים' },
   { value: '26-35', label: '26-35 שנים' },
@@ -30,7 +114,7 @@ const AGE_OPTIONS = [
   { value: '65+', label: '65+ שנים' },
 ];
 
-const MARITAL_OPTIONS = [
+const MARITAL_OPTIONS: SelectOption[] = [
   { value: '', label: 'בחר מצב משפחתי' },
   { value: 'single', label: 'רווק/ה' },
   { value: 'married', label: 'נשוי/אה' },
@@ -38,21 +122,21 @@ const MARITAL_OPTIONS = [
   { value: 'widowed', label: 'אלמן/ה' },
 ];
 
-const EMPLOYMENT_OPTIONS = [
+const EMPLOYMENT_OPTIONS: SelectOption[] = [
   { value: '', label: 'בחר סוג תעסוקה' },
   { value: 'employee', label: 'שכיר/ה' },
   { value: 'self_employed', label: 'עצמאי/ת' },
   { value: 'both', label: 'שכיר/ה + עצמאי/ת' },
 ];
 
-const MILITARY_OPTIONS = [
+const MILITARY_OPTIONS: SelectOption[] = [
   { value: '', label: 'בחר סטטוס צבאי' },
   { value: 'none', label: 'ללא שירות צבאי' },
   { value: 'reserve', label: 'מילואימניק/ית' },
   { value: 'career', label: 'קבע' },
 ];
 
-const INCOME_OPTIONS = [
+const INCOME_OPTIONS: SelectOption[] = [
   { value: '', label: 'בחר טווח הכנסה' },
   { value: '0-10000', label: 'עד ₪10,000' },
   { value: '10000-20000', label: '₪10,000 - ₪20,000' },
@@ -61,7 +145,7 @@ const INCOME_OPTIONS = [
   { value: '50000+', label: 'מעל ₪50,000' },
 ];
 
-const RISK_OPTIONS = [
+const RISK_OPTIONS: SelectOption[] = [
   { value: '', label: 'בחר רמת סיכון' },
   { value: 'low', label: 'נמוכה - העדפה לביטחון' },
   { value: 'medium', label: 'בינונית - מאוזן' },
@@ -146,65 +230,45 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               {/* Age Range */}
               <div>
                 <label className="label">טווח גיל</label>
-                <select
-                  value={profile.ageRange || ''}
-                  onChange={(e) => setProfile({ ...profile, ageRange: e.target.value || null })}
-                  className="select"
-                >
-                  {AGE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <StyledSelect
+                  value={profile.ageRange}
+                  onChange={(v) => setProfile({ ...profile, ageRange: v })}
+                  options={AGE_OPTIONS}
+                  placeholder="בחר טווח גיל"
+                />
               </div>
 
               {/* Marital Status */}
               <div>
                 <label className="label">מצב משפחתי</label>
-                <select
-                  value={profile.maritalStatus || ''}
-                  onChange={(e) => setProfile({ ...profile, maritalStatus: e.target.value || null })}
-                  className="select"
-                >
-                  {MARITAL_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <StyledSelect
+                  value={profile.maritalStatus}
+                  onChange={(v) => setProfile({ ...profile, maritalStatus: v })}
+                  options={MARITAL_OPTIONS}
+                  placeholder="בחר מצב משפחתי"
+                />
               </div>
 
               {/* Employment Type */}
               <div>
                 <label className="label">סוג תעסוקה</label>
-                <select
-                  value={profile.employmentType || ''}
-                  onChange={(e) => setProfile({ ...profile, employmentType: e.target.value || null })}
-                  className="select"
-                >
-                  {EMPLOYMENT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <StyledSelect
+                  value={profile.employmentType}
+                  onChange={(v) => setProfile({ ...profile, employmentType: v })}
+                  options={EMPLOYMENT_OPTIONS}
+                  placeholder="בחר סוג תעסוקה"
+                />
               </div>
 
               {/* Military Status */}
               <div>
                 <label className="label">סטטוס צבאי</label>
-                <select
-                  value={profile.militaryStatus || ''}
-                  onChange={(e) => setProfile({ ...profile, militaryStatus: e.target.value || null })}
-                  className="select"
-                >
-                  {MILITARY_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <StyledSelect
+                  value={profile.militaryStatus}
+                  onChange={(v) => setProfile({ ...profile, militaryStatus: v })}
+                  options={MILITARY_OPTIONS}
+                  placeholder="בחר סטטוס צבאי"
+                />
               </div>
 
               {/* Children */}
@@ -247,33 +311,23 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               {/* Monthly Income */}
               <div>
                 <label className="label">טווח הכנסה חודשית</label>
-                <select
-                  value={profile.monthlyIncome || ''}
-                  onChange={(e) => setProfile({ ...profile, monthlyIncome: e.target.value || null })}
-                  className="select"
-                >
-                  {INCOME_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <StyledSelect
+                  value={profile.monthlyIncome}
+                  onChange={(v) => setProfile({ ...profile, monthlyIncome: v })}
+                  options={INCOME_OPTIONS}
+                  placeholder="בחר טווח הכנסה"
+                />
               </div>
 
               {/* Risk Tolerance */}
               <div>
                 <label className="label">רמת סיבולת סיכון</label>
-                <select
-                  value={profile.riskTolerance || ''}
-                  onChange={(e) => setProfile({ ...profile, riskTolerance: e.target.value || null })}
-                  className="select"
-                >
-                  {RISK_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                <StyledSelect
+                  value={profile.riskTolerance}
+                  onChange={(v) => setProfile({ ...profile, riskTolerance: v })}
+                  options={RISK_OPTIONS}
+                  placeholder="בחר רמת סיכון"
+                />
               </div>
             </div>
 
