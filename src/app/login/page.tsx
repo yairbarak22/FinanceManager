@@ -3,8 +3,7 @@
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { Wallet, PieChart, TrendingUp, Check } from 'lucide-react';
-import Image from 'next/image';
+import { Wallet, PieChart, TrendingUp } from 'lucide-react';
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -16,14 +15,13 @@ function LoginContent() {
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto mb-4 relative">
-            <Image
+          <div className="w-16 h-16 mx-auto mb-4">
+            <img
               src="/icon.png"
               alt="פלוס"
               width={64}
               height={64}
-              className="rounded-2xl shadow-lg"
-              priority
+              className="w-16 h-16 rounded-2xl shadow-lg object-cover"
             />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-1">פלוס</h1>
