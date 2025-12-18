@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { LogOut, User, ChevronDown, HelpCircle, RotateCcw, UserCog, Users } from 'lucide-react';
+import { LogOut, User, ChevronDown, HelpCircle, UserCog, Users } from 'lucide-react';
 import { useOnboarding } from '@/hooks/useOnboarding';
 
 interface UserMenuProps {
@@ -14,7 +14,7 @@ export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserM
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { startTour } = useOnboarding();
+  const { startOnboarding } = useOnboarding();
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -102,24 +102,12 @@ export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserM
             <button
               onClick={() => {
                 setIsOpen(false);
-                startTour();
+                startOnboarding();
               }}
               className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
             >
               <HelpCircle className="w-4 h-4 text-pink-500" />
-              הצג סיור מודרך
-            </button>
-            <button
-              onClick={async () => {
-                setIsOpen(false);
-                // Reset onboarding status and start tour
-                await fetch('/api/user/onboarding', { method: 'DELETE' });
-                startTour();
-              }}
-              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <RotateCcw className="w-4 h-4 text-teal-500" />
-              אפס והתחל מחדש
+              הצג מדריך למתחילים
             </button>
             <div className="my-1 border-t border-gray-100" />
             <button
@@ -138,4 +126,3 @@ export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserM
     </div>
   );
 }
-

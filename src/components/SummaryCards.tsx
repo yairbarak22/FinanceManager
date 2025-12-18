@@ -13,7 +13,7 @@ export default function SummaryCards({ totalBalance, totalIncome, totalExpenses 
   const isPositiveBalance = totalBalance >= 0;
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4" data-tour="summary-cards">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4" >
       {/* Balance Card */}
       <div className={`rounded-2xl p-5 ${isPositiveBalance ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-red-500 to-rose-600'} text-white shadow-lg`}>
         <div className="flex items-center justify-between">

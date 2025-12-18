@@ -25,7 +25,7 @@ export default function NetWorthSection({
   const isPositiveCashFlow = monthlyCashFlow >= 0;
 
   return (
-    <div className="card p-6 h-full" data-tour="net-worth-section">
+    <div className="card p-6 h-full" >
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center">

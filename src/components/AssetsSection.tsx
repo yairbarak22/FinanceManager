@@ -24,7 +24,7 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
   const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
 
   return (
-    <div data-tour="assets-section">
+    <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">

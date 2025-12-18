@@ -38,6 +38,7 @@ import { getEffectiveMonthlyExpense } from '@/lib/loanCalculations';
 import { useCategories } from '@/hooks/useCategories';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useToast } from '@/hooks/useToast';
+import { useOnboarding } from '@/hooks/useOnboarding';
 import ToastContainer from '@/components/ui/Toast';
 import {
   expenseCategories as defaultExpenseCategories,
@@ -123,6 +124,17 @@ export default function Home() {
 
   // Toast notifications
   const toast = useToast();
+
+  // Onboarding hook
+  const { openProfileModal, setOpenProfileModal } = useOnboarding();
+
+  // Open profile modal when requested by onboarding
+  useEffect(() => {
+    if (openProfileModal) {
+      setIsProfileModalOpen(true);
+      setOpenProfileModal(false);
+    }
+  }, [openProfileModal, setOpenProfileModal]);
 
   // Memoized categories: defaults from client-side + custom from API
   const expenseCats = useMemo(() => ({
@@ -496,7 +508,6 @@ export default function Home() {
         <div className="flex items-center justify-between">
           {/* Tabs */}
           <div 
-            data-tour="navigation-tabs"
             className="flex items-center gap-2 bg-white rounded-xl p-1.5 shadow-sm border border-gray-100"
           >
             <button
@@ -518,7 +529,6 @@ export default function Home() {
                 setActiveTab('investments');
                 analytics.trackTabChange('investments');
               }}
-              data-tour="investments-tab"
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
                 activeTab === 'investments'
                   ? 'bg-pink-500 text-white shadow-sm'

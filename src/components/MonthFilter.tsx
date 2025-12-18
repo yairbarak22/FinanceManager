@@ -86,7 +86,7 @@ export default function MonthFilter({
   };
 
   return (
-    <div className="relative" ref={dropdownRef} data-tour="month-filter">
+    <div className="relative" ref={dropdownRef} >
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}

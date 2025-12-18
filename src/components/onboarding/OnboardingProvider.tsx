@@ -2,20 +2,14 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
-import SpotlightOverlay from './SpotlightOverlay';
-import TooltipBox from './TooltipBox';
-import { tourSteps, TourStep } from './tourSteps';
+import OnboardingWizard from './OnboardingWizard';
 
 interface OnboardingContextType {
   isActive: boolean;
-  currentStep: number;
-  totalSteps: number;
-  currentStepData: TourStep | null;
-  startTour: () => void;
-  nextStep: () => void;
-  prevStep: () => void;
-  skipTour: () => void;
-  endTour: () => void;
+  startOnboarding: () => void;
+  completeOnboarding: () => void;
+  openProfileModal: boolean;
+  setOpenProfileModal: (open: boolean) => void;
 }
 
 const OnboardingContext = createContext<OnboardingContextType | null>(null);
@@ -35,8 +29,8 @@ interface OnboardingProviderProps {
 export default function OnboardingProvider({ children }: OnboardingProviderProps) {
   const { status } = useSession();
   const [isActive, setIsActive] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
   const [hasCheckedStatus, setHasCheckedStatus] = useState(false);
+  const [openProfileModal, setOpenProfileModal] = useState(false);
 
   // Check onboarding status on mount
   useEffect(() => {
@@ -72,68 +66,36 @@ export default function OnboardingProvider({ children }: OnboardingProviderProps
     }
   };
 
-  const startTour = useCallback(() => {
-    setCurrentStep(0);
+  const startOnboarding = useCallback(() => {
     setIsActive(true);
   }, []);
 
-  const nextStep = useCallback(() => {
-    if (currentStep < tourSteps.length - 1) {
-      setCurrentStep((prev) => prev + 1);
-    } else {
-      endTour();
-    }
-  }, [currentStep]);
-
-  const prevStep = useCallback(() => {
-    if (currentStep > 0) {
-      setCurrentStep((prev) => prev - 1);
-    }
-  }, [currentStep]);
-
-  const skipTour = useCallback(() => {
+  const completeOnboarding = useCallback(() => {
     setIsActive(false);
-    setCurrentStep(0);
     markOnboardingComplete();
   }, []);
 
-  const endTour = useCallback(() => {
-    setIsActive(false);
-    setCurrentStep(0);
-    markOnboardingComplete();
+  const handleOpenProfile = useCallback(() => {
+    setOpenProfileModal(true);
   }, []);
-
-  const currentStepData = isActive ? tourSteps[currentStep] : null;
 
   const value: OnboardingContextType = {
     isActive,
-    currentStep,
-    totalSteps: tourSteps.length,
-    currentStepData,
-    startTour,
-    nextStep,
-    prevStep,
-    skipTour,
-    endTour,
+    startOnboarding,
+    completeOnboarding,
+    openProfileModal,
+    setOpenProfileModal,
   };
 
   return (
     <OnboardingContext.Provider value={value}>
       {children}
-      {isActive && currentStepData && (
-        <>
-          <SpotlightOverlay targetSelector={currentStepData.target} />
-          <TooltipBox
-            step={currentStepData}
-            currentIndex={currentStep}
-            totalSteps={tourSteps.length}
-            onNext={nextStep}
-            onPrev={prevStep}
-            onSkip={skipTour}
-          />
-        </>
+      {isActive && (
+        <OnboardingWizard 
+          onComplete={completeOnboarding}
+          onOpenProfile={handleOpenProfile}
+        />
       )}
     </OnboardingContext.Provider>
   );
 }
-
