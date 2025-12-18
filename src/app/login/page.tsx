@@ -3,6 +3,8 @@
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { Wallet, PieChart, TrendingUp } from 'lucide-react';
+import Image from 'next/image';
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -10,47 +12,81 @@ function LoginContent() {
   const callbackUrl = searchParams.get('callbackUrl') || '/';
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="w-full max-w-md p-8">
-        {/* Logo/Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-pink-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <svg
-              className="w-8 h-8 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            הניהול הפיננסי שלי
-          </h1>
-          <p className="text-gray-500">התחבר כדי לנהל את הכספים שלך</p>
+    <div className="min-h-screen flex flex-col lg:flex-row" dir="rtl">
+      {/* Right Side - Marketing (Blue Gradient) */}
+      <div className="flex-1 bg-gradient-to-bl from-blue-500 via-blue-600 to-indigo-700 p-8 lg:p-12 flex flex-col justify-center relative overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
+          <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl" />
         </div>
+        
+        <div className="relative z-10 max-w-xl mx-auto lg:mx-0">
+          {/* Hero Section */}
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight mb-6">
+            הכסף שלך.{' '}
+            <span className="text-cyan-300">בשליטה מלאה.</span>
+          </h1>
+          
+          <p className="text-lg text-blue-100 leading-relaxed mb-10">
+            כל הנכסים, ההתחייבויות וההשקעות שלך במקום אחד. המערכת שתעזור לך להבין את השווי האמיתי שלך ולנהל כסף בחוכמה – בפשטות וללא עלות.
+          </p>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-center">
-            <p className="text-red-600 text-sm">
-              {error === 'OAuthAccountNotLinked'
-                ? 'כתובת האימייל כבר קיימת במערכת עם ספק אחר'
-                : 'שגיאה בהתחברות. נסה שוב.'}
-            </p>
+          {/* Feature Pillars */}
+          <div className="space-y-6">
+            <FeatureItem 
+              icon={<Wallet className="w-6 h-6" />}
+              title="שליטה בתזרים"
+              description="ניתוח הוצאות אוטומטי וניהול תקציב חכם. לדעת בדיוק לאן הכסף הולך."
+            />
+            <FeatureItem 
+              icon={<PieChart className="w-6 h-6" />}
+              title="תמונת מצב פיננסית"
+              description="ריכוז פנסיה, דירה, הלוואות וחסכונות. רואים את התמונה השלמה."
+            />
+            <FeatureItem 
+              icon={<TrendingUp className="w-6 h-6" />}
+              title="ניהול השקעות"
+              description="כלים לאיזון התיק וקבלת החלטות מושכלות, כדי שהכסף יעבוד בשבילך."
+            />
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* Login Card */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+      {/* Left Side - Login Form (White) */}
+      <div className="w-full lg:w-[420px] bg-white p-8 lg:p-12 flex flex-col justify-center min-h-[400px] lg:min-h-screen">
+        <div className="max-w-sm mx-auto w-full">
+          {/* Brand */}
+          <div className="text-center mb-10">
+            <div className="w-20 h-20 mx-auto mb-4 relative">
+              <Image
+                src="/logo.svg"
+                alt="פלוס"
+                width={80}
+                height={80}
+                className="drop-shadow-lg"
+                priority
+              />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">פלוס</h2>
+            <p className="text-gray-500 text-sm">להוציא את המקסימום מהכסף שלך</p>
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-center">
+              <p className="text-red-600 text-sm">
+                {error === 'OAuthAccountNotLinked'
+                  ? 'כתובת האימייל כבר קיימת במערכת עם ספק אחר'
+                  : 'שגיאה בהתחברות. נסה שוב.'}
+              </p>
+            </div>
+          )}
+
+          {/* Login Button */}
           <button
             onClick={() => signIn('google', { callbackUrl })}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 group"
+            className="w-full flex items-center justify-center gap-3 px-5 py-4 bg-white border-2 border-gray-200 rounded-xl hover:border-blue-400 hover:bg-blue-50/50 transition-all duration-200 group shadow-sm"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -71,15 +107,33 @@ function LoginContent() {
               />
             </svg>
             <span className="text-gray-700 font-medium group-hover:text-gray-900">
-              התחבר עם Google
+              כניסה למערכת עם Google
             </span>
           </button>
-        </div>
 
-        {/* Footer */}
-        <p className="text-center text-xs text-gray-400 mt-6">
-          בהתחברות, אתה מסכים לתנאי השימוש ומדיניות הפרטיות
-        </p>
+          {/* Trust Microcopy */}
+          <div className="mt-6 flex items-center justify-center gap-3 text-xs text-gray-400">
+            <span>השימוש בחינם</span>
+            <span className="w-1 h-1 bg-gray-300 rounded-full" />
+            <span>פרטיות מלאה</span>
+            <span className="w-1 h-1 bg-gray-300 rounded-full" />
+            <span>ללא דמי מנוי</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeatureItem({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+  return (
+    <div className="flex gap-4 items-start">
+      <div className="flex-shrink-0 w-12 h-12 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center text-white">
+        {icon}
+      </div>
+      <div>
+        <h3 className="text-white font-semibold text-lg mb-1">{title}</h3>
+        <p className="text-blue-100/80 text-sm leading-relaxed">{description}</p>
       </div>
     </div>
   );
@@ -89,8 +143,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full animate-spin" />
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-bl from-blue-500 via-blue-600 to-indigo-700">
+          <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin" />
         </div>
       }
     >
@@ -98,4 +152,3 @@ export default function LoginPage() {
     </Suspense>
   );
 }
-
