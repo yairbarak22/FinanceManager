@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAuth, withUserId } from '@/lib/authHelpers';
+import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
 
 // GET all holdings
 export async function GET() {
@@ -8,8 +8,11 @@ export async function GET() {
     const { userId, error } = await requireAuth();
     if (error) return error;
 
+    // Use shared account to get holdings from all members
+    const sharedWhere = await withSharedAccount(userId);
+    
     const holdings = await prisma.holding.findMany({
-      where: withUserId(userId),
+      where: sharedWhere,
       orderBy: { targetAllocation: 'desc' },
     });
     return NextResponse.json(holdings);

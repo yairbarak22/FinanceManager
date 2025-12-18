@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from './auth';
+import { prisma } from './prisma';
 
 /**
  * Get the current authenticated user's session
@@ -30,6 +31,79 @@ export async function requireAuth(): Promise<
   }
 
   return { userId: session.user.id, error: null };
+}
+
+/**
+ * Get or create a shared account for a user
+ * Each new user gets their own SharedAccount where they are the owner
+ */
+export async function getOrCreateSharedAccount(userId: string): Promise<string> {
+  // Check if user already has a shared account membership
+  const existingMembership = await prisma.sharedAccountMember.findFirst({
+    where: { userId },
+    select: { sharedAccountId: true },
+  });
+
+  if (existingMembership) {
+    return existingMembership.sharedAccountId;
+  }
+
+  // Create new shared account and membership
+  const sharedAccount = await prisma.sharedAccount.create({
+    data: {
+      name: 'החשבון שלי',
+      members: {
+        create: {
+          userId,
+          role: 'owner',
+        },
+      },
+    },
+  });
+
+  return sharedAccount.id;
+}
+
+/**
+ * Get the shared account ID for a user
+ * Returns null if user doesn't have a shared account
+ */
+export async function getUserSharedAccountId(userId: string): Promise<string | null> {
+  const membership = await prisma.sharedAccountMember.findFirst({
+    where: { userId },
+    select: { sharedAccountId: true },
+  });
+
+  return membership?.sharedAccountId || null;
+}
+
+/**
+ * Get all user IDs that share the same account
+ * This is used to query data for shared accounts
+ */
+export async function getSharedUserIds(userId: string): Promise<string[]> {
+  // Get user's shared account
+  const sharedAccountId = await getOrCreateSharedAccount(userId);
+
+  // Get all members of this shared account
+  const members = await prisma.sharedAccountMember.findMany({
+    where: { sharedAccountId },
+    select: { userId: true },
+  });
+
+  return members.map((m) => m.userId);
+}
+
+/**
+ * Build a where clause for shared account queries
+ * Uses userId IN (all shared account members)
+ */
+export async function withSharedAccount<T extends Record<string, unknown>>(
+  userId: string,
+  where: T = {} as T
+): Promise<T & { userId: { in: string[] } }> {
+  const userIds = await getSharedUserIds(userId);
+  return { ...where, userId: { in: userIds } };
 }
 
 /**

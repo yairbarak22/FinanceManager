@@ -2,10 +2,15 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { LogOut, User, ChevronDown, HelpCircle, RotateCcw } from 'lucide-react';
+import { LogOut, User, ChevronDown, HelpCircle, RotateCcw, UserCog, Users } from 'lucide-react';
 import { useOnboarding } from '@/hooks/useOnboarding';
 
-export default function UserMenu() {
+interface UserMenuProps {
+  onOpenProfile?: () => void;
+  onOpenAccountSettings?: () => void;
+}
+
+export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserMenuProps) {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -69,6 +74,31 @@ export default function UserMenu() {
 
           {/* Menu Items */}
           <div className="py-1">
+            {onOpenProfile && (
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  onOpenProfile();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <UserCog className="w-4 h-4 text-purple-500" />
+                פרטים אישיים
+              </button>
+            )}
+            {onOpenAccountSettings && (
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  onOpenAccountSettings();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <Users className="w-4 h-4 text-blue-500" />
+                שיתוף חשבון
+              </button>
+            )}
+            <div className="my-1 border-t border-gray-100" />
             <button
               onClick={() => {
                 setIsOpen(false);

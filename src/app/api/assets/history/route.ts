@@ -1,17 +1,20 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/authHelpers';
+import { requireAuth, getSharedUserIds } from '@/lib/authHelpers';
 
 export async function GET() {
   try {
     const { userId, error } = await requireAuth();
     if (error) return error;
 
-    // Get history records only for assets belonging to the user
+    // Get all user IDs in the shared account
+    const userIds = await getSharedUserIds(userId);
+
+    // Get history records for assets belonging to all shared account members
     const historyRecords = await prisma.assetValueHistory.findMany({
       where: {
         asset: {
-          userId,
+          userId: { in: userIds },
         },
       },
       orderBy: { monthKey: 'asc' },

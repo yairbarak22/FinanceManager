@@ -8,7 +8,7 @@ import RecurringTransactions from '@/components/RecurringTransactions';
 import NetWorthSection from '@/components/NetWorthSection';
 import AssetsSection from '@/components/AssetsSection';
 import LiabilitiesSection from '@/components/LiabilitiesSection';
-import NetWorthChart from '@/components/NetWorthChart';
+import AssetAllocationChart from '@/components/AssetAllocationChart';
 import MonthlySummary from '@/components/MonthlySummary';
 import MonthlyTrendsCharts from '@/components/MonthlyTrendsCharts';
 import ExpensesPieChart from '@/components/ExpensesPieChart';
@@ -22,6 +22,8 @@ import ImportModal from '@/components/modals/ImportModal';
 import DocumentsModal from '@/components/modals/DocumentsModal';
 import InvestmentsTab from '@/components/investments/InvestmentsTab';
 import UserMenu from '@/components/UserMenu';
+import ProfileModal from '@/components/ProfileModal';
+import AccountSettings from '@/components/AccountSettings';
 import { LayoutDashboard, TrendingUp } from 'lucide-react';
 import {
   Transaction,
@@ -100,6 +102,12 @@ export default function Home() {
     id: string;
     name: string;
   } | null>(null);
+  
+  // Profile modal state
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  
+  // Account settings modal state
+  const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
   
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
@@ -523,7 +531,10 @@ export default function Home() {
           </div>
           
           {/* User Menu */}
-          <UserMenu />
+          <UserMenu 
+            onOpenProfile={() => setIsProfileModalOpen(true)}
+            onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
+          />
         </div>
 
         {/* ============================================
@@ -578,12 +589,14 @@ export default function Home() {
             />
           </div>
           
-          {/* Net Worth Chart */}
+          {/* Asset Allocation Chart */}
           <div className="lg:col-span-2">
-            <NetWorthChart
-              data={netWorthHistory}
-              currentNetWorth={netWorth + totalBalance}
-              transactionBalance={totalBalance}
+            <AssetAllocationChart
+              assets={assets}
+              onGetRecommendations={() => {
+                // TODO: Implement recommendations system
+                alert('מערכת ההמלצות תהיה זמינה בקרוב!');
+              }}
             />
           </div>
         </div>
@@ -763,6 +776,18 @@ export default function Home() {
           entityName={documentsEntity.name}
         />
       )}
+
+      {/* Profile Modal */}
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
+
+      {/* Account Settings Modal */}
+      <AccountSettings
+        isOpen={isAccountSettingsOpen}
+        onClose={() => setIsAccountSettingsOpen(false)}
+      />
 
       {/* Toast Notifications */}
       <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />

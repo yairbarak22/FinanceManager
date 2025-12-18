@@ -260,18 +260,9 @@ export const incomeCategories: CategoryInfo[] = [
 ];
 
 // ============================================
-// ASSET CATEGORIES (8)
+// ASSET CATEGORIES (10)
 // ============================================
 export const assetCategories: CategoryInfo[] = [
-  {
-    id: 'investments',
-    name: 'Investments',
-    nameHe: 'השקעות',
-    icon: TrendingUp,
-    color: '#0ea5e9',
-    bgColor: 'bg-sky-100',
-    textColor: 'text-sky-600',
-  },
   {
     id: 'real_estate',
     name: 'Real Estate',
@@ -284,7 +275,7 @@ export const assetCategories: CategoryInfo[] = [
   {
     id: 'stocks',
     name: 'Stocks',
-    nameHe: 'מניות',
+    nameHe: 'שוק ההון',
     icon: LineChart,
     color: '#22c55e',
     bgColor: 'bg-green-100',
@@ -300,19 +291,10 @@ export const assetCategories: CategoryInfo[] = [
     textColor: 'text-amber-600',
   },
   {
-    id: 'savings_account',
-    name: 'Savings Account',
-    nameHe: 'חיסכון בנקאי',
-    icon: Landmark,
-    color: '#3b82f6',
-    bgColor: 'bg-blue-100',
-    textColor: 'text-blue-600',
-  },
-  {
     id: 'pension_fund',
     name: 'Pension Fund',
     nameHe: 'פנסיה',
-    icon: Wallet,
+    icon: Briefcase,
     color: '#06b6d4',
     bgColor: 'bg-cyan-100',
     textColor: 'text-cyan-600',
@@ -327,6 +309,24 @@ export const assetCategories: CategoryInfo[] = [
     textColor: 'text-purple-600',
   },
   {
+    id: 'savings_account',
+    name: 'Savings Account',
+    nameHe: 'חיסכון בנקאי',
+    icon: PiggyBank,
+    color: '#3b82f6',
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-600',
+  },
+  {
+    id: 'investments',
+    name: 'Investments',
+    nameHe: 'השקעות אחרות',
+    icon: TrendingUp,
+    color: '#0ea5e9',
+    bgColor: 'bg-sky-100',
+    textColor: 'text-sky-600',
+  },
+  {
     id: 'vehicle',
     name: 'Vehicle',
     nameHe: 'רכב',
@@ -334,6 +334,24 @@ export const assetCategories: CategoryInfo[] = [
     color: '#ef4444',
     bgColor: 'bg-red-100',
     textColor: 'text-red-600',
+  },
+  {
+    id: 'cash',
+    name: 'Cash',
+    nameHe: 'מזומן',
+    icon: Banknote,
+    color: '#10b981',
+    bgColor: 'bg-emerald-100',
+    textColor: 'text-emerald-600',
+  },
+  {
+    id: 'other',
+    name: 'Other',
+    nameHe: 'אחר',
+    icon: MoreHorizontal,
+    color: '#64748b',
+    bgColor: 'bg-slate-100',
+    textColor: 'text-slate-600',
   },
 ];
 

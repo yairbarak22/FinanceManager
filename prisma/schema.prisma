@@ -27,6 +27,8 @@ model User {
   recurringTransactions RecurringTransaction[]
   sessions              Session[]
   transactions          Transaction[]
+  profile               UserProfile?
+  sharedAccountMembers  SharedAccountMember[]
 }
 
 model Account {
@@ -194,4 +196,62 @@ model CustomCategory {
 
   @@unique([userId, name, type]) // Prevent duplicates
   @@index([userId])
+}
+
+// ============================================
+// USER PROFILE - Personal details for recommendations
+// ============================================
+model UserProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  militaryStatus String?  // none | reserve | career
+  maritalStatus  String?  // single | married | divorced | widowed
+  employmentType String?  // employee | self_employed | both
+  hasChildren    Boolean  @default(false)
+  childrenCount  Int      @default(0)
+  ageRange       String?  // 18-25 | 26-35 | 36-45 | 46-55 | 56-65 | 65+
+  monthlyIncome  String?  // income ranges
+  riskTolerance  String?  // low | medium | high
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// SHARED ACCOUNTS - Allow multiple users to share data
+// ============================================
+model SharedAccount {
+  id        String                @id @default(cuid())
+  name      String                @default("החשבון שלי")
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+  members   SharedAccountMember[]
+  invites   AccountInvite[]
+}
+
+model SharedAccountMember {
+  id              String        @id @default(cuid())
+  userId          String
+  sharedAccountId String
+  role            String        @default("member") // owner | member
+  joinedAt        DateTime      @default(now())
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sharedAccount   SharedAccount @relation(fields: [sharedAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sharedAccountId])
+  @@index([userId])
+  @@index([sharedAccountId])
+}
+
+model AccountInvite {
+  id              String        @id @default(cuid())
+  sharedAccountId String
+  email           String
+  token           String        @unique @default(cuid())
+  expiresAt       DateTime
+  createdAt       DateTime      @default(now())
+  sharedAccount   SharedAccount @relation(fields: [sharedAccountId], references: [id], onDelete: Cascade)
+
+  @@index([sharedAccountId])
+  @@index([token])
 }

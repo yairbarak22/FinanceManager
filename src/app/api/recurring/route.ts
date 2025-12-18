@@ -1,14 +1,17 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, withUserId } from '@/lib/authHelpers';
+import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
 
 export async function GET() {
   try {
     const { userId, error } = await requireAuth();
     if (error) return error;
 
+    // Use shared account to get recurring transactions from all members
+    const sharedWhere = await withSharedAccount(userId);
+    
     const recurring = await prisma.recurringTransaction.findMany({
-      where: withUserId(userId),
+      where: sharedWhere,
       orderBy: { createdAt: 'desc' },
     });
     

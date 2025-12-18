@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, withUserId } from '@/lib/authHelpers';
+import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,8 +25,11 @@ export async function GET(request: NextRequest) {
       };
     }
     
+    // Use shared account to get transactions from all members
+    const sharedWhere = await withSharedAccount(userId, whereClause);
+    
     const transactions = await prisma.transaction.findMany({
-      where: withUserId(userId, whereClause),
+      where: sharedWhere,
       orderBy: { date: 'desc' },
     });
     
