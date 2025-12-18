@@ -38,7 +38,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-purple-900/80 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-900/95 via-slate-900/90 to-blue-900/80 backdrop-blur-sm" />
       
       {/* Card */}
       <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
@@ -69,9 +69,9 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 key={i}
                 className={`h-2 rounded-full transition-all duration-300 ${
                   i === step 
-                    ? 'w-8 bg-pink-500' 
+                    ? 'w-8 bg-blue-500' 
                     : i < step 
-                      ? 'w-2 bg-pink-300' 
+                      ? 'w-2 bg-blue-300' 
                       : 'w-2 bg-gray-200'
                 }`}
               />
@@ -92,7 +92,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             
             <button
               onClick={nextStep}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-medium hover:from-pink-600 hover:to-purple-600 transition-all"
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-medium hover:from-blue-600 hover:to-cyan-600 transition-all"
             >
               {step === TOTAL_STEPS - 1 ? 'קדימה לעבודה!' : 'הבא'}
               {step < TOTAL_STEPS - 1 && <ChevronLeft className="w-4 h-4" />}
@@ -109,8 +109,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
 function StepWelcome() {
   return (
     <div className="text-center">
-      <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-pink-100 to-purple-100 rounded-2xl flex items-center justify-center">
-        <Wallet className="w-10 h-10 text-pink-500" />
+      <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center">
+        <Wallet className="w-10 h-10 text-blue-500" />
       </div>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">
         הכסף שלך. התמונה המלאה.
@@ -133,8 +133,8 @@ function StepWelcome() {
 function StepProfile() {
   return (
     <div className="text-center">
-      <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center">
-        <User className="w-10 h-10 text-blue-500" />
+      <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-sky-100 to-indigo-100 rounded-2xl flex items-center justify-center">
+        <User className="w-10 h-10 text-sky-500" />
       </div>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">
         הצעד הראשון: הפרופיל שלך
@@ -154,15 +154,15 @@ function StepProfile() {
         </p>
         <ul className="space-y-2 pr-4">
           <li className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-pink-500 rounded-full" />
+            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
             הטבות מס שמגיעות לך
           </li>
           <li className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-pink-500 rounded-full" />
+            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
             אפשרויות חיסכון מותאמות
           </li>
           <li className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-pink-500 rounded-full" />
+            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
             המלצות השקעה לפי המצב שלך
           </li>
         </ul>
@@ -234,8 +234,8 @@ function StepTransactions() {
 function StepReady() {
   return (
     <div className="text-center">
-      <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-pink-100 to-purple-100 rounded-2xl flex items-center justify-center">
-        <Sparkles className="w-10 h-10 text-pink-500" />
+      <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center">
+        <Sparkles className="w-10 h-10 text-blue-500" />
       </div>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">
         אתה בפנים! 🎉
@@ -244,19 +244,19 @@ function StepReady() {
         <p>
           עכשיו אתה יכול להתחיל.
         </p>
-        <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-4">
+        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4">
           <p className="font-medium text-gray-700 mb-3">הצעדים הראשונים:</p>
           <ul className="space-y-2 text-gray-600">
             <li className="flex items-center gap-2">
-              <span className="w-5 h-5 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs">1</span>
+              <span className="w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">1</span>
               מלא את הפרטים האישיים שלך
             </li>
             <li className="flex items-center gap-2">
-              <span className="w-5 h-5 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs">2</span>
+              <span className="w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">2</span>
               הוסף נכס או התחייבות ראשונים
             </li>
             <li className="flex items-center gap-2">
-              <span className="w-5 h-5 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs">3</span>
+              <span className="w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">3</span>
               העלה קובץ עסקאות
             </li>
           </ul>
