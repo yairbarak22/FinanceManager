@@ -38,7 +38,6 @@ import { getEffectiveMonthlyExpense } from '@/lib/loanCalculations';
 import { useCategories } from '@/hooks/useCategories';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useToast } from '@/hooks/useToast';
-import { useOnboarding } from '@/hooks/useOnboarding';
 import ToastContainer from '@/components/ui/Toast';
 import {
   expenseCategories as defaultExpenseCategories,
@@ -125,16 +124,6 @@ export default function Home() {
   // Toast notifications
   const toast = useToast();
 
-  // Onboarding hook
-  const { openProfileModal, setOpenProfileModal } = useOnboarding();
-
-  // Open profile modal when requested by onboarding
-  useEffect(() => {
-    if (openProfileModal) {
-      setIsProfileModalOpen(true);
-      setOpenProfileModal(false);
-    }
-  }, [openProfileModal, setOpenProfileModal]);
 
   // Memoized categories: defaults from client-side + custom from API
   const expenseCats = useMemo(() => ({

@@ -8,8 +8,6 @@ interface OnboardingContextType {
   isActive: boolean;
   startOnboarding: () => void;
   completeOnboarding: () => void;
-  openProfileModal: boolean;
-  setOpenProfileModal: (open: boolean) => void;
 }
 
 const OnboardingContext = createContext<OnboardingContextType | null>(null);
@@ -30,7 +28,6 @@ export default function OnboardingProvider({ children }: OnboardingProviderProps
   const { status } = useSession();
   const [isActive, setIsActive] = useState(false);
   const [hasCheckedStatus, setHasCheckedStatus] = useState(false);
-  const [openProfileModal, setOpenProfileModal] = useState(false);
 
   // Check onboarding status on mount
   useEffect(() => {
@@ -75,26 +72,17 @@ export default function OnboardingProvider({ children }: OnboardingProviderProps
     markOnboardingComplete();
   }, []);
 
-  const handleOpenProfile = useCallback(() => {
-    setOpenProfileModal(true);
-  }, []);
-
   const value: OnboardingContextType = {
     isActive,
     startOnboarding,
     completeOnboarding,
-    openProfileModal,
-    setOpenProfileModal,
   };
 
   return (
     <OnboardingContext.Provider value={value}>
       {children}
       {isActive && (
-        <OnboardingWizard 
-          onComplete={completeOnboarding}
-          onOpenProfile={handleOpenProfile}
-        />
+        <OnboardingWizard onComplete={completeOnboarding} />
       )}
     </OnboardingContext.Provider>
   );

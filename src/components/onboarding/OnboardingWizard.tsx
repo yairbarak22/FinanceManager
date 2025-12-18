@@ -14,12 +14,11 @@ import {
 
 interface OnboardingWizardProps {
   onComplete: () => void;
-  onOpenProfile: () => void;
 }
 
 const TOTAL_STEPS = 5;
 
-export default function OnboardingWizard({ onComplete, onOpenProfile }: OnboardingWizardProps) {
+export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
   const [step, setStep] = useState(0);
 
   const nextStep = () => {
@@ -34,11 +33,6 @@ export default function OnboardingWizard({ onComplete, onOpenProfile }: Onboardi
     if (step > 0) {
       setStep(step - 1);
     }
-  };
-
-  const handleFillProfile = () => {
-    onOpenProfile();
-    nextStep();
   };
 
   return (
@@ -96,32 +90,13 @@ export default function OnboardingWizard({ onComplete, onOpenProfile }: Onboardi
               </button>
             )}
             
-            {step === 1 ? (
-              // Profile step - two buttons
-              <div className="flex-1 flex gap-3">
-                <button
-                  onClick={nextStep}
-                  className="flex-1 px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
-                >
-                  אולי אחר כך
-                </button>
-                <button
-                  onClick={handleFillProfile}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-medium hover:from-pink-600 hover:to-purple-600 transition-all"
-                >
-                  מלא עכשיו
-                </button>
-              </div>
-            ) : (
-              // Other steps - single next button
-              <button
-                onClick={nextStep}
-                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-medium hover:from-pink-600 hover:to-purple-600 transition-all"
-              >
-                {step === TOTAL_STEPS - 1 ? 'קדימה לעבודה!' : 'הבא'}
-                {step < TOTAL_STEPS - 1 && <ChevronLeft className="w-4 h-4" />}
-              </button>
-            )}
+            <button
+              onClick={nextStep}
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-500 text-white rounded-xl font-medium hover:from-pink-600 hover:to-purple-600 transition-all"
+            >
+              {step === TOTAL_STEPS - 1 ? 'קדימה לעבודה!' : 'הבא'}
+              {step < TOTAL_STEPS - 1 && <ChevronLeft className="w-4 h-4" />}
+            </button>
           </div>
         </div>
       </div>
@@ -162,12 +137,18 @@ function StepProfile() {
         <User className="w-10 h-10 text-blue-500" />
       </div>
       <h2 className="text-2xl font-bold text-gray-900 mb-2">
-        נעים להכיר
+        הצעד הראשון: הפרופיל שלך
       </h2>
       <div className="text-gray-600 space-y-3 mt-6 text-right">
         <p>
-          כדי שנוכל להתאים לך המלצות רלוונטיות, נשמח לדעת קצת יותר.
+          כדי שנוכל להתאים לך המלצות רלוונטיות, מלא את הפרטים האישיים שלך.
         </p>
+        <div className="bg-blue-50 rounded-xl p-4 text-sm">
+          <p className="font-medium text-blue-700 mb-2">איפה זה?</p>
+          <p className="text-blue-600">
+            לחץ על התמונה שלך בפינה השמאלית העליונה ← בחר &quot;פרטים אישיים&quot;
+          </p>
+        </div>
         <p>
           זה לוקח פחות מדקה ויעזור לנו למצוא:
         </p>
@@ -268,15 +249,15 @@ function StepReady() {
           <ul className="space-y-2 text-gray-600">
             <li className="flex items-center gap-2">
               <span className="w-5 h-5 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs">1</span>
-              הוסף נכס או התחייבות ראשונים
+              מלא את הפרטים האישיים שלך
             </li>
             <li className="flex items-center gap-2">
               <span className="w-5 h-5 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs">2</span>
-              העלה קובץ עסקאות
+              הוסף נכס או התחייבות ראשונים
             </li>
             <li className="flex items-center gap-2">
               <span className="w-5 h-5 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs">3</span>
-              גלה לאן הולך הכסף
+              העלה קובץ עסקאות
             </li>
           </ul>
         </div>
@@ -284,4 +265,3 @@ function StepReady() {
     </div>
   );
 }
-
