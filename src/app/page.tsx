@@ -20,6 +20,7 @@ import LiabilityModal from '@/components/modals/LiabilityModal';
 import AmortizationModal from '@/components/modals/AmortizationModal';
 import ImportModal from '@/components/modals/ImportModal';
 import DocumentsModal from '@/components/modals/DocumentsModal';
+import AdvisorModal from '@/components/modals/AdvisorModal';
 import InvestmentsTab from '@/components/investments/InvestmentsTab';
 import UserMenu from '@/components/UserMenu';
 import ProfileModal from '@/components/ProfileModal';
@@ -88,6 +89,7 @@ export default function Home() {
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [isLiabilityModalOpen, setIsLiabilityModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isAdvisorModalOpen, setIsAdvisorModalOpen] = useState(false);
   
   // Edit state
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
@@ -592,10 +594,7 @@ export default function Home() {
           <div className="lg:col-span-2">
             <AssetAllocationChart
               assets={assets}
-              onGetRecommendations={() => {
-                // TODO: Implement recommendations system
-                alert('מערכת ההמלצות תהיה זמינה בקרוב!');
-              }}
+              onGetRecommendations={() => setIsAdvisorModalOpen(true)}
             />
           </div>
         </div>
@@ -796,6 +795,12 @@ export default function Home() {
       <AccountSettings
         isOpen={isAccountSettingsOpen}
         onClose={() => setIsAccountSettingsOpen(false)}
+      />
+
+      {/* Advisor Recommendations Modal */}
+      <AdvisorModal
+        isOpen={isAdvisorModalOpen}
+        onClose={() => setIsAdvisorModalOpen(false)}
       />
 
       {/* Toast Notifications */}

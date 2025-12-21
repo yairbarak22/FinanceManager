@@ -27,6 +27,7 @@ export interface Asset {
   name: string;
   category: string; // 'investments' | 'real_estate' etc.
   value: number;
+  liquidity?: 'immediate' | 'short_term' | 'pension' | 'locked'; // נזילות הנכס
   createdAt?: string;
   updatedAt?: string;
 }
@@ -51,6 +52,7 @@ export interface Liability {
   remainingAmount?: number;   // יתרת החוב הנוכחית
   loanMethod: 'spitzer' | 'equal_principal'; // שיטת ההלוואה
   hasInterestRebate: boolean; // זיכוי על הריבית
+  linkage?: 'none' | 'index' | 'foreign'; // הצמדה (אין / מדד / מט"ח)
   createdAt?: string;
   updatedAt?: string;
 }
@@ -168,4 +170,22 @@ export interface DashboardData {
   totalAssets: number;
   totalLiabilities: number;
   monthlyLiabilityPayments: number;
+}
+
+// User Profile for advisor
+export interface UserProfile {
+  id: string;
+  userId: string;
+  militaryStatus?: 'none' | 'reserve' | 'career';
+  maritalStatus?: 'single' | 'married' | 'divorced' | 'widowed';
+  employmentType?: 'employee' | 'self_employed' | 'both' | 'student';
+  hasChildren: boolean;
+  childrenCount: number;
+  ageRange?: '18-25' | '26-35' | '36-45' | '46-55' | '56-65' | '65+';
+  monthlyIncome?: string;
+  riskTolerance?: 'low' | 'medium' | 'high';
+  isStudent: boolean;
+  graduationDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
