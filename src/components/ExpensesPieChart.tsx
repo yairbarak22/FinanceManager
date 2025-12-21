@@ -35,7 +35,7 @@ export default function ExpensesPieChart({ transactions }: ExpensesPieChartProps
 
   if (data.length === 0) {
     return (
-      <div className="card p-6 flex flex-col items-center justify-center h-full min-h-[300px]" >
+      <div className="card p-6 flex flex-col items-center justify-center h-full" >
         <PieChartIcon className="w-12 h-12 text-gray-300 mb-3" />
         <p className="text-gray-400 text-sm">אין הוצאות להצגה</p>
       </div>
@@ -43,7 +43,7 @@ export default function ExpensesPieChart({ transactions }: ExpensesPieChartProps
   }
 
   return (
-    <div className="card p-6" >
+    <div className="card p-6 h-full flex flex-col" >
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <div className="w-10 h-10 bg-pink-100 rounded-xl flex items-center justify-center">
@@ -53,7 +53,7 @@ export default function ExpensesPieChart({ transactions }: ExpensesPieChartProps
       </div>
 
       {/* Pie Chart */}
-      <div className="h-48">
+      <div className="flex-1 min-h-[150px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie

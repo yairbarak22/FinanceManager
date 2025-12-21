@@ -22,7 +22,7 @@ export default function RecentTransactions({ transactions, onDelete, onNewTransa
   });
 
   return (
-    <div className="card p-6">
+    <div className="card p-6 h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -53,7 +53,7 @@ export default function RecentTransactions({ transactions, onDelete, onNewTransa
       </div>
 
       {/* Transactions List - Scrollable container for all transactions */}
-      <div className="max-h-[350px] overflow-y-auto pr-2">
+      <div className="flex-1 overflow-y-auto pr-2">
         <div className="space-y-2">
         {transactions.map((transaction) => {
           const categoryInfo = getCategoryInfo(

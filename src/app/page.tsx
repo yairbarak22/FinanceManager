@@ -671,32 +671,28 @@ export default function Home() {
             ============================================ */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Monthly Trends Chart */}
-          <div className="card p-4 h-[400px]">
-            <MonthlyTrendsCharts data={monthlySummaries} />
-          </div>
+          <MonthlyTrendsCharts data={monthlySummaries} />
           
           {/* Monthly Summary */}
-          <div className="h-[400px]">
-            <MonthlySummary
-              summaries={monthlySummaries}
-              totalIncome={totalIncome}
-              totalExpenses={totalExpenses}
-              totalBalance={totalBalance}
-            />
-          </div>
+          <MonthlySummary
+            summaries={monthlySummaries}
+            totalIncome={totalIncome}
+            totalExpenses={totalExpenses}
+            totalBalance={totalBalance}
+          />
         </div>
 
         {/* ============================================
-            SECTION 6: Expenses Pie (1/3) + Transactions (2/3)
+            SECTION 6: Expenses Pie (1/3) + Transactions (2/3) - Same Height
             ============================================ */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[450px]">
           {/* Expenses Pie Chart - 1/3 */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 h-full">
             <ExpensesPieChart transactions={filteredTransactions} />
           </div>
           
           {/* Recent Transactions - 2/3 */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 h-full">
             <RecentTransactions
               transactions={filteredTransactions}
               onDelete={handleDeleteTransaction}
