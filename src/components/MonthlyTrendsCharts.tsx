@@ -36,7 +36,7 @@ export default function MonthlyTrendsCharts({ data }: MonthlyTrendsChartsProps) 
   }
 
   return (
-    <div className="card p-6">
+    <div className="card p-6 h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-2 mb-6">
         <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
@@ -46,7 +46,7 @@ export default function MonthlyTrendsCharts({ data }: MonthlyTrendsChartsProps) 
       </div>
 
       {/* Combined Chart */}
-      <div className="h-72">
+      <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
             <defs>

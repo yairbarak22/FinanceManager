@@ -42,7 +42,7 @@ export default function MonthlySummary({
   };
 
   return (
-    <div className="card p-6">
+    <div className="card p-6 h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
@@ -75,7 +75,7 @@ export default function MonthlySummary({
       </div>
 
       {/* Monthly Cards */}
-      <div className="space-y-2 max-h-[300px] overflow-y-auto">
+      <div className="space-y-2 flex-1 overflow-y-auto">
         {summaries.map((summary) => {
           const monthKey = `${summary.year}-${summary.month}`;
           const isExpanded = expandedMonths.includes(monthKey);

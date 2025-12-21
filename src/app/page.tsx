@@ -669,17 +669,21 @@ export default function Home() {
         {/* ============================================
             SECTION 5: Monthly Trends + Monthly Summary (2 Columns, Same Height)
             ============================================ */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[420px]">
           {/* Monthly Trends Chart */}
-          <MonthlyTrendsCharts data={monthlySummaries} />
+          <div className="h-full">
+            <MonthlyTrendsCharts data={monthlySummaries} />
+          </div>
           
           {/* Monthly Summary */}
-          <MonthlySummary
-            summaries={monthlySummaries}
-            totalIncome={totalIncome}
-            totalExpenses={totalExpenses}
-            totalBalance={totalBalance}
-          />
+          <div className="h-full">
+            <MonthlySummary
+              summaries={monthlySummaries}
+              totalIncome={totalIncome}
+              totalExpenses={totalExpenses}
+              totalBalance={totalBalance}
+            />
+          </div>
         </div>
 
         {/* ============================================

@@ -15,20 +15,12 @@ function LoginContent() {
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-pink-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg">
-            <svg
-              className="w-8 h-8 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              />
-            </svg>
+          <div className="w-16 h-16 mx-auto mb-4">
+            <img
+              src="/icon.png"
+              alt="פלוס"
+              className="w-16 h-16 rounded-2xl shadow-lg object-cover"
+            />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-1">פלוס</h1>
           <p className="text-gray-500 text-sm">להוציא את המקסימום מהכסף שלך</p>
