@@ -667,36 +667,44 @@ export default function Home() {
         </div>
 
         {/* ============================================
-            SECTION 5: Charts (3 Columns - Trends, Pie, Summary)
+            SECTION 5: Monthly Trends + Monthly Summary (2 Columns, Same Height)
             ============================================ */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Monthly Trends Chart */}
-          <div className="card p-4">
+          <div className="card p-4 h-[400px]">
             <MonthlyTrendsCharts data={monthlySummaries} />
           </div>
           
-          {/* Expenses Pie Chart */}
-          <div className="max-h-[500px]">
-            <ExpensesPieChart transactions={filteredTransactions} />
+          {/* Monthly Summary */}
+          <div className="h-[400px]">
+            <MonthlySummary
+              summaries={monthlySummaries}
+              totalIncome={totalIncome}
+              totalExpenses={totalExpenses}
+              totalBalance={totalBalance}
+            />
           </div>
-          
-          <MonthlySummary
-            summaries={monthlySummaries}
-            totalIncome={totalIncome}
-            totalExpenses={totalExpenses}
-            totalBalance={totalBalance}
-          />
         </div>
 
         {/* ============================================
-            SECTION 6: Recent Transactions (Full Width)
+            SECTION 6: Expenses Pie (1/3) + Transactions (2/3)
             ============================================ */}
-        <RecentTransactions
-          transactions={filteredTransactions}
-          onDelete={handleDeleteTransaction}
-          onNewTransaction={() => setIsTransactionModalOpen(true)}
-          onImport={() => setIsImportModalOpen(true)}
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Expenses Pie Chart - 1/3 */}
+          <div className="lg:col-span-1">
+            <ExpensesPieChart transactions={filteredTransactions} />
+          </div>
+          
+          {/* Recent Transactions - 2/3 */}
+          <div className="lg:col-span-2">
+            <RecentTransactions
+              transactions={filteredTransactions}
+              onDelete={handleDeleteTransaction}
+              onNewTransaction={() => setIsTransactionModalOpen(true)}
+              onImport={() => setIsImportModalOpen(true)}
+            />
+          </div>
+        </div>
           </>
         )}
       </div>
