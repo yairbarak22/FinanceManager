@@ -600,9 +600,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Monthly Trends Chart (Full Width) */}
-        <MonthlyTrendsCharts data={monthlySummaries} />
-
         {/* ============================================
             SECTION 4: Assets, Liabilities, Recurring (3 Columns)
             ============================================ */}
@@ -670,9 +667,14 @@ export default function Home() {
         </div>
 
         {/* ============================================
-            SECTION 5: Charts (2 Columns)
+            SECTION 5: Charts (3 Columns - Trends, Pie, Summary)
             ============================================ */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Monthly Trends Chart */}
+          <div className="card p-4">
+            <MonthlyTrendsCharts data={monthlySummaries} />
+          </div>
+          
           {/* Expenses Pie Chart */}
           <div className="max-h-[500px]">
             <ExpensesPieChart transactions={filteredTransactions} />

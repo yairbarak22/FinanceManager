@@ -52,9 +52,10 @@ export default function RecentTransactions({ transactions, onDelete, onNewTransa
         </div>
       </div>
 
-      {/* Transactions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {transactions.slice(0, 12).map((transaction) => {
+      {/* Transactions Grid - Scrollable container */}
+      <div className="max-h-[400px] overflow-y-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {transactions.map((transaction) => {
           const categoryInfo = getCategoryInfo(
             transaction.category,
             transaction.type as 'income' | 'expense'
@@ -114,20 +115,13 @@ export default function RecentTransactions({ transactions, onDelete, onNewTransa
             </div>
           );
         })}
+        </div>
       </div>
 
       {transactions.length === 0 && (
         <div className="text-center py-12">
           <Receipt className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-400">אין עסקאות להצגה</p>
-        </div>
-      )}
-
-      {transactions.length > 12 && (
-        <div className="text-center mt-4">
-          <p className="text-sm text-gray-500">
-            מציג 12 מתוך {transactions.length} עסקאות
-          </p>
         </div>
       )}
 
