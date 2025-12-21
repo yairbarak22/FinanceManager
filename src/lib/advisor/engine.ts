@@ -82,4 +82,3 @@ export async function generateRecommendations(
 ): Promise<Recommendation[]> {
   return advisorEngine.generateRecommendations(context);
 }
-

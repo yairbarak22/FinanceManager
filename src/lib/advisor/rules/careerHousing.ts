@@ -30,4 +30,3 @@ export default createRule({
     potentialValue: ESTIMATED_VALUES.CAREER_HOUSING_SAVINGS,
   },
 });
-
