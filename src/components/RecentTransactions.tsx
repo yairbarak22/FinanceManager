@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Trash2, Receipt } from 'lucide-react';
+import { Trash2, Receipt, Plus, Upload } from 'lucide-react';
 import { Transaction } from '@/lib/types';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
@@ -10,9 +10,11 @@ import ConfirmDialog from './modals/ConfirmDialog';
 interface RecentTransactionsProps {
   transactions: Transaction[];
   onDelete: (id: string) => void;
+  onNewTransaction: () => void;
+  onImport: () => void;
 }
 
-export default function RecentTransactions({ transactions, onDelete }: RecentTransactionsProps) {
+export default function RecentTransactions({ transactions, onDelete, onNewTransaction, onImport }: RecentTransactionsProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; description: string }>({
     isOpen: false,
     id: '',
@@ -22,13 +24,31 @@ export default function RecentTransactions({ transactions, onDelete }: RecentTra
   return (
     <div className="card p-6">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
-          <Receipt className="w-5 h-5 text-gray-600" />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+            <Receipt className="w-5 h-5 text-gray-600" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">הוצאות שוטפות</h2>
+            <p className="text-sm text-gray-500">{transactions.length} עסקאות</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">עסקאות אחרונות</h2>
-          <p className="text-sm text-gray-500">{transactions.length} עסקאות</p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onImport}
+            className="btn-secondary"
+          >
+            <Upload className="w-4 h-4" />
+            <span className="hidden sm:inline">ייבוא</span>
+          </button>
+          <button
+            onClick={onNewTransaction}
+            className="btn-primary"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">עסקה חדשה</span>
+          </button>
         </div>
       </div>
 

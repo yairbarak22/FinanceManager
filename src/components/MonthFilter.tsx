@@ -56,8 +56,10 @@ export default function MonthFilter({
   }, []);
 
   // Group months by category
+  // Past months: oldest first (top) to newest (bottom, closest to current)
+  const pastMonths = allMonths.filter(m => m < currentMonth);
+  // Future months: closest first (top) to farthest (bottom)
   const futureMonths = allMonths.filter(m => m > currentMonth);
-  const pastMonths = allMonths.filter(m => m < currentMonth).reverse();
 
   const handleSelect = (monthKey: string) => {
     onMonthChange(monthKey);
@@ -116,11 +118,11 @@ export default function MonthFilter({
 
           <div className="border-t border-gray-100 my-1" />
 
-          {/* Future Months */}
-          {futureMonths.length > 0 && (
+          {/* Past Months (oldest at top, newest at bottom) */}
+          {pastMonths.length > 0 && (
             <>
-              <div className="month-group-header">חודשים עתידיים</div>
-              {futureMonths.map(renderMonthOption)}
+              <div className="month-group-header">חודשים קודמים</div>
+              {pastMonths.map(renderMonthOption)}
             </>
           )}
 
@@ -128,11 +130,11 @@ export default function MonthFilter({
           <div className="month-group-header">החודש הנוכחי</div>
           {renderMonthOption(currentMonth)}
 
-          {/* Past Months */}
-          {pastMonths.length > 0 && (
+          {/* Future Months (closest at top, farthest at bottom) */}
+          {futureMonths.length > 0 && (
             <>
-              <div className="month-group-header">חודשים קודמים</div>
-              {pastMonths.map(renderMonthOption)}
+              <div className="month-group-header">חודשים עתידיים</div>
+              {futureMonths.map(renderMonthOption)}
             </>
           )}
         </div>

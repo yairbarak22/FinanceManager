@@ -18,7 +18,7 @@ export default function SummaryCards({ totalBalance, totalIncome, totalExpenses 
       <div className={`rounded-2xl p-5 ${isPositiveBalance ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-red-500 to-rose-600'} text-white shadow-lg`}>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-white/80 text-sm font-medium mb-1">יתרה כוללת</p>
+            <p className="text-white/80 text-sm font-medium mb-1">תזרים</p>
             <p className="text-3xl font-bold tracking-tight">{formatCurrency(totalBalance)}</p>
             <p className="text-white/60 text-xs mt-1">
               {isPositiveBalance ? 'חיובי' : 'שלילי'}

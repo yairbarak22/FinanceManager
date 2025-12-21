@@ -54,8 +54,11 @@ export default function Home() {
   const [liabilities, setLiabilities] = useState<Liability[]>([]);
   const [netWorthHistory, setNetWorthHistory] = useState<NetWorthHistory[]>([]);
   
-  // Filter state
-  const [selectedMonth, setSelectedMonth] = useState('all');
+  // Filter state - default to current month
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
   const [monthsWithData, setMonthsWithData] = useState<Set<string>>(new Set());
   
   // Generate all months (past 12 + current + future 6 = 19 months)
@@ -550,10 +553,7 @@ export default function Home() {
             SECTION 1: Header + Filter (Single Row)
             ============================================ */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <Header 
-            onNewTransaction={() => setIsTransactionModalOpen(true)} 
-            onImport={() => setIsImportModalOpen(true)}
-          />
+          <Header />
           <MonthFilter
             selectedMonth={selectedMonth}
             onMonthChange={setSelectedMonth}
@@ -689,12 +689,12 @@ export default function Home() {
         {/* ============================================
             SECTION 6: Recent Transactions (Full Width)
             ============================================ */}
-        <div className="card p-4 max-h-[500px] overflow-hidden flex flex-col">
-          <RecentTransactions
-            transactions={filteredTransactions}
-            onDelete={handleDeleteTransaction}
-          />
-        </div>
+        <RecentTransactions
+          transactions={filteredTransactions}
+          onDelete={handleDeleteTransaction}
+          onNewTransaction={() => setIsTransactionModalOpen(true)}
+          onImport={() => setIsImportModalOpen(true)}
+        />
           </>
         )}
       </div>
