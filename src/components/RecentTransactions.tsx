@@ -22,39 +22,38 @@ export default function RecentTransactions({ transactions, onDelete, onNewTransa
   });
 
   return (
-    <div className="card p-6 h-full flex flex-col">
+    <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
-            <Receipt className="w-5 h-5 text-gray-600" />
+          <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+            <Receipt className="w-4 h-4 text-gray-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">הוצאות שוטפות</h2>
-            <p className="text-sm text-gray-500">{transactions.length} עסקאות</p>
+            <h3 className="font-semibold text-gray-900">הוצאות שוטפות</h3>
+            <p className="text-xs text-gray-500">{transactions.length} עסקאות</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={onImport}
-            className="btn-secondary"
+            className="text-sm text-gray-600 hover:text-gray-700 font-medium flex items-center gap-1"
           >
             <Upload className="w-4 h-4" />
-            <span className="hidden sm:inline">ייבוא</span>
+            ייבוא
           </button>
           <button
             onClick={onNewTransaction}
-            className="btn-primary"
+            className="text-sm text-pink-600 hover:text-pink-700 font-medium flex items-center gap-1 mr-2"
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">עסקה חדשה</span>
+            הוסף
           </button>
         </div>
       </div>
 
-      {/* Transactions List - Scrollable container for all transactions */}
-      <div className="flex-1 min-h-0 overflow-y-auto pr-2">
-        <div className="space-y-2">
+      {/* Transactions List */}
+      <div className="space-y-2">
         {transactions.map((transaction) => {
           const categoryInfo = getCategoryInfo(
             transaction.category,
@@ -115,7 +114,6 @@ export default function RecentTransactions({ transactions, onDelete, onNewTransa
             </div>
           );
         })}
-        </div>
       </div>
 
       {transactions.length === 0 && (

@@ -689,14 +689,14 @@ export default function Home() {
         {/* ============================================
             SECTION 6: Expenses Pie (1/3) + Transactions (2/3) - Same Height
             ============================================ */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[450px]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Expenses Pie Chart - 1/3 */}
-          <div className="lg:col-span-1 h-full">
+          <div className="card p-4 max-h-[500px] overflow-y-auto lg:col-span-1">
             <ExpensesPieChart transactions={filteredTransactions} />
           </div>
           
           {/* Recent Transactions - 2/3 */}
-          <div className="lg:col-span-2 h-full">
+          <div className="card p-4 max-h-[500px] overflow-y-auto lg:col-span-2">
             <RecentTransactions
               transactions={filteredTransactions}
               onDelete={handleDeleteTransaction}
