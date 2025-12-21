@@ -53,7 +53,7 @@ export default function RecentTransactions({ transactions, onDelete, onNewTransa
       </div>
 
       {/* Transactions List - Scrollable container for all transactions */}
-      <div className="flex-1 overflow-y-auto pr-2">
+      <div className="flex-1 min-h-0 overflow-y-auto pr-2">
         <div className="space-y-2">
         {transactions.map((transaction) => {
           const categoryInfo = getCategoryInfo(

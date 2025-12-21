@@ -53,7 +53,7 @@ export default function ExpensesPieChart({ transactions }: ExpensesPieChartProps
       </div>
 
       {/* Pie Chart */}
-      <div className="flex-1 min-h-[150px]">
+      <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
