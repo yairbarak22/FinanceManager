@@ -76,71 +76,88 @@ export default function RecurringTransactions({
             <div
               key={transaction.id}
               className={cn(
-                'flex items-center gap-3 p-3 rounded-lg transition-all',
+                'flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-lg transition-all',
                 transaction.isActive ? 'bg-gray-50' : 'bg-gray-50/50 opacity-60'
               )}
             >
-              {/* Icon */}
-              <div
-                className={cn(
-                  'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
-                  categoryInfo?.bgColor || 'bg-gray-100'
-                )}
-              >
-                {transaction.type === 'income' ? (
-                  <TrendingUp className={cn('w-4 h-4', categoryInfo?.textColor || 'text-gray-600')} />
-                ) : (
-                  <TrendingDown className={cn('w-4 h-4', categoryInfo?.textColor || 'text-gray-600')} />
-                )}
-              </div>
-
-              {/* Details */}
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-gray-900 text-sm truncate">{transaction.name}</p>
-                <p className="text-xs text-gray-500">{categoryInfo?.nameHe}</p>
-              </div>
-
-              {/* Amount */}
-              <p
-                className={cn(
-                  'text-sm font-bold flex-shrink-0',
-                  transaction.type === 'income' ? 'text-green-600' : 'text-pink-600'
-                )}
-              >
-                {transaction.type === 'income' ? '+' : '-'}
-                {formatCurrency(transaction.amount)}
-              </p>
-
-              {/* Toggle */}
-              <button
-                onClick={() => onToggle(transaction.id, !transaction.isActive)}
-                className={cn(
-                  'toggle flex-shrink-0',
-                  transaction.isActive ? 'toggle-checked' : 'toggle-unchecked'
-                )}
-              >
-                <span
+              {/* Top row: Icon + Details + Amount (mobile) */}
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                {/* Icon */}
+                <div
                   className={cn(
-                    'toggle-thumb',
-                    transaction.isActive ? 'toggle-thumb-checked' : 'toggle-thumb-unchecked'
+                    'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
+                    categoryInfo?.bgColor || 'bg-gray-100'
                   )}
-                />
-              </button>
+                >
+                  {transaction.type === 'income' ? (
+                    <TrendingUp className={cn('w-4 h-4', categoryInfo?.textColor || 'text-gray-600')} />
+                  ) : (
+                    <TrendingDown className={cn('w-4 h-4', categoryInfo?.textColor || 'text-gray-600')} />
+                  )}
+                </div>
 
-              {/* Actions */}
-              <div className="flex gap-1 flex-shrink-0">
-                <button
-                  onClick={() => onEdit(transaction)}
-                  className="p-1.5 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600"
+                {/* Details */}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-900 text-sm truncate">{transaction.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{categoryInfo?.nameHe}</p>
+                </div>
+
+                {/* Amount - visible on mobile */}
+                <p
+                  className={cn(
+                    'text-sm font-bold flex-shrink-0 sm:hidden',
+                    transaction.type === 'income' ? 'text-green-600' : 'text-pink-600'
+                  )}
                 >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => setDeleteConfirm({ isOpen: true, id: transaction.id, name: transaction.name })}
-                  className="p-1.5 rounded hover:bg-red-100 text-gray-400 hover:text-red-500"
+                  {transaction.type === 'income' ? '+' : '-'}
+                  {formatCurrency(transaction.amount)}
+                </p>
+              </div>
+
+              {/* Bottom row (mobile) / Continue (desktop): Amount + Toggle + Actions */}
+              <div className="flex items-center gap-2 justify-end mr-12 sm:mr-0">
+                {/* Amount - visible on desktop */}
+                <p
+                  className={cn(
+                    'hidden sm:block text-sm font-bold flex-shrink-0',
+                    transaction.type === 'income' ? 'text-green-600' : 'text-pink-600'
+                  )}
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  {transaction.type === 'income' ? '+' : '-'}
+                  {formatCurrency(transaction.amount)}
+                </p>
+
+                {/* Toggle */}
+                <button
+                  onClick={() => onToggle(transaction.id, !transaction.isActive)}
+                  className={cn(
+                    'toggle flex-shrink-0',
+                    transaction.isActive ? 'toggle-checked' : 'toggle-unchecked'
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'toggle-thumb',
+                      transaction.isActive ? 'toggle-thumb-checked' : 'toggle-thumb-unchecked'
+                    )}
+                  />
                 </button>
+
+                {/* Actions */}
+                <div className="flex gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => onEdit(transaction)}
+                    className="p-1.5 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirm({ isOpen: true, id: transaction.id, name: transaction.name })}
+                    className="p-1.5 rounded hover:bg-red-100 text-gray-400 hover:text-red-500"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           );

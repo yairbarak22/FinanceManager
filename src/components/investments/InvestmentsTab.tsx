@@ -146,11 +146,16 @@ export default function InvestmentsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Top Row: Calculator + Charts */}
+      {/* Charts - shown first on mobile for context */}
+      <div className="lg:hidden">
+        <AllocationCharts holdings={holdings} />
+      </div>
+
+      {/* Top Row: Calculator + Charts (desktop) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calculator */}
         <div className="lg:col-span-1">
-          <div className="h-[400px]">
+          <div className="lg:h-[400px]">
             <InvestmentCalculator
               onCalculate={handleCalculate}
               onApplyInvestment={handleApplyInvestment}
@@ -161,8 +166,8 @@ export default function InvestmentsTab() {
           </div>
         </div>
 
-        {/* Charts */}
-        <div className="lg:col-span-2">
+        {/* Charts - hidden on mobile (shown above), visible on desktop */}
+        <div className="hidden lg:block lg:col-span-2">
           <div className="h-[400px]">
             <AllocationCharts holdings={holdings} />
           </div>

@@ -56,106 +56,109 @@ export default function AllocationCharts({ holdings }: AllocationChartsProps) {
   };
 
   return (
-    <div className="card p-6 h-full flex flex-col">
-      <h3 className="font-semibold text-gray-900 mb-6 flex-shrink-0">פילוח התיק</h3>
+    <div className="card p-4 sm:p-6 h-full flex flex-col">
+      <h3 className="font-semibold text-gray-900 mb-4 sm:mb-6 flex-shrink-0">פילוח התיק</h3>
       
       <div className="flex-1 min-h-0">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Current Allocation */}
-        <div>
-          <h4 className="text-sm font-medium text-gray-600 mb-2 text-center">פילוח נוכחי</h4>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={currentData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={2}
-                  dataKey="value"
-                  label={renderCustomLabel}
-                  labelLine={false}
-                >
-                  {currentData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: number, name: string) => [
-                    formatCurrency(value),
-                    name,
-                  ]}
-                  contentStyle={{
-                    direction: 'rtl',
-                    borderRadius: '12px',
-                    border: 'none',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+        {/* Charts grid - side by side on mobile, more space on desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-2 gap-2 sm:gap-4">
+          {/* Current Allocation */}
+          <div>
+            <h4 className="text-xs sm:text-sm font-medium text-gray-600 mb-1 sm:mb-2 text-center">נוכחי</h4>
+            <div className="h-32 sm:h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={currentData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="40%"
+                    outerRadius="70%"
+                    paddingAngle={2}
+                    dataKey="value"
+                    label={renderCustomLabel}
+                    labelLine={false}
+                  >
+                    {currentData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number, name: string) => [
+                      formatCurrency(value),
+                      name,
+                    ]}
+                    contentStyle={{
+                      direction: 'rtl',
+                      borderRadius: '12px',
+                      border: 'none',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      fontSize: '12px',
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-center text-xs sm:text-sm text-gray-500 mt-1 sm:mt-2">
+              {formatCurrency(totalValue)}
+            </p>
           </div>
-          <p className="text-center text-sm text-gray-500 mt-2">
-            סה״כ: {formatCurrency(totalValue)}
-          </p>
+
+          {/* Target Allocation */}
+          <div>
+            <h4 className="text-xs sm:text-sm font-medium text-gray-600 mb-1 sm:mb-2 text-center">יעד</h4>
+            <div className="h-32 sm:h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={targetData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius="40%"
+                    outerRadius="70%"
+                    paddingAngle={2}
+                    dataKey="value"
+                    label={renderCustomLabel}
+                    labelLine={false}
+                  >
+                    {targetData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value: number, name: string) => [
+                      `${value.toFixed(1)}%`,
+                      name,
+                    ]}
+                    contentStyle={{
+                      direction: 'rtl',
+                      borderRadius: '12px',
+                      border: 'none',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                      fontSize: '12px',
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-center text-xs sm:text-sm text-gray-500 mt-1 sm:mt-2">
+              100%
+            </p>
+          </div>
         </div>
 
-        {/* Target Allocation */}
-        <div>
-          <h4 className="text-sm font-medium text-gray-600 mb-2 text-center">פילוח יעד</h4>
-          <div className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={targetData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={80}
-                  paddingAngle={2}
-                  dataKey="value"
-                  label={renderCustomLabel}
-                  labelLine={false}
-                >
-                  {targetData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: number, name: string) => [
-                    `${value.toFixed(1)}%`,
-                    name,
-                  ]}
-                  contentStyle={{
-                    direction: 'rtl',
-                    borderRadius: '12px',
-                    border: 'none',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <p className="text-center text-sm text-gray-500 mt-2">
-            סה״כ: 100%
-          </p>
+        {/* Legend - scrollable on mobile if many items */}
+        <div className="mt-3 sm:mt-4 flex flex-wrap justify-center gap-2 sm:gap-3 max-h-16 sm:max-h-none overflow-y-auto">
+          {holdings.map((h, i) => (
+            <div key={h.id} className="flex items-center gap-1 sm:gap-1.5">
+              <div 
+                className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full flex-shrink-0" 
+                style={{ backgroundColor: COLORS[i % COLORS.length] }}
+              />
+              <span className="text-[10px] sm:text-xs text-gray-600 truncate max-w-[60px] sm:max-w-none">{h.name}</span>
+            </div>
+          ))}
         </div>
-      </div>
-
-      {/* Legend */}
-      <div className="mt-4 flex flex-wrap justify-center gap-3">
-        {holdings.map((h, i) => (
-          <div key={h.id} className="flex items-center gap-1.5">
-            <div 
-              className="w-2.5 h-2.5 rounded-full" 
-              style={{ backgroundColor: COLORS[i % COLORS.length] }}
-            />
-            <span className="text-xs text-gray-600">{h.name}</span>
-          </div>
-        ))}
-      </div>
       </div>
     </div>
   );
