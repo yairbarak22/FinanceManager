@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Calculator, ArrowLeft, Sparkles, PlusCircle, Calendar, ArrowRight } from 'lucide-react';
 import { InvestmentCalculation } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
+// AI Feature temporarily disabled
+// import HelpTrigger from '../ai/HelpTrigger';
 
 interface ForecastData {
   monthsToIdeal: number;
@@ -97,6 +99,23 @@ export default function InvestmentCalculator({
     setForecast(null);
   }, [amount]);
 
+  // Dynamic context data for AI Help
+  const calculatorContextData = useMemo(() => {
+    if (!summary) return { סכום_השקעה: parseFloat(amount) || 0 };
+    return {
+      סכום_השקעה: summary.investmentAmount,
+      שווי_נוכחי: summary.currentPortfolioValue,
+      שווי_חדש: summary.newPortfolioValue,
+      פילוחים: calculations.map(c => ({
+        שם: c.holdingName,
+        אחוז_נוכחי: c.currentAllocation.toFixed(1),
+        אחוז_חדש: c.newAllocation.toFixed(1),
+        סכום_להשקעה: c.amountToInvest,
+      })),
+      תחזית_חודשים_לאידאל: forecast?.monthsToIdeal,
+    };
+  }, [summary, calculations, forecast, amount]);
+
   // Results View
   if (showResults && summary && calculations.length > 0) {
     return (
@@ -111,6 +130,12 @@ export default function InvestmentCalculator({
               <ArrowRight className="w-5 h-5" />
             </button>
             <h3 className="font-semibold text-gray-900">תוצאות החישוב</h3>
+            {/* AI Feature temporarily disabled */}
+            {/* <HelpTrigger
+              topicId="investments"
+              contextData={calculatorContextData}
+              size="sm"
+            /> */}
           </div>
           <span className="text-sm font-bold text-indigo-600">
             {formatCurrency(summary.investmentAmount)}

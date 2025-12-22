@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { X, Calculator } from 'lucide-react';
 import { Liability } from '@/lib/types';
 import { CategoryInfo } from '@/lib/categories';
@@ -8,6 +8,8 @@ import { calculateSpitzerPayment } from '@/lib/loanCalculations';
 import { cn } from '@/lib/utils';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
+// AI Feature temporarily disabled
+// import HelpTrigger from '@/components/ai/HelpTrigger';
 
 interface LiabilityModalProps {
   isOpen: boolean;
@@ -93,6 +95,15 @@ export default function LiabilityModal({
     const newCategory = await onAddCategory(categoryName);
     setType(newCategory.id);
   };
+
+  // Dynamic context data for AI Help
+  const loanContextData = useMemo(() => ({
+    סכום_הלוואה: parseFloat(totalAmount) || 0,
+    ריבית_שנתית: parseFloat(interestRate) || 0,
+    תקופה_בחודשים: parseInt(loanTermMonths) || 0,
+    שיטת_הלוואה: loanMethod === 'spitzer' ? 'שפיצר' : 'קרן שווה',
+    תשלום_חודשי_נוכחי: parseFloat(monthlyPayment) || 0,
+  }), [totalAmount, interestRate, loanTermMonths, loanMethod, monthlyPayment]);
 
   if (!isOpen) return null;
 
@@ -249,6 +260,12 @@ export default function LiabilityModal({
                   <Calculator className="w-4 h-4" />
                   חשב
                 </button>
+                {/* AI Feature temporarily disabled */}
+                {/* <HelpTrigger
+                  topicId="loan_form"
+                  contextData={loanContextData}
+                  size="md"
+                /> */}
               </div>
 
               {/* Interest Rebate */}

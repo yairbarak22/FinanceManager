@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, Pencil, Trash2, Banknote, Home, TrendingDown, Table, FolderOpen } from 'lucide-react';
 import { Liability } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
 import { getEffectiveMonthlyExpense, getCurrentMonthPayment } from '@/lib/loanCalculations';
 import ConfirmDialog from './modals/ConfirmDialog';
+// AI Feature temporarily disabled
+// import HelpTrigger from './ai/HelpTrigger';
 
 interface LiabilitiesSectionProps {
   liabilities: Liability[];
@@ -33,6 +35,14 @@ export default function LiabilitiesSection({
   const totalLiabilities = liabilities.reduce((sum, l) => sum + l.totalAmount, 0);
   const monthlyPayments = liabilities.reduce((sum, l) => sum + l.monthlyPayment, 0);
 
+  // Dynamic context data for AI Help
+  const liabilitiesContextData = useMemo(() => ({
+    סהכ_התחייבויות: liabilities.length,
+    סכום_כולל: totalLiabilities,
+    תשלום_חודשי: monthlyPayments,
+    סוגים: [...new Set(liabilities.map(l => getCategoryInfo(l.type, 'liability')?.nameHe || l.type))].join(', '),
+  }), [liabilities, totalLiabilities, monthlyPayments]);
+
   return (
     <div>
       {/* Header */}
@@ -45,6 +55,12 @@ export default function LiabilitiesSection({
             <h3 className="font-semibold text-gray-900">התחייבויות</h3>
             <p className="text-xs text-red-600 font-medium">{formatCurrency(totalLiabilities)}</p>
           </div>
+          {/* AI Feature temporarily disabled */}
+          {/* <HelpTrigger
+            topicId="liabilities"
+            contextData={liabilitiesContextData}
+            size="sm"
+          /> */}
         </div>
         <button onClick={onAdd} className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1">
           <Plus className="w-4 h-4" />

@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, Pencil, Trash2, TrendingUp, HelpCircle, FolderOpen } from 'lucide-react';
 import { Asset } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
 import ConfirmDialog from './modals/ConfirmDialog';
+// AI Feature temporarily disabled
+// import HelpTrigger from './ai/HelpTrigger';
 
 interface AssetsSectionProps {
   assets: Asset[];
@@ -23,6 +25,16 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
   });
   const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
 
+  // Dynamic context data for AI Help (summary only, not full asset list)
+  const assetsContextData = useMemo(() => {
+    const categories = [...new Set(assets.map(a => getCategoryInfo(a.category, 'asset')?.nameHe || a.category))];
+    return {
+      סהכ_נכסים: assets.length,
+      שווי_כולל: totalAssets,
+      קטגוריות: categories.join(', '),
+    };
+  }, [assets, totalAssets]);
+
   return (
     <div>
       {/* Header */}
@@ -35,6 +47,12 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
             <h3 className="font-semibold text-gray-900">נכסים</h3>
             <p className="text-xs text-green-600 font-medium">{formatCurrency(totalAssets)}</p>
           </div>
+          {/* AI Feature temporarily disabled */}
+          {/* <HelpTrigger
+            topicId="assets"
+            contextData={assetsContextData}
+            size="sm"
+          /> */}
         </div>
         <button onClick={onAdd} className="text-sm text-green-600 hover:text-green-700 font-medium flex items-center gap-1">
           <Plus className="w-4 h-4" />

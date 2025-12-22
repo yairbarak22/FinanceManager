@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { put } from '@vercel/blob';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, withUserId } from '@/lib/authHelpers';
+import { validateAndSanitizeFile } from '@/lib/fileValidator';
 
 // Allowed file types
 const ALLOWED_TYPES = [
@@ -148,13 +149,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Security Layer 2+3: Validate magic bytes and sanitize file content
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+    const validationResult = await validateAndSanitizeFile(fileBuffer, file.type);
+    
+    if (!validationResult.isValid) {
+      return NextResponse.json(
+        { error: validationResult.error },
+        { status: 400 }
+      );
+    }
+
+    // Use sanitized buffer if available (e.g., re-encoded images)
+    const uploadBuffer = validationResult.sanitizedBuffer || fileBuffer;
+
     // Generate unique filename for blob storage
     const ext = file.name.split('.').pop() || '';
     const storedName = `documents/${entityType}/${entityId}/${uuidv4()}.${ext}`;
 
     // Upload to Vercel Blob with random suffix for extra security
     // The blob URL is never exposed to clients - downloads go through our authenticated proxy
-    const blob = await put(storedName, file, {
+    const blob = await put(storedName, uploadBuffer, {
       access: 'public',
       contentType: file.type,
       addRandomSuffix: true, // Adds random suffix to make URLs unguessable
@@ -169,7 +184,7 @@ export async function POST(request: NextRequest) {
         storedName: blob.pathname, // Use actual blob pathname for deletion
         url: blob.url,
         mimeType: file.type,
-        size: file.size,
+        size: uploadBuffer.length, // Use sanitized buffer size
         entityType,
         entityId,
       },

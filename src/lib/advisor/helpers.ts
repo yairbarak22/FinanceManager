@@ -8,6 +8,7 @@ import {
   REAL_ESTATE_CATEGORIES,
   LIQUID_ASSET_TYPES,
   INTEREST_THRESHOLDS,
+  KEYWORDS,
 } from './constants';
 
 // ============================================
@@ -74,6 +75,13 @@ export function hasChildren(ctx: FinancialContext): boolean {
 }
 
 /**
+ * Get children count
+ */
+export function getChildrenCount(ctx: FinancialContext): number {
+  return ctx.user.profile?.childrenCount ?? 0;
+}
+
+/**
  * Get the middle of an age range (for calculations)
  */
 function getAgeFromRange(ageRange?: string): number | null {
@@ -105,6 +113,17 @@ export function isInAgeRange(ctx: FinancialContext, minAge: number, maxAge: numb
  */
 export function getEstimatedAge(ctx: FinancialContext): number | null {
   return getAgeFromRange(ctx.user.profile?.ageRange);
+}
+
+/**
+ * Check if user is recently graduated (last 2 years)
+ */
+export function isRecentGraduate(ctx: FinancialContext): boolean {
+  if (!ctx.user.profile?.graduationDate) return false;
+  const gradDate = new Date(ctx.user.profile.graduationDate);
+  const twoYearsAgo = new Date();
+  twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+  return gradDate >= twoYearsAgo;
 }
 
 // ============================================
@@ -174,10 +193,26 @@ export function hasRealEstate(ctx: FinancialContext): boolean {
 }
 
 /**
+ * Count real estate properties
+ */
+export function getRealEstateCount(ctx: FinancialContext): number {
+  return ctx.assets.filter(a => 
+    REAL_ESTATE_CATEGORIES.includes(a.category as typeof REAL_ESTATE_CATEGORIES[number])
+  ).length;
+}
+
+/**
  * Check if monthly cash flow is negative
  */
 export function hasNegativeCashFlow(ctx: FinancialContext): boolean {
   return ctx.metrics.monthlyCashFlow < 0;
+}
+
+/**
+ * Check if monthly cash flow is positive
+ */
+export function hasPositiveCashFlow(ctx: FinancialContext): boolean {
+  return ctx.metrics.monthlyCashFlow > 0;
 }
 
 /**
@@ -199,6 +234,34 @@ export function hasMortgage(ctx: FinancialContext): boolean {
  */
 export function hasLiabilities(ctx: FinancialContext): boolean {
   return ctx.liabilities.length > 0;
+}
+
+// ============================================
+// Asset Specific Checks - בדיקות נכסים ספציפיים
+// ============================================
+
+/**
+ * Check if user has Keren Hishtalmut asset
+ */
+export function hasKerenHishtalmut(ctx: FinancialContext): boolean {
+  return ctx.assets.some(a => 
+    a.category === 'education_fund' || 
+    a.name.includes('קרן השתלמות') ||
+    a.name.includes('קה"ש')
+  );
+}
+
+/**
+ * Get Keren Hishtalmut total value
+ */
+export function getKerenHishtalmutValue(ctx: FinancialContext): number {
+  return ctx.assets
+    .filter(a => 
+      a.category === 'education_fund' || 
+      a.name.includes('קרן השתלמות') ||
+      a.name.includes('קה"ש')
+    )
+    .reduce((sum, a) => sum + a.value, 0);
 }
 
 // ============================================
@@ -235,6 +298,23 @@ export function sumTransactionsByKeywords(
 }
 
 /**
+ * Check if user has transactions with specific keywords
+ */
+export function hasTransactionsWithKeywords(
+  ctx: FinancialContext, 
+  keywords: readonly string[],
+  type?: 'income' | 'expense'
+): boolean {
+  return ctx.transactions.some(t => {
+    if (type && t.type !== type) return false;
+    const description = t.description.toLowerCase();
+    return keywords.some(kw => 
+      description.includes(kw.toLowerCase())
+    );
+  });
+}
+
+/**
  * Get total income from transactions
  */
 export function getTotalIncome(ctx: FinancialContext): number {
@@ -250,6 +330,74 @@ export function getTotalExpenses(ctx: FinancialContext): number {
   return ctx.transactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+}
+
+/**
+ * Check if user has rental income
+ */
+export function hasRentalIncome(ctx: FinancialContext): boolean {
+  return hasTransactionsWithKeywords(ctx, KEYWORDS.RENT_INCOME, 'income');
+}
+
+/**
+ * Get monthly rental income (average over available transaction data)
+ */
+export function getMonthlyRentalIncome(ctx: FinancialContext): number {
+  const rentTransactions = ctx.transactions.filter(t =>
+    t.type === 'income' &&
+    KEYWORDS.RENT_INCOME.some(kw => t.description.toLowerCase().includes(kw.toLowerCase()))
+  );
+  const total = rentTransactions.reduce((sum, t) => sum + t.amount, 0);
+  // Assume 3 months of transaction data
+  return total / 3;
+}
+
+/**
+ * Check if user pays arnona (municipal tax)
+ */
+export function paysArnona(ctx: FinancialContext): boolean {
+  return hasTransactionsWithKeywords(ctx, KEYWORDS.ARNONA, 'expense');
+}
+
+/**
+ * Check if user has life insurance payments
+ */
+export function paysLifeInsurance(ctx: FinancialContext): boolean {
+  return hasTransactionsWithKeywords(ctx, KEYWORDS.LIFE_INSURANCE, 'expense');
+}
+
+/**
+ * Check if user has special needs child indicators
+ */
+export function hasSpecialNeedsIndicators(ctx: FinancialContext): boolean {
+  return hasTransactionsWithKeywords(ctx, KEYWORDS.SPECIAL_NEEDS, 'expense');
+}
+
+/**
+ * Check if user pays for daycare
+ */
+export function paysDaycare(ctx: FinancialContext): boolean {
+  return hasTransactionsWithKeywords(ctx, KEYWORDS.DAYCARE, 'expense');
+}
+
+/**
+ * Check if user has electricity income (solar panels)
+ */
+export function hasElectricityIncome(ctx: FinancialContext): boolean {
+  return hasTransactionsWithKeywords(ctx, KEYWORDS.ELECTRICITY_INCOME, 'income');
+}
+
+/**
+ * Get bank fees from transactions
+ */
+export function getMonthlyBankFees(ctx: FinancialContext): number {
+  const feeTransactions = ctx.transactions.filter(t =>
+    t.type === 'expense' &&
+    KEYWORDS.BANK_FEES.some(kw => t.description.toLowerCase().includes(kw.toLowerCase()))
+  );
+  const total = feeTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  // Assume 3 months of transaction data
+  return total / 3;
 }
 
 // ============================================

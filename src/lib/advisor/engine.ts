@@ -5,12 +5,35 @@
 
 import { FinancialContext, FinancialRule, Recommendation, PRIORITY_ORDER } from './types';
 
-// Import all rules
+// Import existing rules
 import careerHousingRule from './rules/careerHousing';
 import ogenLoansRule from './rules/ogenLoans';
 import donations46Rule from './rules/donations46';
 import reserveBonusRule from './rules/reserveBonus';
 import arbitrageRule from './rules/arbitrage';
+
+// Import new rules - Category 1: Leverage & Arbitrage
+import kerenLeverageRule from './rules/kerenLeverage';
+import consumerClubLoansRule from './rules/consumerClubLoans';
+import sparkilRule from './rules/sparkil';
+import kerenIRARule from './rules/kerenIRA';
+
+// Import new rules - Category 2: Tax Benefits
+import workGrantRule from './rules/workGrant';
+import specialNeedsCreditRule from './rules/specialNeedsCredit';
+import lifeInsuranceCreditRule from './rules/lifeInsuranceCredit';
+import rentTaxExemptRule from './rules/rentTaxExempt';
+import solarTaxExemptRule from './rules/solarTaxExempt';
+
+// Import new rules - Category 3: Consumer Rights
+import miliumArnonaRule from './rules/miliumArnona';
+import savingsForChildRule from './rules/savingsForChild';
+import harHakesefRule from './rules/harHakesef';
+import bituachLeumiRefundRule from './rules/bituachLeumiRefund';
+import daycareSubsidyRule from './rules/daycareSubsidy';
+import bankFeesRule from './rules/bankFees';
+import studentBankBenefitsRule from './rules/studentBankBenefits';
+import kerenHishtalmutMaxRule from './rules/kerenHishtalmutMax';
 
 /**
  * All registered rules
@@ -20,11 +43,35 @@ import arbitrageRule from './rules/arbitrage';
  * 3. Add it to this array
  */
 const ALL_RULES: FinancialRule[] = [
+  // Existing rules
   careerHousingRule,
   ogenLoansRule,
   donations46Rule,
   reserveBonusRule,
   arbitrageRule,
+  
+  // Category 1: Leverage & Arbitrage (4 rules)
+  kerenLeverageRule,
+  consumerClubLoansRule,
+  sparkilRule,
+  kerenIRARule,
+  
+  // Category 2: Tax Benefits (5 rules)
+  workGrantRule,
+  specialNeedsCreditRule,
+  lifeInsuranceCreditRule,
+  rentTaxExemptRule,
+  solarTaxExemptRule,
+  
+  // Category 3: Consumer Rights (8 rules)
+  miliumArnonaRule,
+  savingsForChildRule,
+  harHakesefRule,
+  bituachLeumiRefundRule,
+  daycareSubsidyRule,
+  bankFeesRule,
+  studentBankBenefitsRule,
+  kerenHishtalmutMaxRule,
 ];
 
 /**
