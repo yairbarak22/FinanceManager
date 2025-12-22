@@ -70,48 +70,61 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
           return (
             <div
               key={asset.id}
-              className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 bg-gray-50 rounded-lg"
             >
-              {/* Icon */}
-              <div
-                className={cn(
-                  'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
-                  categoryInfo?.bgColor || 'bg-gray-100'
-                )}
-              >
-                <Icon className={cn('w-4 h-4', categoryInfo?.textColor || 'text-gray-600')} />
+              {/* Top row: Icon + Details + Value (mobile) */}
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                {/* Icon */}
+                <div
+                  className={cn(
+                    'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
+                    categoryInfo?.bgColor || 'bg-gray-100'
+                  )}
+                >
+                  <Icon className={cn('w-4 h-4', categoryInfo?.textColor || 'text-gray-600')} />
+                </div>
+
+                {/* Details */}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-900 text-sm truncate">{asset.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{categoryInfo?.nameHe}</p>
+                </div>
+
+                {/* Value - visible on mobile in this row */}
+                <p className="text-sm font-bold text-green-600 flex-shrink-0 sm:hidden">
+                  {formatCurrency(asset.value)}
+                </p>
               </div>
 
-              {/* Details */}
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-gray-900 text-sm truncate">{asset.name}</p>
-                <p className="text-xs text-gray-500">{categoryInfo?.nameHe}</p>
-              </div>
+              {/* Bottom row (mobile) / Continue (desktop): Value + Actions */}
+              <div className="flex items-center gap-2 justify-end sm:gap-1 mr-12 sm:mr-0">
+                {/* Value - visible on desktop */}
+                <p className="hidden sm:block text-sm font-bold text-gray-900 flex-shrink-0 ml-2">
+                  {formatCurrency(asset.value)}
+                </p>
 
-              {/* Value */}
-              <p className="text-sm font-bold text-gray-900 flex-shrink-0">{formatCurrency(asset.value)}</p>
-
-              {/* Actions */}
-              <div className="flex gap-1 flex-shrink-0">
-                <button
-                  onClick={() => onViewDocuments(asset)}
-                  className="p-1.5 rounded hover:bg-violet-100 text-gray-400 hover:text-violet-600"
-                  title="מסמכים"
-                >
-                  <FolderOpen className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => onEdit(asset)}
-                  className="p-1.5 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => setDeleteConfirm({ isOpen: true, id: asset.id, name: asset.name })}
-                  className="p-1.5 rounded hover:bg-red-100 text-gray-400 hover:text-red-500"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                {/* Actions */}
+                <div className="flex gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => onViewDocuments(asset)}
+                    className="p-1.5 rounded hover:bg-violet-100 text-gray-400 hover:text-violet-600"
+                    title="מסמכים"
+                  >
+                    <FolderOpen className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => onEdit(asset)}
+                    className="p-1.5 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirm({ isOpen: true, id: asset.id, name: asset.name })}
+                    className="p-1.5 rounded hover:bg-red-100 text-gray-400 hover:text-red-500"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           );
