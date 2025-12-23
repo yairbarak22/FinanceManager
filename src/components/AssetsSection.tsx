@@ -105,20 +105,20 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
                 <div className="flex gap-1 flex-shrink-0">
                   <button
                     onClick={() => onViewDocuments(asset)}
-                    className="p-1.5 rounded hover:bg-violet-100 text-gray-400 hover:text-violet-600"
+                    className="p-1.5 rounded hover:bg-violet-100 text-gray-500 hover:text-violet-600"
                     title="מסמכים"
                   >
                     <FolderOpen className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => onEdit(asset)}
-                    className="p-1.5 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600"
+                    className="p-1.5 rounded hover:bg-gray-200 text-gray-500 hover:text-gray-600"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => setDeleteConfirm({ isOpen: true, id: asset.id, name: asset.name })}
-                    className="p-1.5 rounded hover:bg-red-100 text-gray-400 hover:text-red-500"
+                    className="p-1.5 rounded hover:bg-red-100 text-gray-500 hover:text-red-500"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -129,7 +129,7 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
         })}
         
         {assets.length === 0 && (
-          <p className="text-center text-gray-400 text-sm py-4">אין נכסים</p>
+          <p className="text-center text-gray-500 text-sm py-4">אין נכסים</p>
         )}
       </div>
 

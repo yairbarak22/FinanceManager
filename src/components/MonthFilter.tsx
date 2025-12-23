@@ -81,7 +81,7 @@ export default function MonthFilter({
         <span className="flex-1 text-right">{formatMonthDisplay(monthKey)}</span>
         {isSelected && <Check className="w-4 h-4 text-pink-500" />}
         {isCurrent && !isSelected && (
-          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">נוכחי</span>
+          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">נוכחי</span>
         )}
       </button>
     );
@@ -99,7 +99,7 @@ export default function MonthFilter({
           {formatMonthDisplay(selectedMonth)}
         </span>
         <ChevronDown 
-          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
+          className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
         />
       </button>
 

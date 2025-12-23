@@ -119,9 +119,9 @@ export default function MonthlySummary({
                     {isPositive ? '+' : ''}{formatCurrency(summary.balance)}
                   </p>
                   {isExpanded ? (
-                    <ChevronUp className="w-4 h-4 text-gray-400" />
+                    <ChevronUp className="w-4 h-4 text-gray-500" />
                   ) : (
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                    <ChevronDown className="w-4 h-4 text-gray-500" />
                   )}
                 </div>
               </button>

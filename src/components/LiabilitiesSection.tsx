@@ -110,7 +110,7 @@ export default function LiabilitiesSection({
                     )}
                   </p>
                   {hasLoanDetails && currentPayment && (
-                    <p className="text-xs text-gray-400 mt-0.5 truncate">
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">
                       חודש {currentPayment.currentMonth}/{liability.loanTermMonths}
                       {liability.hasInterestRebate && (
                         <span className="text-green-600"> • חיוב: {formatCurrency(effectiveExpense)}</span>
@@ -136,7 +136,7 @@ export default function LiabilitiesSection({
                 <div className="flex gap-1 flex-shrink-0">
                   <button
                     onClick={() => onViewDocuments(liability)}
-                    className="p-1.5 rounded hover:bg-violet-100 text-gray-400 hover:text-violet-600"
+                    className="p-1.5 rounded hover:bg-violet-100 text-gray-500 hover:text-violet-600"
                     title="מסמכים"
                   >
                     <FolderOpen className="w-3.5 h-3.5" />
@@ -144,7 +144,7 @@ export default function LiabilitiesSection({
                   {hasLoanDetails && (
                     <button
                       onClick={() => onViewAmortization(liability)}
-                      className="p-1.5 rounded hover:bg-blue-100 text-gray-400 hover:text-blue-600"
+                      className="p-1.5 rounded hover:bg-blue-100 text-gray-500 hover:text-blue-600"
                       title="לוח סילוקין"
                     >
                       <Table className="w-3.5 h-3.5" />
@@ -152,13 +152,13 @@ export default function LiabilitiesSection({
                   )}
                   <button
                     onClick={() => onEdit(liability)}
-                    className="p-1.5 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600"
+                    className="p-1.5 rounded hover:bg-gray-200 text-gray-500 hover:text-gray-600"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => setDeleteConfirm({ isOpen: true, id: liability.id, name: liability.name })}
-                    className="p-1.5 rounded hover:bg-red-100 text-gray-400 hover:text-red-500"
+                    className="p-1.5 rounded hover:bg-red-100 text-gray-500 hover:text-red-500"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -169,7 +169,7 @@ export default function LiabilitiesSection({
         })}
         
         {liabilities.length === 0 && (
-          <p className="text-center text-gray-400 text-sm py-4">אין התחייבויות</p>
+          <p className="text-center text-gray-500 text-sm py-4">אין התחייבויות</p>
         )}
       </div>
 

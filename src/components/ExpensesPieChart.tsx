@@ -37,7 +37,7 @@ export default function ExpensesPieChart({ transactions }: ExpensesPieChartProps
     return (
       <div className="flex flex-col items-center justify-center py-8">
         <PieChartIcon className="w-12 h-12 text-gray-300 mb-3" />
-        <p className="text-gray-400 text-sm">אין הוצאות להצגה</p>
+        <p className="text-gray-500 text-sm">אין הוצאות להצגה</p>
       </div>
     );
   }
@@ -95,7 +95,7 @@ export default function ExpensesPieChart({ transactions }: ExpensesPieChartProps
               style={{ backgroundColor: item.color }}
             />
             <span className="text-xs text-gray-600 truncate flex-1">{item.name}</span>
-            <span className="text-xs text-gray-400 flex-shrink-0">{item.percentage}%</span>
+            <span className="text-xs text-gray-500 flex-shrink-0">{item.percentage}%</span>
           </div>
         ))}
       </div>

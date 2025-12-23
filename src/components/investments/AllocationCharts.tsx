@@ -42,7 +42,7 @@ export default function AllocationCharts({ holdings }: AllocationChartsProps) {
     return (
       <div className="card p-6 h-full flex flex-col">
         <h3 className="font-semibold text-gray-900 mb-4">פילוח התיק</h3>
-        <div className="flex-1 flex items-center justify-center text-gray-400">
+        <div className="flex-1 flex items-center justify-center text-gray-500">
           <p>אין נתונים להצגה</p>
           <p className="text-sm mt-1">הוסף אחזקות כדי לראות את הפילוח</p>
         </div>

@@ -175,7 +175,7 @@ export default function InvestmentCalculator({
                 <p className="text-xs text-gray-500">שווי נוכחי</p>
                 <p className="text-sm font-bold text-gray-700">{formatCurrency(summary.currentPortfolioValue)}</p>
               </div>
-              <ArrowLeft className="w-4 h-4 text-gray-400" />
+              <ArrowLeft className="w-4 h-4 text-gray-500" />
               <div>
                 <p className="text-xs text-gray-500">שווי חדש</p>
                 <p className="text-sm font-bold text-indigo-600">{formatCurrency(summary.newPortfolioValue)}</p>
@@ -193,11 +193,11 @@ export default function InvestmentCalculator({
               >
                 <div className="flex-1 min-w-0">
                   <span className="text-sm font-medium text-gray-900 truncate block">{calc.holdingName}</span>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-gray-500">
                     {calc.currentAllocation.toFixed(1)}% → {calc.newAllocation.toFixed(1)}%
                   </span>
                 </div>
-                <span className={`text-sm font-bold mr-2 ${calc.amountToInvest > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                <span className={`text-sm font-bold mr-2 ${calc.amountToInvest > 0 ? 'text-green-600' : 'text-gray-500'}`}>
                   {calc.amountToInvest > 0 ? `+${formatCurrency(calc.amountToInvest)}` : '—'}
                 </span>
               </div>
@@ -243,7 +243,7 @@ export default function InvestmentCalculator({
       <div className="flex-1 flex flex-col justify-center">
         <div className="space-y-4">
           <div className="relative">
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">₪</span>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-lg">₪</span>
             <input
               type="number"
               value={amount}
@@ -274,7 +274,7 @@ export default function InvestmentCalculator({
       </div>
 
       {/* Hint */}
-      <p className="text-xs text-gray-400 text-center mt-4">
+      <p className="text-xs text-gray-500 text-center mt-4">
         הזן את הסכום שברצונך להשקיע מדי חודש
       </p>
     </div>

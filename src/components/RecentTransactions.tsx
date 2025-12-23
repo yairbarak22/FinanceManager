@@ -196,9 +196,19 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
             <div
               key={transaction.id}
               onClick={isSelectMode ? () => toggleSelection(transaction.id) : undefined}
+              role={isSelectMode ? 'button' : undefined}
+              tabIndex={isSelectMode ? 0 : undefined}
+              onKeyDown={isSelectMode ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleSelection(transaction.id);
+                }
+              } : undefined}
+              aria-pressed={isSelectMode ? isSelected : undefined}
+              aria-label={isSelectMode ? `${isSelected ? 'בטל בחירה' : 'בחר'} עסקה: ${transaction.description}` : undefined}
               className={cn(
                 'flex items-center gap-3 p-3 rounded-xl transition-colors group',
-                isSelectMode ? 'cursor-pointer' : '',
+                isSelectMode ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-violet-500' : '',
                 isSelected ? 'bg-violet-50 ring-2 ring-violet-300' : 'bg-gray-50 hover:bg-gray-100'
               )}
             >
@@ -213,7 +223,7 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
                   {isSelected ? (
                     <CheckSquare className="w-5 h-5 text-violet-600" />
                   ) : (
-                    <Square className="w-5 h-5 text-gray-400" />
+                    <Square className="w-5 h-5 text-gray-500" />
                   )}
                 </div>
               ) : (
@@ -237,7 +247,7 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
                   <p className="font-medium text-gray-900 text-sm truncate">
                     {categoryInfo?.nameHe || transaction.category}
                   </p>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-gray-500">
                     {formatDate(transaction.date)}
                   </span>
                 </div>
@@ -285,7 +295,7 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
       {transactions.length === 0 && (
         <div className="text-center py-12">
           <Receipt className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-400">אין עסקאות להצגה</p>
+          <p className="text-gray-500">אין עסקאות להצגה</p>
         </div>
       )}
 

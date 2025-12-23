@@ -5,6 +5,7 @@ import OnboardingProvider from "@/components/onboarding/OnboardingProvider";
 import AIChatProvider from "@/components/ai/AIChatProvider";
 import Analytics from "@/components/Analytics";
 import CookieConsent from "@/components/CookieConsent";
+import { AccessibilityStatement } from "@/components/AccessibilityStatement";
 import "./globals.css";
 
 const heebo = Heebo({
@@ -35,6 +36,7 @@ export default function RootLayout({
           </AIChatProvider>
           <Analytics />
           <CookieConsent />
+          <AccessibilityStatement />
         </Providers>
       </body>
     </html>

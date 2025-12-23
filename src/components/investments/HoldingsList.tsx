@@ -142,13 +142,13 @@ export default function HoldingsList({
                 <div className="flex gap-1 flex-shrink-0">
                   <button
                     onClick={() => onEdit(holding)}
-                    className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-gray-600"
+                    className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-200 text-gray-500 hover:text-gray-600"
                   >
                     <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </button>
                   <button
                     onClick={() => setDeleteConfirm({ isOpen: true, id: holding.id, name: holding.name })}
-                    className="p-1.5 sm:p-2 rounded-lg hover:bg-red-100 text-gray-400 hover:text-red-500"
+                    className="p-1.5 sm:p-2 rounded-lg hover:bg-red-100 text-gray-500 hover:text-red-500"
                   >
                     <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </button>
@@ -159,7 +159,7 @@ export default function HoldingsList({
         })}
 
         {holdings.length === 0 && (
-          <div className="text-center py-12 text-gray-400">
+          <div className="text-center py-12 text-gray-500">
             <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>אין אחזקות עדיין</p>
             <p className="text-sm mt-1">הוסף את האחזקות שלך כדי להתחיל</p>
