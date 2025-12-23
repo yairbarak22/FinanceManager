@@ -331,6 +331,71 @@ export default function Home() {
     }
   };
 
+  const handleDeleteMultipleTransactions = async (ids: string[]) => {
+    try {
+      // Delete all selected transactions in parallel
+      const results = await Promise.all(
+        ids.map(id => fetch(`/api/transactions/${id}`, { method: 'DELETE' }))
+      );
+      
+      const failedCount = results.filter(r => !r.ok).length;
+      await fetchData();
+      
+      if (failedCount === 0) {
+        toast.success(`${ids.length} עסקאות נמחקו בהצלחה`);
+      } else {
+        toast.error(`${failedCount} עסקאות נכשלו במחיקה`);
+      }
+    } catch (error) {
+      console.error('Error deleting transactions:', error);
+      toast.error('שגיאה במחיקת עסקאות');
+    }
+  };
+
+  const handleUpdateTransactionCategory = async (
+    transactionId: string,
+    newCategory: string,
+    merchantName: string,
+    saveBehavior: 'once' | 'always' | 'alwaysAsk'
+  ) => {
+    try {
+      // Update the transaction category
+      const res = await fetch(`/api/transactions/${transactionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: newCategory }),
+      });
+      
+      if (!res.ok) throw new Error('Failed to update transaction');
+
+      // Handle merchant category mapping based on save behavior
+      if (saveBehavior !== 'once') {
+        await fetch('/api/merchant-category', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            merchantName,
+            category: saveBehavior === 'always' ? newCategory : '',
+            alwaysAsk: saveBehavior === 'alwaysAsk',
+          }),
+        });
+      }
+
+      await fetchData();
+      
+      if (saveBehavior === 'once') {
+        toast.success('הקטגוריה עודכנה');
+      } else if (saveBehavior === 'always') {
+        toast.success('הקטגוריה עודכנה ותישמר לפעמים הבאות');
+      } else {
+        toast.success('הקטגוריה עודכנה, תישאל שוב בפעם הבאה');
+      }
+    } catch (error) {
+      console.error('Error updating transaction category:', error);
+      toast.error('שגיאה בעדכון קטגוריה');
+    }
+  };
+
   // Recurring transaction handlers
   const handleAddRecurring = async (data: Omit<RecurringTransaction, 'id' | 'createdAt' | 'updatedAt'>) => {
     // Capture editing state before any changes
@@ -699,6 +764,8 @@ export default function Home() {
             <RecentTransactions
               transactions={filteredTransactions}
               onDelete={handleDeleteTransaction}
+              onDeleteMultiple={handleDeleteMultipleTransactions}
+              onUpdateCategory={handleUpdateTransactionCategory}
               onNewTransaction={() => setIsTransactionModalOpen(true)}
               onImport={() => setIsImportModalOpen(true)}
             />

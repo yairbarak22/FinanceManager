@@ -78,8 +78,9 @@ export default function ExpensesPieChart({ transactions }: ExpensesPieChartProps
                 borderRadius: '12px',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                 fontSize: '13px',
+                direction: 'rtl',
               }}
-              formatter={(value: number) => [formatCurrency(value), '']}
+              formatter={(value: number, name: string) => [formatCurrency(value), name]}
             />
           </PieChart>
         </ResponsiveContainer>
@@ -93,8 +94,8 @@ export default function ExpensesPieChart({ transactions }: ExpensesPieChartProps
               className="w-3 h-3 rounded-full flex-shrink-0"
               style={{ backgroundColor: item.color }}
             />
-            <span className="text-xs text-gray-600 truncate">{item.name}</span>
-            <span className="text-xs text-gray-400 mr-auto">{item.percentage}%</span>
+            <span className="text-xs text-gray-600 truncate flex-1">{item.name}</span>
+            <span className="text-xs text-gray-400 flex-shrink-0">{item.percentage}%</span>
           </div>
         ))}
       </div>

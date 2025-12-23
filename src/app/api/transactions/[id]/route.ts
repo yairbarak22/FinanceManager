@@ -16,15 +16,17 @@ export async function PUT(
     // Use shared account to allow editing records from all members
     const sharedWhere = await withSharedAccountId(id, userId);
     
+    // Build update data object with only provided fields (partial update support)
+    const updateData: Record<string, unknown> = {};
+    if (body.type !== undefined) updateData.type = body.type;
+    if (body.amount !== undefined) updateData.amount = body.amount;
+    if (body.category !== undefined) updateData.category = body.category;
+    if (body.description !== undefined) updateData.description = body.description;
+    if (body.date !== undefined) updateData.date = new Date(body.date);
+    
     const result = await prisma.transaction.updateMany({
       where: sharedWhere,
-      data: {
-        type: body.type,
-        amount: body.amount,
-        category: body.category,
-        description: body.description,
-        date: new Date(body.date),
-      },
+      data: updateData,
     });
     
     if (result.count === 0) {
