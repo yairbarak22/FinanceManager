@@ -16,6 +16,13 @@ export default createRule({
   condition: (ctx) => {
     return hasChildren(ctx) && getChildrenCount(ctx) > 0;
   },
+
+  getEligibilityReason: (ctx) => {
+    const kidsCount = getChildrenCount(ctx);
+    const totalSavings = kidsCount * ESTIMATED_VALUES.CHILD_SAVINGS_TOTAL;
+    
+    return `מספר ילדים: ${kidsCount}. הפקדה נוספת של 57₪ לחודש לכל ילד יכולה להביא לחיסכון כולל של כ-${totalSavings.toLocaleString()}₪ (${kidsCount} ילדים × ${ESTIMATED_VALUES.CHILD_SAVINGS_TOTAL.toLocaleString()}₪)`;
+  },
   
   recommendation: {
     title: 'הכפלת חיסכון לכל ילד',

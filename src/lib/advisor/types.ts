@@ -56,6 +56,7 @@ export interface Recommendation {
   priority: RecommendationPriority;
   actionUrl?: string;
   potentialValue?: number;
+  eligibilityReason?: string; // הסבר למה המשתמש זכאי להמלצה
 }
 
 // Rule configuration for createRule factory
@@ -63,7 +64,8 @@ export interface RuleConfig {
   id: string;
   name: string;
   condition: (ctx: FinancialContext) => boolean | Promise<boolean>;
-  recommendation: Omit<Recommendation, 'id'>;
+  recommendation: Omit<Recommendation, 'id' | 'eligibilityReason'>;
+  getEligibilityReason?: (ctx: FinancialContext) => string; // פונקציה דינמית להסבר הזכאות
 }
 
 // A financial rule interface

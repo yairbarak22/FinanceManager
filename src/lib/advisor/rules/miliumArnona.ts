@@ -20,6 +20,10 @@ export default createRule({
     // Must be paying arnona
     return paysArnona(ctx);
   },
+
+  getEligibilityReason: () => {
+    return `סטטוס צבאי: מילואים פעיל. זוהה תשלום ארנונה בעסקאות. ההנחה ניתנת ע"י הרשות המקומית בתיאום עם צה"ל.`;
+  },
   
   recommendation: {
     title: 'הנחת ארנונה למשרתים במילואים',

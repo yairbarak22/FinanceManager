@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import HelpTrigger from '@/components/ai/HelpTrigger';
 
 // Types matching the backend
 type RecommendationType = 'tax_benefit' | 'savings' | 'insurance' | 'banking' | 'general';
@@ -27,6 +28,7 @@ interface Recommendation {
   priority: RecommendationPriority;
   actionUrl?: string;
   potentialValue?: number;
+  eligibilityReason?: string;
 }
 
 interface AdvisorModalProps {
@@ -64,6 +66,15 @@ const PRIORITY_LABELS: Record<RecommendationPriority, string> = {
   high: 'עדיפות גבוהה',
   medium: 'עדיפות בינונית',
   low: 'עדיפות נמוכה',
+};
+
+// Type labels in Hebrew
+const TYPE_LABELS: Record<RecommendationType, string> = {
+  tax_benefit: 'הטבת מס',
+  savings: 'חיסכון',
+  insurance: 'ביטוח',
+  banking: 'בנקאות',
+  general: 'כללי',
 };
 
 export default function AdvisorModal({ isOpen, onClose }: AdvisorModalProps) {
@@ -182,7 +193,18 @@ export default function AdvisorModal({ isOpen, onClose }: AdvisorModalProps) {
 
 // Individual recommendation card
 function RecommendationCard({ recommendation }: { recommendation: Recommendation }) {
-  const { title, description, type, priority, actionUrl, potentialValue } = recommendation;
+  const { title, description, type, priority, actionUrl, potentialValue, eligibilityReason } = recommendation;
+
+  // Build context data for AI help
+  const contextData = {
+    כותרת: title,
+    תיאור: description,
+    סוג_המלצה: TYPE_LABELS[type],
+    עדיפות: PRIORITY_LABELS[priority],
+    ...(potentialValue && { ערך_כספי_משוער: potentialValue }),
+    ...(eligibilityReason && { סיבת_זכאות: eligibilityReason }),
+    ...(actionUrl && { קישור_למידע: actionUrl }),
+  };
 
   return (
     <div className="bg-white border border-gray-100 rounded-xl p-4 hover:shadow-md transition-shadow">
@@ -195,7 +217,15 @@ function RecommendationCard({ recommendation }: { recommendation: Recommendation
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-1">
-            <h4 className="font-medium text-gray-900">{title}</h4>
+            <div className="flex items-center gap-2">
+              <h4 className="font-medium text-gray-900">{title}</h4>
+              <HelpTrigger
+                contextDescription={`המלצה פיננסית: ${title}`}
+                contextData={contextData}
+                topicId="recommendation"
+                size="sm"
+              />
+            </div>
             <span className={`text-xs px-2 py-0.5 rounded-full border flex-shrink-0 ${PRIORITY_STYLES[priority]}`}>
               {PRIORITY_LABELS[priority]}
             </span>

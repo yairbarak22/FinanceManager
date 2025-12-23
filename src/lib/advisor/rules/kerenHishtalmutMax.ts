@@ -23,6 +23,13 @@ export default createRule({
     // Should have meaningful surplus (at least 1,500 NIS/month)
     return getMonthlyCashFlow(ctx) >= 1500;
   },
+
+  getEligibilityReason: (ctx) => {
+    const cashFlow = getMonthlyCashFlow(ctx);
+    const monthlyMax = Math.round(20500 / 12);
+    
+    return `סוג תעסוקה: עצמאי. תזרים חודשי פנוי: ${cashFlow.toLocaleString()}₪ (מעל 1,500₪ הנדרשים). תקרת הפקדה מוטבת: ~${monthlyMax.toLocaleString()}₪ לחודש (20,500₪ בשנה).`;
+  },
   
   recommendation: {
     title: 'מיצוי תקרת קרן השתלמות לעצמאים',

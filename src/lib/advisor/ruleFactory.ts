@@ -41,10 +41,16 @@ export function createRule(config: RuleConfig): FinancialRule {
           return null;
         }
         
-        // Return recommendation with ID
+        // Generate eligibility reason if function provided
+        const eligibilityReason = config.getEligibilityReason 
+          ? config.getEligibilityReason(context)
+          : undefined;
+        
+        // Return recommendation with ID and eligibility reason
         return {
           id: config.id,
           ...config.recommendation,
+          ...(eligibilityReason && { eligibilityReason }),
         };
       } catch (error) {
         console.error(`Error evaluating rule ${config.id}:`, error);

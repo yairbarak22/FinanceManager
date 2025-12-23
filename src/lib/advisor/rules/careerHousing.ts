@@ -6,7 +6,7 @@
  */
 
 import { createRule } from '../ruleFactory';
-import { isCareer, isInAgeRange, hasNoRealEstate } from '../helpers';
+import { isCareer, isInAgeRange, hasNoRealEstate, getEstimatedAge, getRealEstateCount } from '../helpers';
 import { SERVICE_URLS, ESTIMATED_VALUES, AGE_RANGES } from '../constants';
 
 export default createRule({
@@ -19,6 +19,13 @@ export default createRule({
       isInAgeRange(ctx, AGE_RANGES.CAREER_HOUSING_MIN, AGE_RANGES.CAREER_HOUSING_MAX) &&
       hasNoRealEstate(ctx)
     );
+  },
+
+  getEligibilityReason: (ctx) => {
+    const age = getEstimatedAge(ctx);
+    const realEstateCount = getRealEstateCount(ctx);
+    
+    return `סטטוס צבאי: קבע, גיל משוער: ${age} (בטווח ${AGE_RANGES.CAREER_HOUSING_MIN}-${AGE_RANGES.CAREER_HOUSING_MAX}), נכסי נדל"ן: ${realEstateCount} (נדרש: 0)`;
   },
   
   recommendation: {
