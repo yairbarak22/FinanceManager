@@ -2,8 +2,11 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
-// Hardcoded admin emails - must match adminHelpers.ts
-const ADMIN_EMAILS = ['yairbarak22@gmail.com'];
+// Read admin emails from environment variable (comma-separated)
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
+  .split(',')
+  .map(email => email.trim().toLowerCase())
+  .filter(Boolean);
 
 function isAdmin(email: string | null | undefined): boolean {
   if (!email) return false;

@@ -14,6 +14,7 @@ export async function getAuthSession() {
 /**
  * Require authentication for an API route
  * Returns the user ID if authenticated, or an error response
+ * Also verifies that the user still exists in the database (JWT revocation protection)
  */
 export async function requireAuth(): Promise<
   { userId: string; error: null } | { userId: null; error: NextResponse }
@@ -25,6 +26,22 @@ export async function requireAuth(): Promise<
       userId: null,
       error: NextResponse.json(
         { error: 'Unauthorized - Please sign in' },
+        { status: 401 }
+      ),
+    };
+  }
+
+  // JWT Revocation Check: Verify user still exists and is active
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true },
+  });
+
+  if (!user) {
+    return {
+      userId: null,
+      error: NextResponse.json(
+        { error: 'Unauthorized - User no longer exists' },
         { status: 401 }
       ),
     };

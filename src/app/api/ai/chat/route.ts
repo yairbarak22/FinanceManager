@@ -9,6 +9,7 @@ import { generateText } from 'ai';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getTopic, getDefaultTopic } from '@/lib/ai/topics';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 interface ChatRequest {
   message: string;
@@ -42,6 +43,26 @@ export async function POST(request: Request) {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'לא מורשה' }, { status: 401 });
+    }
+
+    // Rate limiting for AI endpoint (more restrictive)
+    const rateLimitResult = checkRateLimit(
+      `ai:${session.user.id}`,
+      RATE_LIMITS.ai.limit,
+      RATE_LIMITS.ai.windowMs
+    );
+    
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'יותר מדי בקשות. אנא המתן דקה ונסה שוב.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(Math.ceil(rateLimitResult.resetIn / 1000)),
+          }
+        }
+      );
     }
 
     const body: ChatRequest = await request.json();

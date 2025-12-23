@@ -10,6 +10,7 @@ import { requireAuth } from '@/lib/authHelpers';
 import { groq } from '@ai-sdk/groq';
 import { generateText } from 'ai';
 import * as XLSX from 'xlsx';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 // ============================================
 // TYPES
@@ -466,6 +467,20 @@ export async function POST(request: NextRequest) {
   try {
     const { userId, error } = await requireAuth();
     if (error) return error;
+
+    // Rate limiting for import endpoint (heavy operation)
+    const rateLimitResult = checkRateLimit(
+      `import:${userId}`,
+      RATE_LIMITS.import.limit,
+      RATE_LIMITS.import.windowMs
+    );
+    
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'יותר מדי בקשות ייבוא. אנא המתן דקה ונסה שוב.' },
+        { status: 429 }
+      );
+    }
 
     const formData = await request.formData();
     const file = formData.get('file') as File;

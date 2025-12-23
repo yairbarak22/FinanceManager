@@ -1,11 +1,18 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 export async function GET() {
   try {
     const { userId, error } = await requireAuth();
     if (error) return error;
+
+    // Rate limiting
+    const rateLimitResult = checkRateLimit(`api:${userId}`, RATE_LIMITS.api.limit, RATE_LIMITS.api.windowMs);
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json({ error: 'יותר מדי בקשות' }, { status: 429 });
+    }
 
     // Use shared account to get recurring transactions from all members
     const sharedWhere = await withSharedAccount(userId);
@@ -27,6 +34,12 @@ export async function POST(request: NextRequest) {
     const { userId, error } = await requireAuth();
     if (error) return error;
 
+    // Rate limiting
+    const rateLimitResult = checkRateLimit(`api:${userId}`, RATE_LIMITS.api.limit, RATE_LIMITS.api.windowMs);
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json({ error: 'יותר מדי בקשות' }, { status: 429 });
+    }
+
     const body = await request.json();
     
     // Validate required fields
@@ -42,8 +55,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Category is required' }, { status: 400 });
     }
     
+    if (body.category.length > 50) {
+      return NextResponse.json({ error: 'Category too long (max 50 characters)' }, { status: 400 });
+    }
+    
     if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    }
+    
+    if (body.name.length > 100) {
+      return NextResponse.json({ error: 'Name too long (max 100 characters)' }, { status: 400 });
     }
     
     const recurring = await prisma.recurringTransaction.create({

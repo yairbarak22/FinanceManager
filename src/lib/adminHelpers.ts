@@ -2,8 +2,11 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from './auth';
 
-// Hardcoded admin emails - only these can access admin pages
-const ADMIN_EMAILS = ['yairbarak22@gmail.com'];
+// Read admin emails from environment variable (comma-separated)
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
+  .split(',')
+  .map(email => email.trim().toLowerCase())
+  .filter(Boolean);
 
 /**
  * Check if an email is an admin
