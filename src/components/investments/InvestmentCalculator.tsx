@@ -4,8 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Calculator, ArrowLeft, Sparkles, PlusCircle, Calendar, ArrowRight } from 'lucide-react';
 import { InvestmentCalculation } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils';
-// AI Feature temporarily disabled
-// import HelpTrigger from '../ai/HelpTrigger';
+import HelpTrigger from '../ai/HelpTrigger';
 
 interface ForecastData {
   monthsToIdeal: number;
@@ -130,12 +129,11 @@ export default function InvestmentCalculator({
               <ArrowRight className="w-5 h-5" />
             </button>
             <h3 className="font-semibold text-gray-900">תוצאות החישוב</h3>
-            {/* AI Feature temporarily disabled */}
-            {/* <HelpTrigger
+            <HelpTrigger
               topicId="investments"
               contextData={calculatorContextData}
               size="sm"
-            /> */}
+            />
           </div>
           <span className="text-sm font-bold text-indigo-600">
             {formatCurrency(summary.investmentAmount)}

@@ -6,8 +6,7 @@ import { Asset } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
 import ConfirmDialog from './modals/ConfirmDialog';
-// AI Feature temporarily disabled
-// import HelpTrigger from './ai/HelpTrigger';
+import HelpTrigger from './ai/HelpTrigger';
 
 interface AssetsSectionProps {
   assets: Asset[];
@@ -47,12 +46,11 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
             <h3 className="font-semibold text-gray-900">נכסים</h3>
             <p className="text-xs text-green-600 font-medium">{formatCurrency(totalAssets)}</p>
           </div>
-          {/* AI Feature temporarily disabled */}
-          {/* <HelpTrigger
+          <HelpTrigger
             topicId="assets"
             contextData={assetsContextData}
             size="sm"
-          /> */}
+          />
         </div>
         <button onClick={onAdd} className="text-sm text-green-600 hover:text-green-700 font-medium flex items-center gap-1">
           <Plus className="w-4 h-4" />

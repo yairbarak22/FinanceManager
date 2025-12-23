@@ -8,8 +8,7 @@ import { calculateSpitzerPayment } from '@/lib/loanCalculations';
 import { cn } from '@/lib/utils';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
-// AI Feature temporarily disabled
-// import HelpTrigger from '@/components/ai/HelpTrigger';
+import HelpTrigger from '@/components/ai/HelpTrigger';
 
 interface LiabilityModalProps {
   isOpen: boolean;
@@ -260,12 +259,11 @@ export default function LiabilityModal({
                   <Calculator className="w-4 h-4" />
                   חשב
                 </button>
-                {/* AI Feature temporarily disabled */}
-                {/* <HelpTrigger
+                <HelpTrigger
                   topicId="loan_form"
                   contextData={loanContextData}
                   size="md"
-                /> */}
+                />
               </div>
 
               {/* Interest Rebate */}

@@ -7,8 +7,7 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
 import { getEffectiveMonthlyExpense, getCurrentMonthPayment } from '@/lib/loanCalculations';
 import ConfirmDialog from './modals/ConfirmDialog';
-// AI Feature temporarily disabled
-// import HelpTrigger from './ai/HelpTrigger';
+import HelpTrigger from './ai/HelpTrigger';
 
 interface LiabilitiesSectionProps {
   liabilities: Liability[];
@@ -55,12 +54,11 @@ export default function LiabilitiesSection({
             <h3 className="font-semibold text-gray-900">התחייבויות</h3>
             <p className="text-xs text-red-600 font-medium">{formatCurrency(totalLiabilities)}</p>
           </div>
-          {/* AI Feature temporarily disabled */}
-          {/* <HelpTrigger
+          <HelpTrigger
             topicId="liabilities"
             contextData={liabilitiesContextData}
             size="sm"
-          /> */}
+          />
         </div>
         <button onClick={onAdd} className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1">
           <Plus className="w-4 h-4" />

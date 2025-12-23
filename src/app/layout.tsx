@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { Heebo } from "next/font/google";
 import Providers from "@/components/Providers";
 import OnboardingProvider from "@/components/onboarding/OnboardingProvider";
-// AI Feature temporarily disabled
-// import AIChatProvider from "@/components/ai/AIChatProvider";
+import AIChatProvider from "@/components/ai/AIChatProvider";
 import Analytics from "@/components/Analytics";
 import CookieConsent from "@/components/CookieConsent";
 import "./globals.css";
@@ -29,12 +28,11 @@ export default function RootLayout({
     <html lang="he" dir="rtl">
       <body className={`${heebo.variable} font-sans antialiased`}>
         <Providers>
-          {/* AI Feature temporarily disabled */}
-          {/* <AIChatProvider> */}
+          <AIChatProvider>
             <OnboardingProvider>
               {children}
             </OnboardingProvider>
-          {/* </AIChatProvider> */}
+          </AIChatProvider>
           <Analytics />
           <CookieConsent />
         </Providers>
