@@ -9,6 +9,7 @@ interface MonthFilterProps {
   allMonths: string[];
   monthsWithData: Set<string>;
   currentMonth: string;
+  variant?: 'light' | 'dark';
 }
 
 const monthNames: { [key: string]: string } = {
@@ -38,8 +39,10 @@ export default function MonthFilter({
   onMonthChange, 
   allMonths, 
   monthsWithData,
-  currentMonth 
+  currentMonth,
+  variant = 'light'
 }: MonthFilterProps) {
+  const isDark = variant === 'dark';
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -77,11 +80,11 @@ export default function MonthFilter({
         onClick={() => handleSelect(monthKey)}
         className={`month-option ${isSelected ? 'selected' : ''} ${hasData ? 'has-data' : 'no-data'} ${isCurrent ? 'current' : ''}`}
       >
-        <span className={`indicator ${hasData ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+        <span className={`indicator ${hasData ? 'bg-emerald-500' : 'bg-slate-300'}`} />
         <span className="flex-1 text-right">{formatMonthDisplay(monthKey)}</span>
-        {isSelected && <Check className="w-4 h-4 text-pink-500" />}
+        {isSelected && <Check className="w-4 h-4 text-indigo-500" />}
         {isCurrent && !isSelected && (
-          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">נוכחי</span>
+          <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">נוכחי</span>
         )}
       </button>
     );
@@ -92,14 +95,18 @@ export default function MonthFilter({
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-3 px-4 py-2.5 bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all shadow-sm min-w-[200px]"
+        className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all min-w-[180px] ${
+          isDark 
+            ? 'bg-slate-800 hover:bg-slate-700 border-0' 
+            : 'bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm'
+        }`}
       >
-        <Calendar className="w-5 h-5 text-pink-500" />
-        <span className="flex-1 text-right font-medium text-gray-800">
+        <Calendar className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-indigo-500'}`} />
+        <span className={`flex-1 text-right font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>
           {formatMonthDisplay(selectedMonth)}
         </span>
         <ChevronDown 
-          className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
+          className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${isDark ? 'text-slate-400' : 'text-slate-500'}`} 
         />
       </button>
 
@@ -111,12 +118,12 @@ export default function MonthFilter({
             onClick={() => handleSelect('all')}
             className={`month-option all-months ${selectedMonth === 'all' ? 'selected' : ''}`}
           >
-            <Calendar className="w-4 h-4 text-pink-500" />
+            <Calendar className="w-4 h-4 text-indigo-500" />
             <span className="flex-1 text-right font-medium">כל החודשים</span>
-            {selectedMonth === 'all' && <Check className="w-4 h-4 text-pink-500" />}
+            {selectedMonth === 'all' && <Check className="w-4 h-4 text-indigo-500" />}
           </button>
 
-          <div className="border-t border-gray-100 my-1" />
+          <div className="border-t border-slate-100 my-1" />
 
           {/* Past Months (oldest at top, newest at bottom) */}
           {pastMonths.length > 0 && (

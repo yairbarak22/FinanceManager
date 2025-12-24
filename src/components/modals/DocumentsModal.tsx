@@ -144,7 +144,7 @@ export default function DocumentsModal({
     if (mimeType.includes('image')) {
       return <ImageIcon className="w-5 h-5 text-purple-500" />;
     }
-    return <FileText className="w-5 h-5 text-gray-500" />;
+    return <FileText className="w-5 h-5 text-slate-500" />;
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -172,16 +172,16 @@ export default function DocumentsModal({
         {/* Header */}
         <div className="modal-header">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
-              <FolderOpen className="w-5 h-5 text-violet-600" />
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+              <FolderOpen className="w-5 h-5 text-indigo-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">מסמכים</h3>
-              <p className="text-sm text-gray-500">{entityName}</p>
+              <h3 className="text-lg font-semibold text-slate-900">מסמכים</h3>
+              <p className="text-sm text-slate-500">{entityName}</p>
             </div>
           </div>
           <button onClick={onClose} className="btn-icon">
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-slate-500" />
           </button>
         </div>
 
@@ -199,7 +199,7 @@ export default function DocumentsModal({
           <div
             className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer ${
               isDragging
-                ? 'border-pink-400 bg-pink-50'
+                ? 'border-indigo-400 bg-indigo-50'
                 : 'border-gray-200 hover:border-gray-300'
             }`}
             onDragOver={handleDragOver}
@@ -217,16 +217,16 @@ export default function DocumentsModal({
             />
             {isUploading ? (
               <div className="flex flex-col items-center gap-2">
-                <Loader2 className="w-8 h-8 text-pink-500 animate-spin" />
-                <p className="text-sm text-gray-600">מעלה קבצים...</p>
+                <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                <p className="text-sm text-slate-600">מעלה קבצים...</p>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <Upload className="w-8 h-8 text-gray-400" />
-                <p className="text-sm text-gray-600">
+                <Upload className="w-8 h-8 text-slate-400" />
+                <p className="text-sm text-slate-600">
                   גרור קבצים לכאן או לחץ לבחירה
                 </p>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-slate-400">
                   PDF, Word, Excel, JPG, PNG (עד 10MB)
                 </p>
               </div>
@@ -237,17 +237,17 @@ export default function DocumentsModal({
           <div className="space-y-2 max-h-64 overflow-y-auto">
             {isLoading ? (
               <div className="flex justify-center py-8">
-                <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
+                <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
               </div>
             ) : documents.length === 0 ? (
-              <p className="text-center text-gray-400 py-8 text-sm">
+              <p className="text-center text-slate-400 py-8 text-sm">
                 אין מסמכים מצורפים
               </p>
             ) : (
               documents.map((doc) => (
                 <div
                   key={doc.id}
-                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group"
+                  className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group"
                 >
                   {/* File Icon */}
                   <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center flex-shrink-0 shadow-sm">
@@ -256,10 +256,10 @@ export default function DocumentsModal({
 
                   {/* File Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-slate-900 truncate">
                       {doc.filename}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-slate-500">
                       {formatFileSize(doc.size)} • {formatDate(doc.createdAt || '')}
                     </p>
                   </div>
@@ -271,7 +271,7 @@ export default function DocumentsModal({
                       className="p-2 rounded-lg hover:bg-white transition-colors"
                       title="הורד"
                     >
-                      <Download className="w-4 h-4 text-gray-500" />
+                      <Download className="w-4 h-4 text-slate-500" />
                     </button>
                     <button
                       onClick={() => handleDelete(doc.id)}
@@ -289,7 +289,7 @@ export default function DocumentsModal({
 
         {/* Footer */}
         <div className="modal-footer">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-slate-400">
             {documents.length} / 20 מסמכים
           </p>
           <button onClick={onClose} className="btn-secondary mr-auto">

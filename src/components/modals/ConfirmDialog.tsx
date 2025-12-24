@@ -36,16 +36,16 @@ export default function ConfirmDialog({
             <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-red-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+            <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
           </div>
           <button onClick={onClose} className="btn-icon">
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-slate-500" />
           </button>
         </div>
 
         {/* Body */}
         <div className="modal-body">
-          <p className="text-gray-600">{message}</p>
+          <p className="text-slate-600">{message}</p>
         </div>
 
         {/* Footer */}

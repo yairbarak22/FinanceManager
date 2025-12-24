@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import Header from '@/components/Header';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import HeaderBar, { NavSection } from '@/components/HeaderBar';
 import MonthFilter from '@/components/MonthFilter';
 import SummaryCards from '@/components/SummaryCards';
 import RecurringTransactions from '@/components/RecurringTransactions';
@@ -25,7 +25,6 @@ import InvestmentsTab from '@/components/investments/InvestmentsTab';
 import UserMenu from '@/components/UserMenu';
 import ProfileModal from '@/components/ProfileModal';
 import AccountSettings from '@/components/AccountSettings';
-import { LayoutDashboard, TrendingUp } from 'lucide-react';
 import {
   Transaction,
   RecurringTransaction,
@@ -117,8 +116,47 @@ export default function Home() {
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
   
-  // Tab navigation state
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'investments'>('dashboard');
+  // Section navigation state
+  const [activeSection, setActiveSection] = useState<NavSection>('dashboard');
+  
+  // Section refs for scrolling
+  const transactionsRef = useRef<HTMLDivElement>(null);
+  const recurringRef = useRef<HTMLDivElement>(null);
+  const assetsRef = useRef<HTMLDivElement>(null);
+  const liabilitiesRef = useRef<HTMLDivElement>(null);
+
+  // Handle section navigation with scroll
+  const handleSectionChange = (section: NavSection) => {
+    setActiveSection(section);
+    
+    // Scroll to section
+    const scrollToRef = (ref: React.RefObject<HTMLDivElement | null>) => {
+      if (ref.current) {
+        const headerOffset = 80; // Account for sticky header
+        const elementPosition = ref.current.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+      }
+    };
+
+    switch (section) {
+      case 'transactions':
+        scrollToRef(transactionsRef);
+        break;
+      case 'recurring':
+        scrollToRef(recurringRef);
+        break;
+      case 'assets':
+        scrollToRef(assetsRef);
+        break;
+      case 'liabilities':
+        scrollToRef(liabilitiesRef);
+        break;
+      case 'dashboard':
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        break;
+    }
+  };
 
   // Categories hook - custom categories from API
   const { getCustomByType, addCustomCategory } = useCategories();
@@ -550,229 +588,183 @@ export default function Home() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500">טוען נתונים...</p>
+          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-500">טוען נתונים...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen py-6 px-4 md:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <main className="min-h-screen">
+      {/* HeaderBar */}
+      <HeaderBar
+        activeSection={activeSection}
+        onSectionChange={(section) => {
+          handleSectionChange(section);
+          analytics.trackTabChange(section);
+        }}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
+        selectedMonth={selectedMonth}
+        onMonthChange={setSelectedMonth}
+        allMonths={allMonths}
+        monthsWithData={monthsWithData}
+        currentMonth={currentMonthKey}
+      />
+
+      <div className="max-w-7xl mx-auto py-6 px-4 md:px-6 lg:px-8">
         
-        {/* ============================================
-            TOP NAVIGATION BAR (Tabs + User Menu)
-            ============================================ */}
-        <div className="flex items-center justify-between">
-          {/* Tabs */}
-          <div 
-            className="flex items-center gap-2 bg-white rounded-xl p-1.5 shadow-sm border border-gray-100"
-          >
-            <button
-              onClick={() => {
-                setActiveTab('dashboard');
-                analytics.trackTabChange('dashboard');
-              }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                activeTab === 'dashboard'
-                  ? 'bg-pink-500 text-white shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              ראשי
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('investments');
-                analytics.trackTabChange('investments');
-              }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
-                activeTab === 'investments'
-                  ? 'bg-pink-500 text-white shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <TrendingUp className="w-4 h-4" />
-              השקעות
-            </button>
-          </div>
-          
-          {/* User Menu */}
-          <UserMenu 
-            onOpenProfile={() => setIsProfileModalOpen(true)}
-            onOpenAccountSettings={() => setIsAccountSettingsOpen(true)}
+        {/* All sections with consistent spacing */}
+        <div className="flex flex-col gap-6">
+
+          {/* Dashboard Title */}
+          <h1 className="text-2xl font-bold text-slate-900">דשבורד</h1>
+
+          {/* ============================================
+              SECTION 1: Summary Cards (Full Width)
+              ============================================ */}
+          <SummaryCards
+            totalBalance={totalBalance}
+            totalIncome={totalIncome}
+            totalExpenses={totalExpenses}
+            netWorth={netWorth}
           />
-        </div>
 
-        {/* ============================================
-            INVESTMENTS TAB
-            ============================================ */}
-        {activeTab === 'investments' && <InvestmentsTab />}
-
-        {/* ============================================
-            DASHBOARD TAB
-            ============================================ */}
-        {activeTab === 'dashboard' && (
-          <>
-        {/* ============================================
-            SECTION 1: Header + Filter (Single Row)
-            ============================================ */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <Header />
-          <MonthFilter
-            selectedMonth={selectedMonth}
-            onMonthChange={setSelectedMonth}
-            allMonths={allMonths}
-            monthsWithData={monthsWithData}
-            currentMonth={currentMonthKey}
-          />
-        </div>
-
-        {/* ============================================
-            SECTION 2: Summary Cards (Full Width)
-            ============================================ */}
-        <SummaryCards
-          totalBalance={totalBalance}
-          totalIncome={totalIncome}
-          totalExpenses={totalExpenses}
-        />
-
-        {/* ============================================
-            SECTION 3: Net Worth + Charts (Summary Graphs)
-            ============================================ */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Net Worth Main Card */}
-          <div className="lg:col-span-1">
-            <NetWorthSection
-              netWorth={netWorth}
-              totalAssets={totalAssets}
-              totalLiabilities={totalLiabilities}
-              monthlyLiabilityPayments={monthlyLiabilityPayments}
-              fixedIncome={fixedIncome}
-              fixedExpenses={fixedExpenses}
-            />
-          </div>
-          
-          {/* Asset Allocation Chart */}
-          <div className="lg:col-span-2">
-            <AssetAllocationChart
-              assets={assets}
-              onGetRecommendations={() => setIsAdvisorModalOpen(true)}
-            />
-          </div>
-        </div>
-
-        {/* ============================================
-            SECTION 4: Assets, Liabilities, Recurring (3 Columns)
-            ============================================ */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Assets */}
-          <div className="card p-4 max-h-[500px] overflow-y-auto">
-            <AssetsSection
-              assets={assets}
-              onAdd={() => {
-                setEditingAsset(null);
-                setIsAssetModalOpen(true);
-              }}
-              onEdit={(asset) => {
-                setEditingAsset(asset);
-                setIsAssetModalOpen(true);
-              }}
-              onDelete={handleDeleteAsset}
-              onViewDocuments={(asset) => {
-                setDocumentsEntity({ type: 'asset', id: asset.id, name: asset.name });
-                setIsDocumentsModalOpen(true);
-              }}
-            />
+          {/* ============================================
+              SECTION 2: Net Worth + Charts (Summary Graphs)
+              ============================================ */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Net Worth Main Card */}
+            <div className="lg:col-span-1">
+              <NetWorthSection
+                netWorth={netWorth}
+                totalAssets={totalAssets}
+                totalLiabilities={totalLiabilities}
+                monthlyLiabilityPayments={monthlyLiabilityPayments}
+                fixedIncome={fixedIncome}
+                fixedExpenses={fixedExpenses}
+              />
+            </div>
+            
+            {/* Asset Allocation Chart */}
+            <div className="lg:col-span-2">
+              <AssetAllocationChart
+                assets={assets}
+                onGetRecommendations={() => setIsAdvisorModalOpen(true)}
+              />
+            </div>
           </div>
 
-          {/* Liabilities */}
-          <div className="card p-4 max-h-[500px] overflow-y-auto">
-            <LiabilitiesSection
-              liabilities={liabilities}
-              onAdd={() => {
-                setEditingLiability(null);
-                setIsLiabilityModalOpen(true);
-              }}
-              onEdit={(liability) => {
-                setEditingLiability(liability);
-                setIsLiabilityModalOpen(true);
-              }}
-              onDelete={handleDeleteLiability}
-              onViewAmortization={(liability) => {
-                setViewingLiability(liability);
-                setIsAmortizationModalOpen(true);
-              }}
-              onViewDocuments={(liability) => {
-                setDocumentsEntity({ type: 'liability', id: liability.id, name: liability.name });
-                setIsDocumentsModalOpen(true);
-              }}
-            />
+          {/* ============================================
+              SECTION 3: Assets, Liabilities, Recurring (3 Columns)
+              ============================================ */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Assets */}
+            <div ref={assetsRef} className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-4 max-h-[500px] overflow-y-auto">
+              <AssetsSection
+                assets={assets}
+                onAdd={() => {
+                  setEditingAsset(null);
+                  setIsAssetModalOpen(true);
+                }}
+                onEdit={(asset) => {
+                  setEditingAsset(asset);
+                  setIsAssetModalOpen(true);
+                }}
+                onDelete={handleDeleteAsset}
+                onViewDocuments={(asset) => {
+                  setDocumentsEntity({ type: 'asset', id: asset.id, name: asset.name });
+                  setIsDocumentsModalOpen(true);
+                }}
+              />
+            </div>
+
+            {/* Liabilities */}
+            <div ref={liabilitiesRef} className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-4 max-h-[500px] overflow-y-auto">
+              <LiabilitiesSection
+                liabilities={liabilities}
+                onAdd={() => {
+                  setEditingLiability(null);
+                  setIsLiabilityModalOpen(true);
+                }}
+                onEdit={(liability) => {
+                  setEditingLiability(liability);
+                  setIsLiabilityModalOpen(true);
+                }}
+                onDelete={handleDeleteLiability}
+                onViewAmortization={(liability) => {
+                  setViewingLiability(liability);
+                  setIsAmortizationModalOpen(true);
+                }}
+                onViewDocuments={(liability) => {
+                  setDocumentsEntity({ type: 'liability', id: liability.id, name: liability.name });
+                  setIsDocumentsModalOpen(true);
+                }}
+              />
+            </div>
+
+            {/* Recurring Transactions */}
+            <div ref={recurringRef} className="max-h-[500px] overflow-y-auto md:col-span-2 lg:col-span-1">
+              <RecurringTransactions
+                transactions={recurringTransactions}
+                onAdd={() => {
+                  setEditingRecurring(null);
+                  setIsRecurringModalOpen(true);
+                }}
+                onEdit={(tx) => {
+                  setEditingRecurring(tx);
+                  setIsRecurringModalOpen(true);
+                }}
+                onDelete={handleDeleteRecurring}
+                onToggle={handleToggleRecurring}
+              />
+            </div>
           </div>
 
-          {/* Recurring Transactions */}
-          <div className="card p-4 max-h-[500px] overflow-y-auto">
-            <RecurringTransactions
-              transactions={recurringTransactions}
-              onAdd={() => {
-                setEditingRecurring(null);
-                setIsRecurringModalOpen(true);
-              }}
-              onEdit={(tx) => {
-                setEditingRecurring(tx);
-                setIsRecurringModalOpen(true);
-              }}
-              onDelete={handleDeleteRecurring}
-              onToggle={handleToggleRecurring}
-            />
+          {/* ============================================
+              SECTION 4: Monthly Trends + Monthly Summary (2 Columns)
+              ============================================ */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Monthly Trends Chart */}
+            <div className="min-h-[350px] md:min-h-[420px]">
+              <MonthlyTrendsCharts data={monthlySummaries} />
+            </div>
+            
+            {/* Monthly Summary */}
+            <div className="min-h-[350px] md:min-h-[420px]">
+              <MonthlySummary
+                summaries={monthlySummaries}
+                totalIncome={totalIncome}
+                totalExpenses={totalExpenses}
+                totalBalance={totalBalance}
+              />
+            </div>
           </div>
-        </div>
 
-        {/* ============================================
-            SECTION 5: Monthly Trends + Monthly Summary (2 Columns, Same Height)
-            ============================================ */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[420px]">
-          {/* Monthly Trends Chart */}
-          <div className="h-full">
-            <MonthlyTrendsCharts data={monthlySummaries} />
+          {/* ============================================
+              SECTION 6: Expenses Pie (1/3) + Transactions (2/3) - Same Height
+              ============================================ */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Expenses Pie Chart - 1/3 */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-4 max-h-[500px] overflow-y-auto lg:col-span-1">
+              <ExpensesPieChart transactions={filteredTransactions} />
+            </div>
+            
+            {/* Recent Transactions - 2/3 */}
+            <div ref={transactionsRef} className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-4 max-h-[500px] overflow-y-auto lg:col-span-2">
+              <RecentTransactions
+                transactions={filteredTransactions}
+                onDelete={handleDeleteTransaction}
+                onDeleteMultiple={handleDeleteMultipleTransactions}
+                onUpdateCategory={handleUpdateTransactionCategory}
+                onNewTransaction={() => setIsTransactionModalOpen(true)}
+                onImport={() => setIsImportModalOpen(true)}
+              />
+            </div>
           </div>
-          
-          {/* Monthly Summary */}
-          <div className="h-full">
-            <MonthlySummary
-              summaries={monthlySummaries}
-              totalIncome={totalIncome}
-              totalExpenses={totalExpenses}
-              totalBalance={totalBalance}
-            />
-          </div>
-        </div>
 
-        {/* ============================================
-            SECTION 6: Expenses Pie (1/3) + Transactions (2/3) - Same Height
-            ============================================ */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Expenses Pie Chart - 1/3 */}
-          <div className="card p-4 max-h-[500px] overflow-y-auto lg:col-span-1">
-            <ExpensesPieChart transactions={filteredTransactions} />
-          </div>
-          
-          {/* Recent Transactions - 2/3 */}
-          <div className="card p-4 max-h-[500px] overflow-y-auto lg:col-span-2">
-            <RecentTransactions
-              transactions={filteredTransactions}
-              onDelete={handleDeleteTransaction}
-              onDeleteMultiple={handleDeleteMultipleTransactions}
-              onUpdateCategory={handleUpdateTransactionCategory}
-              onNewTransaction={() => setIsTransactionModalOpen(true)}
-              onImport={() => setIsImportModalOpen(true)}
-            />
-          </div>
-        </div>
-          </>
-        )}
+        </div>{/* End of flex container */}
       </div>
 
       {/* ============================================

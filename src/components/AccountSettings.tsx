@@ -159,15 +159,15 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
               <Users className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">שיתוף חשבון</h2>
-              <p className="text-xs text-gray-500">{accountName}</p>
+              <h2 className="text-lg font-semibold text-slate-900">שיתוף חשבון</h2>
+              <p className="text-xs text-slate-500">{accountName}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-slate-500" />
           </button>
         </div>
 
@@ -189,7 +189,7 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
               {/* Invite Section */}
               {isOwner && (
                 <div className="mb-6">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-slate-700 mb-2 flex items-center gap-2">
                     <UserPlus className="w-4 h-4" />
                     הזמן משתמש חדש
                   </h3>
@@ -221,7 +221,7 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
               {/* Pending Invites */}
               {invites.length > 0 && (
                 <div className="mb-6">
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">הזמנות ממתינות</h3>
+                  <h3 className="text-sm font-medium text-slate-700 mb-2">הזמנות ממתינות</h3>
                   <div className="space-y-2">
                     {invites.map((invite) => (
                       <div
@@ -229,10 +229,10 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
                         className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg"
                       >
                         <div>
-                          <p className="text-sm font-medium text-gray-900" dir="ltr">
+                          <p className="text-sm font-medium text-slate-900" dir="ltr">
                             {invite.email}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-slate-500">
                             פג תוקף: {new Date(invite.expiresAt).toLocaleDateString('he-IL')}
                           </p>
                         </div>
@@ -264,12 +264,12 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
 
               {/* Members List */}
               <div>
-                <h3 className="text-sm font-medium text-gray-700 mb-2">משתמשים בחשבון</h3>
+                <h3 className="text-sm font-medium text-slate-700 mb-2">משתמשים בחשבון</h3>
                 <div className="space-y-2">
                   {members.map((member) => (
                     <div
                       key={member.id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
                     >
                       <div className="flex items-center gap-3">
                         {member.user.image ? (
@@ -279,20 +279,20 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
                             className="w-10 h-10 rounded-full"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                            <User className="w-5 h-5 text-gray-500" />
+                          <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
+                            <User className="w-5 h-5 text-slate-500" />
                           </div>
                         )}
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-sm font-medium text-slate-900">
                               {member.user.name || 'ללא שם'}
                             </p>
                             {member.role === 'owner' && (
                               <Crown className="w-4 h-4 text-amber-500" />
                             )}
                           </div>
-                          <p className="text-xs text-gray-500" dir="ltr">
+                          <p className="text-xs text-slate-500" dir="ltr">
                             {member.user.email}
                           </p>
                         </div>
@@ -328,7 +328,7 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
         <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-100">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            className="px-4 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
           >
             סגור
           </button>

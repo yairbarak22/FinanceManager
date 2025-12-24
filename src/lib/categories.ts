@@ -104,8 +104,8 @@ export const expenseCategories: CategoryInfo[] = [
     nameHe: 'קניות',
     icon: ShoppingBag,
     color: '#ec4899',
-    bgColor: 'bg-pink-100',
-    textColor: 'text-pink-600',
+    bgColor: 'bg-rose-100',
+    textColor: 'text-rose-600',
   },
   {
     id: 'education',
@@ -113,8 +113,8 @@ export const expenseCategories: CategoryInfo[] = [
     nameHe: 'חינוך',
     icon: GraduationCap,
     color: '#8b5cf6',
-    bgColor: 'bg-violet-100',
-    textColor: 'text-violet-600',
+    bgColor: 'bg-indigo-100',
+    textColor: 'text-indigo-600',
   },
   {
     id: 'subscriptions',
@@ -158,8 +158,8 @@ export const expenseCategories: CategoryInfo[] = [
     nameHe: 'טיפוח',
     icon: Sparkles,
     color: '#f472b6',
-    bgColor: 'bg-pink-100',
-    textColor: 'text-pink-500',
+    bgColor: 'bg-rose-100',
+    textColor: 'text-rose-500',
   },
   {
     id: 'communication',
@@ -200,8 +200,8 @@ export const incomeCategories: CategoryInfo[] = [
     nameHe: 'בונוס',
     icon: Gift,
     color: '#14b8a6',
-    bgColor: 'bg-teal-100',
-    textColor: 'text-teal-600',
+    bgColor: 'bg-emerald-100',
+    textColor: 'text-emerald-600',
   },
   {
     id: 'investment',
@@ -218,8 +218,8 @@ export const incomeCategories: CategoryInfo[] = [
     nameHe: 'שכירות',
     icon: Building,
     color: '#8b5cf6',
-    bgColor: 'bg-violet-100',
-    textColor: 'text-violet-600',
+    bgColor: 'bg-indigo-100',
+    textColor: 'text-indigo-600',
   },
   {
     id: 'freelance',
@@ -245,8 +245,8 @@ export const incomeCategories: CategoryInfo[] = [
     nameHe: 'קצבת ילדים',
     icon: Baby,
     color: '#ec4899',
-    bgColor: 'bg-pink-100',
-    textColor: 'text-pink-600',
+    bgColor: 'bg-rose-100',
+    textColor: 'text-rose-600',
   },
   {
     id: 'other',
@@ -269,8 +269,8 @@ export const assetCategories: CategoryInfo[] = [
     nameHe: 'נדל"ן',
     icon: Building2,
     color: '#8b5cf6',
-    bgColor: 'bg-violet-100',
-    textColor: 'text-violet-600',
+    bgColor: 'bg-indigo-100',
+    textColor: 'text-indigo-600',
   },
   {
     id: 'stocks',
@@ -374,8 +374,8 @@ export const liabilityTypes: CategoryInfo[] = [
     nameHe: 'משכנתא',
     icon: Home,
     color: '#ec4899',
-    bgColor: 'bg-pink-100',
-    textColor: 'text-pink-600',
+    bgColor: 'bg-rose-100',
+    textColor: 'text-rose-600',
   },
   {
     id: 'credit_card',
@@ -383,8 +383,8 @@ export const liabilityTypes: CategoryInfo[] = [
     nameHe: 'כרטיס אשראי',
     icon: CreditCard,
     color: '#8b5cf6',
-    bgColor: 'bg-violet-100',
-    textColor: 'text-violet-600',
+    bgColor: 'bg-indigo-100',
+    textColor: 'text-indigo-600',
   },
   {
     id: 'car_loan',
@@ -401,8 +401,8 @@ export const liabilityTypes: CategoryInfo[] = [
     nameHe: 'הלוואת סטודנטים',
     icon: GraduationCap,
     color: '#14b8a6',
-    bgColor: 'bg-teal-100',
-    textColor: 'text-teal-600',
+    bgColor: 'bg-emerald-100',
+    textColor: 'text-emerald-600',
   },
 ];
 
@@ -448,10 +448,10 @@ export const customCategoryColors = [
   { color: '#f97316', bgColor: 'bg-orange-100', textColor: 'text-orange-600' },
   { color: '#eab308', bgColor: 'bg-yellow-100', textColor: 'text-yellow-600' },
   { color: '#22c55e', bgColor: 'bg-green-100', textColor: 'text-green-600' },
-  { color: '#14b8a6', bgColor: 'bg-teal-100', textColor: 'text-teal-600' },
+  { color: '#14b8a6', bgColor: 'bg-emerald-100', textColor: 'text-emerald-600' },
   { color: '#0ea5e9', bgColor: 'bg-sky-100', textColor: 'text-sky-600' },
-  { color: '#8b5cf6', bgColor: 'bg-violet-100', textColor: 'text-violet-600' },
-  { color: '#ec4899', bgColor: 'bg-pink-100', textColor: 'text-pink-600' },
+  { color: '#8b5cf6', bgColor: 'bg-indigo-100', textColor: 'text-indigo-600' },
+  { color: '#ec4899', bgColor: 'bg-rose-100', textColor: 'text-rose-600' },
 ];
 
 // ============================================

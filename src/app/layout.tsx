@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Heebo } from "next/font/google";
+import { Heebo, Inter } from "next/font/google";
 import Providers from "@/components/Providers";
 import OnboardingProvider from "@/components/onboarding/OnboardingProvider";
 import AIChatProvider from "@/components/ai/AIChatProvider";
@@ -15,9 +15,15 @@ const heebo = Heebo({
   display: "swap",
 });
 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "הניהול הפיננסי שלי",
-  description: "מעקב ושליטה מלאה על התקציב המשפחתי",
+  title: "NETO - ניהול הון חכם",
+  description: "המקום שלך לצמוח כלכלית. ניהול הוצאות, השקעות ותכנון פיננסי חכם.",
 };
 
 export default function RootLayout({
@@ -27,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="he" dir="rtl">
-      <body className={`${heebo.variable} font-sans antialiased`}>
+      <body className={`${heebo.variable} ${inter.variable} font-sans antialiased`}>
         <Providers>
           <AIChatProvider>
             <OnboardingProvider>

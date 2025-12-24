@@ -12,18 +12,18 @@ interface AssetAllocationChartProps {
   onGetRecommendations?: () => void;
 }
 
-// Colors for categories that match the defined palette
+// Brand-aligned colors for categories
 const CATEGORY_COLORS: Record<string, string> = {
-  real_estate: '#8b5cf6',
-  stocks: '#22c55e',
-  crypto: '#f59e0b',
-  pension_fund: '#06b6d4',
-  education_fund: '#a855f7',
-  savings_account: '#3b82f6',
-  investments: '#0ea5e9',
-  vehicle: '#ef4444',
-  cash: '#10b981',
-  other: '#64748b',
+  real_estate: '#6366f1',  // Indigo
+  stocks: '#10b981',       // Emerald
+  crypto: '#f59e0b',       // Amber
+  pension_fund: '#14b8a6', // Teal
+  education_fund: '#a855f7', // Purple
+  savings_account: '#3b82f6', // Blue
+  investments: '#06b6d4',  // Cyan
+  vehicle: '#64748b',      // Slate
+  cash: '#34d399',         // Emerald light
+  other: '#94a3b8',        // Slate light
 };
 
 export default function AssetAllocationChart({ assets, onGetRecommendations }: AssetAllocationChartProps) {
@@ -47,7 +47,7 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
           name: categoryInfo?.nameHe || categoryId,
           value,
           percentage: total > 0 ? ((value / total) * 100).toFixed(1) : '0',
-          color: CATEGORY_COLORS[categoryId] || '#64748b',
+          color: CATEGORY_COLORS[categoryId] || '#94a3b8',
         };
       })
       .sort((a, b) => b.value - a.value); // Sort by value descending
@@ -62,10 +62,10 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white px-3 py-2 shadow-lg rounded-lg border border-gray-100">
-          <p className="font-medium text-gray-900">{data.name}</p>
-          <p className="text-sm text-gray-600">{formatCurrency(data.value)}</p>
-          <p className="text-xs text-gray-500">{data.percentage}% מסך הנכסים</p>
+        <div className="bg-white px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.15)] rounded-xl border border-slate-100">
+          <p className="font-semibold text-slate-900">{data.name}</p>
+          <p className="text-sm text-slate-600 mt-1">{formatCurrency(data.value)}</p>
+          <p className="text-xs text-slate-500">{data.percentage}% מסך הנכסים</p>
         </div>
       );
     }
@@ -88,7 +88,8 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
         fill="white"
         textAnchor="middle"
         dominantBaseline="central"
-        className="text-xs font-medium"
+        className="text-xs font-semibold"
+        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
       >
         {percentage}%
       </text>
@@ -96,16 +97,16 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
   };
 
   return (
-    <div className="card p-6 h-full">
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-6 h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center">
-            <PieChartIcon className="w-5 h-5 text-violet-600" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+            <PieChartIcon className="w-5 h-5 text-indigo-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">פילוח נכסים</h2>
-            <p className="text-xs text-gray-500">סה"כ: {formatCurrency(totalAssets)}</p>
+            <h2 className="text-lg font-semibold text-slate-900">פילוח נכסים</h2>
+            <p className="text-xs text-slate-500">סה"כ: {formatCurrency(totalAssets)}</p>
           </div>
         </div>
         
@@ -113,7 +114,7 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
         {onGetRecommendations && (
           <button
             onClick={onGetRecommendations}
-            className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all text-sm font-medium shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all text-sm font-medium shadow-sm"
           >
             <Lightbulb className="w-4 h-4" />
             קבל המלצות
@@ -122,7 +123,7 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
       </div>
 
       {isEmpty ? (
-        <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+        <div className="flex flex-col items-center justify-center h-48 text-slate-400">
           <PieChartIcon className="w-12 h-12 mb-2 opacity-50" />
           <p className="text-sm">אין נכסים להצגה</p>
           <p className="text-xs">הוסף נכסים כדי לראות את הפילוח</p>
@@ -137,15 +138,20 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
                   data={chartData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={45}
-                  outerRadius={80}
+                  innerRadius={50}
+                  outerRadius={85}
                   paddingAngle={2}
                   dataKey="value"
                   labelLine={false}
                   label={renderCustomLabel}
                 >
                   {chartData.map((entry) => (
-                    <Cell key={entry.id} fill={entry.color} />
+                    <Cell 
+                      key={entry.id} 
+                      fill={entry.color}
+                      stroke="white"
+                      strokeWidth={2}
+                    />
                   ))}
                 </Pie>
                 <Tooltip content={<CustomTooltip />} />
@@ -153,20 +159,20 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
             </ResponsiveContainer>
           </div>
 
-          {/* Legend - Custom Grid */}
+          {/* Legend - Brand styled */}
           <div className="mt-4 grid grid-cols-2 gap-2">
             {chartData.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100"
               >
                 <div
-                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-white shadow-sm"
                   style={{ backgroundColor: item.color }}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-gray-700 truncate">{item.name}</p>
-                  <p className="text-xs text-gray-500">{item.percentage}%</p>
+                  <p className="text-xs font-medium text-slate-700 truncate">{item.name}</p>
+                  <p className="text-xs text-slate-500">{item.percentage}%</p>
                 </div>
               </div>
             ))}
@@ -176,4 +182,3 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
     </div>
   );
 }
-

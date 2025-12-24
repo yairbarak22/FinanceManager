@@ -38,13 +38,13 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-            <TrendingUp className="w-4 h-4 text-green-600" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+            <TrendingUp className="w-5 h-5 text-emerald-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">נכסים</h3>
-            <p className="text-xs text-green-600 font-medium">{formatCurrency(totalAssets)}</p>
+            <h3 className="font-semibold text-slate-900">נכסים</h3>
+            <p className="text-xs text-emerald-600 font-medium">{formatCurrency(totalAssets)}</p>
           </div>
           <HelpTrigger
             topicId="assets"
@@ -52,7 +52,7 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
             size="sm"
           />
         </div>
-        <button onClick={onAdd} className="text-sm text-green-600 hover:text-green-700 font-medium flex items-center gap-1">
+        <button onClick={onAdd} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
           <Plus className="w-4 h-4" />
           הוסף
         </button>
@@ -68,7 +68,7 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
           return (
             <div
               key={asset.id}
-              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 bg-gray-50 rounded-lg"
+              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 bg-slate-50 rounded-lg"
             >
               {/* Top row: Icon + Details + Value (mobile) */}
               <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -76,16 +76,16 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
                 <div
                   className={cn(
                     'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
-                    categoryInfo?.bgColor || 'bg-gray-100'
+                    categoryInfo?.bgColor || 'bg-slate-100'
                   )}
                 >
-                  <Icon className={cn('w-4 h-4', categoryInfo?.textColor || 'text-gray-600')} />
+                  <Icon className={cn('w-4 h-4', categoryInfo?.textColor || 'text-slate-600')} />
                 </div>
 
                 {/* Details */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 text-sm truncate">{asset.name}</p>
-                  <p className="text-xs text-gray-500 truncate">{categoryInfo?.nameHe}</p>
+                  <p className="font-medium text-slate-900 text-sm truncate">{asset.name}</p>
+                  <p className="text-xs text-slate-500 truncate">{categoryInfo?.nameHe}</p>
                 </div>
 
                 {/* Value - visible on mobile in this row */}
@@ -97,7 +97,7 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
               {/* Bottom row (mobile) / Continue (desktop): Value + Actions */}
               <div className="flex items-center gap-2 justify-end sm:gap-1 mr-12 sm:mr-0">
                 {/* Value - visible on desktop */}
-                <p className="hidden sm:block text-sm font-bold text-gray-900 flex-shrink-0 ml-2">
+                <p className="hidden sm:block text-sm font-bold text-slate-900 flex-shrink-0 ml-2">
                   {formatCurrency(asset.value)}
                 </p>
 
@@ -105,20 +105,20 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
                 <div className="flex gap-1 flex-shrink-0">
                   <button
                     onClick={() => onViewDocuments(asset)}
-                    className="p-1.5 rounded hover:bg-violet-100 text-gray-500 hover:text-violet-600"
+                    className="p-1.5 rounded hover:bg-indigo-100 text-slate-500 hover:text-indigo-600"
                     title="מסמכים"
                   >
                     <FolderOpen className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => onEdit(asset)}
-                    className="p-1.5 rounded hover:bg-gray-200 text-gray-500 hover:text-gray-600"
+                    className="p-1.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-600"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => setDeleteConfirm({ isOpen: true, id: asset.id, name: asset.name })}
-                    className="p-1.5 rounded hover:bg-red-100 text-gray-500 hover:text-red-500"
+                    className="p-1.5 rounded hover:bg-red-100 text-slate-500 hover:text-red-500"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -129,7 +129,7 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
         })}
         
         {assets.length === 0 && (
-          <p className="text-center text-gray-500 text-sm py-4">אין נכסים</p>
+          <p className="text-center text-slate-500 text-sm py-4">אין נכסים</p>
         )}
       </div>
 

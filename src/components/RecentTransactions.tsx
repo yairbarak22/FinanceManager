@@ -120,21 +120,21 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-            <Receipt className="w-4 h-4 text-gray-600" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+            <Receipt className="w-5 h-5 text-indigo-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">הוצאות שוטפות</h3>
-            <p className="text-xs text-gray-500">{transactions.length} עסקאות</p>
+            <h3 className="font-semibold text-slate-900">הוצאות שוטפות</h3>
+            <p className="text-xs text-slate-500">{transactions.length} עסקאות</p>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-3">
           {isSelectMode ? (
             <>
               <button
                 onClick={selectAll}
-                className="text-sm text-gray-600 hover:text-gray-700 font-medium flex items-center gap-1"
+                className="text-sm text-slate-600 hover:text-slate-700 font-medium flex items-center gap-1"
               >
                 {selectedIds.size === transactions.length ? (
                   <CheckSquare className="w-4 h-4" />
@@ -145,7 +145,7 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
               </button>
               <button
                 onClick={toggleSelectMode}
-                className="text-sm text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1 mr-2"
+                className="text-sm text-slate-500 hover:text-slate-700 font-medium flex items-center gap-1"
               >
                 <X className="w-4 h-4" />
                 ביטול
@@ -156,7 +156,7 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
               {transactions.length > 0 && onDeleteMultiple && (
                 <button
                   onClick={toggleSelectMode}
-                  className="text-sm text-gray-500 hover:text-gray-600 font-medium flex items-center gap-1"
+                  className="text-sm text-slate-500 hover:text-slate-600 font-medium flex items-center gap-1"
                 >
                   <CheckSquare className="w-4 h-4" />
                   בחירה
@@ -164,14 +164,14 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
               )}
               <button
                 onClick={onImport}
-                className="text-sm text-gray-600 hover:text-gray-700 font-medium flex items-center gap-1"
+                className="text-sm text-slate-600 hover:text-slate-700 font-medium flex items-center gap-1"
               >
                 <Upload className="w-4 h-4" />
                 ייבוא
               </button>
               <button
                 onClick={onNewTransaction}
-                className="text-sm text-pink-600 hover:text-pink-700 font-medium flex items-center gap-1 mr-2"
+                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
               >
                 <Plus className="w-4 h-4" />
                 הוסף
@@ -208,8 +208,8 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
               aria-label={isSelectMode ? `${isSelected ? 'בטל בחירה' : 'בחר'} עסקה: ${transaction.description}` : undefined}
               className={cn(
                 'flex items-center gap-3 p-3 rounded-xl transition-colors group',
-                isSelectMode ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-violet-500' : '',
-                isSelected ? 'bg-violet-50 ring-2 ring-violet-300' : 'bg-gray-50 hover:bg-gray-100'
+                isSelectMode ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500' : '',
+                isSelected ? 'bg-indigo-50 ring-2 ring-indigo-300' : 'bg-slate-50 hover:bg-slate-100'
               )}
             >
               {/* Checkbox (Select Mode) or Category Icon */}
@@ -217,25 +217,25 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
                 <div
                   className={cn(
                     'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors',
-                    isSelected ? 'bg-violet-100' : 'bg-gray-100'
+                    isSelected ? 'bg-indigo-100' : 'bg-slate-100'
                   )}
                 >
                   {isSelected ? (
-                    <CheckSquare className="w-5 h-5 text-violet-600" />
+                    <CheckSquare className="w-5 h-5 text-indigo-600" />
                   ) : (
-                    <Square className="w-5 h-5 text-gray-500" />
+                    <Square className="w-5 h-5 text-slate-500" />
                   )}
                 </div>
               ) : (
                 <div
                   className={cn(
                     'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0',
-                    categoryInfo?.bgColor || 'bg-gray-100'
+                    categoryInfo?.bgColor || 'bg-slate-100'
                   )}
                 >
                   {Icon && (
                     <Icon
-                      className={cn('w-5 h-5', categoryInfo?.textColor || 'text-gray-600')}
+                      className={cn('w-5 h-5', categoryInfo?.textColor || 'text-slate-600')}
                     />
                   )}
                 </div>
@@ -244,21 +244,21 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
               {/* Transaction Details */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="font-medium text-gray-900 text-sm truncate">
+                  <p className="font-medium text-slate-900 text-sm truncate">
                     {categoryInfo?.nameHe || transaction.category}
                   </p>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-slate-500">
                     {formatDate(transaction.date)}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 truncate">{transaction.description}</p>
+                <p className="text-xs text-slate-500 truncate">{transaction.description}</p>
               </div>
 
               {/* Amount */}
               <p
                 className={cn(
                   'text-sm font-bold flex-shrink-0',
-                  isIncome ? 'text-green-600' : 'text-pink-600'
+                  isIncome ? 'text-green-600' : 'text-rose-600'
                 )}
               >
                 {isIncome ? '+' : '-'}{formatCurrency(transaction.amount)}
@@ -271,7 +271,7 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
                   {onUpdateCategory && (
                     <button
                       onClick={() => openEditDialog(transaction)}
-                      className="p-1.5 rounded-lg text-gray-300 hover:text-violet-500 hover:bg-violet-50 transition-all"
+                      className="p-1.5 rounded-lg text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 transition-all"
                       title="ערוך קטגוריה"
                     >
                       <Edit3 className="w-4 h-4" />
@@ -280,7 +280,7 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
                   {/* Delete Button */}
                   <button
                     onClick={() => setDeleteConfirm({ isOpen: true, id: transaction.id, description: transaction.description })}
-                    className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                    className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
                     title="מחק"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -294,8 +294,8 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
 
       {transactions.length === 0 && (
         <div className="text-center py-12">
-          <Receipt className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">אין עסקאות להצגה</p>
+          <Receipt className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+          <p className="text-slate-500">אין עסקאות להצגה</p>
         </div>
       )}
 
@@ -338,30 +338,30 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" dir="rtl">
             {/* Header */}
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">עריכת קטגוריה</h3>
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-semibold text-slate-900">עריכת קטגוריה</h3>
               <button
                 onClick={closeEditDialog}
-                className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-5 h-5 text-slate-500" />
               </button>
             </div>
 
             {/* Content */}
             <div className="p-4 space-y-4">
               {/* Transaction info */}
-              <div className="p-3 bg-gray-50 rounded-xl">
-                <p className="text-sm text-gray-600">עסקה:</p>
-                <p className="font-medium text-gray-900">{editingTransaction.description}</p>
-                <p className="text-sm text-gray-500">
+              <div className="p-3 bg-slate-50 rounded-xl">
+                <p className="text-sm text-slate-600">עסקה:</p>
+                <p className="font-medium text-slate-900">{editingTransaction.description}</p>
+                <p className="text-sm text-slate-500">
                   {formatCurrency(editingTransaction.amount)} • {formatDate(editingTransaction.date)}
                 </p>
               </div>
 
               {/* Category dropdown */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   קטגוריה חדשה
                 </label>
                 <div ref={dropdownRef} className="relative">
@@ -371,8 +371,8 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
                     className={cn(
                       'w-full px-3 py-2.5 border-2 rounded-xl text-sm font-medium transition-all',
                       'flex items-center justify-between gap-2',
-                      'focus:ring-2 focus:ring-violet-500 focus:ring-offset-1 focus:outline-none',
-                      'border-violet-300 bg-white text-violet-700 hover:border-violet-400'
+                      'focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 focus:outline-none',
+                      'border-violet-300 bg-white text-indigo-700 hover:border-violet-400'
                     )}
                   >
                     <span>
@@ -385,7 +385,7 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
                   </button>
 
                   {isDropdownOpen && (
-                    <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                    <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
                       <div className="p-1">
                         {getCategoriesForType(editingTransaction.type).map((cat) => {
                           const isSelected = cat.id === selectedCategory;
@@ -401,12 +401,12 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
                                 'w-full px-3 py-2 rounded-lg text-sm font-medium text-right',
                                 'flex items-center justify-between gap-2 transition-colors',
                                 isSelected 
-                                  ? 'bg-violet-100 text-violet-700 border-2 border-violet-300' 
-                                  : 'text-gray-700 hover:bg-gray-100 border-2 border-transparent'
+                                  ? 'bg-indigo-100 text-indigo-700 border-2 border-violet-300' 
+                                  : 'text-slate-700 hover:bg-slate-100 border-2 border-transparent'
                               )}
                             >
                               <span>{cat.nameHe}</span>
-                              {isSelected && <Check className="w-4 h-4 text-violet-600" />}
+                              {isSelected && <Check className="w-4 h-4 text-indigo-600" />}
                             </button>
                           );
                         })}
@@ -418,15 +418,15 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
 
               {/* Save behavior options */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   שמירה לפעמים הבאות
                 </label>
                 <div className="space-y-2">
                   <label className={cn(
                     'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
                     saveBehavior === 'once' 
-                      ? 'border-violet-300 bg-violet-50' 
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-violet-300 bg-indigo-50' 
+                      : 'border-slate-200 hover:border-slate-300'
                   )}>
                     <input
                       type="radio"
@@ -434,19 +434,19 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
                       value="once"
                       checked={saveBehavior === 'once'}
                       onChange={() => setSaveBehavior('once')}
-                      className="w-4 h-4 text-violet-600 focus:ring-violet-500"
+                      className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
                     />
                     <div>
-                      <p className="font-medium text-gray-900">רק הפעם</p>
-                      <p className="text-xs text-gray-500">העדכון יחול רק על עסקה זו</p>
+                      <p className="font-medium text-slate-900">רק הפעם</p>
+                      <p className="text-xs text-slate-500">העדכון יחול רק על עסקה זו</p>
                     </div>
                   </label>
 
                   <label className={cn(
                     'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
                     saveBehavior === 'always' 
-                      ? 'border-violet-300 bg-violet-50' 
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-violet-300 bg-indigo-50' 
+                      : 'border-slate-200 hover:border-slate-300'
                   )}>
                     <input
                       type="radio"
@@ -454,19 +454,19 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
                       value="always"
                       checked={saveBehavior === 'always'}
                       onChange={() => setSaveBehavior('always')}
-                      className="w-4 h-4 text-violet-600 focus:ring-violet-500"
+                      className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
                     />
                     <div>
-                      <p className="font-medium text-gray-900">זכור לפעמים הבאות</p>
-                      <p className="text-xs text-gray-500">עסקאות עתידיות מעסק זה יסווגו אוטומטית</p>
+                      <p className="font-medium text-slate-900">זכור לפעמים הבאות</p>
+                      <p className="text-xs text-slate-500">עסקאות עתידיות מעסק זה יסווגו אוטומטית</p>
                     </div>
                   </label>
 
                   <label className={cn(
                     'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
                     saveBehavior === 'alwaysAsk' 
-                      ? 'border-violet-300 bg-violet-50' 
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-violet-300 bg-indigo-50' 
+                      : 'border-slate-200 hover:border-slate-300'
                   )}>
                     <input
                       type="radio"
@@ -474,11 +474,11 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
                       value="alwaysAsk"
                       checked={saveBehavior === 'alwaysAsk'}
                       onChange={() => setSaveBehavior('alwaysAsk')}
-                      className="w-4 h-4 text-violet-600 focus:ring-violet-500"
+                      className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
                     />
                     <div>
-                      <p className="font-medium text-gray-900">תמיד תשאל אותי</p>
-                      <p className="text-xs text-gray-500">לעסקים גנריים כמו העברה בביט, PayBox וכו׳</p>
+                      <p className="font-medium text-slate-900">תמיד תשאל אותי</p>
+                      <p className="text-xs text-slate-500">לעסקים גנריים כמו העברה בביט, PayBox וכו׳</p>
                     </div>
                   </label>
                 </div>
@@ -486,17 +486,17 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-gray-100 flex gap-3">
+            <div className="p-4 border-t border-slate-100 flex gap-3">
               <button
                 onClick={handleSaveCategory}
                 disabled={!selectedCategory || selectedCategory === editingTransaction.category}
-                className="flex-1 py-2.5 bg-violet-600 text-white rounded-xl font-medium hover:bg-violet-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 שמור
               </button>
               <button
                 onClick={closeEditDialog}
-                className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors"
+                className="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors"
               >
                 ביטול
               </button>

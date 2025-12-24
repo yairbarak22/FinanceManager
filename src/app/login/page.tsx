@@ -46,7 +46,7 @@ function LoginContent() {
           {/* Login Button */}
           <button
             onClick={() => signIn('google', { callbackUrl })}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-pink-50/50 hover:border-pink-300 transition-all duration-200 group focus:outline-none focus:ring-2 focus:ring-pink-500/20"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-indigo-50/50 hover:border-indigo-300 transition-all duration-200 group focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -82,20 +82,20 @@ function LoginContent() {
           <h3 className="text-sm font-semibold text-gray-900 mb-4">מה תקבל?</h3>
           <ul className="space-y-3">
             <li className="flex items-center gap-3 text-sm text-gray-600">
-              <div className="w-8 h-8 bg-pink-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Wallet className="w-4 h-4 text-pink-500" />
+              <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Wallet className="w-4 h-4 text-indigo-500" />
               </div>
               <span>ניתוח הוצאות וניהול תקציב חכם</span>
             </li>
             <li className="flex items-center gap-3 text-sm text-gray-600">
-              <div className="w-8 h-8 bg-pink-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <PieChart className="w-4 h-4 text-pink-500" />
+              <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <PieChart className="w-4 h-4 text-indigo-500" />
               </div>
               <span>מעקב נכסים, התחייבויות ושווי נקי</span>
             </li>
             <li className="flex items-center gap-3 text-sm text-gray-600">
-              <div className="w-8 h-8 bg-pink-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                <TrendingUp className="w-4 h-4 text-pink-500" />
+              <div className="w-8 h-8 bg-indigo-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="w-4 h-4 text-indigo-500" />
               </div>
               <span>כלים לאיזון תיק השקעות</span>
             </li>
@@ -116,7 +116,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-          <div className="w-8 h-8 border-4 border-pink-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
         </div>
       }
     >

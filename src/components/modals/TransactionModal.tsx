@@ -76,7 +76,7 @@ export default function TransactionModal({
         <div className="modal-content animate-scale-in" onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="modal-header">
-            <h2 className="text-xl font-bold text-gray-900">
+            <h2 className="text-xl font-bold text-slate-900">
               {transaction ? 'עריכת עסקה' : 'עסקה חדשה'}
             </h2>
             <button onClick={onClose} className="btn-icon">
@@ -99,8 +99,8 @@ export default function TransactionModal({
                     }}
                     className={`py-3 px-4 rounded-xl font-medium transition-all ${
                       type === 'expense'
-                        ? 'bg-pink-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-indigo-500 text-white'
+                        : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
                     }`}
                   >
                     הוצאה
@@ -113,8 +113,8 @@ export default function TransactionModal({
                     }}
                     className={`py-3 px-4 rounded-xl font-medium transition-all ${
                       type === 'income'
-                        ? 'bg-teal-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
                     }`}
                   >
                     הכנסה

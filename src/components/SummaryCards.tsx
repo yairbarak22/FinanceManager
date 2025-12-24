@@ -1,7 +1,7 @@
 'use client';
 
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 
 interface SummaryCardsProps {
   totalBalance: number;
@@ -13,47 +13,62 @@ export default function SummaryCards({ totalBalance, totalIncome, totalExpenses 
   const isPositiveBalance = totalBalance >= 0;
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4" >
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Balance Card */}
-      <div className={`rounded-2xl p-5 ${isPositiveBalance ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-red-500 to-rose-600'} text-white shadow-lg`}>
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-5">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-white/80 text-sm font-medium mb-1">תזרים</p>
-            <p className="text-3xl font-bold tracking-tight">{formatCurrency(totalBalance)}</p>
-            <p className="text-white/60 text-xs mt-1">
+            <p className="text-slate-500 text-sm font-medium mb-1">תזרים</p>
+            <p className={cn(
+              "text-3xl font-bold tracking-tight",
+              isPositiveBalance ? "text-emerald-500" : "text-rose-500"
+            )}>
+              {formatCurrency(totalBalance)}
+            </p>
+            <p className="text-slate-400 text-xs mt-1">
               {isPositiveBalance ? 'חיובי' : 'שלילי'}
             </p>
           </div>
-          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-            <Wallet className="w-7 h-7 text-white" />
+          <div className={cn(
+            "w-12 h-12 rounded-xl flex items-center justify-center",
+            isPositiveBalance ? "bg-emerald-100" : "bg-rose-100"
+          )}>
+            <Wallet className={cn(
+              "w-6 h-6",
+              isPositiveBalance ? "text-emerald-600" : "text-rose-600"
+            )} />
           </div>
         </div>
       </div>
 
       {/* Income Card */}
-      <div className="rounded-2xl p-5 bg-gradient-to-br from-teal-500 to-cyan-600 text-white shadow-lg">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-5">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-white/80 text-sm font-medium mb-1">סה"כ הכנסות</p>
-            <p className="text-3xl font-bold tracking-tight">{formatCurrency(totalIncome)}</p>
-            <p className="text-white/60 text-xs mt-1">כולל קבועות</p>
+            <p className="text-slate-500 text-sm font-medium mb-1">סה"כ הכנסות</p>
+            <p className="text-3xl font-bold tracking-tight text-emerald-500">
+              {formatCurrency(totalIncome)}
+            </p>
+            <p className="text-slate-400 text-xs mt-1">כולל קבועות</p>
           </div>
-          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-            <TrendingUp className="w-7 h-7 text-white" />
+          <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
+            <TrendingUp className="w-6 h-6 text-emerald-600" />
           </div>
         </div>
       </div>
 
       {/* Expenses Card */}
-      <div className="rounded-2xl p-5 bg-gradient-to-br from-pink-500 to-rose-600 text-white shadow-lg">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-5">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-white/80 text-sm font-medium mb-1">סה"כ הוצאות</p>
-            <p className="text-3xl font-bold tracking-tight">{formatCurrency(totalExpenses)}</p>
-            <p className="text-white/60 text-xs mt-1">כולל קבועות + התחייבויות</p>
+            <p className="text-slate-500 text-sm font-medium mb-1">סה"כ הוצאות</p>
+            <p className="text-3xl font-bold tracking-tight text-rose-500">
+              {formatCurrency(totalExpenses)}
+            </p>
+            <p className="text-slate-400 text-xs mt-1">כולל קבועות + התחייבויות</p>
           </div>
-          <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-            <TrendingDown className="w-7 h-7 text-white" />
+          <div className="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center">
+            <TrendingDown className="w-6 h-6 text-rose-600" />
           </div>
         </div>
       </div>

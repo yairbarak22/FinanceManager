@@ -51,14 +51,14 @@ const TYPE_COLORS: Record<RecommendationType, string> = {
   savings: 'bg-blue-100 text-blue-600',
   insurance: 'bg-purple-100 text-purple-600',
   banking: 'bg-amber-100 text-amber-600',
-  general: 'bg-gray-100 text-gray-600',
+  general: 'bg-slate-100 text-slate-600',
 };
 
 // Priority badge styles
 const PRIORITY_STYLES: Record<RecommendationPriority, string> = {
   high: 'bg-red-100 text-red-700 border-red-200',
   medium: 'bg-amber-100 text-amber-700 border-amber-200',
-  low: 'bg-gray-100 text-gray-600 border-gray-200',
+  low: 'bg-slate-100 text-slate-600 border-gray-200',
 };
 
 // Priority labels in Hebrew
@@ -128,12 +128,12 @@ export default function AdvisorModal({ isOpen, onClose }: AdvisorModalProps) {
               <Lightbulb className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">המלצות פיננסיות</h3>
-              <p className="text-xs text-gray-500">הטבות ופעולות מומלצות עבורך</p>
+              <h3 className="text-lg font-semibold text-slate-900">המלצות פיננסיות</h3>
+              <p className="text-xs text-slate-500">הטבות ופעולות מומלצות עבורך</p>
             </div>
           </div>
           <button onClick={onClose} className="btn-icon">
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-slate-500" />
           </button>
         </div>
 
@@ -142,14 +142,14 @@ export default function AdvisorModal({ isOpen, onClose }: AdvisorModalProps) {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12">
               <Loader2 className="w-10 h-10 text-amber-500 animate-spin mb-4" />
-              <p className="text-gray-500">מנתח את הנתונים הפיננסיים שלך...</p>
+              <p className="text-slate-500">מנתח את הנתונים הפיננסיים שלך...</p>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4">
                 <X className="w-6 h-6 text-red-500" />
               </div>
-              <p className="text-gray-600 mb-4">{error}</p>
+              <p className="text-slate-600 mb-4">{error}</p>
               <button
                 onClick={fetchRecommendations}
                 className="btn-primary"
@@ -162,8 +162,8 @@ export default function AdvisorModal({ isOpen, onClose }: AdvisorModalProps) {
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center mb-4">
                 <Sparkles className="w-8 h-8 text-green-500" />
               </div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">מצוין!</h4>
-              <p className="text-gray-500 text-center max-w-sm">
+              <h4 className="text-lg font-medium text-slate-900 mb-2">מצוין!</h4>
+              <p className="text-slate-500 text-center max-w-sm">
                 לא מצאנו כרגע הטבות או פעולות שמתאימות לך.
                 המשך לעדכן את הנתונים ונמשיך לחפש הזדמנויות עבורך.
               </p>
@@ -179,7 +179,7 @@ export default function AdvisorModal({ isOpen, onClose }: AdvisorModalProps) {
 
         {/* Footer */}
         <div className="modal-footer border-t border-gray-100">
-          <p className="text-xs text-gray-400 flex-1">
+          <p className="text-xs text-slate-400 flex-1">
             ההמלצות מבוססות על הנתונים שהזנת ואינן מהוות ייעוץ פיננסי מקצועי
           </p>
           <button onClick={onClose} className="btn-secondary">
@@ -218,7 +218,7 @@ function RecommendationCard({ recommendation }: { recommendation: Recommendation
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-1">
             <div className="flex items-center gap-2">
-              <h4 className="font-medium text-gray-900">{title}</h4>
+              <h4 className="font-medium text-slate-900">{title}</h4>
               <HelpTrigger
                 contextDescription={`המלצה פיננסית: ${title}`}
                 contextData={contextData}
@@ -231,7 +231,7 @@ function RecommendationCard({ recommendation }: { recommendation: Recommendation
             </span>
           </div>
           
-          <p className="text-sm text-gray-600 mb-3 leading-relaxed">
+          <p className="text-sm text-slate-600 mb-3 leading-relaxed">
             {description}
           </p>
 
@@ -239,7 +239,7 @@ function RecommendationCard({ recommendation }: { recommendation: Recommendation
             {/* Potential value */}
             {potentialValue && (
               <div className="text-sm">
-                <span className="text-gray-500">חיסכון משוער: </span>
+                <span className="text-slate-500">חיסכון משוער: </span>
                 <span className="font-medium text-green-600">
                   {formatCurrency(potentialValue)}
                 </span>

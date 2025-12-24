@@ -41,10 +41,10 @@ export default function CookieConsent() {
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 mb-1">
+            <h3 className="font-semibold text-slate-900 mb-1">
               אנחנו משתמשים בעוגיות
             </h3>
-            <p className="text-sm text-gray-500 leading-relaxed">
+            <p className="text-sm text-slate-500 leading-relaxed">
               אנחנו משתמשים בעוגיות כדי לשפר את חווית השימוש ולנתח את השימוש באתר.
               לא נשלח נתונים פיננסיים אישיים - רק מידע סטטיסטי על השימוש באפליקציה.
             </p>
@@ -53,10 +53,10 @@ export default function CookieConsent() {
           {/* Close button for mobile */}
           <button
             onClick={handleDecline}
-            className="md:hidden p-1 rounded-lg hover:bg-gray-100 transition-colors"
+            className="md:hidden p-1 rounded-lg hover:bg-slate-100 transition-colors"
             aria-label="סגור"
           >
-            <X className="w-5 h-5 text-gray-400" />
+            <X className="w-5 h-5 text-slate-400" />
           </button>
         </div>
 
@@ -64,13 +64,13 @@ export default function CookieConsent() {
         <div className="flex items-center justify-end gap-3 mt-4">
           <button
             onClick={handleDecline}
-            className="hidden md:block px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            className="hidden md:block px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
           >
             לא תודה
           </button>
           <button
             onClick={handleAccept}
-            className="px-6 py-2.5 bg-pink-500 hover:bg-pink-600 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+            className="px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
           >
             אישור
           </button>

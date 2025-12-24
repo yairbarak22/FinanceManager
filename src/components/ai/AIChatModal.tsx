@@ -29,7 +29,7 @@ function renderMarkdown(text: string): React.ReactNode {
     if (trimmedLine.startsWith('###')) {
       const content = trimmedLine.replace(/^###\s*/, '');
       elements.push(
-        <h4 key={lineIndex} className="font-bold text-violet-700 mt-3 mb-1">
+        <h4 key={lineIndex} className="font-bold text-indigo-700 mt-3 mb-1">
           {renderInlineMarkdown(content)}
         </h4>
       );
@@ -40,7 +40,7 @@ function renderMarkdown(text: string): React.ReactNode {
     if (h2Match) {
       const content = trimmedLine.replace(/^##\s*/, '');
       elements.push(
-        <h3 key={lineIndex} className="font-bold text-violet-700 mt-3 mb-1 text-base">
+        <h3 key={lineIndex} className="font-bold text-indigo-700 mt-3 mb-1 text-base">
           {renderInlineMarkdown(content)}
         </h3>
       );
@@ -51,7 +51,7 @@ function renderMarkdown(text: string): React.ReactNode {
     if (h1Match) {
       const content = trimmedLine.replace(/^#\s*/, '');
       elements.push(
-        <h2 key={lineIndex} className="font-bold text-violet-700 mt-3 mb-1 text-lg">
+        <h2 key={lineIndex} className="font-bold text-indigo-700 mt-3 mb-1 text-lg">
           {renderInlineMarkdown(content)}
         </h2>
       );
@@ -63,7 +63,7 @@ function renderMarkdown(text: string): React.ReactNode {
       const content = trimmedLine.replace(/^[\-•\*]\s*/, '');
       elements.push(
         <div key={lineIndex} className="flex gap-2 mr-2 mb-0.5">
-          <span className="text-violet-500 flex-shrink-0">•</span>
+          <span className="text-indigo-500 flex-shrink-0">•</span>
           <span>{renderInlineMarkdown(content)}</span>
         </div>
       );
@@ -75,7 +75,7 @@ function renderMarkdown(text: string): React.ReactNode {
     if (numberedMatch) {
       elements.push(
         <div key={lineIndex} className="flex gap-2 mr-2 mb-0.5">
-          <span className="text-violet-500 font-medium flex-shrink-0">{numberedMatch[1]}.</span>
+          <span className="text-indigo-500 font-medium flex-shrink-0">{numberedMatch[1]}.</span>
           <span>{renderInlineMarkdown(numberedMatch[2])}</span>
         </div>
       );
@@ -116,7 +116,7 @@ function renderInlineMarkdown(text: string): React.ReactNode {
       
       // Add bold text
       parts.push(
-        <strong key={keyIndex++} className="font-semibold text-gray-900">
+        <strong key={keyIndex++} className="font-semibold text-slate-900">
           {boldMatch[1]}
         </strong>
       );
@@ -345,9 +345,9 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-center px-4">
-              <Bot className="w-10 h-10 mb-3 text-violet-300" />
-              <p className="text-sm font-medium text-gray-700 mb-1">יש מושג שלא ברור?</p>
-              <p className="text-xs text-gray-400 mb-4 max-w-xs">
+              <Bot className="w-10 h-10 mb-3 text-indigo-300" />
+              <p className="text-sm font-medium text-slate-700 mb-1">יש מושג שלא ברור?</p>
+              <p className="text-xs text-slate-400 mb-4 max-w-xs">
                 אני כאן כדי להסביר מושגים פיננסיים בצורה פשוטה וברורה
               </p>
               
@@ -357,7 +357,7 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
                   <button
                     key={idx}
                     onClick={() => handleSuggestedQuestion(question)}
-                    className="px-3 py-1.5 text-xs bg-violet-50 text-violet-700 rounded-full hover:bg-violet-100 transition-colors border border-violet-200"
+                    className="px-3 py-1.5 text-xs bg-indigo-50 text-indigo-700 rounded-full hover:bg-indigo-100 transition-colors border border-indigo-200"
                   >
                     {question}
                   </button>
@@ -378,11 +378,11 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
                 'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
                 message.role === 'user' 
                   ? 'bg-blue-100' 
-                  : 'bg-violet-100'
+                  : 'bg-indigo-100'
               )}>
                 {message.role === 'user' 
                   ? <User className="w-4 h-4 text-blue-600" />
-                  : <Bot className="w-4 h-4 text-violet-600" />
+                  : <Bot className="w-4 h-4 text-indigo-600" />
                 }
               </div>
               <div className="flex flex-col max-w-[80%]">
@@ -390,14 +390,14 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
                   'px-4 py-2.5 rounded-2xl text-sm leading-relaxed',
                   message.role === 'user'
                     ? 'bg-blue-500 text-white rounded-br-md whitespace-pre-wrap'
-                    : 'bg-gray-100 text-gray-800 rounded-bl-md'
+                    : 'bg-slate-100 text-slate-800 rounded-bl-md'
                 )}>
                   {message.role === 'user' ? (
                     message.content
                   ) : message.isTyping ? (
                     <div>
                       {renderMarkdown(displayedText)}
-                      <span className="inline-block w-1 h-4 bg-violet-500 ml-0.5 animate-pulse" />
+                      <span className="inline-block w-1 h-4 bg-indigo-500 ml-0.5 animate-pulse" />
                     </div>
                   ) : (
                     renderMarkdown(message.content)
@@ -407,7 +407,7 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
                 {message.role === 'assistant' && !message.isTyping && message.content && (
                   <button
                     onClick={() => copyToClipboard(message.content, message.id)}
-                    className="self-start mt-1 p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="self-start mt-1 p-1 text-slate-400 hover:text-slate-600 transition-colors"
                     title="העתק"
                   >
                     {copiedId === message.id ? (
@@ -423,13 +423,13 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
 
           {isLoading && (
             <div className="flex gap-3">
-              <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center">
-                <Bot className="w-4 h-4 text-violet-600" />
+              <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                <Bot className="w-4 h-4 text-indigo-600" />
               </div>
-              <div className="bg-gray-100 px-4 py-3 rounded-2xl rounded-bl-md flex items-center gap-1">
-                <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-2 h-2 bg-violet-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="bg-slate-100 px-4 py-3 rounded-2xl rounded-bl-md flex items-center gap-1">
+                <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           )}
@@ -439,13 +439,13 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
 
         {/* Suggested Questions (when messages exist) */}
         {messages.length > 0 && !isLoading && !isTypingAnimation && (
-          <div className="px-4 py-2 border-t border-gray-100 bg-gray-50">
+          <div className="px-4 py-2 border-t border-gray-100 bg-slate-50">
             <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
               {topic.suggestedQuestions.slice(0, 3).map((question, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSuggestedQuestion(question)}
-                  className="px-3 py-1 text-xs bg-white text-violet-600 rounded-full hover:bg-violet-50 transition-colors border border-violet-200 whitespace-nowrap flex-shrink-0"
+                  className="px-3 py-1 text-xs bg-white text-indigo-600 rounded-full hover:bg-indigo-50 transition-colors border border-indigo-200 whitespace-nowrap flex-shrink-0"
                 >
                   {question}
                 </button>
@@ -463,13 +463,13 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="שאל שאלה..."
-              className="flex-1 px-4 py-2.5 bg-gray-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+              className="flex-1 px-4 py-2.5 bg-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               disabled={isLoading || isTypingAnimation}
             />
             <button
               type="submit"
               disabled={!input.trim() || isLoading || isTypingAnimation}
-              className="px-4 py-2.5 bg-violet-500 text-white rounded-xl hover:bg-violet-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2.5 bg-indigo-500 text-white rounded-xl hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Send className="w-4 h-4" />
             </button>

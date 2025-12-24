@@ -46,12 +46,12 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
       )}
     >
       {icons[toast.type]}
-      <p className="text-sm text-gray-700 flex-1">{toast.message}</p>
+      <p className="text-sm text-slate-700 flex-1">{toast.message}</p>
       <button
         onClick={() => onRemove(toast.id)}
         className="p-1 rounded hover:bg-gray-200/50 transition-colors"
       >
-        <X className="w-4 h-4 text-gray-400" />
+        <X className="w-4 h-4 text-slate-400" />
       </button>
     </div>
   );

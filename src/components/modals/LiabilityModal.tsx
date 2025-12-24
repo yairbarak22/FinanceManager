@@ -112,7 +112,7 @@ export default function LiabilityModal({
         <div className="modal-content max-w-lg animate-scale-in" onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="modal-header">
-            <h2 className="text-xl font-bold text-gray-900">
+            <h2 className="text-xl font-bold text-slate-900">
               {liability ? 'עריכת התחייבות' : 'התחייבות חדשה'}
             </h2>
             <button onClick={onClose} className="btn-icon">
@@ -160,8 +160,8 @@ export default function LiabilityModal({
                     className={cn(
                       "py-2.5 px-4 rounded-xl text-sm font-medium transition-all",
                       loanMethod === 'spitzer'
-                        ? 'bg-violet-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-indigo-500 text-white'
+                        : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
                     )}
                   >
                     שפיצר
@@ -172,8 +172,8 @@ export default function LiabilityModal({
                     className={cn(
                       "py-2.5 px-4 rounded-xl text-sm font-medium transition-all",
                       loanMethod === 'equal_principal'
-                        ? 'bg-violet-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? 'bg-indigo-500 text-white'
+                        : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
                     )}
                   >
                     קרן שווה
@@ -270,8 +270,8 @@ export default function LiabilityModal({
               <div className="bg-green-50 rounded-xl p-4 border border-green-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-gray-900">זיכוי על הריבית</p>
-                    <p className="text-sm text-gray-500 mt-0.5">
+                    <p className="font-medium text-slate-900">זיכוי על הריבית</p>
+                    <p className="text-sm text-slate-500 mt-0.5">
                       אם פעיל, רק הקרן נחשבת כהוצאה (לדוגמה: משכנתא עם החזר מס)
                     </p>
                   </div>

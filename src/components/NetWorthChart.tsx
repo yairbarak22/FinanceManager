@@ -33,7 +33,7 @@ export default function NetWorthChart({ data, currentNetWorth, transactionBalanc
           <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
             <TrendingUp className="w-5 h-5 text-blue-600" />
           </div>
-          <h2 className="text-lg font-semibold text-gray-900">התקדמות השווי הנקי</h2>
+          <h2 className="text-lg font-semibold text-slate-900">התקדמות השווי הנקי</h2>
         </div>
         
         {/* Change Badge */}
@@ -92,11 +92,11 @@ export default function NetWorthChart({ data, currentNetWorth, transactionBalanc
       {/* Bottom Stats */}
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
-          <p className="text-xs text-gray-500 mb-1">שווי נקי נוכחי</p>
+          <p className="text-xs text-slate-500 mb-1">שווי נקי נוכחי</p>
           <p className="text-lg font-bold text-blue-600">{formatCurrency(currentNetWorth)}</p>
         </div>
         <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
-          <p className="text-xs text-gray-500 mb-1">יתרה מעסקאות</p>
+          <p className="text-xs text-slate-500 mb-1">יתרה מעסקאות</p>
           <p className={`text-lg font-bold ${transactionBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {formatCurrency(transactionBalance)}
           </p>

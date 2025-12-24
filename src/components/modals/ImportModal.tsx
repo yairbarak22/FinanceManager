@@ -96,8 +96,8 @@ function ProgressStep({
           'w-10 h-10 rounded-full flex items-center justify-center transition-all',
           isError ? 'bg-red-100 text-red-600' :
           isComplete ? 'bg-green-100 text-green-600' :
-          isActive ? 'bg-violet-100 text-violet-600 ring-2 ring-violet-300 ring-offset-2' :
-          'bg-gray-100 text-gray-400'
+          isActive ? 'bg-indigo-100 text-indigo-600 ring-2 ring-indigo-300 ring-offset-2' :
+          'bg-slate-100 text-slate-400'
         )}
       >
         {isComplete ? (
@@ -113,7 +113,7 @@ function ProgressStep({
       <span
         className={cn(
           'text-xs mt-2 text-center',
-          isActive || isComplete ? 'text-gray-900 font-medium' : 'text-gray-400'
+          isActive || isComplete ? 'text-slate-900 font-medium' : 'text-slate-400'
         )}
       >
         {label}
@@ -128,7 +128,7 @@ function ProgressLine({ isComplete }: { isComplete: boolean }) {
     <div
       className={cn(
         'flex-1 h-0.5 mx-2 transition-colors',
-        isComplete ? 'bg-green-300' : 'bg-gray-200'
+        isComplete ? 'bg-green-300' : 'bg-slate-200'
       )}
     />
   );
@@ -184,9 +184,9 @@ function CategoryDropdown({
         className={cn(
           'w-full px-3 py-2.5 border-2 rounded-xl text-sm font-medium transition-all',
           'flex items-center justify-between gap-2',
-          'focus:ring-2 focus:ring-violet-500 focus:ring-offset-1 focus:outline-none',
+          'focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 focus:outline-none',
           value 
-            ? 'border-violet-300 bg-violet-50 text-violet-700 hover:border-violet-400' 
+            ? 'border-indigo-300 bg-indigo-50 text-indigo-700 hover:border-indigo-400' 
             : 'border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-400'
         )}
       >
@@ -201,7 +201,7 @@ function CategoryDropdown({
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-64 overflow-y-auto">
+        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-64 overflow-y-auto">
           <div className="p-1">
             {categories.map((cat) => {
               const isSelected = cat.id === value;
@@ -217,12 +217,12 @@ function CategoryDropdown({
                     'w-full px-3 py-2 rounded-lg text-sm font-medium text-right',
                     'flex items-center justify-between gap-2 transition-colors',
                     isSelected 
-                      ? 'bg-violet-100 text-violet-700 border-2 border-violet-300' 
-                      : 'text-gray-700 hover:bg-gray-100 border-2 border-transparent'
+                      ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300' 
+                      : 'text-slate-700 hover:bg-slate-100 border-2 border-transparent'
                   )}
                 >
                   <span>{cat.nameHe}</span>
-                  {isSelected && <Check className="w-4 h-4 text-violet-600" />}
+                  {isSelected && <Check className="w-4 h-4 text-indigo-600" />}
                 </button>
               );
             })}
@@ -445,18 +445,18 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
               <FileSpreadsheet className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">ייבוא עסקאות חכם</h3>
-              <p className="text-sm text-gray-500">סיווג אוטומטי עם AI</p>
+              <h3 className="text-lg font-semibold text-slate-900">ייבוא עסקאות חכם</h3>
+              <p className="text-sm text-slate-500">סיווג אוטומטי עם AI</p>
             </div>
           </div>
           <button onClick={handleClose} className="btn-icon">
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-slate-500" />
           </button>
         </div>
 
         {/* Progress Stepper (show when processing) */}
         {phase !== 'idle' && phase !== 'error' && (
-          <div className="px-6 py-4 border-b border-gray-100">
+          <div className="px-6 py-4 border-b border-slate-100">
             <div className="flex items-center justify-between">
               <ProgressStep
                 step={1}
@@ -502,8 +502,8 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                 className={cn(
                   'border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer',
               isDragging
-                    ? 'border-violet-400 bg-violet-50'
-                : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-indigo-400 bg-indigo-50'
+                : 'border-slate-200 hover:border-slate-300'
                 )}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -517,23 +517,23 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
               accept=".xlsx,.xls,.csv"
               className="hidden"
             />
-            <Upload className="w-10 h-10 text-gray-400 mx-auto mb-3" />
-            <p className="text-sm text-gray-600 mb-1">
+            <Upload className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+            <p className="text-sm text-slate-600 mb-1">
               גרור קובץ לכאן או לחץ לבחירה
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-slate-400">
               Excel (.xlsx, .xls) או CSV
             </p>
           </div>
 
           {file && (
-            <div className="mt-4 p-3 bg-gray-50 rounded-xl flex items-center gap-3">
-                  <FileSpreadsheet className="w-5 h-5 text-violet-600" />
+            <div className="mt-4 p-3 bg-slate-50 rounded-xl flex items-center gap-3">
+                  <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-slate-900 truncate">
                   {file.name}
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-slate-500">
                   {(file.size / 1024).toFixed(1)} KB
                 </p>
               </div>
@@ -558,14 +558,14 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
           {/* Processing states */}
           {(phase === 'parsing' || phase === 'classifying' || phase === 'saving') && (
             <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="w-12 h-12 text-violet-500 animate-spin mb-4" />
-              <p className="text-gray-700 font-medium">
+              <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
+              <p className="text-slate-700 font-medium">
                 {phase === 'parsing' && 'מנתח את הקובץ...'}
                 {phase === 'classifying' && 'מסווג עסקאות עם AI...'}
                 {phase === 'saving' && 'שומר עסקאות...'}
               </p>
               {phase === 'classifying' && (
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-slate-500 mt-2">
                   זה עשוי לקחת מספר שניות
                 </p>
               )}
@@ -603,21 +603,21 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
               )}
 
               {/* Review table */}
-              <div className="border border-gray-200 rounded-xl overflow-hidden">
+              <div className="border border-slate-200 rounded-xl overflow-hidden">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-slate-50">
                     <tr>
-                      <th className="text-right px-4 py-3 font-medium text-gray-600">עסק</th>
-                      <th className="text-right px-4 py-3 font-medium text-gray-600">סכום</th>
-                      <th className="text-right px-4 py-3 font-medium text-gray-600">תאריך</th>
-                      <th className="text-right px-4 py-3 font-medium text-gray-600">קטגוריה</th>
+                      <th className="text-right px-4 py-3 font-medium text-slate-600">עסק</th>
+                      <th className="text-right px-4 py-3 font-medium text-slate-600">סכום</th>
+                      <th className="text-right px-4 py-3 font-medium text-slate-600">תאריך</th>
+                      <th className="text-right px-4 py-3 font-medium text-slate-600">קטגוריה</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {needsReview.map((t) => (
-                      <tr key={t.rowNum} className="hover:bg-gray-50">
+                      <tr key={t.rowNum} className="hover:bg-slate-50">
                         <td className="px-4 py-3">
-                          <span className="font-medium text-gray-900">{t.merchantName}</span>
+                          <span className="font-medium text-slate-900">{t.merchantName}</span>
                         </td>
                         <td className="px-4 py-3">
                           <span className={cn(
@@ -627,7 +627,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                             {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-gray-600">
+                        <td className="px-4 py-3 text-slate-600">
                           {new Date(t.date).toLocaleDateString('he-IL')}
                         </td>
                         <td className="px-4 py-3">
@@ -654,10 +654,10 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
               <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">הייבוא הושלם!</h4>
-              <p className="text-gray-600 text-center">
+              <h4 className="text-lg font-semibold text-slate-900 mb-2">הייבוא הושלם!</h4>
+              <p className="text-slate-600 text-center">
                 {savedCount > 0 ? (
-                  <>נשמרו <span className="font-bold text-violet-600">{savedCount}</span> עסקאות בהצלחה</>
+                  <>נשמרו <span className="font-bold text-indigo-600">{savedCount}</span> עסקאות בהצלחה</>
                 ) : (
                   'לא נמצאו עסקאות לייבוא'
                 )}
@@ -670,7 +670,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                     </span>
                   )}
                   {stats.aiClassified > 0 && (
-                    <span className="px-3 py-1 bg-violet-100 text-violet-700 rounded-full text-sm">
+                    <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
                       🧠 {stats.aiClassified} סווגו ע&quot;י AI
                     </span>
                   )}
@@ -690,7 +690,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
               <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
                 <AlertCircle className="w-8 h-8 text-red-600" />
               </div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">שגיאה</h4>
+              <h4 className="text-lg font-semibold text-slate-900 mb-2">שגיאה</h4>
               <div className="space-y-1 text-center">
                 {errors.map((err, i) => (
                   <p key={i} className="text-red-600">{err}</p>

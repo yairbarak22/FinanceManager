@@ -37,7 +37,7 @@ export default function HoldingsList({
   };
 
   return (
-    <div className="card p-6">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -45,8 +45,8 @@ export default function HoldingsList({
             <BarChart3 className="w-5 h-5 text-indigo-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">האחזקות שלי</h3>
-            <p className="text-sm text-gray-500">
+            <h3 className="font-semibold text-slate-900">האחזקות שלי</h3>
+            <p className="text-sm text-slate-500">
               {holdings.length} נכסים • {formatCurrency(totalValue)}
             </p>
           </div>
@@ -78,7 +78,7 @@ export default function HoldingsList({
           return (
             <div
               key={holding.id}
-              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 sm:p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
             >
               {/* Top row: Icon + Details + Value (mobile) */}
               <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
@@ -90,14 +90,14 @@ export default function HoldingsList({
                 {/* Details */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-gray-900 text-sm sm:text-base truncate">{holding.name}</p>
+                    <p className="font-medium text-slate-900 text-sm sm:text-base truncate">{holding.name}</p>
                     {holding.symbol && (
-                      <span className="hidden sm:inline text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">
+                      <span className="hidden sm:inline text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded">
                         {holding.symbol}
                       </span>
                     )}
                   </div>
-                  <p className="text-xs sm:text-sm text-gray-500">
+                  <p className="text-xs sm:text-sm text-slate-500">
                     {holding.type === 'etf' ? 'קרן סל' : 'קרן מחקה'}
                     {holding.symbol && <span className="sm:hidden"> • {holding.symbol}</span>}
                   </p>
@@ -105,8 +105,8 @@ export default function HoldingsList({
 
                 {/* Value - mobile only */}
                 <div className="text-left flex-shrink-0 sm:hidden">
-                  <p className="font-bold text-gray-900 text-sm">{formatCurrency(holding.currentValue)}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="font-bold text-slate-900 text-sm">{formatCurrency(holding.currentValue)}</p>
+                  <p className="text-xs text-slate-500">
                     {currentAllocation.toFixed(1)}%
                   </p>
                 </div>
@@ -116,8 +116,8 @@ export default function HoldingsList({
               <div className="flex items-center gap-2 sm:gap-4 justify-between sm:justify-end mr-12 sm:mr-0">
                 {/* Value - desktop only */}
                 <div className="hidden sm:block text-left flex-shrink-0">
-                  <p className="font-bold text-gray-900">{formatCurrency(holding.currentValue)}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="font-bold text-slate-900">{formatCurrency(holding.currentValue)}</p>
+                  <p className="text-xs text-slate-500">
                     {currentAllocation.toFixed(1)}% נוכחי
                   </p>
                 </div>
@@ -127,7 +127,7 @@ export default function HoldingsList({
                   <p className={cn(
                     "font-medium text-sm sm:text-base",
                     allocationDiff > 5 ? "text-red-500" : 
-                    allocationDiff < -5 ? "text-green-500" : "text-gray-700"
+                    allocationDiff < -5 ? "text-green-500" : "text-slate-700"
                   )}>
                     יעד: {holding.targetAllocation}%
                   </p>
@@ -142,13 +142,13 @@ export default function HoldingsList({
                 <div className="flex gap-1 flex-shrink-0">
                   <button
                     onClick={() => onEdit(holding)}
-                    className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-200 text-gray-500 hover:text-gray-600"
+                    className="p-1.5 sm:p-2 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-600"
                   >
                     <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </button>
                   <button
                     onClick={() => setDeleteConfirm({ isOpen: true, id: holding.id, name: holding.name })}
-                    className="p-1.5 sm:p-2 rounded-lg hover:bg-red-100 text-gray-500 hover:text-red-500"
+                    className="p-1.5 sm:p-2 rounded-lg hover:bg-red-100 text-slate-500 hover:text-red-500"
                   >
                     <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </button>
@@ -159,7 +159,7 @@ export default function HoldingsList({
         })}
 
         {holdings.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-slate-500">
             <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>אין אחזקות עדיין</p>
             <p className="text-sm mt-1">הוסף את האחזקות שלך כדי להתחיל</p>

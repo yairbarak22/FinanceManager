@@ -38,7 +38,7 @@ export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserM
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all"
+        className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all"
       >
         {image ? (
           <img
@@ -47,15 +47,15 @@ export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserM
             className="w-8 h-8 rounded-full"
           />
         ) : (
-          <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center">
-            <User className="w-4 h-4 text-pink-600" />
+          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+            <User className="w-4 h-4 text-indigo-600" />
           </div>
         )}
-        <span className="text-sm font-medium text-gray-700 hidden sm:block max-w-[120px] truncate">
+        <span className="text-sm font-medium text-slate-700 hidden sm:block max-w-[120px] truncate">
           {name || email}
         </span>
         <ChevronDown
-          className={`w-4 h-4 text-gray-400 transition-transform ${
+          className={`w-4 h-4 text-slate-400 transition-transform ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
@@ -63,13 +63,13 @@ export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserM
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute left-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-scale-in">
+        <div className="absolute left-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50 animate-scale-in">
           {/* User Info */}
-          <div className="px-4 py-3 border-b border-gray-100">
-            <p className="text-sm font-medium text-gray-900 truncate">
+          <div className="px-4 py-3 border-b border-slate-100">
+            <p className="text-sm font-medium text-slate-900 truncate">
               {name || 'משתמש'}
             </p>
-            <p className="text-xs text-gray-500 truncate">{email}</p>
+            <p className="text-xs text-slate-500 truncate">{email}</p>
           </div>
 
           {/* Menu Items */}
@@ -80,7 +80,7 @@ export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserM
                   setIsOpen(false);
                   onOpenProfile();
                 }}
-                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 <UserCog className="w-4 h-4 text-purple-500" />
                 פרטים אישיים
@@ -92,24 +92,24 @@ export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserM
                   setIsOpen(false);
                   onOpenAccountSettings();
                 }}
-                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
               >
                 <Users className="w-4 h-4 text-blue-500" />
                 שיתוף חשבון
               </button>
             )}
-            <div className="my-1 border-t border-gray-100" />
+            <div className="my-1 border-t border-slate-100" />
             <button
               onClick={() => {
                 setIsOpen(false);
                 startOnboarding();
               }}
-              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
             >
-              <HelpCircle className="w-4 h-4 text-pink-500" />
+              <HelpCircle className="w-4 h-4 text-indigo-500" />
               הצג מדריך למתחילים
             </button>
-            <div className="my-1 border-t border-gray-100" />
+            <div className="my-1 border-t border-slate-100" />
             <button
               onClick={() => {
                 setIsOpen(false);

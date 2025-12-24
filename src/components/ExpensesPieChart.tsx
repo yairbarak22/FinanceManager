@@ -36,8 +36,8 @@ export default function ExpensesPieChart({ transactions }: ExpensesPieChartProps
   if (data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8">
-        <PieChartIcon className="w-12 h-12 text-gray-300 mb-3" />
-        <p className="text-gray-500 text-sm">אין הוצאות להצגה</p>
+        <PieChartIcon className="w-12 h-12 text-slate-300 mb-3" />
+        <p className="text-slate-500 text-sm">אין הוצאות להצגה</p>
       </div>
     );
   }
@@ -46,11 +46,11 @@ export default function ExpensesPieChart({ transactions }: ExpensesPieChartProps
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-pink-100 rounded-lg flex items-center justify-center">
-            <PieChartIcon className="w-4 h-4 text-pink-600" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+            <PieChartIcon className="w-5 h-5 text-indigo-600" />
           </div>
-          <h3 className="font-semibold text-gray-900">התפלגות הוצאות</h3>
+          <h3 className="font-semibold text-slate-900">התפלגות הוצאות</h3>
         </div>
       </div>
 
@@ -94,8 +94,8 @@ export default function ExpensesPieChart({ transactions }: ExpensesPieChartProps
               className="w-3 h-3 rounded-full flex-shrink-0"
               style={{ backgroundColor: item.color }}
             />
-            <span className="text-xs text-gray-600 truncate flex-1">{item.name}</span>
-            <span className="text-xs text-gray-500 flex-shrink-0">{item.percentage}%</span>
+            <span className="text-xs text-slate-600 truncate flex-1">{item.name}</span>
+            <span className="text-xs text-slate-500 flex-shrink-0">{item.percentage}%</span>
           </div>
         ))}
       </div>

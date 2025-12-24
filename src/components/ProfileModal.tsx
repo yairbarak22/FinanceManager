@@ -62,15 +62,15 @@ function StyledSelect({ value, onChange, options, placeholder }: StyledSelectPro
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           'category-select-trigger',
-          !selectedOption && 'text-gray-400'
+          !selectedOption && 'text-slate-400'
         )}
       >
-        <span className={cn('flex-1 text-right', selectedOption ? 'text-gray-900' : 'text-gray-400')}>
+        <span className={cn('flex-1 text-right', selectedOption ? 'text-slate-900' : 'text-slate-400')}>
           {selectedOption?.label || placeholder}
         </span>
         <ChevronDown
           className={cn(
-            'w-4 h-4 text-gray-400 transition-transform',
+            'w-4 h-4 text-slate-400 transition-transform',
             isOpen && 'rotate-180'
           )}
         />
@@ -92,7 +92,7 @@ function StyledSelect({ value, onChange, options, placeholder }: StyledSelectPro
               >
                 <span className="flex-1 text-right">{option.label}</span>
                 {value === option.value && (
-                  <Check className="w-4 h-4 text-pink-500" />
+                  <Check className="w-4 h-4 text-indigo-500" />
                 )}
               </button>
             ))}
@@ -213,7 +213,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       <div className="modal-content animate-scale-in" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="modal-header">
-          <h2 className="text-xl font-bold text-gray-900">פרטים אישיים</h2>
+          <h2 className="text-xl font-bold text-slate-900">פרטים אישיים</h2>
           <button onClick={onClose} className="btn-icon">
             <X className="w-5 h-5" />
           </button>
@@ -222,7 +222,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         {/* Form */}
         {loading ? (
           <div className="p-12 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+            <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
@@ -284,14 +284,14 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                         hasChildren: e.target.checked,
                         childrenCount: e.target.checked ? Math.max(1, profile.childrenCount) : 0
                       })}
-                      className="w-5 h-5 rounded border-gray-300 text-pink-500 focus:ring-pink-500"
+                      className="w-5 h-5 rounded border-gray-300 text-indigo-500 focus:ring-indigo-500"
                     />
-                    <span className="text-gray-700">יש לי ילדים</span>
+                    <span className="text-slate-700">יש לי ילדים</span>
                   </label>
                   
                   {profile.hasChildren && (
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-500">מספר:</span>
+                      <span className="text-sm text-slate-500">מספר:</span>
                       <input
                         type="number"
                         min="1"

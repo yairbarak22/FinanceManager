@@ -50,7 +50,7 @@ export default function HelpTrigger({
       onClick={handleClick}
       className={cn(
         'inline-flex items-center justify-center rounded-full transition-all',
-        'text-violet-400 hover:text-violet-600 hover:bg-violet-50',
+        'text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50',
         'active:scale-95',
         size === 'sm' && 'w-5 h-5',
         size === 'md' && 'w-6 h-6',

@@ -46,13 +46,13 @@ export default function LiabilitiesSection({
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-            <TrendingDown className="w-4 h-4 text-red-600" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center">
+            <TrendingDown className="w-5 h-5 text-rose-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">התחייבויות</h3>
-            <p className="text-xs text-red-600 font-medium">{formatCurrency(totalLiabilities)}</p>
+            <h3 className="font-semibold text-slate-900">התחייבויות</h3>
+            <p className="text-xs text-rose-600 font-medium">{formatCurrency(totalLiabilities)}</p>
           </div>
           <HelpTrigger
             topicId="liabilities"
@@ -60,17 +60,17 @@ export default function LiabilitiesSection({
             size="sm"
           />
         </div>
-        <button onClick={onAdd} className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1">
+        <button onClick={onAdd} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
           <Plus className="w-4 h-4" />
           הוסף
         </button>
       </div>
 
       {/* Monthly Payment Info */}
-      <div className="bg-orange-50 rounded-lg p-3 border border-orange-100 mb-4">
+      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 mb-4">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-600">תשלום חודשי כולל</span>
-          <span className="text-sm font-bold text-orange-600">{formatCurrency(monthlyPayments)}</span>
+          <span className="text-xs text-slate-600">תשלום חודשי כולל</span>
+          <span className="text-sm font-bold text-rose-600">{formatCurrency(monthlyPayments)}</span>
         </div>
       </div>
 
@@ -86,7 +86,7 @@ export default function LiabilitiesSection({
           return (
             <div
               key={liability.id}
-              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 bg-gray-50 rounded-lg"
+              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 bg-slate-50 rounded-lg"
             >
               {/* Top row: Icon + Details + Value (mobile) */}
               <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -94,23 +94,23 @@ export default function LiabilitiesSection({
                 <div
                   className={cn(
                     'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
-                    categoryInfo?.bgColor || 'bg-gray-100'
+                    categoryInfo?.bgColor || 'bg-slate-100'
                   )}
                 >
-                  <Icon className={cn('w-4 h-4', categoryInfo?.textColor || 'text-gray-600')} />
+                  <Icon className={cn('w-4 h-4', categoryInfo?.textColor || 'text-slate-600')} />
                 </div>
 
                 {/* Details */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 text-sm truncate">{liability.name}</p>
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="font-medium text-slate-900 text-sm truncate">{liability.name}</p>
+                  <p className="text-xs text-slate-500 truncate">
                     {categoryInfo?.nameHe} • {formatCurrency(liability.monthlyPayment)}/חודש
                     {liability.hasInterestRebate && (
                       <span className="text-green-600"> • זיכוי ריבית</span>
                     )}
                   </p>
                   {hasLoanDetails && currentPayment && (
-                    <p className="text-xs text-gray-500 mt-0.5 truncate">
+                    <p className="text-xs text-slate-500 mt-0.5 truncate">
                       חודש {currentPayment.currentMonth}/{liability.loanTermMonths}
                       {liability.hasInterestRebate && (
                         <span className="text-green-600"> • חיוב: {formatCurrency(effectiveExpense)}</span>
@@ -136,7 +136,7 @@ export default function LiabilitiesSection({
                 <div className="flex gap-1 flex-shrink-0">
                   <button
                     onClick={() => onViewDocuments(liability)}
-                    className="p-1.5 rounded hover:bg-violet-100 text-gray-500 hover:text-violet-600"
+                    className="p-1.5 rounded hover:bg-indigo-100 text-slate-500 hover:text-indigo-600"
                     title="מסמכים"
                   >
                     <FolderOpen className="w-3.5 h-3.5" />
@@ -144,7 +144,7 @@ export default function LiabilitiesSection({
                   {hasLoanDetails && (
                     <button
                       onClick={() => onViewAmortization(liability)}
-                      className="p-1.5 rounded hover:bg-blue-100 text-gray-500 hover:text-blue-600"
+                      className="p-1.5 rounded hover:bg-blue-100 text-slate-500 hover:text-blue-600"
                       title="לוח סילוקין"
                     >
                       <Table className="w-3.5 h-3.5" />
@@ -152,13 +152,13 @@ export default function LiabilitiesSection({
                   )}
                   <button
                     onClick={() => onEdit(liability)}
-                    className="p-1.5 rounded hover:bg-gray-200 text-gray-500 hover:text-gray-600"
+                    className="p-1.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-600"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => setDeleteConfirm({ isOpen: true, id: liability.id, name: liability.name })}
-                    className="p-1.5 rounded hover:bg-red-100 text-gray-500 hover:text-red-500"
+                    className="p-1.5 rounded hover:bg-red-100 text-slate-500 hover:text-red-500"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -169,7 +169,7 @@ export default function LiabilitiesSection({
         })}
         
         {liabilities.length === 0 && (
-          <p className="text-center text-gray-500 text-sm py-4">אין התחייבויות</p>
+          <p className="text-center text-slate-500 text-sm py-4">אין התחייבויות</p>
         )}
       </div>
 

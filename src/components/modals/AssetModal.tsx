@@ -64,7 +64,7 @@ export default function AssetModal({
         <div className="modal-content animate-scale-in" onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="modal-header">
-            <h2 className="text-xl font-bold text-gray-900">
+            <h2 className="text-xl font-bold text-slate-900">
               {asset ? 'עריכת נכס' : 'נכס חדש'}
             </h2>
             <button onClick={onClose} className="btn-icon">

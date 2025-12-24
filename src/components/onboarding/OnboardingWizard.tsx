@@ -45,7 +45,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
         {/* Skip button */}
         <button
           onClick={onComplete}
-          className="absolute top-4 left-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors z-10"
+          className="absolute top-4 left-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors z-10"
           title="דלג"
         >
           <X className="w-5 h-5" />
@@ -72,7 +72,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                     ? 'w-8 bg-blue-500' 
                     : i < step 
                       ? 'w-2 bg-blue-300' 
-                      : 'w-2 bg-gray-200'
+                      : 'w-2 bg-slate-200'
                 }`}
               />
             ))}
@@ -83,7 +83,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             {step > 0 && step < TOTAL_STEPS - 1 && (
               <button
                 onClick={prevStep}
-                className="flex items-center justify-center gap-2 px-4 py-3 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
                 הקודם
@@ -112,10 +112,10 @@ function StepWelcome() {
       <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center">
         <Wallet className="w-10 h-10 text-blue-500" />
       </div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <h2 className="text-2xl font-bold text-slate-900 mb-2">
         הכסף שלך. התמונה המלאה.
       </h2>
-      <div className="text-gray-600 space-y-3 mt-6 text-right">
+      <div className="text-slate-600 space-y-3 mt-6 text-right">
         <p>
           Finance Manager מרכז את כל המידע הפיננסי שלך במקום אחד.
         </p>
@@ -136,10 +136,10 @@ function StepProfile() {
       <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-sky-100 to-indigo-100 rounded-2xl flex items-center justify-center">
         <User className="w-10 h-10 text-sky-500" />
       </div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <h2 className="text-2xl font-bold text-slate-900 mb-2">
         הצעד הראשון: הפרופיל שלך
       </h2>
-      <div className="text-gray-600 space-y-3 mt-6 text-right">
+      <div className="text-slate-600 space-y-3 mt-6 text-right">
         <p>
           כדי שנוכל להתאים לך המלצות רלוונטיות, מלא את הפרטים האישיים שלך.
         </p>
@@ -177,10 +177,10 @@ function StepAssets() {
       <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-2xl flex items-center justify-center">
         <Building2 className="w-10 h-10 text-emerald-500" />
       </div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <h2 className="text-2xl font-bold text-slate-900 mb-2">
         מה יש לך? מה אתה חייב?
       </h2>
-      <div className="text-gray-600 space-y-3 mt-6 text-right">
+      <div className="text-slate-600 space-y-3 mt-6 text-right">
         <div className="flex gap-6 justify-center text-sm mb-4">
           <div className="bg-emerald-50 px-4 py-2 rounded-lg">
             <span className="font-medium text-emerald-700">נכסים</span>
@@ -208,16 +208,16 @@ function StepTransactions() {
       <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center">
         <CreditCard className="w-10 h-10 text-amber-500" />
       </div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <h2 className="text-2xl font-bold text-slate-900 mb-2">
         לאן הולך הכסף?
       </h2>
-      <div className="text-gray-600 space-y-3 mt-6 text-right">
+      <div className="text-slate-600 space-y-3 mt-6 text-right">
         <p>
           פעם בחודש, העלה קובץ עם פירוט האשראי שלך.
         </p>
-        <div className="bg-gray-50 rounded-xl p-4 text-sm">
-          <p className="font-medium text-gray-700 mb-2">איך עושים את זה:</p>
-          <ol className="space-y-1.5 text-gray-600">
+        <div className="bg-slate-50 rounded-xl p-4 text-sm">
+          <p className="font-medium text-slate-700 mb-2">איך עושים את זה:</p>
+          <ol className="space-y-1.5 text-slate-600">
             <li>1. הורד דוח עסקאות מהבנק או מחברת האשראי</li>
             <li>2. לחץ על &quot;ייבוא עסקאות&quot;</li>
             <li>3. המערכת תעשה את השאר</li>
@@ -237,16 +237,16 @@ function StepReady() {
       <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center">
         <Sparkles className="w-10 h-10 text-blue-500" />
       </div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <h2 className="text-2xl font-bold text-slate-900 mb-2">
         אתה בפנים! 🎉
       </h2>
-      <div className="text-gray-600 space-y-3 mt-6 text-right">
+      <div className="text-slate-600 space-y-3 mt-6 text-right">
         <p>
           עכשיו אתה יכול להתחיל.
         </p>
         <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4">
-          <p className="font-medium text-gray-700 mb-3">הצעדים הראשונים:</p>
-          <ul className="space-y-2 text-gray-600">
+          <p className="font-medium text-slate-700 mb-3">הצעדים הראשונים:</p>
+          <ul className="space-y-2 text-slate-600">
             <li className="flex items-center gap-2">
               <span className="w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">1</span>
               מלא את הפרטים האישיים שלך

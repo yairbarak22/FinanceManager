@@ -52,7 +52,7 @@ export default function HoldingModal({ isOpen, onClose, onSave, holding }: Holdi
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-xl font-bold text-slate-900">
             {holding ? 'עריכת נכס' : 'הוספת נכס חדש'}
           </h2>
           <button onClick={onClose} className="btn-icon">
@@ -129,7 +129,7 @@ export default function HoldingModal({ isOpen, onClose, onSave, holding }: Holdi
                 step="0.1"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 סכום כל הפילוחים צריך להיות 100%
               </p>
             </div>

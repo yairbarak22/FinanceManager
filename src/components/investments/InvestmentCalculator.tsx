@@ -118,17 +118,17 @@ export default function InvestmentCalculator({
   // Results View
   if (showResults && summary && calculations.length > 0) {
     return (
-      <div className="card p-6 h-full flex flex-col">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 h-full flex flex-col">
         {/* Header with back button */}
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <div className="flex items-center gap-2">
             <button 
               onClick={handleBack}
-              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500"
+              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500"
             >
               <ArrowRight className="w-5 h-5" />
             </button>
-            <h3 className="font-semibold text-gray-900">תוצאות החישוב</h3>
+            <h3 className="font-semibold text-slate-900">תוצאות החישוב</h3>
             <HelpTrigger
               topicId="investments"
               contextData={calculatorContextData}
@@ -150,7 +150,7 @@ export default function InvestmentCalculator({
                 <span className="text-xs font-semibold text-emerald-800">תחזית</span>
               </div>
               {isForecastLoading ? (
-                <div className="flex items-center gap-2 text-gray-500">
+                <div className="flex items-center gap-2 text-slate-500">
                   <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                   <span className="text-xs">מחשב...</span>
                 </div>
@@ -172,12 +172,12 @@ export default function InvestmentCalculator({
           <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-3 border border-indigo-100">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-xs text-gray-500">שווי נוכחי</p>
-                <p className="text-sm font-bold text-gray-700">{formatCurrency(summary.currentPortfolioValue)}</p>
+                <p className="text-xs text-slate-500">שווי נוכחי</p>
+                <p className="text-sm font-bold text-slate-700">{formatCurrency(summary.currentPortfolioValue)}</p>
               </div>
-              <ArrowLeft className="w-4 h-4 text-gray-500" />
+              <ArrowLeft className="w-4 h-4 text-slate-500" />
               <div>
-                <p className="text-xs text-gray-500">שווי חדש</p>
+                <p className="text-xs text-slate-500">שווי חדש</p>
                 <p className="text-sm font-bold text-indigo-600">{formatCurrency(summary.newPortfolioValue)}</p>
               </div>
             </div>
@@ -185,19 +185,19 @@ export default function InvestmentCalculator({
 
           {/* Allocation Breakdown */}
           <div className="space-y-2">
-            <h4 className="text-xs font-medium text-gray-500">פירוט ההשקעה:</h4>
+            <h4 className="text-xs font-medium text-slate-500">פירוט ההשקעה:</h4>
             {calculations.map((calc) => (
               <div
                 key={calc.holdingId}
-                className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                className="flex items-center justify-between p-2 bg-slate-50 rounded-lg"
               >
                 <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium text-gray-900 truncate block">{calc.holdingName}</span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-sm font-medium text-slate-900 truncate block">{calc.holdingName}</span>
+                  <span className="text-xs text-slate-500">
                     {calc.currentAllocation.toFixed(1)}% → {calc.newAllocation.toFixed(1)}%
                   </span>
                 </div>
-                <span className={`text-sm font-bold mr-2 ${calc.amountToInvest > 0 ? 'text-green-600' : 'text-gray-500'}`}>
+                <span className={`text-sm font-bold mr-2 ${calc.amountToInvest > 0 ? 'text-green-600' : 'text-slate-500'}`}>
                   {calc.amountToInvest > 0 ? `+${formatCurrency(calc.amountToInvest)}` : '—'}
                 </span>
               </div>
@@ -228,14 +228,14 @@ export default function InvestmentCalculator({
 
   // Input View (Default)
   return (
-    <div className="card p-6 h-full flex flex-col">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 h-full flex flex-col">
       <div className="flex items-center gap-3 mb-6">
         <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center">
           <Calculator className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h3 className="font-semibold text-gray-900">מחשבון השקעה</h3>
-          <p className="text-sm text-gray-500">הזן סכום לחישוב פילוח</p>
+          <h3 className="font-semibold text-slate-900">מחשבון השקעה</h3>
+          <p className="text-sm text-slate-500">הזן סכום לחישוב פילוח</p>
         </div>
       </div>
 
@@ -243,7 +243,7 @@ export default function InvestmentCalculator({
       <div className="flex-1 flex flex-col justify-center">
         <div className="space-y-4">
           <div className="relative">
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-lg">₪</span>
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg">₪</span>
             <input
               type="number"
               value={amount}
@@ -274,7 +274,7 @@ export default function InvestmentCalculator({
       </div>
 
       {/* Hint */}
-      <p className="text-xs text-gray-500 text-center mt-4">
+      <p className="text-xs text-slate-500 text-center mt-4">
         הזן את הסכום שברצונך להשקיע מדי חודש
       </p>
     </div>
