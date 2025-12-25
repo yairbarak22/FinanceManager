@@ -35,22 +35,32 @@ function LoginContent() {
   ];
 
   return (
-    <div dir="rtl" className="min-h-screen bg-gradient-to-br from-[#0F172A] via-[#131B2E] to-[#1E1B4B] relative overflow-hidden">
-      {/* Tech Pattern Overlay */}
+    <div 
+      dir="rtl" 
+      className="min-h-screen relative overflow-hidden"
+      style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 50%, #0F172A 100%)' }}
+    >
+      {/* Tech Pattern Overlay - very subtle */}
       <div 
-        className="absolute inset-0 opacity-[0.03]"
+        className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(99, 102, 241, 0.3) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(99, 102, 241, 0.3) 1px, transparent 1px)
+            linear-gradient(rgba(99, 102, 241, 0.08) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(99, 102, 241, 0.08) 1px, transparent 1px)
           `,
-          backgroundSize: '60px 60px',
+          backgroundSize: '80px 80px',
         }}
       />
       
       {/* Decorative Gradient Orbs */}
-      <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 left-1/4 w-72 h-72 bg-violet-500/15 rounded-full blur-3xl" />
+      <div 
+        className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%)', filter: 'blur(60px)' }}
+      />
+      <div 
+        className="absolute bottom-1/4 left-1/4 w-72 h-72 rounded-full pointer-events-none"
+        style={{ background: 'radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, transparent 70%)', filter: 'blur(50px)' }}
+      />
 
       {/* Main Container */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4 lg:p-8">
@@ -190,7 +200,10 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F172A] to-[#1E1B4B]">
+        <div 
+          className="min-h-screen flex items-center justify-center"
+          style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 50%, #0F172A 100%)' }}
+        >
           <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
         </div>
       }
