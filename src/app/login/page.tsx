@@ -3,7 +3,7 @@
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { Medal, Rocket, Eye, TrendingUp, PieChart } from 'lucide-react';
+import { Medal, Rocket, Eye, PieChart } from 'lucide-react';
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -11,33 +11,21 @@ function LoginContent() {
   const callbackUrl = searchParams.get('callbackUrl') || '/';
 
   return (
-    <div 
-      dir="rtl" 
+    <div
+      dir="rtl"
       style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)',
+        background: 'linear-gradient(180deg, #F5F9FE 0%, #F0F6FD 15%, #EAF3FC 30%, #E4F0FB 45%, #DEEDF9 60%, #D8EAF8 75%, #D2E7F6 90%, #CCE4F5 100%)',
         position: 'relative',
         overflow: 'hidden',
       }}
     >
-      {/* Tech Grid Pattern Overlay */}
-      <div 
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage: `
-            linear-gradient(rgba(99, 102, 241, 0.06) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(99, 102, 241, 0.06) 1px, transparent 1px)
-          `,
-          backgroundSize: '50px 50px',
-          pointerEvents: 'none',
-        }}
-      />
+      {/* Tech Grid Pattern Overlay - REMOVED */}
 
       {/* Ambient Glow Effects */}
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
-        <div 
-          style={{ 
+        <div
+          style={{
             position: 'absolute',
             top: '-150px',
             right: '-150px',
@@ -47,8 +35,8 @@ function LoginContent() {
             background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 60%)',
           }}
         />
-        <div 
-          style={{ 
+        <div
+          style={{
             position: 'absolute',
             bottom: '-150px',
             left: '-150px',
@@ -60,175 +48,420 @@ function LoginContent() {
         />
       </div>
 
-      {/* Main Container - CSS Grid for Split Screen */}
-      <div 
+      {/* Main Container - Centered Layout */}
+      <div
         style={{
           position: 'relative',
           zIndex: 10,
           minHeight: '100vh',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '48px 24px',
         }}
       >
-        {/* Left Side - White Card Area */}
-        <div 
+        {/* Hero Headline */}
+        <h2
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '48px',
+            fontSize: '32px',
+            fontWeight: 500,
+            color: '#1D1D1F',
+            textAlign: 'center',
+            marginBottom: '40px',
+            fontFamily: 'var(--font-heebo)',
           }}
         >
-          <div 
+          העתיד הכלכלי שלך מתחיל כאן.
+        </h2>
+
+        {/* Glassmorphism Card */}
+        <div
+          style={{
+            maxWidth: '480px',
+            width: '100%',
+            padding: '48px',
+            borderRadius: '32px',
+            direction: 'rtl',
+
+            // Glassmorphism Effect - Frosted glass on warm background
+            background: 'rgba(255, 255, 255, 0.50)',
+            backdropFilter: 'blur(30px)',
+            WebkitBackdropFilter: 'blur(30px)',
+
+            // Border & Shadow - Rim light effect
+            border: '1px solid rgba(255, 255, 255, 0.5)',
+            boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          {/* Logo - NETO */}
+          <div
             style={{
-              width: '100%',
-              maxWidth: '460px',
-              backgroundColor: 'white',
-              borderRadius: '24px',
-              padding: '48px',
-              boxShadow: '0 25px 60px -15px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '2px',
+              marginBottom: '32px',
             }}
           >
-            {/* Logo */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '32px' }}>
-              <span style={{ fontSize: '36px', fontWeight: 900, color: '#1E293B', letterSpacing: '-0.02em' }}>NET</span>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <PieChart style={{ width: '36px', height: '36px', color: '#1E293B' }} strokeWidth={2.5} />
-                <TrendingUp style={{ width: '20px', height: '20px', color: '#10B981', position: 'absolute', top: '-4px', right: '-8px' }} strokeWidth={3} />
+            <PieChart
+              style={{
+                width: '42px',
+                height: '42px',
+                color: '#1D1D1F',
+                marginTop: '4px',
+              }}
+              strokeWidth={2.5}
+            />
+            <span
+              style={{
+                fontSize: '48px',
+                fontWeight: 900,
+                color: '#1D1D1F',
+                letterSpacing: '-0.02em',
+                fontFamily: 'var(--font-heebo), sans-serif',
+              }}
+            >
+              NET
+            </span>
+
+          </div>
+
+          {/* Main Headline */}
+          <h1
+            style={{
+              fontSize: '28px',
+              fontWeight: 600,
+              color: '#1D1D1F',
+              textAlign: 'center',
+              marginBottom: '32px',
+              lineHeight: 1.3,
+              fontFamily: 'var(--font-heebo), sans-serif',
+            }}
+          >
+            תדאג לעתיד שלך
+          </h1>
+
+          {/* Error Message */}
+          {error && (
+            <div
+              style={{
+                marginBottom: '24px',
+                padding: '16px',
+                backgroundColor: 'rgba(254, 242, 242, 0.9)',
+                border: '1px solid rgba(254, 202, 202, 0.9)',
+                borderRadius: '16px',
+                textAlign: 'center',
+              }}
+            >
+              <p style={{ color: '#DC2626', fontSize: '14px', fontWeight: 500, fontFamily: 'var(--font-heebo)' }}>
+                {error === 'OAuthAccountNotLinked'
+                  ? 'כתובת האימייל כבר קיימת במערכת עם ספק אחר'
+                  : 'שגיאה בהתחברות. נסה שוב.'}
+              </p>
+            </div>
+          )}
+
+          {/* Features List */}
+          <div style={{ marginBottom: '32px' }}>
+            {/* Feature 1 */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '16px',
+                flexDirection: 'row-reverse', // Icon on right, text on left
+              }}
+            >
+
+              <span
+                style={{
+                  fontSize: '16px',
+                  color: '#1D1D1F',
+                  fontWeight: 500,
+                  fontFamily: 'var(--font-heebo), sans-serif',
+                  flex: 1,
+                  textAlign: 'right',
+                }}
+              >
+                מקסום זכויות והטבות בעזרת AI
+              </span>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  backgroundColor: 'transparent',
+                  border: '2px solid #1D1D1F',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Medal style={{ width: '20px', height: '20px', color: '#1D1D1F', strokeWidth: 1.5 }} />
               </div>
             </div>
 
-            {/* Headline */}
-            <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#1E293B', textAlign: 'center', marginBottom: '40px' }}>
-              בונים הון, לא רק משכורת.
-            </h1>
 
-            {/* Error Message */}
-            {error && (
-              <div style={{ marginBottom: '24px', padding: '16px', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '16px', textAlign: 'center' }}>
-                <p style={{ color: '#DC2626', fontSize: '14px', fontWeight: 500 }}>
-                  {error === 'OAuthAccountNotLinked'
-                    ? 'כתובת האימייל כבר קיימת במערכת עם ספק אחר'
-                    : 'שגיאה בהתחברות. נסה שוב.'}
-                </p>
-              </div>
-            )}
+            {/* Feature 2 */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '16px',
+                flexDirection: 'row-reverse', // Icon on right, text on left
+              }}
+            >
 
-            {/* Feature List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '40px' }}>
-              {/* Feature 1 */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                <div style={{ width: '56px', height: '56px', backgroundColor: '#EEF2FF', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Medal style={{ width: '28px', height: '28px', color: '#6366F1' }} />
-                </div>
-                <div style={{ flex: 1, paddingTop: '4px' }}>
-                  <p style={{ fontSize: '16px', color: '#475569', lineHeight: 1.7 }}>
-                    <span style={{ fontWeight: 700, color: '#1E293B' }}>תמקסם את הזכויות:</span>{' '}
-                    המערכת תסרוק ותדרוש עבורך כל הטבה – ממילואים ועד נקודות זיכוי לסטודנטים.
-                  </p>
-                </div>
-              </div>
-
-              {/* Feature 2 */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                <div style={{ width: '56px', height: '56px', backgroundColor: '#EEF2FF', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Rocket style={{ width: '28px', height: '28px', color: '#6366F1' }} />
-                </div>
-                <div style={{ flex: 1, paddingTop: '4px' }}>
-                  <p style={{ fontSize: '16px', color: '#475569', lineHeight: 1.7 }}>
-                    <span style={{ fontWeight: 700, color: '#1E293B' }}>תשקיע חכם:</span>{' '}
-                    הופכים את הכסף הפנוי הראשון שלך למנוע צמיחה, במקום שיישחק בעו&quot;ש.
-                  </p>
-                </div>
-              </div>
-
-              {/* Feature 3 */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                <div style={{ width: '56px', height: '56px', backgroundColor: '#EEF2FF', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Eye style={{ width: '28px', height: '28px', color: '#6366F1' }} />
-                </div>
-                <div style={{ flex: 1, paddingTop: '4px' }}>
-                  <p style={{ fontSize: '16px', color: '#475569', lineHeight: 1.7 }}>
-                    <span style={{ fontWeight: 700, color: '#1E293B' }}>תראה הכל:</span>{' '}
-                    תמונת מצב מלאה של העושר שלך, ברגע אחד, בלי אקסלים מסובכים.
-                  </p>
-                </div>
+              <span
+                style={{
+                  fontSize: '16px',
+                  color: '#1D1D1F',
+                  fontWeight: 500,
+                  fontFamily: 'var(--font-heebo), sans-serif',
+                  flex: 1,
+                  textAlign: 'right',
+                }}
+              >
+                השקעות וצמיחות פיננסית
+              </span>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  backgroundColor: 'transparent',
+                  border: '2px solid #1D1D1F',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Rocket style={{ width: '20px', height: '20px', color: '#1D1D1F', strokeWidth: 1.5 }} />
               </div>
             </div>
 
-            {/* CTA Button */}
-            <button
-              onClick={() => signIn('google', { callbackUrl })}
-              style={{ 
-                width: '100%',
+            {/* Feature 3 */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                marginBottom: '16px',
+                flexDirection: 'row-reverse', // Icon on right, text on left
+              }}
+            >
+
+              <span
+                style={{
+                  fontSize: '16px',
+                  color: '#1D1D1F',
+                  fontWeight: 500,
+                  fontFamily: 'var(--font-heebo), sans-serif',
+                  flex: 1,
+                  textAlign: 'right',
+                }}
+              >
+                שקיפות ותמונת מצב מלאה של ההון העצמי שלך
+              </span>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  backgroundColor: 'transparent',
+                  border: '2px solid #1D1D1F',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <Eye style={{ width: '20px', height: '20px', color: '#1D1D1F', strokeWidth: 1.5 }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Google Sign-In Button */}
+          <button
+            onClick={() => signIn('google', { callbackUrl })}
+            style={{
+              width: '100%',
+              padding: '16px 24px',
+              borderRadius: '14px',
+              border: 'none',
+              cursor: 'pointer',
+              background: '#2B4699',
+              color: 'white',
+              fontSize: '16px',
+              fontWeight: 600,
+              fontFamily: 'var(--font-heebo), sans-serif',
+              boxShadow: '0 4px 12px rgba(43, 70, 153, 0.3)',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#1f3a7a';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(43, 70, 153, 0.4)';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#2B4699';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(43, 70, 153, 0.3)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
+          >
+            <span>התחל עכשיו עם Google</span>
+            <svg style={{ width: '24px', height: '24px' }} viewBox="0 0 24 24">
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              />
+            </svg>
+          </button>
+
+          {/* Legal Disclaimer & Privacy */}
+          <div style={{ marginTop: '24px', textAlign: 'center' }}>
+            {/* Terms of Service Agreement */}
+            <p
+              style={{
+                fontSize: '13px',
+                color: '#86868b',
+                lineHeight: 1.6,
+                marginBottom: '12px',
+                fontFamily: 'var(--font-heebo), sans-serif',
+              }}
+            >
+              בהתחברות, את/ה מסכימ/ה ל
+              <a
+                href="/terms"
+                style={{
+                  color: '#2B4699',
+                  textDecoration: 'none',
+                  fontWeight: 600,
+                  marginRight: '4px',
+                  marginLeft: '4px',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+              >
+                תנאי השימוש
+              </a>
+              ול
+              <a
+                href="/privacy"
+                style={{
+                  color: '#2B4699',
+                  textDecoration: 'none',
+                  fontWeight: 600,
+                  marginRight: '4px',
+                  marginLeft: '4px',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+              >
+                מדיניות הפרטיות
+              </a>
+              שלנו.
+            </p>
+
+            {/* Security & Privacy Reassurance */}
+            <div
+              style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '12px',
-                padding: '18px 24px',
-                borderRadius: '16px',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: 700,
-                color: 'white',
-                fontSize: '18px',
-                background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #7C3AED 100%)',
-                boxShadow: '0 10px 40px -10px rgba(99,102,241,0.6)',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'scale(1.02)';
-                e.currentTarget.style.boxShadow = '0 15px 50px -10px rgba(99,102,241,0.7)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'scale(1)';
-                e.currentTarget.style.boxShadow = '0 10px 40px -10px rgba(99,102,241,0.6)';
+                gap: '6px',
               }}
             >
-              <svg style={{ width: '24px', height: '24px' }} viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              {/* Lock Icon */}
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#86868b"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
-              <span>לפרוץ את תקרת הזכוכית</span>
-            </button>
-          </div>
-        </div>
 
-        {/* Right Side - Dark Content */}
-        <div 
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '48px',
-          }}
-        >
-          <div style={{ maxWidth: '520px', textAlign: 'right' }}>
-            {/* Main Headline */}
-            <h2 style={{ fontSize: '56px', fontWeight: 800, color: 'white', lineHeight: 1.15, marginBottom: '32px' }}>
-              אתה עושה הכל &apos;נכון&apos;.
-              <br />
-              אז למה אתה עדיין לא שם?
-            </h2>
-
-            {/* Sub-headline */}
-            <p style={{ fontSize: '20px', color: '#CBD5E1', lineHeight: 1.7 }}>
-              צבא, מילואים, תואר, קריירה. המסלול הישראלי הקלאסי כבר לא מבטיח דירה או עושר. כדי לנצח את השיטה ב-2025, אתה צריך מערכת הפעלה אחרת לכסף שלך.
-            </p>
+              {/* Privacy Text */}
+              <span
+                style={{
+                  fontSize: '12px',
+                  color: '#86868b',
+                  fontWeight: 500,
+                  fontFamily: 'var(--font-heebo), sans-serif',
+                }}
+              >
+                המידע שלך מאובטח ומוצפן מקצה לקצה
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Mobile Responsive Styles */}
       <style jsx>{`
-        @media (max-width: 1024px) {
-          div[style*="gridTemplateColumns"] {
-            grid-template-columns: 1fr !important;
+        @media (max-width: 768px) {
+          h2 {
+            font-size: 24px !important;
           }
-          div[style*="maxWidth: '520px'"] {
-            display: none !important;
+
+          div[style*='maxWidth: \\'480px\\''] {
+            padding: 32px !important;
+          }
+
+          h1 {
+            font-size: 22px !important;
+          }
+
+          span[style*='fontSize: \\'16px\\''] {
+            font-size: 15px !important;
+          }
+
+          div[style*='width: \\'40px\\''] {
+            width: 36px !important;
+            height: 36px !important;
+          }
+
+          button {
+            padding: 14px 20px !important;
+          }
+        }
+
+        @media (max-width: 640px) {
+          h2 {
+            font-size: 20px !important;
+            margin-bottom: 32px !important;
+          }
+
+          div[style*='backdropFilter'] {
+            backdrop-filter: blur(15px) !important;
+            -webkit-backdrop-filter: blur(15px) !important;
           }
         }
       `}</style>
@@ -240,16 +473,16 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div 
+        <div
           style={{
             minHeight: '100vh',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)',
+            background: 'linear-gradient(180deg, #0a1628 0%, #0f1b2e 50%, #1a2332 100%)',
           }}
         >
-          <div 
+          <div
             style={{
               width: '48px',
               height: '48px',
