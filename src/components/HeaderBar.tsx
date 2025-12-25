@@ -2,12 +2,12 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { 
-  TrendingUp,
-  LogOut, 
-  User, 
-  HelpCircle, 
-  UserCog, 
+import {
+  PieChart,
+  LogOut,
+  User,
+  HelpCircle,
+  UserCog,
   Users,
   Bell
 } from 'lucide-react';
@@ -67,44 +67,35 @@ export default function HeaderBar({
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-gradient-to-r from-[#0a0f1f] via-[#0F1629] to-[#0a0f1f] shadow-[0_4px_30px_rgba(0,0,0,0.4)] backdrop-blur-sm border-b border-slate-800/50">
-      {/* Decorative top gradient line */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-60" />
-      
+    <header className="sticky top-0 z-50 bg-gradient-to-b from-[#F5F9FE] via-[#EFF6FB] to-[#EAF3FC] shadow-md border-b border-blue-100/50" style={{ background: 'linear-gradient(180deg, #F5F9FE 0%, #F0F6FD 50%, #EAF3FC 100%)' }}>
+      {/* Decorative top gradient line - REMOVED */}
+
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          
+
           {/* Right: Logo & Brand */}
           <div className="flex items-center gap-3 group">
-            <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:shadow-indigo-500/50 transition-all">
-                <TrendingUp className="w-5 h-5 text-white" />
-              </div>
-              {/* Glow effect */}
-              <div className="absolute inset-0 w-10 h-10 rounded-xl bg-indigo-500 blur-xl opacity-30 group-hover:opacity-50 transition-opacity" />
-            </div>
-            <div className="hidden sm:block">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xl font-bold bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">NETO</span>
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              </div>
-              <p className="text-xs text-slate-500">הכסף שלך, תכלס.</p>
+            <div className="flex items-center gap-0">
+              <PieChart
+                className="w-10 h-10 text-[#2B4699]"
+                strokeWidth={3}
+                style={{ marginRight: '-2px' }}
+              />
+              <span className="text-2xl font-black text-[#1D1D1F]" style={{ fontFamily: 'var(--font-heebo)' }}>NET</span>
             </div>
           </div>
 
-          {/* Center: Navigation Tabs */}
-          <nav className="hidden md:flex items-center bg-slate-800/40 rounded-xl p-1 border border-slate-700/50">
+          <nav className="hidden md:flex items-center bg-white/60 backdrop-blur-sm rounded-xl p-1 border border-blue-100">
             {navTabs.map((tab) => {
               const isActive = activeSection === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => onSectionChange(tab.id)}
-                  className={`relative px-4 py-2 font-medium text-sm rounded-lg transition-all duration-200 ${
-                    isActive
-                      ? 'text-white bg-gradient-to-r from-indigo-600 to-indigo-500 shadow-lg shadow-indigo-500/25'
-                      : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
-                  }`}
+                  className={`relative px-4 py-2 font-medium text-sm rounded-lg transition-all duration-200 ${isActive
+                      ? 'text-white bg-gradient-to-r from-[#2B4699] to-[#3556AB] shadow-lg shadow-blue-500/25'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -138,10 +129,10 @@ export default function HeaderBar({
             </div>
 
             {/* Notification Bell - hidden on mobile */}
-            <button className="hidden md:flex relative p-2.5 text-slate-400 hover:text-white transition-colors rounded-xl hover:bg-slate-800/50">
+            <button className="hidden md:flex relative p-2.5 text-slate-600 hover:text-slate-900 transition-colors rounded-xl hover:bg-white/50">
               <Bell className="w-5 h-5" />
               {/* Notification dot */}
-              <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-[#0F1629]" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-[#F5F9FE]" />
             </button>
 
             {/* User Menu */}
@@ -149,16 +140,16 @@ export default function HeaderBar({
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 rounded-xl p-0.5 md:p-1 hover:bg-slate-800/50 transition-all"
+                  className="flex items-center gap-2 rounded-xl p-0.5 md:p-1 hover:bg-white/50 transition-all"
                 >
                   {image ? (
                     <img
                       src={image}
                       alt={name || 'User'}
-                      className="w-8 h-8 md:w-9 md:h-9 rounded-xl border-2 border-slate-700 shadow-lg"
+                      className="w-8 h-8 md:w-9 md:h-9 rounded-xl border-2 border-blue-200 shadow-lg"
                     />
                   ) : (
-                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center border-2 border-slate-700 shadow-lg">
+                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-gradient-to-br from-[#2B4699] to-[#3556AB] flex items-center justify-center border-2 border-blue-200 shadow-lg">
                       <User className="w-4 h-4 text-white" />
                     </div>
                   )}
@@ -239,11 +230,10 @@ export default function HeaderBar({
               <button
                 key={tab.id}
                 onClick={() => onSectionChange(tab.id)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${
-                  isActive
-                    ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25'
-                    : 'text-slate-400 hover:text-white bg-slate-800/60 border border-slate-700/50'
-                }`}
+                className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${isActive
+                    ? 'bg-gradient-to-r from-[#2B4699] to-[#3556AB] text-white shadow-lg shadow-blue-500/25'
+                    : 'text-slate-600 hover:text-slate-900 bg-white/60 border border-blue-100/50'
+                  }`}
               >
                 {tab.label}
               </button>
