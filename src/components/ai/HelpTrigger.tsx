@@ -1,6 +1,6 @@
 'use client';
 
-import { Sparkles } from 'lucide-react';
+import { Bot } from 'lucide-react';
 import { useAIChat } from './AIChatProvider';
 import { cn } from '@/lib/utils';
 
@@ -12,7 +12,9 @@ interface HelpTriggerProps {
   /** נתונים דינמיים מהמסך הנוכחי */
   contextData?: Record<string, unknown>;
   /** גודל הכפתור */
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
+  /** האם להציג טקסט */
+  showLabel?: boolean;
   /** מיקום - מוסיף מרווח מתאים */
   className?: string;
 }
@@ -31,7 +33,8 @@ export default function HelpTrigger({
   topicId,
   contextDescription,
   contextData,
-  size = 'sm',
+  size = 'md',
+  showLabel = false,
   className,
 }: HelpTriggerProps) {
   const { openChat } = useAIChat();
@@ -49,19 +52,25 @@ export default function HelpTrigger({
       type="button"
       onClick={handleClick}
       className={cn(
-        'inline-flex items-center justify-center rounded-full transition-all',
-        'text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50',
-        'active:scale-95',
-        size === 'sm' && 'w-5 h-5',
-        size === 'md' && 'w-6 h-6',
+        'inline-flex items-center justify-center gap-1.5 rounded-full transition-all',
+        'bg-gradient-to-r from-violet-500 to-indigo-500 text-white',
+        'hover:from-violet-600 hover:to-indigo-600 hover:shadow-md',
+        'active:scale-95 shadow-sm',
+        size === 'sm' && 'w-6 h-6',
+        size === 'md' && 'w-8 h-8',
+        size === 'lg' && (showLabel ? 'px-3 py-1.5' : 'w-10 h-10'),
         className
       )}
-      title="עזרה"
+      title="עזרה AI"
     >
-      <Sparkles className={cn(
-        size === 'sm' && 'w-3 h-3',
-        size === 'md' && 'w-3.5 h-3.5',
+      <Bot className={cn(
+        size === 'sm' && 'w-3.5 h-3.5',
+        size === 'md' && 'w-4 h-4',
+        size === 'lg' && 'w-5 h-5',
       )} />
+      {showLabel && size === 'lg' && (
+        <span className="text-xs font-medium">AI</span>
+      )}
     </button>
   );
 }

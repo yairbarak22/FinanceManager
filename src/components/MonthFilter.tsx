@@ -45,6 +45,20 @@ export default function MonthFilter({
   const isDark = variant === 'dark';
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const currentMonthRef = useRef<HTMLButtonElement>(null);
+
+  // Scroll to current month when dropdown opens
+  useEffect(() => {
+    if (isOpen && currentMonthRef.current) {
+      // Small delay to ensure dropdown is rendered
+      setTimeout(() => {
+        currentMonthRef.current?.scrollIntoView({ 
+          block: 'center', 
+          behavior: 'auto' 
+        });
+      }, 10);
+    }
+  }, [isOpen]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -77,6 +91,7 @@ export default function MonthFilter({
     return (
       <button
         key={monthKey}
+        ref={isCurrent ? currentMonthRef : undefined}
         onClick={() => handleSelect(monthKey)}
         className={`month-option ${isSelected ? 'selected' : ''} ${hasData ? 'has-data' : 'no-data'} ${isCurrent ? 'current' : ''}`}
       >
