@@ -13,63 +13,100 @@ function LoginContent() {
   return (
     <div 
       dir="rtl" 
-      className="min-h-screen relative overflow-hidden"
       style={{
+        minHeight: '100vh',
         background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
       {/* Tech Grid Pattern Overlay */}
       <div 
-        className="absolute inset-0 pointer-events-none"
         style={{
+          position: 'absolute',
+          inset: 0,
           backgroundImage: `
-            linear-gradient(rgba(99, 102, 241, 0.08) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(99, 102, 241, 0.08) 1px, transparent 1px)
+            linear-gradient(rgba(99, 102, 241, 0.06) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(99, 102, 241, 0.06) 1px, transparent 1px)
           `,
           backgroundSize: '50px 50px',
+          pointerEvents: 'none',
         }}
       />
 
       {/* Ambient Glow Effects */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         <div 
-          className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 60%)' }}
+          style={{ 
+            position: 'absolute',
+            top: '-150px',
+            right: '-150px',
+            width: '500px',
+            height: '500px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 60%)',
+          }}
         />
         <div 
-          className="absolute -bottom-40 -left-40 w-[600px] h-[600px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 60%)' }}
+          style={{ 
+            position: 'absolute',
+            bottom: '-150px',
+            left: '-150px',
+            width: '600px',
+            height: '600px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 60%)',
+          }}
         />
       </div>
 
-      {/* Main Container - Split Screen */}
-      <div className="relative z-10 min-h-screen flex">
+      {/* Main Container - CSS Grid for Split Screen */}
+      <div 
+        style={{
+          position: 'relative',
+          zIndex: 10,
+          minHeight: '100vh',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+        }}
+      >
         {/* Left Side - White Card Area */}
-        <div className="w-full lg:w-1/2 min-h-screen flex items-center justify-center p-6 lg:p-12">
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '48px',
+          }}
+        >
           <div 
-            className="w-full max-w-md bg-white rounded-3xl p-8 lg:p-10"
             style={{
+              width: '100%',
+              maxWidth: '460px',
+              backgroundColor: 'white',
+              borderRadius: '24px',
+              padding: '48px',
               boxShadow: '0 25px 60px -15px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.1)',
             }}
           >
             {/* Logo */}
-            <div className="flex items-center justify-center gap-2 mb-8">
-              <span className="text-4xl font-black text-slate-800 tracking-tight">NET</span>
-              <div className="relative flex items-center">
-                <PieChart className="w-9 h-9 text-slate-800" strokeWidth={2.5} />
-                <TrendingUp className="w-5 h-5 text-emerald-500 absolute -top-1 -right-2" strokeWidth={3} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '32px' }}>
+              <span style={{ fontSize: '36px', fontWeight: 900, color: '#1E293B', letterSpacing: '-0.02em' }}>NET</span>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <PieChart style={{ width: '36px', height: '36px', color: '#1E293B' }} strokeWidth={2.5} />
+                <TrendingUp style={{ width: '20px', height: '20px', color: '#10B981', position: 'absolute', top: '-4px', right: '-8px' }} strokeWidth={3} />
               </div>
             </div>
 
             {/* Headline */}
-            <h1 className="text-2xl lg:text-3xl font-bold text-slate-800 text-center mb-10">
+            <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#1E293B', textAlign: 'center', marginBottom: '40px' }}>
               בונים הון, לא רק משכורת.
             </h1>
 
             {/* Error Message */}
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl text-center">
-                <p className="text-red-600 text-sm font-medium">
+              <div style={{ marginBottom: '24px', padding: '16px', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '16px', textAlign: 'center' }}>
+                <p style={{ color: '#DC2626', fontSize: '14px', fontWeight: 500 }}>
                   {error === 'OAuthAccountNotLinked'
                     ? 'כתובת האימייל כבר קיימת במערכת עם ספק אחר'
                     : 'שגיאה בהתחברות. נסה שוב.'}
@@ -78,50 +115,41 @@ function LoginContent() {
             )}
 
             {/* Feature List */}
-            <div className="space-y-6 mb-10">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '40px' }}>
               {/* Feature 1 */}
-              <div className="flex items-start gap-4">
-                <div 
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: '#EEF2FF' }}
-                >
-                  <Medal className="w-7 h-7" style={{ color: '#6366F1' }} />
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                <div style={{ width: '56px', height: '56px', backgroundColor: '#EEF2FF', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Medal style={{ width: '28px', height: '28px', color: '#6366F1' }} />
                 </div>
-                <div className="flex-1 pt-1">
-                  <p className="text-base text-slate-600 leading-relaxed">
-                    <span className="font-bold text-slate-800">תמקסם את הזכויות:</span>{' '}
+                <div style={{ flex: 1, paddingTop: '4px' }}>
+                  <p style={{ fontSize: '16px', color: '#475569', lineHeight: 1.7 }}>
+                    <span style={{ fontWeight: 700, color: '#1E293B' }}>תמקסם את הזכויות:</span>{' '}
                     המערכת תסרוק ותדרוש עבורך כל הטבה – ממילואים ועד נקודות זיכוי לסטודנטים.
                   </p>
                 </div>
               </div>
 
               {/* Feature 2 */}
-              <div className="flex items-start gap-4">
-                <div 
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: '#EEF2FF' }}
-                >
-                  <Rocket className="w-7 h-7" style={{ color: '#6366F1' }} />
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                <div style={{ width: '56px', height: '56px', backgroundColor: '#EEF2FF', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Rocket style={{ width: '28px', height: '28px', color: '#6366F1' }} />
                 </div>
-                <div className="flex-1 pt-1">
-                  <p className="text-base text-slate-600 leading-relaxed">
-                    <span className="font-bold text-slate-800">תשקיע חכם:</span>{' '}
+                <div style={{ flex: 1, paddingTop: '4px' }}>
+                  <p style={{ fontSize: '16px', color: '#475569', lineHeight: 1.7 }}>
+                    <span style={{ fontWeight: 700, color: '#1E293B' }}>תשקיע חכם:</span>{' '}
                     הופכים את הכסף הפנוי הראשון שלך למנוע צמיחה, במקום שיישחק בעו&quot;ש.
                   </p>
                 </div>
               </div>
 
               {/* Feature 3 */}
-              <div className="flex items-start gap-4">
-                <div 
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: '#EEF2FF' }}
-                >
-                  <Eye className="w-7 h-7" style={{ color: '#6366F1' }} />
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                <div style={{ width: '56px', height: '56px', backgroundColor: '#EEF2FF', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Eye style={{ width: '28px', height: '28px', color: '#6366F1' }} />
                 </div>
-                <div className="flex-1 pt-1">
-                  <p className="text-base text-slate-600 leading-relaxed">
-                    <span className="font-bold text-slate-800">תראה הכל:</span>{' '}
+                <div style={{ flex: 1, paddingTop: '4px' }}>
+                  <p style={{ fontSize: '16px', color: '#475569', lineHeight: 1.7 }}>
+                    <span style={{ fontWeight: 700, color: '#1E293B' }}>תראה הכל:</span>{' '}
                     תמונת מצב מלאה של העושר שלך, ברגע אחד, בלי אקסלים מסובכים.
                   </p>
                 </div>
@@ -131,13 +159,33 @@ function LoginContent() {
             {/* CTA Button */}
             <button
               onClick={() => signIn('google', { callbackUrl })}
-              className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-bold text-white text-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
               style={{ 
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                padding: '18px 24px',
+                borderRadius: '16px',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 700,
+                color: 'white',
+                fontSize: '18px',
                 background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 50%, #7C3AED 100%)',
                 boxShadow: '0 10px 40px -10px rgba(99,102,241,0.6)',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.02)';
+                e.currentTarget.style.boxShadow = '0 15px 50px -10px rgba(99,102,241,0.7)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+                e.currentTarget.style.boxShadow = '0 10px 40px -10px rgba(99,102,241,0.6)';
               }}
             >
-              <svg className="w-6 h-6" viewBox="0 0 24 24">
+              <svg style={{ width: '24px', height: '24px' }} viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -149,30 +197,41 @@ function LoginContent() {
         </div>
 
         {/* Right Side - Dark Content */}
-        <div className="hidden lg:flex w-1/2 min-h-screen items-center justify-center p-12">
-          <div className="max-w-lg text-right">
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '48px',
+          }}
+        >
+          <div style={{ maxWidth: '520px', textAlign: 'right' }}>
             {/* Main Headline */}
-            <h2 className="text-5xl xl:text-6xl font-extrabold text-white leading-tight mb-8">
+            <h2 style={{ fontSize: '56px', fontWeight: 800, color: 'white', lineHeight: 1.15, marginBottom: '32px' }}>
               אתה עושה הכל &apos;נכון&apos;.
               <br />
-              <span className="text-white">אז למה אתה עדיין לא שם?</span>
+              אז למה אתה עדיין לא שם?
             </h2>
 
             {/* Sub-headline */}
-            <p className="text-xl text-slate-300 leading-relaxed">
+            <p style={{ fontSize: '20px', color: '#CBD5E1', lineHeight: 1.7 }}>
               צבא, מילואים, תואר, קריירה. המסלול הישראלי הקלאסי כבר לא מבטיח דירה או עושר. כדי לנצח את השיטה ב-2025, אתה צריך מערכת הפעלה אחרת לכסף שלך.
             </p>
           </div>
         </div>
-
-        {/* Mobile: Dark Content Below Card */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 p-6 text-center" style={{ background: 'linear-gradient(to top, rgba(15,23,42,0.95) 0%, transparent 100%)' }}>
-          <p className="text-base text-slate-300 leading-relaxed">
-            המסלול הישראלי כבר לא מבטיח עושר.<br />
-            <span className="text-white font-semibold">צריך מערכת הפעלה אחרת לכסף.</span>
-          </p>
-        </div>
       </div>
+
+      {/* Mobile Responsive Styles */}
+      <style jsx>{`
+        @media (max-width: 1024px) {
+          div[style*="gridTemplateColumns"] {
+            grid-template-columns: 1fr !important;
+          }
+          div[style*="maxWidth: '520px'"] {
+            display: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
@@ -182,10 +241,24 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div 
-          className="min-h-screen flex items-center justify-center"
-          style={{ background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)' }}
+          style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)',
+          }}
         >
-          <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          <div 
+            style={{
+              width: '48px',
+              height: '48px',
+              border: '4px solid #6366F1',
+              borderTopColor: 'transparent',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+            }}
+          />
         </div>
       }
     >
