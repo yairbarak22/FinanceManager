@@ -628,7 +628,6 @@ export default function Home() {
             totalBalance={totalBalance}
             totalIncome={totalIncome}
             totalExpenses={totalExpenses}
-            netWorth={netWorth}
           />
 
           {/* ============================================
