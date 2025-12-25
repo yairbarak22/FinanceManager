@@ -113,19 +113,32 @@ export default function HeaderBar({
           </nav>
 
           {/* Left: Month Filter & User Menu */}
-          <div className="flex items-center gap-3">
-            {/* Month Filter */}
-            <MonthFilter
-              selectedMonth={selectedMonth}
-              onMonthChange={onMonthChange}
-              allMonths={allMonths}
-              monthsWithData={monthsWithData}
-              currentMonth={currentMonth}
-              variant="dark"
-            />
+          <div className="flex items-center gap-2 md:gap-3">
+            {/* Month Filter - compact on mobile */}
+            <div className="hidden md:block">
+              <MonthFilter
+                selectedMonth={selectedMonth}
+                onMonthChange={onMonthChange}
+                allMonths={allMonths}
+                monthsWithData={monthsWithData}
+                currentMonth={currentMonth}
+                variant="dark"
+              />
+            </div>
+            <div className="md:hidden">
+              <MonthFilter
+                selectedMonth={selectedMonth}
+                onMonthChange={onMonthChange}
+                allMonths={allMonths}
+                monthsWithData={monthsWithData}
+                currentMonth={currentMonth}
+                variant="dark"
+                compact
+              />
+            </div>
 
-            {/* Notification Bell */}
-            <button className="relative p-2.5 text-slate-400 hover:text-white transition-colors rounded-xl hover:bg-slate-800/50">
+            {/* Notification Bell - hidden on mobile */}
+            <button className="hidden md:flex relative p-2.5 text-slate-400 hover:text-white transition-colors rounded-xl hover:bg-slate-800/50">
               <Bell className="w-5 h-5" />
               {/* Notification dot */}
               <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-[#0F1629]" />
@@ -136,16 +149,16 @@ export default function HeaderBar({
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 rounded-xl p-1 hover:bg-slate-800/50 transition-all"
+                  className="flex items-center gap-2 rounded-xl p-0.5 md:p-1 hover:bg-slate-800/50 transition-all"
                 >
                   {image ? (
                     <img
                       src={image}
                       alt={name || 'User'}
-                      className="w-9 h-9 rounded-xl border-2 border-slate-700 shadow-lg"
+                      className="w-8 h-8 md:w-9 md:h-9 rounded-xl border-2 border-slate-700 shadow-lg"
                     />
                   ) : (
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center border-2 border-slate-700 shadow-lg">
+                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center border-2 border-slate-700 shadow-lg">
                       <User className="w-4 h-4 text-white" />
                     </div>
                   )}
@@ -219,17 +232,17 @@ export default function HeaderBar({
         </div>
 
         {/* Mobile Navigation */}
-        <div className="md:hidden flex items-center justify-center gap-1 pb-3 overflow-x-auto">
+        <div className="md:hidden flex items-center justify-start gap-2 pb-3 overflow-x-auto scrollbar-hide -mx-4 px-4">
           {navTabs.map((tab) => {
             const isActive = activeSection === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => onSectionChange(tab.id)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                   isActive
                     ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25'
-                    : 'text-slate-400 hover:text-white bg-slate-800/50'
+                    : 'text-slate-400 hover:text-white bg-slate-800/60 border border-slate-700/50'
                 }`}
               >
                 {tab.label}

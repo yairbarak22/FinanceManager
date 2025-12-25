@@ -10,6 +10,8 @@ interface MonthFilterProps {
   monthsWithData: Set<string>;
   currentMonth: string;
   variant?: 'light' | 'dark';
+  /** Compact mode for mobile - shows only short date format */
+  compact?: boolean;
 }
 
 const monthNames: { [key: string]: string } = {
@@ -27,10 +29,13 @@ const monthNames: { [key: string]: string } = {
   '12': 'דצמבר',
 };
 
-function formatMonthDisplay(monthKey: string): string {
-  if (monthKey === 'all') return 'כל החודשים';
+function formatMonthDisplay(monthKey: string, compact = false): string {
+  if (monthKey === 'all') return compact ? 'הכל' : 'כל החודשים';
   
   const [year, month] = monthKey.split('-');
+  if (compact) {
+    return `${month}/${year.slice(2)}`;
+  }
   return `${monthNames[month]} ${year}`;
 }
 
@@ -40,7 +45,8 @@ export default function MonthFilter({
   allMonths, 
   monthsWithData,
   currentMonth,
-  variant = 'light'
+  variant = 'light',
+  compact = false,
 }: MonthFilterProps) {
   const isDark = variant === 'dark';
   const [isOpen, setIsOpen] = useState(false);
@@ -110,18 +116,22 @@ export default function MonthFilter({
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all min-w-[180px] ${
+        className={`flex items-center gap-2 rounded-xl transition-all ${
+          compact 
+            ? 'px-2.5 py-2' 
+            : 'gap-3 px-4 py-2 min-w-[180px]'
+        } ${
           isDark 
             ? 'bg-slate-800 hover:bg-slate-700 border-0' 
             : 'bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm'
         }`}
       >
-        <Calendar className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-indigo-500'}`} />
-        <span className={`flex-1 text-right font-medium ${isDark ? 'text-white' : 'text-slate-800'}`}>
-          {formatMonthDisplay(selectedMonth)}
+        <Calendar className={`w-5 h-5 flex-shrink-0 ${isDark ? 'text-emerald-400' : 'text-indigo-500'}`} />
+        <span className={`text-right font-medium whitespace-nowrap ${compact ? 'text-sm' : 'flex-1'} ${isDark ? 'text-white' : 'text-slate-800'}`}>
+          {formatMonthDisplay(selectedMonth, compact)}
         </span>
         <ChevronDown 
-          className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${isDark ? 'text-slate-400' : 'text-slate-500'}`} 
+          className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${isDark ? 'text-slate-400' : 'text-slate-500'}`} 
         />
       </button>
 
