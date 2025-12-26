@@ -6,7 +6,7 @@ import { PieChartIcon, Lightbulb } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Asset } from '@/lib/types';
 import { assetCategories, getCategoryInfo } from '@/lib/categories';
-
+import Card from './ui/Card';
 interface AssetAllocationChartProps {
   assets: Asset[];
   onGetRecommendations?: () => void;
@@ -40,7 +40,7 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
 
     const data = Object.entries(categoryTotals)
       .map(([categoryId, value]) => {
-        const categoryInfo = getCategoryInfo(categoryId, 'asset') || 
+        const categoryInfo = getCategoryInfo(categoryId, 'asset') ||
           assetCategories.find(c => c.id === 'other');
         return {
           id: categoryId,
@@ -75,7 +75,7 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
   // Custom label for pie chart
   const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage }: any) => {
     if (percentage < 5) return null; // Don't show label for small slices
-    
+
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -97,7 +97,7 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-6 h-full">
+    <Card className="h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -109,7 +109,7 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
             <p className="text-xs text-slate-500">סה"כ: {formatCurrency(totalAssets)}</p>
           </div>
         </div>
-        
+
         {/* Recommendations Button */}
         {onGetRecommendations && (
           <button
@@ -146,8 +146,8 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
                   label={renderCustomLabel}
                 >
                   {chartData.map((entry) => (
-                    <Cell 
-                      key={entry.id} 
+                    <Cell
+                      key={entry.id}
                       fill={entry.color}
                       stroke="white"
                       strokeWidth={2}
@@ -179,6 +179,6 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
           </div>
         </>
       )}
-    </div>
+    </Card>
   );
 }
