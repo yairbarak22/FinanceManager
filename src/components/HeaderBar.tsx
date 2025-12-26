@@ -9,7 +9,9 @@ import {
   HelpCircle,
   UserCog,
   Users,
-  Bell
+  Bell,
+  ChevronLeft,
+  ChevronDown
 } from 'lucide-react';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import MonthFilter from './MonthFilter';
@@ -90,12 +92,19 @@ export default function HeaderBar({
                 <button
                   key={tab.id}
                   onClick={() => onSectionChange(tab.id)}
-                  className={`px-2 py-1 text-sm transition-all duration-200 ${isActive
-                    ? 'text-[#0055FF] font-semibold'
-                    : 'text-[#6e6e73] font-normal hover:text-[#0055FF] hover:scale-110'
-                    }`}
+                  className="group flex items-center gap-1.5 px-2 py-1 text-sm transition-all duration-200"
                 >
-                  {tab.label}
+                  <span className={`transition-all ${isActive
+                      ? 'text-slate-900 font-semibold'
+                      : 'text-slate-500 font-normal group-hover:text-slate-900'
+                    }`}>
+                    {tab.label}
+                  </span>
+                  {isActive ? (
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" strokeWidth={2} />
+                  ) : (
+                    <ChevronLeft className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:text-blue-400 transition-all" strokeWidth={2} />
+                  )}
                 </button>
               );
             })}
