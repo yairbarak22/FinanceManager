@@ -2,17 +2,24 @@
 
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { Medal, Rocket, Eye, PieChart } from 'lucide-react';
+import LegalModal from '@/components/modals/LegalModal';
 
 function LoginContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
   const callbackUrl = searchParams.get('callbackUrl') || '/';
 
+  // Legal modal state
+  const [legalModal, setLegalModal] = useState<{ isOpen: boolean; type: 'terms' | 'privacy' }>({
+    isOpen: false,
+    type: 'terms',
+  });
+
   return (
-    <div
-      dir="rtl"
+    <div 
+      dir="rtl" 
       style={{
         minHeight: '100vh',
         background: 'linear-gradient(180deg, #F5F9FE 0%, #F0F6FD 15%, #EAF3FC 30%, #E4F0FB 45%, #DEEDF9 60%, #D8EAF8 75%, #D2E7F6 90%, #CCE4F5 100%)',
@@ -126,7 +133,7 @@ function LoginContent() {
               NET
             </span>
 
-          </div>
+              </div>
 
           {/* Main Headline */}
           <h1
@@ -142,8 +149,8 @@ function LoginContent() {
           >
             דואגים לעתיד שלך          </h1>
 
-          {/* Error Message */}
-          {error && (
+              {/* Error Message */}
+              {error && (
             <div
               style={{
                 marginBottom: '24px',
@@ -155,16 +162,16 @@ function LoginContent() {
               }}
             >
               <p style={{ color: '#DC2626', fontSize: '14px', fontWeight: 500, fontFamily: 'var(--font-heebo)' }}>
-                {error === 'OAuthAccountNotLinked'
-                  ? 'כתובת האימייל כבר קיימת במערכת עם ספק אחר'
-                  : 'שגיאה בהתחברות. נסה שוב.'}
-              </p>
-            </div>
-          )}
+                    {error === 'OAuthAccountNotLinked'
+                      ? 'כתובת האימייל כבר קיימת במערכת עם ספק אחר'
+                      : 'שגיאה בהתחברות. נסה שוב.'}
+                  </p>
+                </div>
+              )}
 
           {/* Features List */}
           <div style={{ marginBottom: '32px' }}>
-            {/* Feature 1 */}
+                {/* Feature 1 */}
             <div
               style={{
                 display: 'flex',
@@ -201,11 +208,11 @@ function LoginContent() {
                 }}
               >
                 <Medal style={{ width: '20px', height: '20px', color: '#1D1D1F', strokeWidth: 1.5 }} />
-              </div>
-            </div>
+                  </div>
+                </div>
 
 
-            {/* Feature 2 */}
+                {/* Feature 2 */}
             <div
               style={{
                 display: 'flex',
@@ -242,10 +249,10 @@ function LoginContent() {
                 }}
               >
                 <Rocket style={{ width: '20px', height: '20px', color: '#1D1D1F', strokeWidth: 1.5 }} />
-              </div>
-            </div>
+                  </div>
+                </div>
 
-            {/* Feature 3 */}
+                {/* Feature 3 */}
             <div
               style={{
                 display: 'flex',
@@ -352,35 +359,47 @@ function LoginContent() {
               }}
             >
               בהתחברות, את/ה מסכימ/ה ל
-              <a
-                href="/terms"
+              <button
+                onClick={() => setLegalModal({ isOpen: true, type: 'terms' })}
                 style={{
                   color: '#2B4699',
                   textDecoration: 'none',
                   fontWeight: 600,
                   marginRight: '4px',
                   marginLeft: '4px',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  fontSize: '13px',
+                  fontFamily: 'var(--font-heebo), sans-serif',
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
                 onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
               >
                 תנאי השימוש
-              </a>
+              </button>
               ול
-              <a
-                href="/privacy"
+              <button
+                onClick={() => setLegalModal({ isOpen: true, type: 'privacy' })}
                 style={{
                   color: '#2B4699',
                   textDecoration: 'none',
                   fontWeight: 600,
                   marginRight: '4px',
                   marginLeft: '4px',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  fontSize: '13px',
+                  fontFamily: 'var(--font-heebo), sans-serif',
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
                 onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
               >
                 מדיניות הפרטיות
-              </a>
+              </button>
               שלנו.
             </p>
 
@@ -465,6 +484,13 @@ function LoginContent() {
           }
         }
       `}</style>
+
+      {/* Legal Modal */}
+      <LegalModal
+        isOpen={legalModal.isOpen}
+        onClose={() => setLegalModal({ ...legalModal, isOpen: false })}
+        type={legalModal.type}
+      />
     </div>
   );
 }
@@ -473,7 +499,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div
+        <div 
           style={{
             minHeight: '100vh',
             display: 'flex',
