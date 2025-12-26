@@ -79,7 +79,20 @@ export default function RecurringModal({
 
   const modalContent = (
     <>
-      <div className="modal-overlay" onClick={onClose}>
+      <div
+        className="modal-overlay"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 9999
+        }}
+        onClick={onClose}
+      >
         <div className="modal-content animate-scale-in" onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="modal-header">
@@ -105,8 +118,8 @@ export default function RecurringModal({
                       setCategory('');
                     }}
                     className={`py-3 px-4 rounded-xl font-medium transition-all ${type === 'expense'
-                        ? 'bg-indigo-500 text-white'
-                        : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
+                      ? 'bg-indigo-500 text-white'
+                      : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
                       }`}
                   >
                     הוצאה
@@ -118,8 +131,8 @@ export default function RecurringModal({
                       setCategory('');
                     }}
                     className={`py-3 px-4 rounded-xl font-medium transition-all ${type === 'income'
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
                       }`}
                   >
                     הכנסה
