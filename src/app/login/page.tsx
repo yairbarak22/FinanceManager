@@ -365,42 +365,40 @@ function LoginContent() {
                   color: '#2B4699',
                   textDecoration: 'none',
                   fontWeight: 600,
-                  marginRight: '4px',
-                  marginLeft: '4px',
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
                   padding: 0,
                   fontSize: '13px',
                   fontFamily: 'var(--font-heebo), sans-serif',
+                  display: 'inline',
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
                 onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
               >
                 תנאי השימוש
               </button>
-              ול
+              {' '}ול
               <button
                 onClick={() => setLegalModal({ isOpen: true, type: 'privacy' })}
                 style={{
                   color: '#2B4699',
                   textDecoration: 'none',
                   fontWeight: 600,
-                  marginRight: '4px',
-                  marginLeft: '4px',
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
                   padding: 0,
                   fontSize: '13px',
                   fontFamily: 'var(--font-heebo), sans-serif',
+                  display: 'inline',
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
                 onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
               >
                 מדיניות הפרטיות
               </button>
-              שלנו.
+              {' '}שלנו.
             </p>
 
             {/* Security & Privacy Reassurance */}
