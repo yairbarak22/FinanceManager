@@ -116,13 +116,7 @@ export default function MonthFilter({
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 transition-all ${compact
-            ? 'px-0 py-2'
-            : 'px-0 py-2'
-          } ${isDark
-            ? 'text-[#1D1D1F] hover:text-[#0055FF]'
-            : 'text-slate-800 hover:text-slate-900'
-          }`}
+        className="flex items-center gap-2 transition-all border border-slate-200 rounded-lg px-3 py-1.5 hover:border-slate-300 hover:bg-slate-50/50 cursor-pointer text-[#1D1D1F] hover:text-[#0055FF]"
       >
         <span className={`text-right font-medium whitespace-nowrap ${compact ? 'text-sm' : 'text-sm'} ${isDark ? 'text-[#1D1D1F]' : 'text-slate-800'}`}>
           {formatMonthDisplay(selectedMonth, compact)}
