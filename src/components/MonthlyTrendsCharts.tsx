@@ -5,7 +5,7 @@ import {
   Bar,
   XAxis,
   YAxis,
-  Tooltip,
+import Card from './ui/Card';  Tooltip,
   ResponsiveContainer,
   CartesianGrid,
   ComposedChart,

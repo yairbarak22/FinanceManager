@@ -100,18 +100,19 @@ function LoginContent() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '2px',
+              gap: '0px',
               marginBottom: '32px',
             }}
           >
             <PieChart
               style={{
-                width: '42px',
-                height: '42px',
-                color: '#1D1D1F',
-                marginTop: '4px',
+                width: '50px',
+                height: '50px',
+                color: '#2B4699',
+                marginTop: '0px',
+                marginLeft: '-2px',
               }}
-              strokeWidth={2.5}
+              strokeWidth={3}
             />
             <span
               style={{

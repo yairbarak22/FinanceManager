@@ -5,7 +5,7 @@ import { Plus, Pencil, Trash2, RefreshCw, TrendingUp, TrendingDown } from 'lucid
 import { RecurringTransaction } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
-import ConfirmDialog from './modals/ConfirmDialog';
+import Card from './ui/Card';import ConfirmDialog from './modals/ConfirmDialog';
 
 interface RecurringTransactionsProps {
   transactions: RecurringTransaction[];
