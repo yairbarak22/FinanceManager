@@ -101,6 +101,9 @@ export const RATE_LIMITS = {
   // File upload - very strict
   upload: { maxRequests: 10, windowSeconds: 60 } as RateLimitConfig,
   
+  // Import operations - strict (heavy processing)
+  import: { maxRequests: 5, windowSeconds: 60 } as RateLimitConfig,
+  
   // AI/expensive operations - strict
   ai: { maxRequests: 20, windowSeconds: 60 } as RateLimitConfig,
 };

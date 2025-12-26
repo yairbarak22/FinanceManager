@@ -4,7 +4,14 @@ import { MemberRole } from '@prisma/client';
 import { requireAuth, getOrCreateSharedAccount } from '@/lib/authHelpers';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization to avoid build-time errors when API key is not set
+let resend: Resend | null = null;
+function getResend(): Resend | null {
+  if (!resend && process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 // GET - Get all invites for the user's shared account
 export async function GET() {
@@ -98,8 +105,10 @@ export async function POST(request: Request) {
     });
 
     // Send email invitation
+    const resendClient = getResend();
     try {
-      await resend.emails.send({
+      if (resendClient) {
+        await resendClient.emails.send({
         from: 'Finance Manager <onboarding@resend.dev>',
         to: email.toLowerCase(),
         subject: 'הוזמנת לשתף חשבון ב-Finance Manager',
@@ -137,7 +146,8 @@ export async function POST(request: Request) {
             </p>
           </div>
         `,
-      });
+        });
+      }
     } catch (emailError) {
       console.error('Failed to send invite email:', emailError);
       // Continue even if email fails - user can still copy the link

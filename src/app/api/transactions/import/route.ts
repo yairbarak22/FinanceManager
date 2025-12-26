@@ -469,13 +469,9 @@ export async function POST(request: NextRequest) {
     if (error) return error;
 
     // Rate limiting for import endpoint (heavy operation)
-    const rateLimitResult = checkRateLimit(
-      `import:${userId}`,
-      RATE_LIMITS.import.limit,
-      RATE_LIMITS.import.windowMs
-    );
+    const rateLimitResult = checkRateLimit(`import:${userId}`, RATE_LIMITS.import);
     
-    if (!rateLimitResult.allowed) {
+    if (!rateLimitResult.success) {
       return NextResponse.json(
         { error: 'יותר מדי בקשות ייבוא. אנא המתן דקה ונסה שוב.' },
         { status: 429 }

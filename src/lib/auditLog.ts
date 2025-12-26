@@ -4,7 +4,7 @@
  */
 
 import { prisma } from './prisma';
-import { AuditAction } from '@prisma/client';
+import { AuditAction, Prisma } from '@prisma/client';
 
 export { AuditAction };
 
@@ -27,7 +27,7 @@ export async function logAuditEvent(params: AuditLogParams): Promise<void> {
     // Sanitize metadata - remove any potential PII
     const sanitizedMetadata = params.metadata
       ? sanitizeMetadata(params.metadata)
-      : null;
+      : undefined;
 
     await prisma.auditLog.create({
       data: {
@@ -35,7 +35,7 @@ export async function logAuditEvent(params: AuditLogParams): Promise<void> {
         action: params.action,
         entityType: params.entityType ?? null,
         entityId: params.entityId ?? null,
-        metadata: sanitizedMetadata,
+        metadata: sanitizedMetadata as Prisma.InputJsonValue | undefined,
         ipAddress: params.ipAddress ?? null,
         userAgent: params.userAgent?.substring(0, 500) ?? null, // Limit length
       },
