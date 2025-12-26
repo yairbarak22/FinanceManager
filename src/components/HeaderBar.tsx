@@ -60,10 +60,8 @@ export default function HeaderBar({
 
   const navTabs: { id: NavSection; label: string }[] = [
     { id: 'dashboard', label: 'דשבורד' },
-    { id: 'transactions', label: 'שוטפות' },
-    { id: 'recurring', label: 'קבועות' },
-    { id: 'assets', label: 'נכסים' },
-    { id: 'liabilities', label: 'התחייבויות' },
+    { id: 'assets', label: 'תיק השקעות' },
+    { id: 'transactions', label: 'עזרה' },
   ];
 
   return (
