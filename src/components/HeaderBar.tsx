@@ -103,7 +103,10 @@ export default function HeaderBar({
                   {isActive ? (
                     <ChevronDown className="w-3.5 h-3.5 text-slate-400" strokeWidth={2} />
                   ) : (
-                    <ChevronLeft className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-400 transition-all" strokeWidth={2} />
+                    <>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:hidden transition-all" strokeWidth={2} />
+                      <ChevronLeft className="w-3.5 h-3.5 text-blue-400 hidden group-hover:block transition-all" strokeWidth={2} />
+                    </>
                   )}
                 </button>
               );
