@@ -143,19 +143,21 @@ export default function RecurringTransactions({
                   />
                 </button>
 
-                {/* Actions */}
-                <div className="flex gap-1 flex-shrink-0">
+                {/* Action Buttons - Always visible */}
+                <div className="flex items-center gap-1">
                   <button
                     onClick={() => onEdit(transaction)}
-                    className="p-1.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-600"
+                    className="p-1.5 hover:bg-blue-50 rounded-lg transition-colors"
+                    title="ערוך"
                   >
-                    <Pencil className="w-3.5 h-3.5" />
+                    <Pencil className="w-4 h-4 text-blue-600" />
                   </button>
                   <button
                     onClick={() => setDeleteConfirm({ isOpen: true, id: transaction.id, name: transaction.name })}
-                    className="p-1.5 rounded hover:bg-red-100 text-slate-500 hover:text-red-500"
+                    className="p-1.5 hover:bg-rose-50 rounded-lg transition-colors"
+                    title="מחק"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4 text-rose-600" />
                   </button>
                 </div>
               </div>

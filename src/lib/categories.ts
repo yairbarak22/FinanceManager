@@ -1,10 +1,10 @@
-import { 
-  Home, 
-  Utensils, 
-  Car, 
-  Film, 
-  FileText, 
-  Heart, 
+import {
+  Home,
+  Utensils,
+  Car,
+  Film,
+  FileText,
+  Heart,
   Briefcase,
   Gift,
   TrendingUp,
@@ -45,31 +45,31 @@ export interface CategoryInfo {
 // ============================================
 export const expenseCategories: CategoryInfo[] = [
   {
-    id: 'housing',
-    name: 'Housing',
-    nameHe: 'דיור',
-    icon: Home,
-    color: '#f97316',
-    bgColor: 'bg-orange-100',
-    textColor: 'text-orange-600',
-  },
-  {
     id: 'food',
     name: 'Food',
     nameHe: 'מזון',
-    icon: Utensils,
-    color: '#eab308',
-    bgColor: 'bg-yellow-100',
-    textColor: 'text-yellow-600',
+    icon: Utensils, // Assuming Utensils is the closest LucideIcon for '🍽️'
+    color: '#1E3269',
+    bgColor: 'bg-blue-900', // Placeholder, as original instruction didn't provide these
+    textColor: 'text-white', // Placeholder
   },
   {
-    id: 'transport',
-    name: 'Transport',
+    id: 'transportation',
+    name: 'Transportation',
     nameHe: 'תחבורה',
-    icon: Car,
-    color: '#3b82f6',
-    bgColor: 'bg-blue-100',
-    textColor: 'text-blue-600',
+    icon: Car, // Assuming Car is the closest LucideIcon for '🚗'
+    color: '#2B4699',
+    bgColor: 'bg-blue-800', // Placeholder
+    textColor: 'text-white', // Placeholder
+  },
+  {
+    id: 'utilities',
+    name: 'Utilities',
+    nameHe: 'חשבונות',
+    icon: FileText, // Assuming FileText is the closest LucideIcon for '💡' (bills)
+    color: '#4F5ECE',
+    bgColor: 'bg-indigo-800', // Placeholder
+    textColor: 'text-white', // Placeholder
   },
   {
     id: 'entertainment',
@@ -464,7 +464,7 @@ export function getCategoryInfo(
 ): CategoryInfo | undefined {
   // First check default categories
   let result: CategoryInfo | undefined;
-  
+
   switch (type) {
     case 'income':
       result = incomeCategories.find(c => c.id === categoryId);
@@ -479,12 +479,12 @@ export function getCategoryInfo(
       result = liabilityTypes.find(c => c.id === categoryId);
       break;
   }
-  
+
   // If not found in defaults, check custom categories
   if (!result && customCategories) {
     result = customCategories.find(c => c.id === categoryId);
   }
-  
+
   return result;
 }
 
@@ -514,10 +514,10 @@ export function customCategoryToInfo(dbCategory: {
   color?: string | null;
 }): CategoryInfo {
   const colorIndex = dbCategory.name.length % customCategoryColors.length;
-  const colorInfo = dbCategory.color 
+  const colorInfo = dbCategory.color
     ? customCategoryColors.find(c => c.color === dbCategory.color) || customCategoryColors[colorIndex]
     : customCategoryColors[colorIndex];
-  
+
   return {
     id: dbCategory.id,
     name: dbCategory.name,
