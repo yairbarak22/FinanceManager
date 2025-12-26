@@ -231,6 +231,7 @@ model UserProfile {
 enum MemberRole {
   OWNER
   MEMBER
+  VIEWER  // Read-only access
 }
 
 model SharedAccount {
@@ -247,6 +248,9 @@ model SharedAccountMember {
   userId          String
   sharedAccountId String
   role            MemberRole    @default(MEMBER) // SECURITY: Type-safe enum
+  canEdit         Boolean       @default(true)   // Permission: can edit data
+  canDelete       Boolean       @default(true)   // Permission: can delete data  
+  canInvite       Boolean       @default(false)  // Permission: can invite others
   joinedAt        DateTime      @default(now())
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   sharedAccount   SharedAccount @relation(fields: [sharedAccountId], references: [id], onDelete: Cascade)
