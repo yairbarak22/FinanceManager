@@ -45,137 +45,137 @@ export interface CategoryInfo {
 // ============================================
 export const expenseCategories: CategoryInfo[] = [
   {
+    id: 'housing',
+    name: 'Housing',
+    nameHe: 'דיור',
+    icon: Home,
+    color: '#1E3269',  // Deep Brand Indigo
+    bgColor: 'bg-indigo-100',
+    textColor: 'text-indigo-900',
+  },
+  {
     id: 'food',
     name: 'Food',
     nameHe: 'מזון',
-    icon: Utensils, // Assuming Utensils is the closest LucideIcon for '🍽️'
-    color: '#1E3269',
-    bgColor: 'bg-blue-900', // Placeholder, as original instruction didn't provide these
-    textColor: 'text-white', // Placeholder
+    icon: Utensils,
+    color: '#2B4699',  // Primary Blue
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-900',
   },
   {
-    id: 'transportation',
-    name: 'Transportation',
+    id: 'transport',
+    name: 'Transport',
     nameHe: 'תחבורה',
-    icon: Car, // Assuming Car is the closest LucideIcon for '🚗'
-    color: '#2B4699',
-    bgColor: 'bg-blue-800', // Placeholder
-    textColor: 'text-white', // Placeholder
-  },
-  {
-    id: 'utilities',
-    name: 'Utilities',
-    nameHe: 'חשבונות',
-    icon: FileText, // Assuming FileText is the closest LucideIcon for '💡' (bills)
-    color: '#4F5ECE',
-    bgColor: 'bg-indigo-800', // Placeholder
-    textColor: 'text-white', // Placeholder
+    icon: Car,
+    color: '#4F5ECE',  // Transition Violet
+    bgColor: 'bg-indigo-100',
+    textColor: 'text-indigo-700',
   },
   {
     id: 'entertainment',
     name: 'Entertainment',
     nameHe: 'בילויים',
     icon: Film,
-    color: '#a855f7',
+    color: '#7166D8',  // Rich Purple
     bgColor: 'bg-purple-100',
-    textColor: 'text-purple-600',
+    textColor: 'text-purple-700',
   },
   {
     id: 'bills',
     name: 'Bills',
     nameHe: 'חשבונות',
     icon: FileText,
-    color: '#6b7280',
-    bgColor: 'bg-gray-100',
-    textColor: 'text-gray-600',
+    color: '#938AEA',  // Soft Amethyst
+    bgColor: 'bg-purple-100',
+    textColor: 'text-purple-600',
   },
   {
     id: 'health',
     name: 'Health',
     nameHe: 'בריאות',
     icon: Heart,
-    color: '#ef4444',
-    bgColor: 'bg-red-100',
-    textColor: 'text-red-600',
+    color: '#B5B0ED',  // Lavender Mist
+    bgColor: 'bg-purple-50',
+    textColor: 'text-purple-600',
   },
   {
     id: 'shopping',
     name: 'Shopping',
     nameHe: 'קניות',
     icon: ShoppingBag,
-    color: '#ec4899',
-    bgColor: 'bg-rose-100',
-    textColor: 'text-rose-600',
+    color: '#2B4699',  // Primary Blue (reuse)
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-700',
   },
   {
     id: 'education',
     name: 'Education',
     nameHe: 'חינוך',
     icon: GraduationCap,
-    color: '#8b5cf6',
-    bgColor: 'bg-indigo-100',
-    textColor: 'text-indigo-600',
+    color: '#7166D8',  // Rich Purple (reuse)
+    bgColor: 'bg-purple-100',
+    textColor: 'text-purple-700',
   },
   {
     id: 'subscriptions',
     name: 'Subscriptions',
     nameHe: 'מנויים',
     icon: CreditCard,
-    color: '#0891b2',
-    bgColor: 'bg-cyan-100',
-    textColor: 'text-cyan-600',
+    color: '#4F5ECE',  // Transition Violet (reuse)
+    bgColor: 'bg-indigo-100',
+    textColor: 'text-indigo-700',
   },
   {
     id: 'pets',
     name: 'Pets',
     nameHe: 'חיות מחמד',
     icon: PawPrint,
-    color: '#d97706',
-    bgColor: 'bg-amber-100',
-    textColor: 'text-amber-600',
+    color: '#938AEA',  // Soft Amethyst (reuse)
+    bgColor: 'bg-purple-100',
+    textColor: 'text-purple-600',
   },
   {
     id: 'gifts',
     name: 'Gifts & Donations',
     nameHe: 'מתנות ותרומות',
     icon: Gift,
-    color: '#e11d48',
-    bgColor: 'bg-rose-100',
-    textColor: 'text-rose-600',
+    color: '#B5B0ED',  // Lavender Mist (reuse)
+    bgColor: 'bg-purple-50',
+    textColor: 'text-purple-600',
   },
   {
     id: 'savings',
     name: 'Savings',
     nameHe: 'חיסכון',
     icon: PiggyBank,
-    color: '#059669',
-    bgColor: 'bg-emerald-100',
-    textColor: 'text-emerald-600',
+    color: '#2B4699',  // Primary Blue
+    bgColor: 'bg-blue-100',
+    textColor: 'text-blue-700',
   },
   {
     id: 'personal_care',
     name: 'Personal Care',
-    nameHe: 'טיפוח',
+    nameHe: 'ט‎יפוח',
     icon: Sparkles,
-    color: '#f472b6',
-    bgColor: 'bg-rose-100',
-    textColor: 'text-rose-500',
+    color: '#7166D8',  // Rich Purple
+    bgColor: 'bg-purple-100',
+    textColor: 'text-purple-700',
   },
   {
     id: 'communication',
     name: 'Communication',
     nameHe: 'תקשורת',
     icon: Wifi,
-    color: '#0284c7',
-    bgColor: 'bg-sky-100',
-    textColor: 'text-sky-600',
+    color: '#4F5ECE',  // Transition Violet
+    bgColor: 'bg-indigo-100',
+    textColor: 'text-indigo-700',
   },
   {
     id: 'other',
     name: 'Other',
     nameHe: 'אחר',
     icon: MoreHorizontal,
-    color: '#64748b',
+    color: '#64748b',  // Neutral slate
     bgColor: 'bg-slate-100',
     textColor: 'text-slate-600',
   },
