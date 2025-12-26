@@ -2,13 +2,15 @@
 
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { Medal, Rocket, Eye, PieChart } from 'lucide-react';
+import TermsModal from '@/components/modals/TermsModal';
 
 function LoginContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
   const callbackUrl = searchParams.get('callbackUrl') || '/';
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
 
   return (
     <div
@@ -342,90 +344,66 @@ function LoginContent() {
           {/* Legal Disclaimer & Privacy */}
           <div style={{ marginTop: '24px', textAlign: 'center' }}>
             {/* Terms of Service Agreement */}
-            <p
+            ול
+            <a
+              href="/privacy"
               style={{
-                fontSize: '13px',
+                color: '#2B4699',
+                textDecoration: 'none',
+                fontWeight: 600,
+                marginRight: '4px',
+                marginLeft: '4px',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+            >
+              מדיניות הפרטיות
+            </a>
+            שלנו.
+          </p>
+
+          {/* Security & Privacy Reassurance */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+            }}
+          >
+            {/* Lock Icon */}
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#86868b"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+
+            {/* Privacy Text */}
+            <span
+              style={{
+                fontSize: '12px',
                 color: '#86868b',
-                lineHeight: 1.6,
-                marginBottom: '12px',
+                fontWeight: 500,
                 fontFamily: 'var(--font-heebo), sans-serif',
               }}
             >
-              בהתחברות, את/ה מסכימ/ה ל
-              <a
-                href="/terms"
-                style={{
-                  color: '#2B4699',
-                  textDecoration: 'none',
-                  fontWeight: 600,
-                  marginRight: '4px',
-                  marginLeft: '4px',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-                onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
-              >
-                תנאי השימוש
-              </a>
-              ול
-              <a
-                href="/privacy"
-                style={{
-                  color: '#2B4699',
-                  textDecoration: 'none',
-                  fontWeight: 600,
-                  marginRight: '4px',
-                  marginLeft: '4px',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-                onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
-              >
-                מדיניות הפרטיות
-              </a>
-              שלנו.
-            </p>
-
-            {/* Security & Privacy Reassurance */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-              }}
-            >
-              {/* Lock Icon */}
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#86868b"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-
-              {/* Privacy Text */}
-              <span
-                style={{
-                  fontSize: '12px',
-                  color: '#86868b',
-                  fontWeight: 500,
-                  fontFamily: 'var(--font-heebo), sans-serif',
-                }}
-              >
-                המידע שלך מאובטח ומוצפן מקצה לקצה
-              </span>
-            </div>
+              המידע שלך מאובטח ומוצפן מקצה לקצה
+            </span>
           </div>
         </div>
       </div>
+    </div>
 
-      {/* Mobile Responsive Styles */}
-      <style jsx>{`
+      {/* Mobile Responsive Styles */ }
+  <style jsx>{`
         @media (max-width: 768px) {
           h2 {
             font-size: 24px !important;
@@ -465,7 +443,7 @@ function LoginContent() {
           }
         }
       `}</style>
-    </div>
+    </div >
   );
 }
 
