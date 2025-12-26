@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { X, Users, UserPlus, Copy, Trash2, Crown, User, Mail, Check, Loader2 } from 'lucide-react';
 
 interface Member {
@@ -149,7 +149,10 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
   if (!isOpen) return null;
 
   // SECURITY: Check if the CURRENT user is an OWNER (not just if any owner exists)
-  const isOwner = members.some((m) => m.userId === currentUserId && m.role === 'OWNER');
+  // Use useMemo so this recalculates when members or currentUserId change
+  const isOwner = useMemo(() => {
+    return members.some((m) => m.userId === currentUserId && m.role === 'OWNER');
+  }, [members, currentUserId]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
