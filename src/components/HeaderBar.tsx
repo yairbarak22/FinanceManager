@@ -85,7 +85,7 @@ export default function HeaderBar({
             </div>
           </div>
 
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-6">
             {navTabs.map((tab) => {
               const isActive = activeSection === tab.id;
               return (
