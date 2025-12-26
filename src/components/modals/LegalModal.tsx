@@ -32,7 +32,7 @@ export default function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
 
   if (!isOpen || !mounted) return null;
 
-  const document: LegalDocument = type === 'terms' ? TERMS_OF_SERVICE : PRIVACY_POLICY;
+  const legalContent: LegalDocument = type === 'terms' ? TERMS_OF_SERVICE : PRIVACY_POLICY;
   const Icon = type === 'terms' ? Scale : Shield;
   const iconBgColor = type === 'terms' ? '#EEF2FF' : '#ECFDF5';
   const iconColor = type === 'terms' ? '#4F46E5' : '#059669';
@@ -108,7 +108,7 @@ export default function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
                   fontFamily: 'var(--font-heebo), sans-serif',
                 }}
               >
-                {document.title}
+                {legalContent.title}
               </h2>
               <p
                 style={{
@@ -118,7 +118,7 @@ export default function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
                   fontFamily: 'var(--font-heebo), sans-serif',
                 }}
               >
-                עדכון אחרון: {document.lastUpdated}
+                עדכון אחרון: {legalContent.lastUpdated}
               </p>
             </div>
           </div>
@@ -161,11 +161,11 @@ export default function LegalModal({ isOpen, onClose, type }: LegalModalProps) {
               fontFamily: 'var(--font-heebo), sans-serif',
             }}
           >
-            {document.intro}
+            {legalContent.intro}
           </p>
 
           {/* Sections */}
-          {document.sections.map((section, index) => (
+          {legalContent.sections.map((section, index) => (
             <div key={index} style={{ marginBottom: '24px' }}>
               <h3
                 style={{
