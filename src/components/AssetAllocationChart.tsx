@@ -12,18 +12,18 @@ interface AssetAllocationChartProps {
   onGetRecommendations?: () => void;
 }
 
-// Brand-aligned colors for categories
+// Premium Blue-to-Purple spectrum palette for hierarchical visual depth
 const CATEGORY_COLORS: Record<string, string> = {
-  real_estate: '#6366f1',  // Indigo
-  stocks: '#10b981',       // Emerald
-  crypto: '#f59e0b',       // Amber
-  pension_fund: '#14b8a6', // Teal
-  education_fund: '#a855f7', // Purple
-  savings_account: '#3b82f6', // Blue
-  investments: '#06b6d4',  // Cyan
-  vehicle: '#64748b',      // Slate
-  cash: '#34d399',         // Emerald light
-  other: '#94a3b8',        // Slate light
+  real_estate: '#1E3269',    // Deep Brand Indigo (heaviest/most important)
+  stocks: '#2B4699',          // Primary Blue (brand standard)
+  crypto: '#4F5ECE',          // Transition Violet
+  pension_fund: '#7166D8',    // Rich Purple
+  education_fund: '#938AEA',  // Soft Amethyst
+  savings_account: '#B5B0ED', // Lavender Mist (lightest)
+  investments: '#2B4699',     // Primary Blue
+  vehicle: '#4F5ECE',         // Transition Violet
+  cash: '#7166D8',            // Rich Purple
+  other: '#938AEA',           // Soft Amethyst
 };
 
 export default function AssetAllocationChart({ assets, onGetRecommendations }: AssetAllocationChartProps) {
@@ -114,7 +114,11 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
         {onGetRecommendations && (
           <button
             onClick={onGetRecommendations}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all text-sm font-medium shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 text-white rounded-xl transition-all text-sm font-medium"
+            style={{
+              background: 'linear-gradient(90deg, #2B4699 0%, #7C3AED 100%)',
+              boxShadow: '0 4px 12px rgba(43, 70, 153, 0.25)'
+            }}
           >
             <Lightbulb className="w-4 h-4" />
             קבל המלצות
