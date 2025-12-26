@@ -146,13 +146,14 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
     setTimeout(() => setCopiedToken(null), 2000);
   };
 
-  if (!isOpen) return null;
-
   // SECURITY: Check if the CURRENT user is an OWNER (not just if any owner exists)
   // Use useMemo so this recalculates when members or currentUserId change
+  // IMPORTANT: Must be before the conditional return to follow React Hooks rules
   const isOwner = useMemo(() => {
     return members.some((m) => m.userId === currentUserId && m.role === 'OWNER');
   }, [members, currentUserId]);
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
