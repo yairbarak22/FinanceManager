@@ -18,8 +18,8 @@ function LoginContent() {
   });
 
   return (
-    <div 
-      dir="rtl" 
+    <div
+      dir="rtl"
       style={{
         minHeight: '100vh',
         background: 'linear-gradient(180deg, #F5F9FE 0%, #F0F6FD 15%, #EAF3FC 30%, #E4F0FB 45%, #DEEDF9 60%, #D8EAF8 75%, #D2E7F6 90%, #CCE4F5 100%)',
@@ -133,7 +133,7 @@ function LoginContent() {
               NET
             </span>
 
-              </div>
+          </div>
 
           {/* Main Headline */}
           <h1
@@ -149,8 +149,8 @@ function LoginContent() {
           >
             דואגים לעתיד שלך          </h1>
 
-              {/* Error Message */}
-              {error && (
+          {/* Error Message */}
+          {error && (
             <div
               style={{
                 marginBottom: '24px',
@@ -162,16 +162,16 @@ function LoginContent() {
               }}
             >
               <p style={{ color: '#DC2626', fontSize: '14px', fontWeight: 500, fontFamily: 'var(--font-heebo)' }}>
-                    {error === 'OAuthAccountNotLinked'
-                      ? 'כתובת האימייל כבר קיימת במערכת עם ספק אחר'
-                      : 'שגיאה בהתחברות. נסה שוב.'}
-                  </p>
-                </div>
-              )}
+                {error === 'OAuthAccountNotLinked'
+                  ? 'כתובת האימייל כבר קיימת במערכת עם ספק אחר'
+                  : 'שגיאה בהתחברות. נסה שוב.'}
+              </p>
+            </div>
+          )}
 
           {/* Features List */}
           <div style={{ marginBottom: '32px' }}>
-                {/* Feature 1 */}
+            {/* Feature 1 */}
             <div
               style={{
                 display: 'flex',
@@ -208,11 +208,11 @@ function LoginContent() {
                 }}
               >
                 <Medal style={{ width: '20px', height: '20px', color: '#1D1D1F', strokeWidth: 1.5 }} />
-                  </div>
-                </div>
+              </div>
+            </div>
 
 
-                {/* Feature 2 */}
+            {/* Feature 2 */}
             <div
               style={{
                 display: 'flex',
@@ -249,10 +249,10 @@ function LoginContent() {
                 }}
               >
                 <Rocket style={{ width: '20px', height: '20px', color: '#1D1D1F', strokeWidth: 1.5 }} />
-                  </div>
-                </div>
+              </div>
+            </div>
 
-                {/* Feature 3 */}
+            {/* Feature 3 */}
             <div
               style={{
                 display: 'flex',
@@ -483,6 +483,51 @@ function LoginContent() {
             -webkit-backdrop-filter: blur(15px) !important;
           }
         }
+
+        @media (max-width: 480px) {
+          /* Extra small screens - more aggressive spacing */
+          div[style*='maxWidth: \\'480px\\''] {
+            padding: 24px !important;
+            margin: 0 16px !important;
+          }
+
+          div[style*='padding: \\'48px 24px\\''] {
+            padding: 24px 16px !important;
+          }
+
+          h2 {
+            font-size: 18px !important;
+            margin-bottom: 24px !important;
+          }
+
+          h1 {
+            font-size: 20px !important;
+            margin-bottom: 24px !important;
+          }
+
+          span[style*='fontSize: \\'16px\\''] {
+            font-size: 14px !important;
+            line-height: 1.4 !important;
+          }
+
+          p[style*='fontSize: \\'13px\\''] {
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+          }
+
+          span[style*='fontSize: \\'12px\\''] {
+            font-size: 13px !important;
+          }
+
+          div[style*='marginBottom: \\'16px\\''] {
+            margin-bottom: 12px !important;
+          }
+
+          button {
+            padding: 12px 16px !important;
+            font-size: 15px !important;
+          }
+        }
       `}</style>
 
       {/* Legal Modal */}
@@ -499,7 +544,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div 
+        <div
           style={{
             minHeight: '100vh',
             display: 'flex',
