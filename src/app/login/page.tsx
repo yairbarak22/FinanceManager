@@ -344,23 +344,37 @@ function LoginContent() {
           {/* Legal Disclaimer & Privacy */}
           <div style={{ marginTop: '24px', textAlign: 'center' }}>
             {/* Terms of Service Agreement */}
-            ול
-            <a
-              href="/privacy"
+            <p
               style={{
-                color: '#2B4699',
-                textDecoration: 'none',
-                fontWeight: 600,
-                marginRight: '4px',
-                marginLeft: '4px',
+                fontSize: '12px',
+                color: '#86868b',
+                lineHeight: 1.5,
+                fontFamily: 'var(--font-heebo), sans-serif',
+                padding: '0 20px',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
-              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
             >
-              מדיניות הפרטיות
-            </a>
-            שלנו.
-          </p>
+              בלחיצה על "התחבר עם גוגל" אתה מסכים{' '}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsTermsOpen(true);
+                }}
+                style={{
+                  color: '#2B4699',
+                  textDecoration: 'underline',
+                  fontSize: '12px',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  font: 'inherit',
+                }}
+              >
+                לתנאי השימוש ומדיניות הפרטיות
+              </button>
+            </p>
+          </div>
 
           {/* Security & Privacy Reassurance */}
           <div
@@ -399,6 +413,9 @@ function LoginContent() {
             </span>
           </div>
         </div>
+
+        {/* Terms Modal */}
+        <TermsModal isOpen={isTermsOpen} onClose={() => setIsTermsOpen(false)} />
       </div>
     </div>
 
