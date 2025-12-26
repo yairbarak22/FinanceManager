@@ -1,87 +1,119 @@
 /**
- * Simple in-memory rate limiter for API protection
- * For production with Vercel serverless, consider upgrading to @upstash/ratelimit with Redis
+ * Simple in-memory rate limiter
+ * For production, consider using @upstash/ratelimit with Redis
  */
 
-interface RateLimitRecord {
+interface RateLimitEntry {
   count: number;
   resetTime: number;
 }
 
-// In-memory store for rate limit records
-const requests = new Map<string, RateLimitRecord>();
+// In-memory store (cleared on server restart)
+const rateLimitStore = new Map<string, RateLimitEntry>();
 
-// Cleanup old records periodically (every 5 minutes)
-let lastCleanup = Date.now();
-const CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
-
-function cleanupOldRecords() {
-  const now = Date.now();
-  if (now - lastCleanup < CLEANUP_INTERVAL) return;
-  
-  lastCleanup = now;
-  for (const [key, record] of requests.entries()) {
-    if (now > record.resetTime) {
-      requests.delete(key);
+// Clean up old entries periodically (every 5 minutes)
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of rateLimitStore.entries()) {
+      if (entry.resetTime < now) {
+        rateLimitStore.delete(key);
+      }
     }
-  }
+  }, 5 * 60 * 1000);
+}
+
+export interface RateLimitConfig {
+  // Maximum number of requests allowed in the window
+  maxRequests: number;
+  // Time window in seconds
+  windowSeconds: number;
+}
+
+export interface RateLimitResult {
+  success: boolean;
+  limit: number;
+  remaining: number;
+  resetTime: number;
 }
 
 /**
  * Check if a request should be rate limited
- * @param identifier - Unique identifier for the requester (e.g., IP address, user ID)
- * @param limit - Maximum number of requests allowed in the window
- * @param windowMs - Time window in milliseconds
- * @returns Object with allowed status and remaining requests
+ * @param identifier - Unique identifier for the client (e.g., IP or userId)
+ * @param config - Rate limit configuration
+ * @returns RateLimitResult indicating if request is allowed
  */
 export function checkRateLimit(
   identifier: string,
-  limit: number = 100,
-  windowMs: number = 60000 // 1 minute default
-): { allowed: boolean; remaining: number; resetIn: number } {
-  cleanupOldRecords();
-  
+  config: RateLimitConfig
+): RateLimitResult {
   const now = Date.now();
-  const record = requests.get(identifier);
-  
-  // No existing record or window expired - create new
-  if (!record || now > record.resetTime) {
-    requests.set(identifier, { count: 1, resetTime: now + windowMs });
-    return { allowed: true, remaining: limit - 1, resetIn: windowMs };
-  }
-  
-  // Check if limit exceeded
-  if (record.count >= limit) {
-    return { 
-      allowed: false, 
-      remaining: 0, 
-      resetIn: record.resetTime - now 
+  const windowMs = config.windowSeconds * 1000;
+  const key = identifier;
+
+  let entry = rateLimitStore.get(key);
+
+  // If no entry or window expired, create new entry
+  if (!entry || entry.resetTime < now) {
+    entry = {
+      count: 1,
+      resetTime: now + windowMs,
+    };
+    rateLimitStore.set(key, entry);
+
+    return {
+      success: true,
+      limit: config.maxRequests,
+      remaining: config.maxRequests - 1,
+      resetTime: entry.resetTime,
     };
   }
-  
+
   // Increment count
-  record.count++;
-  return { 
-    allowed: true, 
-    remaining: limit - record.count, 
-    resetIn: record.resetTime - now 
+  entry.count++;
+
+  // Check if over limit
+  if (entry.count > config.maxRequests) {
+    return {
+      success: false,
+      limit: config.maxRequests,
+      remaining: 0,
+      resetTime: entry.resetTime,
+    };
+  }
+
+  return {
+    success: true,
+    limit: config.maxRequests,
+    remaining: config.maxRequests - entry.count,
+    resetTime: entry.resetTime,
   };
 }
 
-/**
- * Rate limit configuration for different endpoints
- */
+// Preset configurations for different endpoint types
 export const RATE_LIMITS = {
-  // General API endpoints
-  api: { limit: 100, windowMs: 60000 }, // 100 requests per minute
+  // Authentication endpoints - strict limits
+  auth: { maxRequests: 5, windowSeconds: 60 } as RateLimitConfig,
   
-  // AI endpoints (more expensive)
-  ai: { limit: 20, windowMs: 60000 }, // 20 requests per minute
+  // API endpoints - moderate limits
+  api: { maxRequests: 100, windowSeconds: 60 } as RateLimitConfig,
   
-  // Import endpoint (heavy operation)
-  import: { limit: 10, windowMs: 60000 }, // 10 requests per minute
+  // File upload - very strict
+  upload: { maxRequests: 10, windowSeconds: 60 } as RateLimitConfig,
   
-  // Auth endpoints (prevent brute force)
-  auth: { limit: 10, windowMs: 60000 }, // 10 requests per minute
+  // AI/expensive operations - strict
+  ai: { maxRequests: 20, windowSeconds: 60 } as RateLimitConfig,
 };
 
+/**
+ * Get client IP from request headers
+ * Works with Vercel/Cloudflare/proxies
+ */
+export function getClientIp(headers: Headers): string {
+  return (
+    headers.get('x-real-ip') ||
+    headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    headers.get('cf-connecting-ip') ||
+    'unknown'
+  );
+}

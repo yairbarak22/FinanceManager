@@ -4,6 +4,7 @@ import { put } from '@vercel/blob';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, withUserId } from '@/lib/authHelpers';
 import { validateAndSanitizeFile } from '@/lib/fileValidator';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 // Allowed file types
 const ALLOWED_TYPES = [
@@ -103,6 +104,21 @@ export async function POST(request: NextRequest) {
   try {
     const { userId, error } = await requireAuth();
     if (error) return error;
+
+    // Rate limiting for file uploads (strict)
+    const rateLimitResult = checkRateLimit(`upload:${userId}`, RATE_LIMITS.upload);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'יותר מדי העלאות. אנא המתן ונסה שוב.' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': String(rateLimitResult.limit),
+            'X-RateLimit-Remaining': String(rateLimitResult.remaining),
+          }
+        }
+      );
+    }
 
     const formData = await request.formData();
     const file = formData.get('file') as File;

@@ -46,20 +46,17 @@ export async function POST(request: Request) {
     }
 
     // Rate limiting for AI endpoint (more restrictive)
-    const rateLimitResult = checkRateLimit(
-      `ai:${session.user.id}`,
-      RATE_LIMITS.ai.limit,
-      RATE_LIMITS.ai.windowMs
-    );
+    const rateLimitResult = checkRateLimit(`ai:${session.user.id}`, RATE_LIMITS.ai);
     
-    if (!rateLimitResult.allowed) {
+    if (!rateLimitResult.success) {
       return NextResponse.json(
         { error: 'יותר מדי בקשות. אנא המתן דקה ונסה שוב.' },
         { 
           status: 429,
           headers: {
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': String(Math.ceil(rateLimitResult.resetIn / 1000)),
+            'X-RateLimit-Limit': String(rateLimitResult.limit),
+            'X-RateLimit-Remaining': String(rateLimitResult.remaining),
+            'X-RateLimit-Reset': String(Math.ceil(rateLimitResult.resetTime / 1000)),
           }
         }
       );
