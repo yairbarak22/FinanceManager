@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     if (!rateLimitResult.success) {
       return NextResponse.json(
         { error: 'יותר מדי העלאות. אנא המתן ונסה שוב.' },
-        { 
+        {
           status: 429,
           headers: {
             'X-RateLimit-Limit': String(rateLimitResult.limit),
@@ -181,7 +181,7 @@ export async function POST(request: NextRequest) {
     // Security Layer 2+3: Validate magic bytes and sanitize file content
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     const validationResult = await validateAndSanitizeFile(fileBuffer, file.type);
-    
+
     if (!validationResult.isValid) {
       return NextResponse.json(
         { error: validationResult.error },
