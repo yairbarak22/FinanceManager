@@ -17,6 +17,17 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      // Prevent redirecting to deleted pages (terms, privacy)
+      // These are now shown as modals in the login page
+      if (url.includes('/privacy') || url.includes('/terms')) {
+        return baseUrl;
+      }
+      // Default behavior: allow relative URLs and same-origin URLs
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
+    },
     async jwt({ token, user }) {
       // On initial sign in, add user id to token
       if (user) {
