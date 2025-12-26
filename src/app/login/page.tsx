@@ -140,8 +140,7 @@ function LoginContent() {
               fontFamily: 'var(--font-heebo), sans-serif',
             }}
           >
-            תדאג לעתיד שלך
-          </h1>
+            דואגים לעתיד שלך          </h1>
 
           {/* Error Message */}
           {error && (
@@ -227,7 +226,7 @@ function LoginContent() {
                   textAlign: 'right',
                 }}
               >
-                השקעות וצמיחות פיננסית
+                השקעות וצמיחה פיננסית
               </span>
               <div
                 style={{

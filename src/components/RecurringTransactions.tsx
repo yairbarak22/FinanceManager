@@ -5,7 +5,7 @@ import { Plus, Pencil, Trash2, RefreshCw, TrendingUp, TrendingDown } from 'lucid
 import { RecurringTransaction } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
-import Card from './ui/Card';import ConfirmDialog from './modals/ConfirmDialog';
+import Card from './ui/Card'; import ConfirmDialog from './modals/ConfirmDialog';
 
 interface RecurringTransactionsProps {
   transactions: RecurringTransaction[];
@@ -31,13 +31,13 @@ export default function RecurringTransactions({
   const fixedIncome = transactions
     .filter((t) => t.type === 'income' && t.isActive)
     .reduce((sum, t) => sum + t.amount, 0);
-    
+
   const fixedExpenses = transactions
     .filter((t) => t.type === 'expense' && t.isActive)
     .reduce((sum, t) => sum + t.amount, 0);
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-5 h-full">
+    <Card padding="sm" className="h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -162,7 +162,7 @@ export default function RecurringTransactions({
             </div>
           );
         })}
-        
+
         {transactions.length === 0 && (
           <p className="text-center text-slate-500 text-sm py-4">אין עסקאות קבועות</p>
         )}
@@ -176,6 +176,6 @@ export default function RecurringTransactions({
         title="מחיקת עסקה קבועה"
         message={`האם אתה בטוח שברצונך למחוק את "${deleteConfirm.name}"?`}
       />
-    </div>
+    </Card>
   );
 }
