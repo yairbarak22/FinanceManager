@@ -45,6 +45,7 @@ import {
   assetCategories as defaultAssetCategories,
   liabilityTypes as defaultLiabilityTypes,
 } from '@/lib/categories';
+import Card from '@/components/ui/Card';
 
 export default function Home() {
   // Data state
@@ -53,35 +54,35 @@ export default function Home() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [liabilities, setLiabilities] = useState<Liability[]>([]);
   const [netWorthHistory, setNetWorthHistory] = useState<NetWorthHistory[]>([]);
-  
+
   // Filter state - default to current month
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
   const [monthsWithData, setMonthsWithData] = useState<Set<string>>(new Set());
-  
+
   // Generate all months (past 12 + current + future 6 = 19 months)
   const allMonths = useMemo(() => {
     const months: string[] = [];
     const now = new Date();
-    
+
     for (let i = -12; i <= 6; i++) {
       const date = new Date(now.getFullYear(), now.getMonth() + i, 1);
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       months.push(`${year}-${month}`);
     }
-    
+
     return months;
   }, []);
-  
+
   // Get current month key
   const currentMonthKey = useMemo(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   }, []);
-  
+
   // Modal state
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false);
@@ -89,16 +90,16 @@ export default function Home() {
   const [isLiabilityModalOpen, setIsLiabilityModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isAdvisorModalOpen, setIsAdvisorModalOpen] = useState(false);
-  
+
   // Edit state
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [editingLiability, setEditingLiability] = useState<Liability | null>(null);
-  
+
   // Amortization modal state
   const [isAmortizationModalOpen, setIsAmortizationModalOpen] = useState(false);
   const [viewingLiability, setViewingLiability] = useState<Liability | null>(null);
-  
+
   // Documents modal state
   const [isDocumentsModalOpen, setIsDocumentsModalOpen] = useState(false);
   const [documentsEntity, setDocumentsEntity] = useState<{
@@ -106,19 +107,19 @@ export default function Home() {
     id: string;
     name: string;
   } | null>(null);
-  
+
   // Profile modal state
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  
+
   // Account settings modal state
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
-  
+
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Section navigation state
   const [activeSection, setActiveSection] = useState<NavSection>('dashboard');
-  
+
   // Section refs for scrolling
   const transactionsRef = useRef<HTMLDivElement>(null);
   const recurringRef = useRef<HTMLDivElement>(null);
@@ -128,7 +129,7 @@ export default function Home() {
   // Handle section navigation with scroll
   const handleSectionChange = (section: NavSection) => {
     setActiveSection(section);
-    
+
     // Scroll to section
     const scrollToRef = (ref: React.RefObject<HTMLDivElement | null>) => {
       if (ref.current) {
@@ -227,13 +228,13 @@ export default function Home() {
 
       // Calculate current liabilities total
       const totalLiabilities = liabData.reduce((sum: number, l: Liability) => sum + l.totalAmount, 0);
-      
+
       // Build net worth history from actual asset history data
       const netWorthData: NetWorthHistory[] = historyData.map((item: { monthKey: string; totalAssets: number }, index: number) => {
         // Parse month key to create date (first day of month)
         const [year, month] = item.monthKey.split('-');
         const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-        
+
         return {
           id: String(index + 1),
           date: date.toISOString(),
@@ -242,7 +243,7 @@ export default function Home() {
           liabilities: totalLiabilities,
         };
       });
-      
+
       // If no history data, create a single entry with current values
       if (netWorthData.length === 0) {
         const totalAssets = assetsData.reduce((sum: number, a: Asset) => sum + a.value, 0);
@@ -254,7 +255,7 @@ export default function Home() {
           liabilities: totalLiabilities,
         });
       }
-      
+
       setNetWorthHistory(netWorthData);
 
       setIsLoading(false);
@@ -273,7 +274,7 @@ export default function Home() {
   const fixedIncome = recurringTransactions
     .filter((t) => t.type === 'income' && t.isActive)
     .reduce((sum, t) => sum + t.amount, 0);
-    
+
   const fixedExpenses = recurringTransactions
     .filter((t) => t.type === 'expense' && t.isActive)
     .reduce((sum, t) => sum + t.amount, 0);
@@ -311,7 +312,7 @@ export default function Home() {
   const monthlySummaries: MonthlySummaryType[] = monthsWithDataArray.map((monthKey) => {
     const [year, month] = monthKey.split('-');
     const monthTransactions = transactions.filter((tx) => getMonthKey(tx.date) === monthKey);
-    
+
     // Regular transactions for this month
     const txIncome = monthTransactions
       .filter((tx) => tx.type === 'income')
@@ -375,10 +376,10 @@ export default function Home() {
       const results = await Promise.all(
         ids.map(id => fetch(`/api/transactions/${id}`, { method: 'DELETE' }))
       );
-      
+
       const failedCount = results.filter(r => !r.ok).length;
       await fetchData();
-      
+
       if (failedCount === 0) {
         toast.success(`${ids.length} עסקאות נמחקו בהצלחה`);
       } else {
@@ -403,7 +404,7 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category: newCategory }),
       });
-      
+
       if (!res.ok) throw new Error('Failed to update transaction');
 
       // Handle merchant category mapping based on save behavior
@@ -420,7 +421,7 @@ export default function Home() {
       }
 
       await fetchData();
-      
+
       if (saveBehavior === 'once') {
         toast.success('הקטגוריה עודכנה');
       } else if (saveBehavior === 'always') {
@@ -438,7 +439,7 @@ export default function Home() {
   const handleAddRecurring = async (data: Omit<RecurringTransaction, 'id' | 'createdAt' | 'updatedAt'>) => {
     // Capture editing state before any changes
     const isNewRecurring = !editingRecurring;
-    
+
     try {
       const url = editingRecurring
         ? `/api/recurring/${editingRecurring.id}`
@@ -498,7 +499,7 @@ export default function Home() {
   const handleAddAsset = async (data: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>) => {
     // Capture editing state before any changes
     const isNewAsset = !editingAsset;
-    
+
     try {
       const url = editingAsset ? `/api/assets/${editingAsset.id}` : '/api/assets';
       const method = editingAsset ? 'PUT' : 'POST';
@@ -542,7 +543,7 @@ export default function Home() {
   const handleAddLiability = async (data: Omit<Liability, 'id' | 'createdAt' | 'updatedAt'>) => {
     // Capture editing state before any changes
     const isNewLiability = !editingLiability;
-    
+
     try {
       const url = editingLiability
         ? `/api/liabilities/${editingLiability.id}`
@@ -614,7 +615,7 @@ export default function Home() {
       />
 
       <div className="max-w-7xl mx-auto py-6 px-4 md:px-6 lg:px-8">
-        
+
         {/* All sections with consistent spacing */}
         <div className="flex flex-col gap-6">
 
@@ -645,7 +646,7 @@ export default function Home() {
                 fixedExpenses={fixedExpenses}
               />
             </div>
-            
+
             {/* Asset Allocation Chart */}
             <div className="lg:col-span-2">
               <AssetAllocationChart
@@ -660,7 +661,7 @@ export default function Home() {
               ============================================ */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Assets */}
-            <div ref={assetsRef} className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-4 max-h-[500px] overflow-y-auto">
+            <Card ref={assetsRef} padding="sm" className="max-h-[500px] overflow-y-auto">
               <AssetsSection
                 assets={assets}
                 onAdd={() => {
@@ -677,10 +678,10 @@ export default function Home() {
                   setIsDocumentsModalOpen(true);
                 }}
               />
-            </div>
+            </Card>
 
             {/* Liabilities */}
-            <div ref={liabilitiesRef} className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-4 max-h-[500px] overflow-y-auto">
+            <Card ref={liabilitiesRef} padding="sm" className="max-h-[500px] overflow-y-auto">
               <LiabilitiesSection
                 liabilities={liabilities}
                 onAdd={() => {
@@ -701,70 +702,70 @@ export default function Home() {
                   setIsDocumentsModalOpen(true);
                 }}
               />
-            </div>
-
-            {/* Recurring Transactions */}
-            <div ref={recurringRef} className="max-h-[500px] overflow-y-auto md:col-span-2 lg:col-span-1">
-              <RecurringTransactions
-                transactions={recurringTransactions}
-                onAdd={() => {
-                  setEditingRecurring(null);
-                  setIsRecurringModalOpen(true);
-                }}
-                onEdit={(tx) => {
-                  setEditingRecurring(tx);
-                  setIsRecurringModalOpen(true);
-                }}
-                onDelete={handleDeleteRecurring}
-                onToggle={handleToggleRecurring}
-              />
-            </div>
           </div>
 
-          {/* ============================================
+          {/* Recurring Transactions */}
+          <div ref={recurringRef} className="max-h-[500px] overflow-y-auto md:col-span-2 lg:col-span-1">
+            <RecurringTransactions
+              transactions={recurringTransactions}
+              onAdd={() => {
+                setEditingRecurring(null);
+                setIsRecurringModalOpen(true);
+              }}
+              onEdit={(tx) => {
+                setEditingRecurring(tx);
+                setIsRecurringModalOpen(true);
+              }}
+              onDelete={handleDeleteRecurring}
+              onToggle={handleToggleRecurring}
+            />
+          </div>
+        </div>
+
+        {/* ============================================
               SECTION 4: Monthly Trends + Monthly Summary (2 Columns)
               ============================================ */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Monthly Trends Chart */}
-            <div className="min-h-[350px] md:min-h-[420px]">
-              <MonthlyTrendsCharts data={monthlySummaries} />
-            </div>
-            
-            {/* Monthly Summary */}
-            <div className="min-h-[350px] md:min-h-[420px]">
-              <MonthlySummary
-                summaries={monthlySummaries}
-                totalIncome={totalIncome}
-                totalExpenses={totalExpenses}
-                totalBalance={totalBalance}
-              />
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Monthly Trends Chart */}
+          <div className="min-h-[350px] md:min-h-[420px]">
+            <MonthlyTrendsCharts data={monthlySummaries} />
           </div>
 
-          {/* ============================================
+          {/* Monthly Summary */}
+          <div className="min-h-[350px] md:min-h-[420px]">
+            <MonthlySummary
+              summaries={monthlySummaries}
+              totalIncome={totalIncome}
+              totalExpenses={totalExpenses}
+              totalBalance={totalBalance}
+            />
+          </div>
+        </div>
+
+        {/* ============================================
               SECTION 6: Expenses Pie (1/3) + Transactions (2/3) - Same Height
               ============================================ */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Expenses Pie Chart - 1/3 */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-4 max-h-[500px] overflow-y-auto lg:col-span-1">
-              <ExpensesPieChart transactions={filteredTransactions} />
-            </div>
-            
-            {/* Recent Transactions - 2/3 */}
-            <div ref={transactionsRef} className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-4 max-h-[500px] overflow-y-auto lg:col-span-2">
-              <RecentTransactions
-                transactions={filteredTransactions}
-                onDelete={handleDeleteTransaction}
-                onDeleteMultiple={handleDeleteMultipleTransactions}
-                onUpdateCategory={handleUpdateTransactionCategory}
-                onNewTransaction={() => setIsTransactionModalOpen(true)}
-                onImport={() => setIsImportModalOpen(true)}
-              />
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Expenses Pie Chart - 1/3 */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-4 max-h-[500px] overflow-y-auto lg:col-span-1">
+            <ExpensesPieChart transactions={filteredTransactions} />
           </div>
 
-        </div>{/* End of flex container */}
-      </div>
+          {/* Recent Transactions - 2/3 */}
+          <div ref={transactionsRef} className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-4 max-h-[500px] overflow-y-auto lg:col-span-2">
+            <RecentTransactions
+              transactions={filteredTransactions}
+              onDelete={handleDeleteTransaction}
+              onDeleteMultiple={handleDeleteMultipleTransactions}
+              onUpdateCategory={handleUpdateTransactionCategory}
+              onNewTransaction={() => setIsTransactionModalOpen(true)}
+              onImport={() => setIsImportModalOpen(true)}
+            />
+          </div>
+        </div>
+
+      </div>{/* End of flex container */}
+    </div>
 
       {/* ============================================
           MODALS
@@ -830,39 +831,41 @@ export default function Home() {
         onSuccess={() => fetchData()}
       />
 
-      {documentsEntity && (
-        <DocumentsModal
-          isOpen={isDocumentsModalOpen}
-          onClose={() => {
-            setIsDocumentsModalOpen(false);
-            setDocumentsEntity(null);
-          }}
-          entityType={documentsEntity.type}
-          entityId={documentsEntity.id}
-          entityName={documentsEntity.name}
-        />
-      )}
-
-      {/* Profile Modal */}
-      <ProfileModal
-        isOpen={isProfileModalOpen}
-        onClose={() => setIsProfileModalOpen(false)}
+  {
+    documentsEntity && (
+      <DocumentsModal
+        isOpen={isDocumentsModalOpen}
+        onClose={() => {
+          setIsDocumentsModalOpen(false);
+          setDocumentsEntity(null);
+        }}
+        entityType={documentsEntity.type}
+        entityId={documentsEntity.id}
+        entityName={documentsEntity.name}
       />
+    )
+  }
 
-      {/* Account Settings Modal */}
-      <AccountSettings
-        isOpen={isAccountSettingsOpen}
-        onClose={() => setIsAccountSettingsOpen(false)}
-      />
+  {/* Profile Modal */ }
+  <ProfileModal
+    isOpen={isProfileModalOpen}
+    onClose={() => setIsProfileModalOpen(false)}
+  />
 
-      {/* Advisor Recommendations Modal */}
-      <AdvisorModal
-        isOpen={isAdvisorModalOpen}
-        onClose={() => setIsAdvisorModalOpen(false)}
-      />
+  {/* Account Settings Modal */ }
+  <AccountSettings
+    isOpen={isAccountSettingsOpen}
+    onClose={() => setIsAccountSettingsOpen(false)}
+  />
 
-      {/* Toast Notifications */}
-      <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
-    </main>
+  {/* Advisor Recommendations Modal */ }
+  <AdvisorModal
+    isOpen={isAdvisorModalOpen}
+    onClose={() => setIsAdvisorModalOpen(false)}
+  />
+
+  {/* Toast Notifications */ }
+  <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
+    </main >
   );
 }

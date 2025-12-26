@@ -31,8 +31,8 @@ export default function Card({
     };
 
     const variantClasses = {
-        default: 'bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.02)]',
-        flat: 'bg-white/90 backdrop-blur-sm rounded-2xl border border-slate-200'
+        default: 'bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.02)]',
+        flat: 'bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200'
     };
 
     return (
