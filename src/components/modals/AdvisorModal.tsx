@@ -45,20 +45,20 @@ const TYPE_ICONS: Record<RecommendationType, React.ReactNode> = {
   general: <Info className="w-5 h-5" />,
 };
 
-// Colors for each type
+// Colors for each type - Blue-Purple spectrum matching brand
 const TYPE_COLORS: Record<RecommendationType, string> = {
-  tax_benefit: 'bg-green-100 text-green-600',
-  savings: 'bg-blue-100 text-blue-600',
-  insurance: 'bg-purple-100 text-purple-600',
-  banking: 'bg-amber-100 text-amber-600',
-  general: 'bg-slate-100 text-slate-600',
+  tax_benefit: 'bg-indigo-50 text-indigo-600',      // Deep blue for tax
+  savings: 'bg-blue-50 text-blue-600',               // Primary blue for savings
+  insurance: 'bg-purple-50 text-purple-600',         // Purple for insurance
+  banking: 'bg-violet-50 text-violet-600',           // Violet for banking  
+  general: 'bg-slate-50 text-slate-600',             // Neutral slate
 };
 
-// Priority badge styles
+// Priority badge styles - Brand colors
 const PRIORITY_STYLES: Record<RecommendationPriority, string> = {
-  high: 'bg-red-100 text-red-700 border-red-200',
-  medium: 'bg-amber-100 text-amber-700 border-amber-200',
-  low: 'bg-slate-100 text-slate-600 border-gray-200',
+  high: 'bg-rose-50 text-rose-700 border-rose-200',
+  medium: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+  low: 'bg-slate-50 text-slate-600 border-slate-200',
 };
 
 // Priority labels in Hebrew
@@ -85,17 +85,17 @@ export default function AdvisorModal({ isOpen, onClose }: AdvisorModalProps) {
   const fetchRecommendations = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch('/api/advisor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch recommendations');
       }
-      
+
       const data = await response.json();
       setRecommendations(data.recommendations || []);
     } catch (err) {
@@ -124,7 +124,9 @@ export default function AdvisorModal({ isOpen, onClose }: AdvisorModalProps) {
         {/* Header */}
         <div className="modal-header border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-200">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg" style={{
+              background: 'linear-gradient(135deg, #2B4699 0%, #7C3AED 100%)'
+            }}>
               <Lightbulb className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -141,7 +143,7 @@ export default function AdvisorModal({ isOpen, onClose }: AdvisorModalProps) {
         <div className="flex-1 overflow-y-auto p-6">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="w-10 h-10 text-amber-500 animate-spin mb-4" />
+              <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mb-4" />
               <p className="text-slate-500">מנתח את הנתונים הפיננסיים שלך...</p>
             </div>
           ) : error ? (
@@ -230,7 +232,7 @@ function RecommendationCard({ recommendation }: { recommendation: Recommendation
               {PRIORITY_LABELS[priority]}
             </span>
           </div>
-          
+
           <p className="text-sm text-slate-600 mb-3 leading-relaxed">
             {description}
           </p>
@@ -240,19 +242,20 @@ function RecommendationCard({ recommendation }: { recommendation: Recommendation
             {potentialValue && (
               <div className="text-sm">
                 <span className="text-slate-500">חיסכון משוער: </span>
-                <span className="font-medium text-green-600">
-                  {formatCurrency(potentialValue)}
+                <span className="font-medium text-indigo-600">
+                  ₪{potentialValue.toLocaleString()}
                 </span>
               </div>
             )}
-            
+
             {/* Action button */}
             {actionUrl && (
               <a
                 href={actionUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors"
+                style={{ color: '#2B4699' }}
               >
                 למידע נוסף
                 <ExternalLink className="w-4 h-4" />
