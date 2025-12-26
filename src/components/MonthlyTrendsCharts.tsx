@@ -5,7 +5,7 @@ import {
   Bar,
   XAxis,
   YAxis,
-import Card from './ui/Card'; Tooltip,
+  Tooltip,
   ResponsiveContainer,
   CartesianGrid,
   ComposedChart,
@@ -13,7 +13,7 @@ import Card from './ui/Card'; Tooltip,
 } from 'recharts';
 import { formatCurrency, formatShortMonth } from '@/lib/utils';
 import { MonthlySummary } from '@/lib/types';
-
+import Card from './ui/Card';
 interface MonthlyTrendsChartsProps {
   data: MonthlySummary[];
 }
