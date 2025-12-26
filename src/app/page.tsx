@@ -702,7 +702,7 @@ export default function Home() {
                   setIsDocumentsModalOpen(true);
                 }}
               />
-          </div>
+          </Card>
 
           {/* Recurring Transactions */}
           <div ref={recurringRef} className="max-h-[500px] overflow-y-auto md:col-span-2 lg:col-span-1">
@@ -747,12 +747,12 @@ export default function Home() {
               ============================================ */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Expenses Pie Chart - 1/3 */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-4 max-h-[500px] overflow-y-auto lg:col-span-1">
+          <Card padding="sm" className="max-h-[500px] overflow-y-auto lg:col-span-1">
             <ExpensesPieChart transactions={filteredTransactions} />
-          </div>
+          </Card>
 
           {/* Recent Transactions - 2/3 */}
-          <div ref={transactionsRef} className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-4 max-h-[500px] overflow-y-auto lg:col-span-2">
+          <Card ref={transactionsRef} padding="sm" className="max-h-[500px] overflow-y-auto lg:col-span-2">
             <RecentTransactions
               transactions={filteredTransactions}
               onDelete={handleDeleteTransaction}
@@ -761,7 +761,7 @@ export default function Home() {
               onNewTransaction={() => setIsTransactionModalOpen(true)}
               onImport={() => setIsImportModalOpen(true)}
             />
-          </div>
+          </Card>
         </div>
 
       </div>{/* End of flex container */}
