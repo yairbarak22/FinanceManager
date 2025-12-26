@@ -419,8 +419,8 @@ function LoginContent() {
       </div>
     </div>
 
-      {/* Mobile Responsive Styles */ }
-  <style jsx>{`
+        {/* Mobile Responsive Styles */ }
+    <style jsx>{`
         @media (max-width: 768px) {
           h2 {
             font-size: 24px !important;
