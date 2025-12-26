@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, Edit3, ChevronDown, Check } from 'lucide-react';
 import { Transaction } from '@/lib/types';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
@@ -333,11 +334,19 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
         message={`האם אתה בטוח שברצונך למחוק ${selectedIds.size} עסקאות?`}
       />
 
-      {/* Category Edit Dialog */}
+      {/* Category Edit Dialog - Using Portal for proper z-index */}
       {
-        editingTransaction && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" dir="rtl">
+        editingTransaction && createPortal(
+          <div 
+            className="fixed inset-0 bg-black/50 flex items-center justify-center p-4"
+            style={{ zIndex: 9999 }}
+            onClick={closeEditDialog}
+          >
+            <div 
+              className="bg-white rounded-2xl shadow-xl w-full max-w-md" 
+              dir="rtl"
+              onClick={(e) => e.stopPropagation()}
+            >
               {/* Header */}
               <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                 <h3 className="font-semibold text-slate-900">עריכת קטגוריה</h3>
@@ -503,7 +512,8 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )
       }
     </div>
