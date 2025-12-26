@@ -25,7 +25,14 @@ export default function ConfirmDialog({
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div
+      className={`modal-overlay ${isOpen ? 'active' : ''}`}
+      style={{
+        position: 'fixed',
+        zIndex: 9999
+      }}
+      onClick={onClose}
+    >
       <div
         className="modal-content max-w-sm"
         onClick={(e) => e.stopPropagation()}

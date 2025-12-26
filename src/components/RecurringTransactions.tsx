@@ -143,8 +143,8 @@ export default function RecurringTransactions({
                   />
                 </button>
 
-                {/* Actions */}
-                <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* Actions - Always visible like Assets */}
+                <div className="flex gap-1 flex-shrink-0">
                   <button
                     onClick={() => onEdit(transaction)}
                     className="p-1.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-600"
