@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 
 interface CardProps {
     children: React.ReactNode;
@@ -16,13 +16,13 @@ interface CardProps {
  * @param className - Additional CSS classes
  * @param style - Inline styles
  */
-export default function Card({
+const Card = forwardRef<HTMLDivElement, CardProps>(({
     children,
     className = '',
     padding = 'md',
     variant = 'default',
     style
-}: CardProps) {
+}, ref) => {
     const paddingClasses = {
         none: '',
         sm: 'p-4',
@@ -37,10 +37,15 @@ export default function Card({
 
     return (
         <div
+            ref={ref}
             className={`${variantClasses[variant]} ${paddingClasses[padding]} ${className}`}
             style={style}
         >
             {children}
         </div>
     );
-}
+});
+
+Card.displayName = 'Card';
+
+export default Card;
