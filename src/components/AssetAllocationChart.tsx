@@ -90,7 +90,7 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
         {onGetRecommendations && (
           <button
             onClick={onGetRecommendations}
-            className="flex items-center gap-2 px-4 py-2 text-white rounded-xl transition-all text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 text-white rounded-xl transition-all duration-300 text-sm font-medium cursor-pointer hover:scale-105 hover:shadow-xl"
             style={{
               background: 'linear-gradient(90deg, #2B4699 0%, #7C3AED 100%)',
               boxShadow: '0 4px 12px rgba(43, 70, 153, 0.25)'
