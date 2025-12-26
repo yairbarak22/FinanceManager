@@ -90,9 +90,9 @@ export default function HeaderBar({
                 <button
                   key={tab.id}
                   onClick={() => onSectionChange(tab.id)}
-                  className={`px-2 py-1 text-sm transition-colors duration-200 ${isActive
+                  className={`px-2 py-1 text-sm transition-all duration-200 ${isActive
                     ? 'text-[#0055FF] font-semibold'
-                    : 'text-[#6e6e73] font-normal hover:text-[#0055FF]'
+                    : 'text-[#6e6e73] font-normal hover:text-[#0055FF] hover:scale-110'
                     }`}
                 >
                   {tab.label}
