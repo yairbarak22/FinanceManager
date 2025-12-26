@@ -2,6 +2,7 @@
 
 import { Landmark, TrendingUp, TrendingDown, Banknote } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
+import Card from './ui/Card';
 
 interface NetWorthSectionProps {
   netWorth: number;
@@ -26,7 +27,7 @@ export default function NetWorthSection({
   const isPositiveNetWorth = netWorth >= 0;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-6 h-full">
+    <Card className="h-full">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
@@ -57,7 +58,7 @@ export default function NetWorthSection({
           </div>
           <span className="font-bold text-emerald-600">{formatCurrency(totalAssets)}</span>
         </div>
-        
+
         {/* Liabilities */}
         <div className="flex items-center justify-between p-3 bg-rose-50 rounded-xl border border-rose-100">
           <div className="flex items-center gap-2">
@@ -68,12 +69,12 @@ export default function NetWorthSection({
           </div>
           <span className="font-bold text-rose-600">{formatCurrency(totalLiabilities)}</span>
         </div>
-        
+
         {/* Monthly Cash Flow */}
         <div className={cn(
           "flex items-center justify-between p-3 rounded-xl border",
-          isPositiveCashFlow 
-            ? "bg-emerald-50 border-emerald-100" 
+          isPositiveCashFlow
+            ? "bg-emerald-50 border-emerald-100"
             : "bg-rose-50 border-rose-100"
         )}>
           <div className="flex items-center gap-2">
@@ -90,6 +91,6 @@ export default function NetWorthSection({
           </span>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

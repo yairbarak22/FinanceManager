@@ -2,6 +2,7 @@
 
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
+import Card from './ui/Card';
 
 interface SummaryCardsProps {
   totalBalance: number;
@@ -11,11 +12,11 @@ interface SummaryCardsProps {
 
 export default function SummaryCards({ totalBalance, totalIncome, totalExpenses }: SummaryCardsProps) {
   const isPositiveBalance = totalBalance >= 0;
-  
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Balance Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-5">
+      <Card padding="sm">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-slate-500 text-sm font-medium mb-1">תזרים</p>
@@ -39,10 +40,10 @@ export default function SummaryCards({ totalBalance, totalIncome, totalExpenses 
             )} />
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Income Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-5">
+      <Card padding="sm">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-slate-500 text-sm font-medium mb-1">סה"כ הכנסות</p>
@@ -55,10 +56,10 @@ export default function SummaryCards({ totalBalance, totalIncome, totalExpenses 
             <TrendingUp className="w-6 h-6 text-emerald-600" />
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Expenses Card */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_20px_rgba(0,0,0,0.08)] p-5">
+      <Card padding="sm">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-slate-500 text-sm font-medium mb-1">סה"כ הוצאות</p>
@@ -71,7 +72,7 @@ export default function SummaryCards({ totalBalance, totalIncome, totalExpenses 
             <TrendingDown className="w-6 h-6 text-rose-600" />
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
