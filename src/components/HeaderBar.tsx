@@ -67,7 +67,7 @@ export default function HeaderBar({
   ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/20" style={{ background: 'rgba(255, 255, 255, 0.3)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+    <header className="sticky top-0 z-50 border-b border-white/20" style={{ background: 'rgba(255, 255, 255, 0.65)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
       {/* Decorative top gradient line - REMOVED */}
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
