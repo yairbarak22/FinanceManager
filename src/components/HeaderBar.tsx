@@ -92,18 +92,18 @@ export default function HeaderBar({
                 <button
                   key={tab.id}
                   onClick={() => onSectionChange(tab.id)}
-                  className="group flex items-center gap-1.5 px-2 py-1 text-sm transition-all duration-200"
+                  className="group flex items-center gap-1.5 px-2 py-1 text-sm transition-all duration-200 cursor-pointer"
                 >
                   <span className={`transition-all ${isActive
-                      ? 'text-slate-900 font-semibold'
-                      : 'text-slate-500 font-normal group-hover:text-slate-900'
+                    ? 'text-slate-900 font-semibold'
+                    : 'text-slate-500 font-normal group-hover:text-slate-900'
                     }`}>
                     {tab.label}
                   </span>
                   {isActive ? (
                     <ChevronDown className="w-3.5 h-3.5 text-slate-400" strokeWidth={2} />
                   ) : (
-                    <ChevronLeft className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 group-hover:text-blue-400 transition-all" strokeWidth={2} />
+                    <ChevronLeft className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-400 transition-all" strokeWidth={2} />
                   )}
                 </button>
               );
