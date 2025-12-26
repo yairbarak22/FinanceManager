@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/authHelpers';
+import { encrypt, decrypt, ENCRYPTED_PROFILE_FIELDS } from '@/lib/encryption';
 
 // Valid enum values for profile fields
 const VALID_MILITARY_STATUS = ['none', 'reserve', 'career'];
@@ -14,6 +15,17 @@ const VALID_RISK_TOLERANCE = ['low', 'medium', 'high'];
 function validateEnum(value: unknown, validValues: string[]): string | null {
   if (!value || typeof value !== 'string') return null;
   return validValues.includes(value) ? value : null;
+}
+
+// Helper to decrypt profile fields
+function decryptProfile<T extends Record<string, unknown>>(profile: T): T {
+  const result = { ...profile };
+  for (const field of ENCRYPTED_PROFILE_FIELDS) {
+    if (field in result && typeof result[field] === 'string' && result[field]) {
+      (result[field] as string) = decrypt(result[field] as string);
+    }
+  }
+  return result;
 }
 
 // GET - Fetch user profile
@@ -33,7 +45,8 @@ export async function GET() {
       });
     }
 
-    return NextResponse.json(profile);
+    // Decrypt sensitive fields before returning
+    return NextResponse.json(decryptProfile(profile));
   } catch (error) {
     console.error('Error fetching profile:', error);
     return NextResponse.json({ error: 'Failed to fetch profile' }, { status: 500 });
@@ -60,16 +73,28 @@ export async function PUT(request: Request) {
       riskTolerance: validateEnum(data.riskTolerance, VALID_RISK_TOLERANCE),
     };
 
+    // Encrypt sensitive fields before storing
+    const encryptedFields = { ...validFields };
+    for (const field of ENCRYPTED_PROFILE_FIELDS) {
+      if (field in encryptedFields && encryptedFields[field as keyof typeof encryptedFields]) {
+        const value = encryptedFields[field as keyof typeof encryptedFields];
+        if (typeof value === 'string') {
+          (encryptedFields[field as keyof typeof encryptedFields] as string) = encrypt(value);
+        }
+      }
+    }
+
     const profile = await prisma.userProfile.upsert({
       where: { userId },
-      update: validFields,
+      update: encryptedFields,
       create: {
         userId,
-        ...validFields,
+        ...encryptedFields,
       },
     });
 
-    return NextResponse.json(profile);
+    // Decrypt before returning
+    return NextResponse.json(decryptProfile(profile));
   } catch (error) {
     console.error('Error updating profile:', error);
     return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 });
