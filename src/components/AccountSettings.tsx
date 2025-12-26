@@ -38,6 +38,7 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
   const [inviting, setInviting] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
 
   useEffect(() => {
     if (isOpen) {
@@ -59,6 +60,7 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
         const data = await membersRes.json();
         setAccountName(data.accountName);
         setMembers(data.members);
+        setCurrentUserId(data.currentUserId || '');
       }
 
       if (invitesRes.ok) {
@@ -146,8 +148,8 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
 
   if (!isOpen) return null;
 
-  // SECURITY: Compare against enum value (comes from Prisma as uppercase)
-  const isOwner = members.some((m) => m.role === 'OWNER');
+  // SECURITY: Check if the CURRENT user is an OWNER (not just if any owner exists)
+  const isOwner = members.some((m) => m.userId === currentUserId && m.role === 'OWNER');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

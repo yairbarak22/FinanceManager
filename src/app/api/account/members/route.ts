@@ -38,6 +38,7 @@ export async function GET() {
     return NextResponse.json({
       accountId: sharedAccount.id,
       accountName: sharedAccount.name,
+      currentUserId: userId, // Include current user ID for permission checks
       members: sharedAccount.members.map((m) => ({
         id: m.id,
         userId: m.userId,
@@ -115,7 +116,7 @@ export async function DELETE(request: Request) {
       action: AuditAction.MEMBER_REMOVED,
       entityType: 'SharedAccountMember',
       entityId: memberId,
-      metadata: { 
+      metadata: {
         removedUserId: memberToRemove.userId,
         sharedAccountId,
       },
