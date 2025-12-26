@@ -72,30 +72,6 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
     return null;
   };
 
-  // Custom label for pie chart
-  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percentage }: any) => {
-    if (percentage < 5) return null; // Don't show label for small slices
-
-    const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    return (
-      <text
-        x={x}
-        y={y}
-        fill="white"
-        textAnchor="middle"
-        dominantBaseline="central"
-        className="text-xs font-semibold"
-        style={{ textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}
-      >
-        {percentage}%
-      </text>
-    );
-  };
-
   return (
     <Card className="h-full">
       {/* Header */}
@@ -146,8 +122,6 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
                   outerRadius={85}
                   paddingAngle={2}
                   dataKey="value"
-                  labelLine={false}
-                  label={renderCustomLabel}
                 >
                   {chartData.map((entry) => (
                     <Cell
