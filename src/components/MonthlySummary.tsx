@@ -42,7 +42,7 @@ export default function MonthlySummary({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 h-full flex flex-col">
+    <Card className="h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
