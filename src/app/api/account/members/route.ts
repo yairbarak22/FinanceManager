@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { MemberRole } from '@prisma/client';
 import { requireAuth, getOrCreateSharedAccount } from '@/lib/authHelpers';
+import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 
 // GET - Get all members of the shared account
 export async function GET() {
@@ -105,6 +106,21 @@ export async function DELETE(request: Request) {
           },
         },
       },
+    });
+
+    // Audit log: member removed
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.MEMBER_REMOVED,
+      entityType: 'SharedAccountMember',
+      entityId: memberId,
+      metadata: { 
+        removedUserId: memberToRemove.userId,
+        sharedAccountId,
+      },
+      ipAddress,
+      userAgent,
     });
 
     return NextResponse.json({ success: true });

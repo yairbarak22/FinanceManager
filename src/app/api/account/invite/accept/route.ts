@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { MemberRole } from '@prisma/client';
 import { requireAuth } from '@/lib/authHelpers';
+import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 
 // POST - Accept an invite
 export async function POST(request: Request) {
@@ -94,6 +95,20 @@ export async function POST(request: Request) {
     // Delete the used invite
     await prisma.accountInvite.delete({
       where: { id: invite.id },
+    });
+
+    // Audit log: invite accepted
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.INVITE_ACCEPTED,
+      entityType: 'SharedAccount',
+      entityId: invite.sharedAccountId,
+      metadata: { 
+        sharedAccountName: invite.sharedAccount.name,
+      },
+      ipAddress,
+      userAgent,
     });
 
     return NextResponse.json({

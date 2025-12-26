@@ -286,3 +286,52 @@ model MerchantCategoryMap {
   @@unique([userId, merchantName])
   @@index([userId])
 }
+
+// ============================================
+// AUDIT LOG - Security & Activity Tracking
+// ============================================
+enum AuditAction {
+  // Authentication
+  LOGIN
+  LOGOUT
+  LOGIN_FAILED
+  SESSION_REFRESH
+  
+  // Data Access
+  DATA_EXPORT
+  DATA_VIEW
+  
+  // Data Modification
+  CREATE
+  UPDATE
+  DELETE
+  BULK_DELETE
+  
+  // Account Management
+  INVITE_SENT
+  INVITE_ACCEPTED
+  MEMBER_REMOVED
+  ROLE_CHANGED
+  
+  // Security Events
+  PASSWORD_CHANGE
+  RATE_LIMITED
+  UNAUTHORIZED_ACCESS
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  userId     String?     // Null for anonymous/system actions
+  action     AuditAction
+  entityType String?     // e.g., "Transaction", "Asset", "Document"
+  entityId   String?     // ID of the affected entity
+  metadata   Json?       // Additional context (sanitized, no PII)
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
+  
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([entityType, entityId])
+}

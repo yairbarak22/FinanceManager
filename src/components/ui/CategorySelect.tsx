@@ -55,10 +55,10 @@ export default function CategorySelect({
       const spaceBelow = window.innerHeight - rect.bottom - 16; // 16px padding from viewport edge
       const spaceAbove = rect.top - 16;
       const preferredHeight = 320; // max-h-80 = 320px
-      
+
       // Decide whether to open below or above based on available space
       const openBelow = spaceBelow >= Math.min(preferredHeight, 150) || spaceBelow >= spaceAbove;
-      
+
       if (openBelow) {
         setPosition({
           top: rect.bottom + 8,
@@ -95,12 +95,12 @@ export default function CategorySelect({
   // Close dropdown when clicking outside
   useEffect(() => {
     if (!isOpen) return;
-    
+
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node;
       const isOutsideTrigger = triggerRef.current && !triggerRef.current.contains(target);
       const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(target);
-      
+
       if (isOutsideTrigger && isOutsideDropdown) {
         setIsOpen(false);
       }
@@ -148,13 +148,13 @@ export default function CategorySelect({
 
   // Dropdown content
   const dropdownContent = (
-    <div 
+    <div
       ref={dropdownRef}
-      className="fixed z-[100] bg-white rounded-xl shadow-lg border border-slate-100 py-2 overflow-y-auto animate-scale-in"
-      style={{ 
-        top: position.top, 
-        bottom: position.bottom, 
-        left: position.left, 
+      className="fixed z-[10000] bg-white rounded-xl shadow-lg border border-slate-100 py-2 overflow-y-auto animate-scale-in"
+      style={{
+        top: position.top,
+        bottom: position.bottom,
+        left: position.left,
         width: position.width,
         maxHeight: position.maxHeight,
       }}
@@ -250,7 +250,7 @@ export default function CategorySelect({
         <input
           type="text"
           value={value}
-          onChange={() => {}}
+          onChange={() => { }}
           required
           className="sr-only"
           tabIndex={-1}
