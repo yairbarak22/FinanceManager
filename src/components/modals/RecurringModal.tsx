@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { RecurringTransaction } from '@/lib/types';
 import { CategoryInfo } from '@/lib/categories';
@@ -32,6 +33,12 @@ export default function RecurringModal({
   const [name, setName] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Set mounted state for portal
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (transaction) {
@@ -68,9 +75,9 @@ export default function RecurringModal({
     setCategory(newCategory.id);
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  const modalContent = (
     <>
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal-content animate-scale-in" onClick={(e) => e.stopPropagation()}>
@@ -97,11 +104,10 @@ export default function RecurringModal({
                       setType('expense');
                       setCategory('');
                     }}
-                    className={`py-3 px-4 rounded-xl font-medium transition-all ${
-                      type === 'expense'
+                    className={`py-3 px-4 rounded-xl font-medium transition-all ${type === 'expense'
                         ? 'bg-indigo-500 text-white'
                         : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     הוצאה
                   </button>
@@ -111,11 +117,10 @@ export default function RecurringModal({
                       setType('income');
                       setCategory('');
                     }}
-                    className={`py-3 px-4 rounded-xl font-medium transition-all ${
-                      type === 'income'
+                    className={`py-3 px-4 rounded-xl font-medium transition-all ${type === 'income'
                         ? 'bg-emerald-500 text-white'
                         : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     הכנסה
                   </button>
@@ -173,9 +178,8 @@ export default function RecurringModal({
                   className={`toggle ${isActive ? 'toggle-checked' : 'toggle-unchecked'}`}
                 >
                   <span
-                    className={`toggle-thumb ${
-                      isActive ? 'toggle-thumb-checked' : 'toggle-thumb-unchecked'
-                    }`}
+                    className={`toggle-thumb ${isActive ? 'toggle-thumb-checked' : 'toggle-thumb-unchecked'
+                      }`}
                   />
                 </button>
               </div>
@@ -203,4 +207,7 @@ export default function RecurringModal({
       />
     </>
   );
+
+  // Render modal via portal to document.body
+  return createPortal(modalContent, document.body);
 }
