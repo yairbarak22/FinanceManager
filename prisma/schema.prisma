@@ -226,6 +226,13 @@ model UserProfile {
 // ============================================
 // SHARED ACCOUNTS - Allow multiple users to share data
 // ============================================
+
+// SECURITY: Type-safe enum for member roles (prevents privilege escalation)
+enum MemberRole {
+  OWNER
+  MEMBER
+}
+
 model SharedAccount {
   id        String                @id @default(cuid())
   name      String                @default("החשבון שלי")
@@ -239,7 +246,7 @@ model SharedAccountMember {
   id              String        @id @default(cuid())
   userId          String
   sharedAccountId String
-  role            String        @default("member") // owner | member
+  role            MemberRole    @default(MEMBER) // SECURITY: Type-safe enum
   joinedAt        DateTime      @default(now())
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   sharedAccount   SharedAccount @relation(fields: [sharedAccountId], references: [id], onDelete: Cascade)

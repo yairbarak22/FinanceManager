@@ -146,7 +146,8 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
 
   if (!isOpen) return null;
 
-  const isOwner = members.some((m) => m.role === 'owner');
+  // SECURITY: Compare against enum value (comes from Prisma as uppercase)
+  const isOwner = members.some((m) => m.role === 'OWNER');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -288,7 +289,7 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
                             <p className="text-sm font-medium text-slate-900">
                               {member.user.name || 'ללא שם'}
                             </p>
-                            {member.role === 'owner' && (
+                            {member.role === 'OWNER' && (
                               <Crown className="w-4 h-4 text-amber-500" />
                             )}
                           </div>
@@ -297,7 +298,7 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
                           </p>
                         </div>
                       </div>
-                      {isOwner && member.role !== 'owner' && (
+                      {isOwner && member.role !== 'OWNER' && (
                         <button
                           onClick={() => handleRemoveMember(member.id)}
                           className="p-2 hover:bg-red-100 rounded-lg transition-colors"

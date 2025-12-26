@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { MemberRole } from '@prisma/client';
 import { requireAuth, getOrCreateSharedAccount } from '@/lib/authHelpers';
 import { Resend } from 'resend';
 
@@ -45,7 +46,7 @@ export async function POST(request: Request) {
 
     // Check if user is owner
     const membership = await prisma.sharedAccountMember.findFirst({
-      where: { userId, sharedAccountId, role: 'owner' },
+      where: { userId, sharedAccountId, role: MemberRole.OWNER },
     });
 
     if (!membership) {
@@ -169,7 +170,7 @@ export async function DELETE(request: Request) {
 
     // Check if user is owner
     const membership = await prisma.sharedAccountMember.findFirst({
-      where: { userId, sharedAccountId, role: 'owner' },
+      where: { userId, sharedAccountId, role: MemberRole.OWNER },
     });
 
     if (!membership) {

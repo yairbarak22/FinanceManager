@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { MemberRole } from '@prisma/client';
 import { requireAuth, getOrCreateSharedAccount } from '@/lib/authHelpers';
 
 // GET - Get all members of the shared account
@@ -67,7 +68,7 @@ export async function DELETE(request: Request) {
 
     // Check if user is owner
     const ownerMembership = await prisma.sharedAccountMember.findFirst({
-      where: { userId, sharedAccountId, role: 'owner' },
+      where: { userId, sharedAccountId, role: MemberRole.OWNER },
     });
 
     if (!ownerMembership) {
@@ -84,7 +85,7 @@ export async function DELETE(request: Request) {
     }
 
     // Can't remove the owner
-    if (memberToRemove.role === 'owner') {
+    if (memberToRemove.role === MemberRole.OWNER) {
       return NextResponse.json({ error: 'Cannot remove account owner' }, { status: 400 });
     }
 
@@ -100,7 +101,7 @@ export async function DELETE(request: Request) {
         members: {
           create: {
             userId: memberToRemove.userId,
-            role: 'owner',
+            role: MemberRole.OWNER,
           },
         },
       },

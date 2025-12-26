@@ -73,6 +73,19 @@ export async function GET(request: NextRequest) {
       orderBy: {
         createdAt: 'desc',
       },
+      // SECURITY: Only select fields that are safe to expose to the client
+      // The 'url' field contains the raw Vercel Blob URL which should never be exposed
+      select: {
+        id: true,
+        filename: true,
+        mimeType: true,
+        size: true,
+        entityType: true,
+        entityId: true,
+        createdAt: true,
+        // url: EXCLUDED - download via /api/documents/download/[id] proxy
+        // storedName: EXCLUDED - internal use only
+      },
     });
 
     return NextResponse.json(documents);
@@ -190,7 +203,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(document);
+    // SECURITY: Return only safe fields (exclude url and storedName)
+    return NextResponse.json({
+      id: document.id,
+      filename: document.filename,
+      mimeType: document.mimeType,
+      size: document.size,
+      entityType: document.entityType,
+      entityId: document.entityId,
+      createdAt: document.createdAt,
+    });
   } catch (error) {
     console.error('Error uploading document:', error);
     return NextResponse.json(

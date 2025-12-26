@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { MemberRole } from '@prisma/client';
 import { requireAuth } from '@/lib/authHelpers';
 
 // POST - Accept an invite
@@ -86,7 +87,7 @@ export async function POST(request: Request) {
       data: {
         userId,
         sharedAccountId: invite.sharedAccountId,
-        role: 'member',
+        role: MemberRole.MEMBER,
       },
     });
 

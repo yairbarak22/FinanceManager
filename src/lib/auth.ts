@@ -49,6 +49,11 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt', // Use JWT for sessions (works with middleware)
+    maxAge: 24 * 60 * 60, // 24 hours - session expires after this time
+    updateAge: 60 * 60,   // 1 hour - session is refreshed if older than this
+  },
+  jwt: {
+    maxAge: 24 * 60 * 60, // 24 hours - JWT token lifetime
   },
 };
 

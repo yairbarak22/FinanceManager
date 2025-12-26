@@ -1,5 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
+import { MemberRole } from '@prisma/client';
 import { authOptions } from './auth';
 import { prisma } from './prisma';
 
@@ -72,7 +73,7 @@ export async function getOrCreateSharedAccount(userId: string): Promise<string> 
       members: {
         create: {
           userId,
-          role: 'owner',
+          role: MemberRole.OWNER,
         },
       },
     },
