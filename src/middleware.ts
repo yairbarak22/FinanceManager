@@ -50,6 +50,8 @@ export async function middleware(request: NextRequest) {
 
 // Protect all routes except:
 // - /login (auth page)
+// - /terms (terms of service - public)
+// - /privacy (privacy policy - public)
 // - /invite/* (invite pages - handle their own auth)
 // - /api/auth/* (NextAuth routes)
 // - /_next/* (Next.js internals)
@@ -59,12 +61,14 @@ export const config = {
     /*
      * Match all request paths except:
      * - /login
+     * - /terms (terms of service)
+     * - /privacy (privacy policy)
      * - /invite/* (invite pages - handle their own auth)
      * - /api/auth (NextAuth.js authentication routes)
      * - /_next/static (static files)
      * - /_next/image (image optimization)
      * - /favicon.ico, /images (static assets)
      */
-    '/((?!login|invite|api/auth|_next/static|_next/image|favicon.ico|images).*)',
+    '/((?!login|terms|privacy|invite|api/auth|_next/static|_next/image|favicon.ico|images).*)',
   ],
 };
