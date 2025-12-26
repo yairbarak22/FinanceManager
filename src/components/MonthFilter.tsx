@@ -31,7 +31,7 @@ const monthNames: { [key: string]: string } = {
 
 function formatMonthDisplay(monthKey: string, compact = false): string {
   if (monthKey === 'all') return compact ? 'הכל' : 'כל החודשים';
-  
+
   const [year, month] = monthKey.split('-');
   if (compact) {
     return `${month}/${year.slice(2)}`;
@@ -39,10 +39,10 @@ function formatMonthDisplay(monthKey: string, compact = false): string {
   return `${monthNames[month]} ${year}`;
 }
 
-export default function MonthFilter({ 
-  selectedMonth, 
-  onMonthChange, 
-  allMonths, 
+export default function MonthFilter({
+  selectedMonth,
+  onMonthChange,
+  allMonths,
   monthsWithData,
   currentMonth,
   variant = 'light',
@@ -58,9 +58,9 @@ export default function MonthFilter({
     if (isOpen && currentMonthRef.current) {
       // Small delay to ensure dropdown is rendered
       setTimeout(() => {
-        currentMonthRef.current?.scrollIntoView({ 
-          block: 'center', 
-          behavior: 'auto' 
+        currentMonthRef.current?.scrollIntoView({
+          block: 'center',
+          behavior: 'auto'
         });
       }, 10);
     }
@@ -103,7 +103,7 @@ export default function MonthFilter({
       >
         <span className={`indicator ${hasData ? 'bg-emerald-500' : 'bg-slate-300'}`} />
         <span className="flex-1 text-right">{formatMonthDisplay(monthKey)}</span>
-        {isSelected && <Check className="w-4 h-4 text-indigo-500" />}
+        {isSelected && <Check className="w-4 h-4 text-blue-400" />}
         {isCurrent && !isSelected && (
           <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">נוכחי</span>
         )}
@@ -116,22 +116,20 @@ export default function MonthFilter({
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 rounded-xl transition-all ${
-          compact 
-            ? 'px-2.5 py-2' 
-            : 'gap-3 px-4 py-2 min-w-[180px]'
-        } ${
-          isDark 
-            ? 'bg-slate-800 hover:bg-slate-700 border-0' 
+        className={`flex items-center gap-2 rounded-xl transition-all ${compact
+          ? 'px-2.5 py-2'
+          : 'gap-3 px-4 py-2 min-w-[180px]'
+          } ${isDark
+            ? 'bg-slate-800 hover:bg-slate-700 border-0'
             : 'bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm'
-        }`}
+          }`}
       >
-        <Calendar className={`w-5 h-5 flex-shrink-0 ${isDark ? 'text-emerald-400' : 'text-indigo-500'}`} />
+        <Calendar className={`w-5 h-5 flex-shrink-0 ${isDark ? 'text-emerald-400' : 'text-blue-400'}`} />
         <span className={`text-right font-medium whitespace-nowrap ${compact ? 'text-sm' : 'flex-1'} ${isDark ? 'text-white' : 'text-slate-800'}`}>
           {formatMonthDisplay(selectedMonth, compact)}
         </span>
-        <ChevronDown 
-          className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${isDark ? 'text-slate-400' : 'text-slate-500'}`} 
+        <ChevronDown
+          className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
         />
       </button>
 
@@ -143,9 +141,9 @@ export default function MonthFilter({
             onClick={() => handleSelect('all')}
             className={`month-option all-months ${selectedMonth === 'all' ? 'selected' : ''}`}
           >
-            <Calendar className="w-4 h-4 text-indigo-500" />
+            <Calendar className="w-4 h-4 text-blue-400" />
             <span className="flex-1 text-right font-medium">כל החודשים</span>
-            {selectedMonth === 'all' && <Check className="w-4 h-4 text-indigo-500" />}
+            {selectedMonth === 'all' && <Check className="w-4 h-4 text-blue-400" />}
           </button>
 
           <div className="border-t border-slate-100 my-1" />
