@@ -116,20 +116,20 @@ export default function MonthFilter({
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 rounded-xl transition-all ${compact
-          ? 'px-2.5 py-2'
-          : 'gap-3 px-4 py-2 min-w-[180px]'
+        className={`flex items-center gap-2 transition-all ${compact
+            ? 'px-0 py-2'
+            : 'px-0 py-2'
           } ${isDark
-            ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 border-0 shadow-md'
-            : 'bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm'
+            ? 'text-[#1D1D1F] hover:text-[#0055FF]'
+            : 'text-slate-800 hover:text-slate-900'
           }`}
       >
-        <Calendar className={`w-5 h-5 flex-shrink-0 ${isDark ? 'text-white' : 'text-blue-400'}`} />
-        <span className={`text-right font-medium whitespace-nowrap ${compact ? 'text-sm' : 'flex-1'} ${isDark ? 'text-white' : 'text-slate-800'}`}>
+        <span className={`text-right font-medium whitespace-nowrap ${compact ? 'text-sm' : 'text-sm'} ${isDark ? 'text-[#1D1D1F]' : 'text-slate-800'}`}>
           {formatMonthDisplay(selectedMonth, compact)}
         </span>
         <ChevronDown
-          className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${isDark ? 'text-white' : 'text-slate-500'}`}
+          className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${isDark ? 'text-[#6e6e73]' : 'text-slate-500'}`}
+          strokeWidth={1.5}
         />
       </button>
 

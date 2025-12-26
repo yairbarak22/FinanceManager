@@ -67,7 +67,7 @@ export default function HeaderBar({
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-gradient-to-b from-[#F5F9FE] via-[#EFF6FB] to-[#EAF3FC] shadow-md border-b border-blue-100/50" style={{ background: 'linear-gradient(180deg, #F5F9FE 0%, #F0F6FD 50%, #EAF3FC 100%)' }}>
+    <header className="sticky top-0 z-50 border-b border-white/20" style={{ background: 'rgba(255, 255, 255, 0.3)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
       {/* Decorative top gradient line - REMOVED */}
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
@@ -85,16 +85,16 @@ export default function HeaderBar({
             </div>
           </div>
 
-          <nav className="hidden md:flex items-center bg-white/60 backdrop-blur-sm rounded-xl p-1 border border-blue-100">
+          <nav className="hidden md:flex items-center gap-8">
             {navTabs.map((tab) => {
               const isActive = activeSection === tab.id;
               return (
                 <button
                   key={tab.id}
                   onClick={() => onSectionChange(tab.id)}
-                  className={`relative px-4 py-2 font-medium text-sm rounded-lg transition-all duration-200 ${isActive
-                      ? 'text-white bg-gradient-to-r from-[#2B4699] to-[#3556AB] shadow-lg shadow-blue-500/25'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                  className={`px-2 py-1 text-sm transition-colors duration-200 ${isActive
+                    ? 'text-[#0055FF] font-semibold'
+                    : 'text-[#6e6e73] font-normal hover:text-[#0055FF]'
                     }`}
                 >
                   {tab.label}
@@ -129,10 +129,10 @@ export default function HeaderBar({
             </div>
 
             {/* Notification Bell - hidden on mobile */}
-            <button className="hidden md:flex relative p-2.5 text-slate-600 hover:text-slate-900 transition-colors rounded-xl hover:bg-white/50">
-              <Bell className="w-5 h-5" />
+            <button className="hidden md:flex relative p-2 text-[#6e6e73] hover:text-[#0055FF] transition-colors">
+              <Bell className="w-5 h-5" strokeWidth={1.5} />
               {/* Notification dot */}
-              <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-[#F5F9FE]" />
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full" />
             </button>
 
             {/* User Menu */}
@@ -231,8 +231,8 @@ export default function HeaderBar({
                 key={tab.id}
                 onClick={() => onSectionChange(tab.id)}
                 className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${isActive
-                    ? 'bg-gradient-to-r from-[#2B4699] to-[#3556AB] text-white shadow-lg shadow-blue-500/25'
-                    : 'text-slate-600 hover:text-slate-900 bg-white/60 border border-blue-100/50'
+                  ? 'bg-gradient-to-r from-[#2B4699] to-[#3556AB] text-white shadow-lg shadow-blue-500/25'
+                  : 'text-slate-600 hover:text-slate-900 bg-white/60 border border-blue-100/50'
                   }`}
               >
                 {tab.label}
