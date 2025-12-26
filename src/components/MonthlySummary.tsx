@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, TrendingUp, TrendingDown, CalendarDays } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { MonthlySummary as MonthlySummaryType } from '@/lib/types';
-
+import Card from './ui/Card';
 interface MonthlySummaryProps {
   summaries: MonthlySummaryType[];
   totalIncome: number;
