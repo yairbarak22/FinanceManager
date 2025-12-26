@@ -34,7 +34,7 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
   const [isSelectMode, setIsSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [multiDeleteConfirm, setMultiDeleteConfirm] = useState(false);
-  
+
   // Category edit state
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -266,244 +266,248 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
 
               {/* Action Buttons (only in normal mode) */}
               {!isSelectMode && (
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
-                  {/* Edit Category Button */}
-                  {onUpdateCategory && (
+                <div className="flex items-center gap-1 group-hover:opacity-100 transition-all flex-shrink-0">
+                  {/* Action Buttons - Always visible like Assets/Liabilities */}
+                  <div className="flex gap-1">
                     <button
                       onClick={() => openEditDialog(transaction)}
-                      className="p-1.5 rounded-lg text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 transition-all"
-                      title="ערוך קטגוריה"
+                      className="p-1.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-600 transition-colors"
+                      title="ערוך"
                     >
-                      <Edit3 className="w-4 h-4" />
+                      <Edit3 className="w-3.5 h-3.5" />
                     </button>
-                  )}
-                  {/* Delete Button */}
-                  <button
-                    onClick={() => setDeleteConfirm({ isOpen: true, id: transaction.id, description: transaction.description })}
-                    className="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
-                    title="מחק"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+                    <button
+                      onClick={() => setDeleteConfirm({ isOpen: true, id: transaction.id, description: transaction.description })}
+                      className="p-1.5 rounded hover:bg-red-100 text-slate-500 hover:text-red-500 transition-colors"
+                      title="מחק"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
               )}
-            </div>
-          );
+                </div>
+              );
         })}
-      </div>
-
-      {transactions.length === 0 && (
-        <div className="text-center py-12">
-          <Receipt className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500">אין עסקאות להצגה</p>
-        </div>
-      )}
-
-      {/* Floating Action Bar (Select Mode) */}
-      {isSelectMode && selectedIds.size > 0 && (
-        <div className="sticky bottom-0 mt-4 p-3 bg-gradient-to-r from-red-500 to-pink-500 rounded-xl shadow-lg flex items-center justify-between">
-          <span className="text-white font-medium">
-            {selectedIds.size} נבחרו
-          </span>
-          <button
-            onClick={() => setMultiDeleteConfirm(true)}
-            className="px-4 py-2 bg-white text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors flex items-center gap-2"
-          >
-            <Trash2 className="w-4 h-4" />
-            מחק הכל
-          </button>
-        </div>
-      )}
-
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={deleteConfirm.isOpen}
-        onClose={() => setDeleteConfirm({ isOpen: false, id: '', description: '' })}
-        onConfirm={() => onDelete(deleteConfirm.id)}
-        title="מחיקת עסקה"
-        message={`האם אתה בטוח שברצונך למחוק את העסקה "${deleteConfirm.description}"?`}
-      />
-
-      {/* Multi-Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={multiDeleteConfirm}
-        onClose={() => setMultiDeleteConfirm(false)}
-        onConfirm={handleMultiDelete}
-        title="מחיקת עסקאות"
-        message={`האם אתה בטוח שברצונך למחוק ${selectedIds.size} עסקאות?`}
-      />
-
-      {/* Category Edit Dialog */}
-      {editingTransaction && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" dir="rtl">
-            {/* Header */}
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-semibold text-slate-900">עריכת קטגוריה</h3>
-              <button
-                onClick={closeEditDialog}
-                className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-slate-500" />
-              </button>
             </div>
 
-            {/* Content */}
-            <div className="p-4 space-y-4">
-              {/* Transaction info */}
-              <div className="p-3 bg-slate-50 rounded-xl">
-                <p className="text-sm text-slate-600">עסקה:</p>
-                <p className="font-medium text-slate-900">{editingTransaction.description}</p>
-                <p className="text-sm text-slate-500">
-                  {formatCurrency(editingTransaction.amount)} • {formatDate(editingTransaction.date)}
-                </p>
+      {
+            transactions.length === 0 && (
+              <div className="text-center py-12">
+                <Receipt className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-500">אין עסקאות להצגה</p>
               </div>
+            )
+          }
 
-              {/* Category dropdown */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  קטגוריה חדשה
-                </label>
-                <div ref={dropdownRef} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className={cn(
-                      'w-full px-3 py-2.5 border-2 rounded-xl text-sm font-medium transition-all',
-                      'flex items-center justify-between gap-2',
-                      'focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 focus:outline-none',
-                      'border-violet-300 bg-white text-indigo-700 hover:border-violet-400'
-                    )}
-                  >
-                    <span>
-                      {getCategoryInfo(selectedCategory, editingTransaction.type as 'income' | 'expense')?.nameHe || 'בחר קטגוריה...'}
-                    </span>
-                    <ChevronDown className={cn(
-                      'w-4 h-4 flex-shrink-0 transition-transform',
-                      isDropdownOpen && 'rotate-180'
-                    )} />
-                  </button>
+          {/* Floating Action Bar (Select Mode) */ }
+          {
+            isSelectMode && selectedIds.size > 0 && (
+              <div className="sticky bottom-0 mt-4 p-3 bg-gradient-to-r from-red-500 to-pink-500 rounded-xl shadow-lg flex items-center justify-between">
+                <span className="text-white font-medium">
+                  {selectedIds.size} נבחרו
+                </span>
+                <button
+                  onClick={() => setMultiDeleteConfirm(true)}
+                  className="px-4 py-2 bg-white text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  מחק הכל
+                </button>
+              </div>
+            )
+          }
 
-                  {isDropdownOpen && (
-                    <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                      <div className="p-1">
-                        {getCategoriesForType(editingTransaction.type).map((cat) => {
-                          const isSelected = cat.id === selectedCategory;
-                          return (
-                            <button
-                              key={cat.id}
-                              type="button"
-                              onClick={() => {
-                                setSelectedCategory(cat.id);
-                                setIsDropdownOpen(false);
-                              }}
-                              className={cn(
-                                'w-full px-3 py-2 rounded-lg text-sm font-medium text-right',
-                                'flex items-center justify-between gap-2 transition-colors',
-                                isSelected 
-                                  ? 'bg-indigo-100 text-indigo-700 border-2 border-violet-300' 
-                                  : 'text-slate-700 hover:bg-slate-100 border-2 border-transparent'
-                              )}
-                            >
-                              <span>{cat.nameHe}</span>
-                              {isSelected && <Check className="w-4 h-4 text-indigo-600" />}
-                            </button>
-                          );
-                        })}
+          {/* Delete Confirmation Dialog */ }
+          <ConfirmDialog
+            isOpen={deleteConfirm.isOpen}
+            onClose={() => setDeleteConfirm({ isOpen: false, id: '', description: '' })}
+            onConfirm={() => onDelete(deleteConfirm.id)}
+            title="מחיקת עסקה"
+            message={`האם אתה בטוח שברצונך למחוק את העסקה "${deleteConfirm.description}"?`}
+          />
+
+          {/* Multi-Delete Confirmation Dialog */ }
+          <ConfirmDialog
+            isOpen={multiDeleteConfirm}
+            onClose={() => setMultiDeleteConfirm(false)}
+            onConfirm={handleMultiDelete}
+            title="מחיקת עסקאות"
+            message={`האם אתה בטוח שברצונך למחוק ${selectedIds.size} עסקאות?`}
+          />
+
+          {/* Category Edit Dialog */ }
+          {
+            editingTransaction && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" dir="rtl">
+                  {/* Header */}
+                  <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <h3 className="font-semibold text-slate-900">עריכת קטגוריה</h3>
+                    <button
+                      onClick={closeEditDialog}
+                      className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
+                      <X className="w-5 h-5 text-slate-500" />
+                    </button>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-4 space-y-4">
+                    {/* Transaction info */}
+                    <div className="p-3 bg-slate-50 rounded-xl">
+                      <p className="text-sm text-slate-600">עסקה:</p>
+                      <p className="font-medium text-slate-900">{editingTransaction.description}</p>
+                      <p className="text-sm text-slate-500">
+                        {formatCurrency(editingTransaction.amount)} • {formatDate(editingTransaction.date)}
+                      </p>
+                    </div>
+
+                    {/* Category dropdown */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        קטגוריה חדשה
+                      </label>
+                      <div ref={dropdownRef} className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                          className={cn(
+                            'w-full px-3 py-2.5 border-2 rounded-xl text-sm font-medium transition-all',
+                            'flex items-center justify-between gap-2',
+                            'focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 focus:outline-none',
+                            'border-violet-300 bg-white text-indigo-700 hover:border-violet-400'
+                          )}
+                        >
+                          <span>
+                            {getCategoryInfo(selectedCategory, editingTransaction.type as 'income' | 'expense')?.nameHe || 'בחר קטגוריה...'}
+                          </span>
+                          <ChevronDown className={cn(
+                            'w-4 h-4 flex-shrink-0 transition-transform',
+                            isDropdownOpen && 'rotate-180'
+                          )} />
+                        </button>
+
+                        {isDropdownOpen && (
+                          <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                            <div className="p-1">
+                              {getCategoriesForType(editingTransaction.type).map((cat) => {
+                                const isSelected = cat.id === selectedCategory;
+                                return (
+                                  <button
+                                    key={cat.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedCategory(cat.id);
+                                      setIsDropdownOpen(false);
+                                    }}
+                                    className={cn(
+                                      'w-full px-3 py-2 rounded-lg text-sm font-medium text-right',
+                                      'flex items-center justify-between gap-2 transition-colors',
+                                      isSelected
+                                        ? 'bg-indigo-100 text-indigo-700 border-2 border-violet-300'
+                                        : 'text-slate-700 hover:bg-slate-100 border-2 border-transparent'
+                                    )}
+                                  >
+                                    <span>{cat.nameHe}</span>
+                                    {isSelected && <Check className="w-4 h-4 text-indigo-600" />}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  )}
+
+                    {/* Save behavior options */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        שמירה לפעמים הבאות
+                      </label>
+                      <div className="space-y-2">
+                        <label className={cn(
+                          'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
+                          saveBehavior === 'once'
+                            ? 'border-violet-300 bg-indigo-50'
+                            : 'border-slate-200 hover:border-slate-300'
+                        )}>
+                          <input
+                            type="radio"
+                            name="saveBehavior"
+                            value="once"
+                            checked={saveBehavior === 'once'}
+                            onChange={() => setSaveBehavior('once')}
+                            className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <div>
+                            <p className="font-medium text-slate-900">רק הפעם</p>
+                            <p className="text-xs text-slate-500">העדכון יחול רק על עסקה זו</p>
+                          </div>
+                        </label>
+
+                        <label className={cn(
+                          'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
+                          saveBehavior === 'always'
+                            ? 'border-violet-300 bg-indigo-50'
+                            : 'border-slate-200 hover:border-slate-300'
+                        )}>
+                          <input
+                            type="radio"
+                            name="saveBehavior"
+                            value="always"
+                            checked={saveBehavior === 'always'}
+                            onChange={() => setSaveBehavior('always')}
+                            className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <div>
+                            <p className="font-medium text-slate-900">זכור לפעמים הבאות</p>
+                            <p className="text-xs text-slate-500">עסקאות עתידיות מעסק זה יסווגו אוטומטית</p>
+                          </div>
+                        </label>
+
+                        <label className={cn(
+                          'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
+                          saveBehavior === 'alwaysAsk'
+                            ? 'border-violet-300 bg-indigo-50'
+                            : 'border-slate-200 hover:border-slate-300'
+                        )}>
+                          <input
+                            type="radio"
+                            name="saveBehavior"
+                            value="alwaysAsk"
+                            checked={saveBehavior === 'alwaysAsk'}
+                            onChange={() => setSaveBehavior('alwaysAsk')}
+                            className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <div>
+                            <p className="font-medium text-slate-900">תמיד תשאל אותי</p>
+                            <p className="text-xs text-slate-500">לעסקים גנריים כמו העברה בביט, PayBox וכו׳</p>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="p-4 border-t border-slate-100 flex gap-3">
+                    <button
+                      onClick={handleSaveCategory}
+                      disabled={!selectedCategory || selectedCategory === editingTransaction.category}
+                      className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      שמור
+                    </button>
+                    <button
+                      onClick={closeEditDialog}
+                      className="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors"
+                    >
+                      ביטול
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              {/* Save behavior options */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  שמירה לפעמים הבאות
-                </label>
-                <div className="space-y-2">
-                  <label className={cn(
-                    'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
-                    saveBehavior === 'once' 
-                      ? 'border-violet-300 bg-indigo-50' 
-                      : 'border-slate-200 hover:border-slate-300'
-                  )}>
-                    <input
-                      type="radio"
-                      name="saveBehavior"
-                      value="once"
-                      checked={saveBehavior === 'once'}
-                      onChange={() => setSaveBehavior('once')}
-                      className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <div>
-                      <p className="font-medium text-slate-900">רק הפעם</p>
-                      <p className="text-xs text-slate-500">העדכון יחול רק על עסקה זו</p>
-                    </div>
-                  </label>
-
-                  <label className={cn(
-                    'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
-                    saveBehavior === 'always' 
-                      ? 'border-violet-300 bg-indigo-50' 
-                      : 'border-slate-200 hover:border-slate-300'
-                  )}>
-                    <input
-                      type="radio"
-                      name="saveBehavior"
-                      value="always"
-                      checked={saveBehavior === 'always'}
-                      onChange={() => setSaveBehavior('always')}
-                      className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <div>
-                      <p className="font-medium text-slate-900">זכור לפעמים הבאות</p>
-                      <p className="text-xs text-slate-500">עסקאות עתידיות מעסק זה יסווגו אוטומטית</p>
-                    </div>
-                  </label>
-
-                  <label className={cn(
-                    'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
-                    saveBehavior === 'alwaysAsk' 
-                      ? 'border-violet-300 bg-indigo-50' 
-                      : 'border-slate-200 hover:border-slate-300'
-                  )}>
-                    <input
-                      type="radio"
-                      name="saveBehavior"
-                      value="alwaysAsk"
-                      checked={saveBehavior === 'alwaysAsk'}
-                      onChange={() => setSaveBehavior('alwaysAsk')}
-                      className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <div>
-                      <p className="font-medium text-slate-900">תמיד תשאל אותי</p>
-                      <p className="text-xs text-slate-500">לעסקים גנריים כמו העברה בביט, PayBox וכו׳</p>
-                    </div>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t border-slate-100 flex gap-3">
-              <button
-                onClick={handleSaveCategory}
-                disabled={!selectedCategory || selectedCategory === editingTransaction.category}
-                className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                שמור
-              </button>
-              <button
-                onClick={closeEditDialog}
-                className="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors"
-              >
-                ביטול
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            )
+          }
     </div>
-  );
+      );
 }
