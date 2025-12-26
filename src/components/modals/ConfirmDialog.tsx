@@ -1,6 +1,8 @@
 'use client';
 
 import { AlertTriangle, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { useEffect, useState } from 'react';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -17,18 +19,30 @@ export default function ConfirmDialog({
   title,
   message,
 }: ConfirmDialogProps) {
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
 
   const handleConfirm = () => {
     onConfirm();
     onClose();
   };
 
-  return (
+  const dialogContent = (
     <div
-      className={`modal-overlay ${isOpen ? 'active' : ''}`}
+      className="modal-overlay"
       style={{
         position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
         zIndex: 9999
       }}
       onClick={onClose}
@@ -70,5 +84,7 @@ export default function ConfirmDialog({
       </div>
     </div>
   );
-}
 
+  // Render to document.body using Portal
+  return createPortal(dialogContent, document.body);
+}
