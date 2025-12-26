@@ -120,16 +120,16 @@ export default function MonthFilter({
           ? 'px-2.5 py-2'
           : 'gap-3 px-4 py-2 min-w-[180px]'
           } ${isDark
-            ? 'bg-slate-800 hover:bg-slate-700 border-0'
+            ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 border-0 shadow-md'
             : 'bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 shadow-sm'
           }`}
       >
-        <Calendar className={`w-5 h-5 flex-shrink-0 ${isDark ? 'text-emerald-400' : 'text-blue-400'}`} />
+        <Calendar className={`w-5 h-5 flex-shrink-0 ${isDark ? 'text-white' : 'text-blue-400'}`} />
         <span className={`text-right font-medium whitespace-nowrap ${compact ? 'text-sm' : 'flex-1'} ${isDark ? 'text-white' : 'text-slate-800'}`}>
           {formatMonthDisplay(selectedMonth, compact)}
         </span>
         <ChevronDown
-          className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${isDark ? 'text-slate-400' : 'text-slate-500'}`}
+          className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} ${isDark ? 'text-white' : 'text-slate-500'}`}
         />
       </button>
 
