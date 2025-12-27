@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth, withIdAndUserId } from '@/lib/authHelpers';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 // GET - Download document securely via proxy (blob URL never exposed to client)
 export async function GET(
@@ -10,6 +11,21 @@ export async function GET(
   try {
     const { userId, error } = await requireAuth();
     if (error) return error;
+
+    // Rate limiting for downloads (prevent abuse)
+    const rateLimitResult = await checkRateLimit(`download:${userId}`, RATE_LIMITS.upload);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'יותר מדי בקשות להורדה. אנא המתן ונסה שוב.' },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': String(rateLimitResult.limit),
+            'X-RateLimit-Remaining': String(rateLimitResult.remaining),
+          },
+        }
+      );
+    }
 
     const { id } = await params;
 
