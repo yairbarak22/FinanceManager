@@ -14,6 +14,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { Document } from '@/lib/types';
+import { apiFetch } from '@/lib/utils';
 
 interface DocumentsModalProps {
   isOpen: boolean;
@@ -48,7 +49,7 @@ export default function DocumentsModal({
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/documents?entityType=${entityType}&entityId=${entityId}`
       );
       if (res.ok) {
@@ -77,7 +78,7 @@ export default function DocumentsModal({
       formData.append('entityId', entityId);
 
       try {
-        const res = await fetch('/api/documents', {
+        const res = await apiFetch('/api/documents', {
           method: 'POST',
           body: formData,
         });
@@ -97,7 +98,7 @@ export default function DocumentsModal({
 
   const handleDelete = async (docId: string) => {
     try {
-      const res = await fetch(`/api/documents/${docId}`, {
+      const res = await apiFetch(`/api/documents/${docId}`, {
         method: 'DELETE',
       });
 

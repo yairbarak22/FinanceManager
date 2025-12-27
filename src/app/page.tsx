@@ -33,7 +33,7 @@ import {
   NetWorthHistory,
   MonthlySummary as MonthlySummaryType,
 } from '@/lib/types';
-import { getMonthKey, calculateSavingsRate } from '@/lib/utils';
+import { getMonthKey, calculateSavingsRate, apiFetch } from '@/lib/utils';
 import { getEffectiveMonthlyExpense } from '@/lib/loanCalculations';
 import { useCategories } from '@/hooks/useCategories';
 import { useAnalytics } from '@/hooks/useAnalytics';
@@ -194,11 +194,11 @@ export default function Home() {
   const fetchData = useCallback(async () => {
     try {
       const [txRes, recRes, assetsRes, liabRes, historyRes] = await Promise.all([
-        fetch('/api/transactions'),
-        fetch('/api/recurring'),
-        fetch('/api/assets'),
-        fetch('/api/liabilities'),
-        fetch('/api/assets/history'),
+        apiFetch('/api/transactions'),
+        apiFetch('/api/recurring'),
+        apiFetch('/api/assets'),
+        apiFetch('/api/liabilities'),
+        apiFetch('/api/assets/history'),
       ]);
 
       // Check all responses before parsing
@@ -339,7 +339,7 @@ export default function Home() {
   // Transaction handlers
   const handleAddTransaction = async (data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
-      const res = await fetch('/api/transactions', {
+      const res = await apiFetch('/api/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -359,7 +359,7 @@ export default function Home() {
 
   const handleDeleteTransaction = async (id: string) => {
     try {
-      const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/transactions/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
       await fetchData();
       toast.success('העסקה נמחקה');
@@ -374,7 +374,7 @@ export default function Home() {
     try {
       // Delete all selected transactions in parallel
       const results = await Promise.all(
-        ids.map(id => fetch(`/api/transactions/${id}`, { method: 'DELETE' }))
+        ids.map(id => apiFetch(`/api/transactions/${id}`, { method: 'DELETE' }))
       );
 
       const failedCount = results.filter(r => !r.ok).length;
@@ -399,7 +399,7 @@ export default function Home() {
   ) => {
     try {
       // Update the transaction category
-      const res = await fetch(`/api/transactions/${transactionId}`, {
+      const res = await apiFetch(`/api/transactions/${transactionId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category: newCategory }),
@@ -409,7 +409,7 @@ export default function Home() {
 
       // Handle merchant category mapping based on save behavior
       if (saveBehavior !== 'once') {
-        await fetch('/api/merchant-category', {
+        await apiFetch('/api/merchant-category', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -446,7 +446,7 @@ export default function Home() {
         : '/api/recurring';
       const method = editingRecurring ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -470,7 +470,7 @@ export default function Home() {
 
   const handleToggleRecurring = async (id: string, isActive: boolean) => {
     try {
-      const res = await fetch(`/api/recurring/${id}`, {
+      const res = await apiFetch(`/api/recurring/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive }),
@@ -485,7 +485,7 @@ export default function Home() {
 
   const handleDeleteRecurring = async (id: string) => {
     try {
-      const res = await fetch(`/api/recurring/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/recurring/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
       await fetchData();
       toast.success('העסקה הקבועה נמחקה');
@@ -504,7 +504,7 @@ export default function Home() {
       const url = editingAsset ? `/api/assets/${editingAsset.id}` : '/api/assets';
       const method = editingAsset ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -528,7 +528,7 @@ export default function Home() {
 
   const handleDeleteAsset = async (id: string) => {
     try {
-      const res = await fetch(`/api/assets/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/assets/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
       await fetchData();
       toast.success('הנכס נמחק');
@@ -550,7 +550,7 @@ export default function Home() {
         : '/api/liabilities';
       const method = editingLiability ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -574,7 +574,7 @@ export default function Home() {
 
   const handleDeleteLiability = async (id: string) => {
     try {
-      const res = await fetch(`/api/liabilities/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/liabilities/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
       await fetchData();
       toast.success('ההתחייבות נמחקה');

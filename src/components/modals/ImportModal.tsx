@@ -16,7 +16,7 @@ import {
   ChevronDown,
   Check,
 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, apiFetch } from '@/lib/utils';
 import { expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
 import { cn } from '@/lib/utils';
 
@@ -442,7 +442,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
     try {
       setPhase('classifying');
 
-      const res = await fetch('/api/transactions/import', {
+      const res = await apiFetch('/api/transactions/import', {
         method: 'POST',
         body: formData,
       });
@@ -503,7 +503,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
         })),
       ];
 
-      const res = await fetch('/api/transactions/import/confirm', {
+      const res = await apiFetch('/api/transactions/import/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transactions: toSave }),

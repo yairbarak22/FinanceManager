@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Holding, InvestmentCalculation } from '@/lib/types';
+import { apiFetch } from '@/lib/utils';
 import HoldingsList from './HoldingsList';
 import AllocationCharts from './AllocationCharts';
 import InvestmentCalculator from './InvestmentCalculator';
@@ -26,7 +27,7 @@ export default function InvestmentsTab() {
   // Fetch holdings
   const fetchHoldings = useCallback(async () => {
     try {
-      const res = await fetch('/api/holdings');
+      const res = await apiFetch('/api/holdings');
       const data = await res.json();
       setHoldings(data);
       setIsLoading(false);
@@ -44,7 +45,7 @@ export default function InvestmentsTab() {
   const handleCalculate = async (amount: number) => {
     setIsCalculating(true);
     try {
-      const res = await fetch('/api/holdings/calculate', {
+      const res = await apiFetch('/api/holdings/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ investmentAmount: amount }),
@@ -70,7 +71,7 @@ export default function InvestmentsTab() {
   // Apply investment - actually update holding values
   const handleApplyInvestment = async (amount: number) => {
     try {
-      const res = await fetch('/api/holdings/apply', {
+      const res = await apiFetch('/api/holdings/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ investmentAmount: amount }),
@@ -101,7 +102,7 @@ export default function InvestmentsTab() {
       const url = editingHolding ? `/api/holdings/${editingHolding.id}` : '/api/holdings';
       const method = editingHolding ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -126,7 +127,7 @@ export default function InvestmentsTab() {
 
   const handleDeleteHolding = async (id: string) => {
     try {
-      await fetch(`/api/holdings/${id}`, { method: 'DELETE' });
+      await apiFetch(`/api/holdings/${id}`, { method: 'DELETE' });
       // Clear calculations when holdings change
       setCalculations([]);
       setCalculationSummary(null);

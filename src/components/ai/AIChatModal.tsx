@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, FormEvent, useCallback } from 'react';
 import { X, Send, Sparkles, Bot, User, Copy, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, apiFetch } from '@/lib/utils';
 import { getTopic, getDefaultTopic, AITopic } from '@/lib/ai/topics';
 
 /**
@@ -251,7 +251,7 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/ai/chat', {
+      const response = await apiFetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

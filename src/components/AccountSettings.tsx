@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { X, Users, UserPlus, Copy, Trash2, Crown, User, Mail, Check, Loader2 } from 'lucide-react';
+import { apiFetch } from '@/lib/utils';
 
 interface Member {
   id: string;
@@ -85,7 +86,7 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
       setInviting(true);
       setError(null);
 
-      const res = await fetch('/api/account/invite', {
+      const res = await apiFetch('/api/account/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: newEmail }),
@@ -109,7 +110,7 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
 
   const handleDeleteInvite = async (inviteId: string) => {
     try {
-      const res = await fetch(`/api/account/invite?id=${inviteId}`, {
+      const res = await apiFetch(`/api/account/invite?id=${inviteId}`, {
         method: 'DELETE',
       });
 
@@ -127,7 +128,7 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
     }
 
     try {
-      const res = await fetch(`/api/account/members?memberId=${memberId}`, {
+      const res = await apiFetch(`/api/account/members?memberId=${memberId}`, {
         method: 'DELETE',
       });
 

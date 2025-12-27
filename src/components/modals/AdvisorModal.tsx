@@ -13,7 +13,7 @@ import {
   Loader2,
   Sparkles,
 } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, apiFetch } from '@/lib/utils';
 import HelpTrigger from '@/components/ai/HelpTrigger';
 
 // Types matching the backend
@@ -87,7 +87,7 @@ export default function AdvisorModal({ isOpen, onClose }: AdvisorModalProps) {
     setError(null);
 
     try {
-      const response = await fetch('/api/advisor', {
+      const response = await apiFetch('/api/advisor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });

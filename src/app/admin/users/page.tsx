@@ -3,16 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { 
-  Users, 
-  Shield, 
-  RefreshCw, 
+import {
+  Users,
+  Shield,
+  RefreshCw,
   User,
   CheckCircle2,
   XCircle,
   ArrowLeft
 } from 'lucide-react';
 import { isAdmin } from '@/lib/adminHelpers';
+import { apiFetch } from '@/lib/utils';
 
 interface UserData {
   id: string;
@@ -54,7 +55,7 @@ export default function AdminUsersPage() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch('/api/admin/users');
+      const res = await apiFetch('/api/admin/users');
       
       if (!res.ok) {
         if (res.status === 403) {

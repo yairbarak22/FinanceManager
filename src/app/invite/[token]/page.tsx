@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Users, Check, X, Loader2 } from 'lucide-react';
+import { apiFetch } from '@/lib/utils';
 
 export default function InvitePage() {
   const { token } = useParams();
@@ -26,7 +27,7 @@ export default function InvitePage() {
       setLoading(true);
       setError(null);
 
-      const res = await fetch('/api/account/invite/accept', {
+      const res = await apiFetch('/api/account/invite/accept', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),

@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useSession } from 'next-auth/react';
 import OnboardingWizard from './OnboardingWizard';
+import { apiFetch } from '@/lib/utils';
 
 interface OnboardingContextType {
   isActive: boolean;
@@ -38,7 +39,7 @@ export default function OnboardingProvider({ children }: OnboardingProviderProps
 
   const checkOnboardingStatus = async () => {
     try {
-      const res = await fetch('/api/user/onboarding');
+      const res = await apiFetch('/api/user/onboarding');
       if (res.ok) {
         const data = await res.json();
         if (!data.hasSeenOnboarding) {
@@ -57,7 +58,7 @@ export default function OnboardingProvider({ children }: OnboardingProviderProps
 
   const markOnboardingComplete = async () => {
     try {
-      await fetch('/api/user/onboarding', { method: 'POST' });
+      await apiFetch('/api/user/onboarding', { method: 'POST' });
     } catch (error) {
       console.error('Error marking onboarding complete:', error);
     }

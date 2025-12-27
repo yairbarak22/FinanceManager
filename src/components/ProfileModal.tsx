@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { X, Loader2, ChevronDown, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, apiFetch } from '@/lib/utils';
 
 interface UserProfile {
   militaryStatus: string | null;
@@ -175,7 +175,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/profile');
+      const res = await apiFetch('/api/profile');
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
@@ -191,7 +191,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     e.preventDefault();
     try {
       setSaving(true);
-      const res = await fetch('/api/profile', {
+      const res = await apiFetch('/api/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profile),

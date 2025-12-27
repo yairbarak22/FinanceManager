@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Calculator, ArrowLeft, Sparkles, PlusCircle, Calendar, ArrowRight } from 'lucide-react';
 import { InvestmentCalculation } from '@/lib/types';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, apiFetch } from '@/lib/utils';
 import HelpTrigger from '../ai/HelpTrigger';
 
 interface ForecastData {
@@ -63,7 +63,7 @@ export default function InvestmentCalculator({
   const fetchForecast = async (investmentAmount: number) => {
     setIsForecastLoading(true);
     try {
-      const res = await fetch('/api/holdings/forecast', {
+      const res = await apiFetch('/api/holdings/forecast', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ monthlyInvestment: investmentAmount }),

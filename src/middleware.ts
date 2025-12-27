@@ -29,6 +29,28 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // SECURITY: CSRF Protection for API routes
+  // Require custom header for all non-safe HTTP methods
+  const isSafeMethod = ['GET', 'HEAD', 'OPTIONS'].includes(request.method);
+  const isApiRoute = pathname.startsWith('/api/');
+  const isAuthRoute = pathname.startsWith('/api/auth/');
+
+  if (!isSafeMethod && isApiRoute && !isAuthRoute) {
+    const csrfHeader = request.headers.get('X-CSRF-Protection');
+    if (csrfHeader !== '1') {
+      return new NextResponse(
+        JSON.stringify({
+          error: 'CSRF protection required',
+          details: 'Missing or invalid X-CSRF-Protection header'
+        }),
+        {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+  }
+
   // SECURITY: Block non-admin users from /admin/* routes
   if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
     if (!isAdmin(token.email as string)) {
