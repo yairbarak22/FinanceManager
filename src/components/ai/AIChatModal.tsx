@@ -319,7 +319,7 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg h-[600px] max-h-[80vh] flex flex-col overflow-hidden animate-scale-in">
+      <div className="relative z-[101] bg-white rounded-2xl shadow-2xl w-full max-w-lg h-[600px] max-h-[80vh] flex flex-col overflow-hidden animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-violet-500 to-purple-600">
           <div className="flex items-center gap-3">

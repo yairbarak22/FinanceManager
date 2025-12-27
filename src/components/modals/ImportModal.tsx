@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -135,7 +135,16 @@ function ProgressLine({ isComplete }: { isComplete: boolean }) {
   );
 }
 
-// Custom Category Dropdown component with Portal support
+// Dropdown position interface
+interface DropdownPosition {
+  top?: number;
+  bottom?: number;
+  left: number;
+  width: number;
+  maxHeight: number;
+}
+
+// Custom Category Dropdown component with Portal
 function CategoryDropdown({
   value,
   onChange,
@@ -153,33 +162,28 @@ function CategoryDropdown({
 }) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const selectedCategory = categories.find(c => c.id === value);
   const [mounted, setMounted] = useState(false);
-  const [position, setPosition] = useState<{ top?: number; bottom?: number; left: number; width: number; maxHeight: number }>({
-    left: 0,
-    width: 0,
-    maxHeight: 256,
-  });
+  const [position, setPosition] = useState<DropdownPosition>({ left: 0, width: 0, maxHeight: 256 });
+  const selectedCategory = categories.find(c => c.id === value);
 
-  // Set mounted state for portal
+  // Set mounted for portal
   useEffect(() => {
     setMounted(true);
   }, []);
 
   // Calculate dropdown position
-  const updatePosition = () => {
+  const updatePosition = useCallback(() => {
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom - 16;
       const spaceAbove = rect.top - 16;
-      const preferredHeight = 256;
+      const preferredHeight = 256; // max-h-64
 
-      // Decide whether to open below or above
-      const openBelow = spaceBelow >= Math.min(preferredHeight, 150) || spaceBelow >= spaceAbove;
+      const openBelow = spaceBelow >= Math.min(preferredHeight, 100) || spaceBelow >= spaceAbove;
 
       if (openBelow) {
         setPosition({
-          top: rect.bottom + 8,
+          top: rect.bottom + 4,
           bottom: undefined,
           left: rect.left,
           width: rect.width,
@@ -188,16 +192,16 @@ function CategoryDropdown({
       } else {
         setPosition({
           top: undefined,
-          bottom: window.innerHeight - rect.top + 8,
+          bottom: window.innerHeight - rect.top + 4,
           left: rect.left,
           width: rect.width,
           maxHeight: Math.min(preferredHeight, spaceAbove),
         });
       }
     }
-  };
+  }, []);
 
-  // Update position when opening
+  // Update position when open
   useEffect(() => {
     if (isOpen) {
       updatePosition();
@@ -208,7 +212,7 @@ function CategoryDropdown({
         window.removeEventListener('scroll', updatePosition, true);
       };
     }
-  }, [isOpen]);
+  }, [isOpen, updatePosition]);
 
   // Handle click outside
   useEffect(() => {
@@ -236,11 +240,11 @@ function CategoryDropdown({
     };
   }, [isOpen, onClose]);
 
-  // Dropdown content for portal
+  // Dropdown content rendered via portal
   const dropdownContent = (
     <div
       ref={dropdownRef}
-      className="fixed z-[60] bg-white border border-slate-200 rounded-xl shadow-lg overflow-y-auto animate-scale-in"
+      className="fixed z-[10000] bg-white border border-slate-200 rounded-xl shadow-lg overflow-y-auto"
       style={{
         top: position.top,
         bottom: position.bottom,
@@ -303,12 +307,63 @@ function CategoryDropdown({
         )} />
       </button>
 
-      {/* Dropdown Panel via Portal */}
+      {/* Dropdown via Portal */}
       {mounted && isOpen && createPortal(dropdownContent, document.body)}
     </div>
   );
 }
 
+// Mobile transaction card component for review
+function TransactionCard({
+  transaction,
+  selectedCategory,
+  onCategoryChange,
+  categories,
+  isDropdownOpen,
+  onDropdownToggle,
+  onDropdownClose,
+}: {
+  transaction: ParsedTransaction;
+  selectedCategory: string;
+  onCategoryChange: (category: string) => void;
+  categories: CategoryInfo[];
+  isDropdownOpen: boolean;
+  onDropdownToggle: () => void;
+  onDropdownClose: () => void;
+}) {
+  return (
+    <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+      {/* Merchant name and amount */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-slate-900 truncate">{transaction.merchantName}</p>
+          <p className="text-sm text-slate-500">
+            {new Date(transaction.date).toLocaleDateString('he-IL')}
+          </p>
+        </div>
+        <span className={cn(
+          'font-bold text-lg whitespace-nowrap',
+          transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+        )}>
+          {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+        </span>
+      </div>
+      
+      {/* Category selector - full width on mobile */}
+      <div>
+        <label className="block text-xs font-medium text-slate-500 mb-1.5">קטגוריה</label>
+        <CategoryDropdown
+          value={selectedCategory}
+          onChange={onCategoryChange}
+          categories={categories}
+          isOpen={isDropdownOpen}
+          onToggle={onDropdownToggle}
+          onClose={onDropdownClose}
+        />
+      </div>
+    </div>
+  );
+}
 
 export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalProps) {
   const [file, setFile] = useState<File | null>(null);
@@ -667,7 +722,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
               </div>
 
               {stats && (
-                <div className="flex gap-3 text-sm">
+                <div className="flex gap-3 text-sm flex-wrap">
                   <span className="px-2 py-1 bg-green-100 text-green-700 rounded-lg">
                     ✓ {stats.cached + stats.aiClassified} סווגו אוטומטית
                   </span>
@@ -679,7 +734,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                 </div>
               )}
 
-              {/* Review table - Desktop */}
+              {/* Desktop: Table view */}
               <div className="hidden md:block border border-slate-200 rounded-xl overflow-hidden">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50">
@@ -687,7 +742,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                       <th className="text-right px-4 py-3 font-medium text-slate-600">עסק</th>
                       <th className="text-right px-4 py-3 font-medium text-slate-600">סכום</th>
                       <th className="text-right px-4 py-3 font-medium text-slate-600">תאריך</th>
-                      <th className="text-right px-4 py-3 font-medium text-slate-600">קטגוריה</th>
+                      <th className="text-right px-4 py-3 font-medium text-slate-600 min-w-[160px]">קטגוריה</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -723,39 +778,19 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                 </table>
               </div>
 
-              {/* Review cards - Mobile */}
-              <div className="block md:hidden space-y-3">
+              {/* Mobile: Card view */}
+              <div className="md:hidden space-y-3">
                 {needsReview.map((t) => (
-                  <div key={t.rowNum} className="border border-slate-200 rounded-xl p-4 bg-white space-y-3">
-                    {/* Merchant and Amount */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-900 text-base truncate">{t.merchantName}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">
-                          {new Date(t.date).toLocaleDateString('he-IL')}
-                        </p>
-                      </div>
-                      <span className={cn(
-                        'font-bold text-lg flex-shrink-0',
-                        t.type === 'income' ? 'text-green-600' : 'text-red-600'
-                      )}>
-                        {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
-                      </span>
-                    </div>
-
-                    {/* Category Selector */}
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1.5">בחר קטגוריה</label>
-                      <CategoryDropdown
-                        value={reviewCategories[t.rowNum] || ''}
-                        onChange={(value) => handleCategoryChange(t.rowNum, value)}
-                        categories={getCategoriesForType(t.type)}
-                        isOpen={openDropdown === t.rowNum}
-                        onToggle={() => setOpenDropdown(openDropdown === t.rowNum ? null : t.rowNum)}
-                        onClose={() => setOpenDropdown(null)}
-                      />
-                    </div>
-                  </div>
+                  <TransactionCard
+                    key={t.rowNum}
+                    transaction={t}
+                    selectedCategory={reviewCategories[t.rowNum] || ''}
+                    onCategoryChange={(category) => handleCategoryChange(t.rowNum, category)}
+                    categories={getCategoriesForType(t.type)}
+                    isDropdownOpen={openDropdown === t.rowNum}
+                    onDropdownToggle={() => setOpenDropdown(openDropdown === t.rowNum ? null : t.rowNum)}
+                    onDropdownClose={() => setOpenDropdown(null)}
+                  />
                 ))}
               </div>
             </div>
