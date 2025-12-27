@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { MemberRole } from '@prisma/client';
 import { requireAuth, getOrCreateSharedAccount } from '@/lib/authHelpers';
+import { config } from '@/lib/config';
 import { Resend } from 'resend';
 
 // Lazy initialization to avoid build-time errors when API key is not set
 let resend: Resend | null = null;
 function getResend(): Resend | null {
-  if (!resend && process.env.RESEND_API_KEY) {
-    resend = new Resend(process.env.RESEND_API_KEY);
+  if (!resend && config.resendApiKey) {
+    resend = new Resend(config.resendApiKey);
   }
   return resend;
 }
@@ -96,7 +97,7 @@ export async function POST(request: Request) {
       },
     });
 
-    const inviteUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/invite/${invite.token}`;
+    const inviteUrl = `${config.nextAuthUrl}/invite/${invite.token}`;
 
     // Get inviter name
     const inviter = await prisma.user.findUnique({
@@ -153,9 +154,16 @@ export async function POST(request: Request) {
       // Continue even if email fails - user can still copy the link
     }
 
+    // SECURITY: Don't expose the token to the client (only the URL)
+    // The token is already in the URL, no need to send it separately
     return NextResponse.json({
-      ...invite,
+      id: invite.id,
+      sharedAccountId: invite.sharedAccountId,
+      email: invite.email,
+      expiresAt: invite.expiresAt,
+      createdAt: invite.createdAt,
       inviteUrl,
+      // token field is intentionally excluded for security
     });
   } catch (error) {
     console.error('Error creating invite:', error);

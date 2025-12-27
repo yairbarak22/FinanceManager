@@ -1,20 +1,16 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from './auth';
-
-// Read admin emails from environment variable (comma-separated)
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
-  .split(',')
-  .map(email => email.trim().toLowerCase())
-  .filter(Boolean);
+import { config } from './config';
 
 /**
  * Check if an email is an admin
  * Uses strict lowercase comparison
+ * Admin emails are configured in centralized config module
  */
 export function isAdmin(email: string | null | undefined): boolean {
   if (!email) return false;
-  return ADMIN_EMAILS.includes(email.toLowerCase());
+  return config.adminEmails.includes(email.toLowerCase());
 }
 
 /**

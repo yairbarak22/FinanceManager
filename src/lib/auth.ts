@@ -2,13 +2,14 @@ import { NextAuthOptions } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import GoogleProvider from 'next-auth/providers/google';
 import { prisma } from './prisma';
+import { config } from './config';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as NextAuthOptions['adapter'],
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: config.googleClientId,
+      clientSecret: config.googleClientSecret,
       authorization: {
         params: {
           prompt: 'select_account', // Force showing account selection on every login

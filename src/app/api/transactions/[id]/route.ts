@@ -12,32 +12,66 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    
+
     // Use shared account to allow editing records from all members
     const sharedWhere = await withSharedAccountId(id, userId);
-    
+
     // Build update data object with only provided fields (partial update support)
+    // SECURITY: Validate each field before updating
     const updateData: Record<string, unknown> = {};
-    if (body.type !== undefined) updateData.type = body.type;
-    if (body.amount !== undefined) updateData.amount = body.amount;
-    if (body.category !== undefined) updateData.category = body.category;
-    if (body.description !== undefined) updateData.description = body.description;
-    if (body.date !== undefined) updateData.date = new Date(body.date);
-    
+
+    if (body.type !== undefined) {
+      if (!['income', 'expense'].includes(body.type)) {
+        return NextResponse.json({ error: 'Invalid type. Must be "income" or "expense"' }, { status: 400 });
+      }
+      updateData.type = body.type;
+    }
+
+    if (body.amount !== undefined) {
+      if (typeof body.amount !== 'number' || body.amount <= 0) {
+        return NextResponse.json({ error: 'Amount must be a positive number' }, { status: 400 });
+      }
+      updateData.amount = body.amount;
+    }
+
+    if (body.category !== undefined) {
+      if (typeof body.category !== 'string' || body.category.trim().length === 0) {
+        return NextResponse.json({ error: 'Category must be a non-empty string' }, { status: 400 });
+      }
+      if (body.category.length > 50) {
+        return NextResponse.json({ error: 'Category too long (max 50 characters)' }, { status: 400 });
+      }
+      updateData.category = body.category.trim();
+    }
+
+    if (body.description !== undefined) {
+      if (typeof body.description !== 'string' || body.description.trim().length === 0) {
+        return NextResponse.json({ error: 'Description must be a non-empty string' }, { status: 400 });
+      }
+      if (body.description.length > 500) {
+        return NextResponse.json({ error: 'Description too long (max 500 characters)' }, { status: 400 });
+      }
+      updateData.description = body.description.trim();
+    }
+
+    if (body.date !== undefined) {
+      updateData.date = new Date(body.date);
+    }
+
     const result = await prisma.transaction.updateMany({
       where: sharedWhere,
       data: updateData,
     });
-    
+
     if (result.count === 0) {
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
     }
-    
+
     // Fetch the updated transaction
     const transaction = await prisma.transaction.findFirst({
       where: sharedWhere,
     });
-    
+
     return NextResponse.json(transaction);
   } catch (error) {
     console.error('Error updating transaction:', error);

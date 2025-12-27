@@ -4,6 +4,7 @@
  */
 
 import { randomBytes, createCipheriv, createDecipheriv } from 'crypto';
+import { config } from './config';
 
 // AES-256 requires a 32-byte key
 const ALGORITHM = 'aes-256-gcm';
@@ -11,34 +12,28 @@ const IV_LENGTH = 12; // GCM standard
 const AUTH_TAG_LENGTH = 16;
 
 /**
- * Get encryption key from environment
- * In production, this should be a proper secret management solution
+ * Get encryption key from centralized config
+ * SECURITY: No default fallback - key must be explicitly set in all environments
  */
 function getEncryptionKey(): Buffer {
-  const key = process.env.ENCRYPTION_KEY;
-  
-  if (!key) {
-    // In development, use a default key (NOT FOR PRODUCTION!)
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('⚠️ Using default encryption key - set ENCRYPTION_KEY in production!');
-      return Buffer.from('0123456789abcdef0123456789abcdef'); // 32 bytes
-    }
-    throw new Error('ENCRYPTION_KEY environment variable is required');
-  }
-  
-  // Key should be 32 bytes (256 bits) in hex or base64
+  const key = config.encryptionKey;
+
+  // Key validation - must be 32 bytes in hex, base64, or raw format
   if (key.length === 64) {
-    // Hex encoded
+    // Hex encoded (recommended)
     return Buffer.from(key, 'hex');
   } else if (key.length === 44) {
     // Base64 encoded
     return Buffer.from(key, 'base64');
   } else if (key.length === 32) {
-    // Raw string (not recommended)
+    // Raw string (not recommended but supported)
     return Buffer.from(key);
   }
-  
-  throw new Error('ENCRYPTION_KEY must be 32 bytes (64 hex chars or 44 base64 chars)');
+
+  throw new Error(
+    'ENCRYPTION_KEY must be 32 bytes (64 hex chars or 44 base64 chars). ' +
+    'Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"'
+  );
 }
 
 /**
