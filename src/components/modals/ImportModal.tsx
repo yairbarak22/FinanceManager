@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useCategories } from '@/hooks/useCategories';
 import {
   X,
   Upload,
@@ -261,7 +262,9 @@ function CategoryDropdown({
             <button
               key={cat.id}
               type="button"
-              onClick={() => {
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 onChange(cat.id);
                 onClose();
               }}
@@ -383,6 +386,9 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
 
   // Track which dropdown is open (by rowNum)
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+
+  // Fetch custom categories
+  const { getCustomByType, loading: categoriesLoading } = useCategories();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -549,9 +555,11 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
     await saveTransactions(transactions, reviewedWithCategories);
   };
 
-  // Get categories based on transaction type
+  // Get categories based on transaction type (includes custom categories)
   const getCategoriesForType = (type: 'income' | 'expense') => {
-    return type === 'income' ? incomeCategories : expenseCategories;
+    const defaultCats = type === 'income' ? incomeCategories : expenseCategories;
+    const customCats = getCustomByType(type);
+    return [...defaultCats, ...customCats];
   };
 
   if (!isOpen) return null;
@@ -735,64 +743,73 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
               )}
 
               {/* Desktop: Table view */}
-              <div className="hidden md:block border border-slate-200 rounded-xl overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="text-right px-4 py-3 font-medium text-slate-600">עסק</th>
-                      <th className="text-right px-4 py-3 font-medium text-slate-600">סכום</th>
-                      <th className="text-right px-4 py-3 font-medium text-slate-600">תאריך</th>
-                      <th className="text-right px-4 py-3 font-medium text-slate-600 min-w-[160px]">קטגוריה</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {needsReview.map((t) => (
-                      <tr key={t.rowNum} className="hover:bg-slate-50">
-                        <td className="px-4 py-3">
-                          <span className="font-medium text-slate-900">{t.merchantName}</span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={cn(
-                            'font-medium',
-                            t.type === 'income' ? 'text-green-600' : 'text-red-600'
-                          )}>
-                            {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-slate-600">
-                          {new Date(t.date).toLocaleDateString('he-IL')}
-                        </td>
-                        <td className="px-4 py-3">
-                          <CategoryDropdown
-                            value={reviewCategories[t.rowNum] || ''}
-                            onChange={(value) => handleCategoryChange(t.rowNum, value)}
-                            categories={getCategoriesForType(t.type)}
-                            isOpen={openDropdown === t.rowNum}
-                            onToggle={() => setOpenDropdown(openDropdown === t.rowNum ? null : t.rowNum)}
-                            onClose={() => setOpenDropdown(null)}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              {categoriesLoading ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
+                  <p className="text-slate-700 font-medium">טוען קטגוריות...</p>
+                </div>
+              ) : (
+                <>
+                  <div className="hidden md:block border border-slate-200 rounded-xl overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="text-right px-4 py-3 font-medium text-slate-600">עסק</th>
+                          <th className="text-right px-4 py-3 font-medium text-slate-600">סכום</th>
+                          <th className="text-right px-4 py-3 font-medium text-slate-600">תאריך</th>
+                          <th className="text-right px-4 py-3 font-medium text-slate-600 min-w-[160px]">קטגוריה</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {needsReview.map((t) => (
+                          <tr key={t.rowNum} className="hover:bg-slate-50">
+                            <td className="px-4 py-3">
+                              <span className="font-medium text-slate-900">{t.merchantName}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={cn(
+                                'font-medium',
+                                t.type === 'income' ? 'text-green-600' : 'text-red-600'
+                              )}>
+                                {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-slate-600">
+                              {new Date(t.date).toLocaleDateString('he-IL')}
+                            </td>
+                            <td className="px-4 py-3">
+                              <CategoryDropdown
+                                value={reviewCategories[t.rowNum] || ''}
+                                onChange={(value) => handleCategoryChange(t.rowNum, value)}
+                                categories={getCategoriesForType(t.type)}
+                                isOpen={openDropdown === t.rowNum}
+                                onToggle={() => setOpenDropdown(openDropdown === t.rowNum ? null : t.rowNum)}
+                                onClose={() => setOpenDropdown(null)}
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
 
-              {/* Mobile: Card view */}
-              <div className="md:hidden space-y-3">
-                {needsReview.map((t) => (
-                  <TransactionCard
-                    key={t.rowNum}
-                    transaction={t}
-                    selectedCategory={reviewCategories[t.rowNum] || ''}
-                    onCategoryChange={(category) => handleCategoryChange(t.rowNum, category)}
-                    categories={getCategoriesForType(t.type)}
-                    isDropdownOpen={openDropdown === t.rowNum}
-                    onDropdownToggle={() => setOpenDropdown(openDropdown === t.rowNum ? null : t.rowNum)}
-                    onDropdownClose={() => setOpenDropdown(null)}
-                  />
-                ))}
-              </div>
+                  {/* Mobile: Card view */}
+                  <div className="md:hidden space-y-3">
+                    {needsReview.map((t) => (
+                      <TransactionCard
+                        key={t.rowNum}
+                        transaction={t}
+                        selectedCategory={reviewCategories[t.rowNum] || ''}
+                        onCategoryChange={(category) => handleCategoryChange(t.rowNum, category)}
+                        categories={getCategoriesForType(t.type)}
+                        isDropdownOpen={openDropdown === t.rowNum}
+                        onDropdownToggle={() => setOpenDropdown(openDropdown === t.rowNum ? null : t.rowNum)}
+                        onDropdownClose={() => setOpenDropdown(null)}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           )}
 
