@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Upload,
@@ -95,9 +96,9 @@ function ProgressStep({
         className={cn(
           'w-10 h-10 rounded-full flex items-center justify-center transition-all',
           isError ? 'bg-red-100 text-red-600' :
-          isComplete ? 'bg-green-100 text-green-600' :
-          isActive ? 'bg-indigo-100 text-indigo-600 ring-2 ring-indigo-300 ring-offset-2' :
-          'bg-slate-100 text-slate-400'
+            isComplete ? 'bg-green-100 text-green-600' :
+              isActive ? 'bg-indigo-100 text-indigo-600 ring-2 ring-indigo-300 ring-offset-2' :
+                'bg-slate-100 text-slate-400'
         )}
       >
         {isComplete ? (
@@ -134,7 +135,7 @@ function ProgressLine({ isComplete }: { isComplete: boolean }) {
   );
 }
 
-// Custom Category Dropdown component
+// Custom Category Dropdown component with Portal support
 function CategoryDropdown({
   value,
   onChange,
@@ -150,19 +151,79 @@ function CategoryDropdown({
   onToggle: () => void;
   onClose: () => void;
 }) {
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const selectedCategory = categories.find(c => c.id === value);
+  const [mounted, setMounted] = useState(false);
+  const [position, setPosition] = useState<{ top?: number; bottom?: number; left: number; width: number; maxHeight: number }>({
+    left: 0,
+    width: 0,
+    maxHeight: 256,
+  });
+
+  // Set mounted state for portal
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Calculate dropdown position
+  const updatePosition = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom - 16;
+      const spaceAbove = rect.top - 16;
+      const preferredHeight = 256;
+
+      // Decide whether to open below or above
+      const openBelow = spaceBelow >= Math.min(preferredHeight, 150) || spaceBelow >= spaceAbove;
+
+      if (openBelow) {
+        setPosition({
+          top: rect.bottom + 8,
+          bottom: undefined,
+          left: rect.left,
+          width: rect.width,
+          maxHeight: Math.min(preferredHeight, spaceBelow),
+        });
+      } else {
+        setPosition({
+          top: undefined,
+          bottom: window.innerHeight - rect.top + 8,
+          left: rect.left,
+          width: rect.width,
+          maxHeight: Math.min(preferredHeight, spaceAbove),
+        });
+      }
+    }
+  };
+
+  // Update position when opening
+  useEffect(() => {
+    if (isOpen) {
+      updatePosition();
+      window.addEventListener('resize', updatePosition);
+      window.addEventListener('scroll', updatePosition, true);
+      return () => {
+        window.removeEventListener('resize', updatePosition);
+        window.removeEventListener('scroll', updatePosition, true);
+      };
+    }
+  }, [isOpen]);
 
   // Handle click outside
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const isOutsideTrigger = triggerRef.current && !triggerRef.current.contains(target);
+      const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(target);
+
+      if (isOutsideTrigger && isOutsideDropdown) {
         onClose();
       }
     };
-    
+
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -175,18 +236,61 @@ function CategoryDropdown({
     };
   }, [isOpen, onClose]);
 
+  // Dropdown content for portal
+  const dropdownContent = (
+    <div
+      ref={dropdownRef}
+      className="fixed z-[60] bg-white border border-slate-200 rounded-xl shadow-lg overflow-y-auto animate-scale-in"
+      style={{
+        top: position.top,
+        bottom: position.bottom,
+        left: position.left,
+        width: position.width,
+        maxHeight: position.maxHeight,
+      }}
+      dir="rtl"
+    >
+      <div className="p-1">
+        {categories.map((cat) => {
+          const isSelected = cat.id === value;
+          return (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => {
+                onChange(cat.id);
+                onClose();
+              }}
+              className={cn(
+                'w-full px-3 py-2 rounded-lg text-sm font-medium text-right',
+                'flex items-center justify-between gap-2 transition-colors',
+                isSelected
+                  ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300'
+                  : 'text-slate-700 hover:bg-slate-100 border-2 border-transparent'
+              )}
+            >
+              <span>{cat.nameHe}</span>
+              {isSelected && <Check className="w-4 h-4 text-indigo-600" />}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   return (
-    <div ref={dropdownRef} className="relative">
+    <div className="relative">
       {/* Trigger Button */}
       <button
+        ref={triggerRef}
         type="button"
         onClick={onToggle}
         className={cn(
           'w-full px-3 py-2.5 border-2 rounded-xl text-sm font-medium transition-all',
           'flex items-center justify-between gap-2',
           'focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 focus:outline-none',
-          value 
-            ? 'border-indigo-300 bg-indigo-50 text-indigo-700 hover:border-indigo-400' 
+          value
+            ? 'border-indigo-300 bg-indigo-50 text-indigo-700 hover:border-indigo-400'
             : 'border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-400'
         )}
       >
@@ -199,39 +303,12 @@ function CategoryDropdown({
         )} />
       </button>
 
-      {/* Dropdown Panel */}
-      {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-64 overflow-y-auto">
-          <div className="p-1">
-            {categories.map((cat) => {
-              const isSelected = cat.id === value;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => {
-                    onChange(cat.id);
-                    onClose();
-                  }}
-                  className={cn(
-                    'w-full px-3 py-2 rounded-lg text-sm font-medium text-right',
-                    'flex items-center justify-between gap-2 transition-colors',
-                    isSelected 
-                      ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300' 
-                      : 'text-slate-700 hover:bg-slate-100 border-2 border-transparent'
-                  )}
-                >
-                  <span>{cat.nameHe}</span>
-                  {isSelected && <Check className="w-4 h-4 text-indigo-600" />}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {/* Dropdown Panel via Portal */}
+      {mounted && isOpen && createPortal(dropdownContent, document.body)}
     </div>
   );
 }
+
 
 export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalProps) {
   const [file, setFile] = useState<File | null>(null);
@@ -248,7 +325,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
 
   // Manual category selections for review items
   const [reviewCategories, setReviewCategories] = useState<Record<number, string>>({});
-  
+
   // Track which dropdown is open (by rowNum)
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
 
@@ -501,44 +578,44 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
               <div
                 className={cn(
                   'border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer',
-              isDragging
+                  isDragging
                     ? 'border-indigo-400 bg-indigo-50'
-                : 'border-slate-200 hover:border-slate-300'
+                    : 'border-slate-200 hover:border-slate-300'
                 )}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept=".xlsx,.xls,.csv"
-              className="hidden"
-            />
-            <Upload className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-            <p className="text-sm text-slate-600 mb-1">
-              גרור קובץ לכאן או לחץ לבחירה
-            </p>
-            <p className="text-xs text-slate-400">
-              Excel (.xlsx, .xls) או CSV
-            </p>
-          </div>
-
-          {file && (
-            <div className="mt-4 p-3 bg-slate-50 rounded-xl flex items-center gap-3">
-                  <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-900 truncate">
-                  {file.name}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept=".xlsx,.xls,.csv"
+                  className="hidden"
+                />
+                <Upload className="w-10 h-10 text-slate-400 mx-auto mb-3" />
+                <p className="text-sm text-slate-600 mb-1">
+                  גרור קובץ לכאן או לחץ לבחירה
                 </p>
-                <p className="text-xs text-slate-500">
-                  {(file.size / 1024).toFixed(1)} KB
+                <p className="text-xs text-slate-400">
+                  Excel (.xlsx, .xls) או CSV
                 </p>
               </div>
-            </div>
-          )}
+
+              {file && (
+                <div className="mt-4 p-3 bg-slate-50 rounded-xl flex items-center gap-3">
+                  <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-900 truncate">
+                      {file.name}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {(file.size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="mt-4 p-3 bg-blue-50 rounded-xl">
                 <p className="text-sm text-blue-800 font-medium mb-1">ייבוא מכל בנק או חברת אשראי</p>
@@ -602,8 +679,8 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                 </div>
               )}
 
-              {/* Review table */}
-              <div className="border border-slate-200 rounded-xl overflow-hidden">
+              {/* Review table - Desktop */}
+              <div className="hidden md:block border border-slate-200 rounded-xl overflow-hidden">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50">
                     <tr>
@@ -645,6 +722,42 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                   </tbody>
                 </table>
               </div>
+
+              {/* Review cards - Mobile */}
+              <div className="block md:hidden space-y-3">
+                {needsReview.map((t) => (
+                  <div key={t.rowNum} className="border border-slate-200 rounded-xl p-4 bg-white space-y-3">
+                    {/* Merchant and Amount */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-slate-900 text-base truncate">{t.merchantName}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {new Date(t.date).toLocaleDateString('he-IL')}
+                        </p>
+                      </div>
+                      <span className={cn(
+                        'font-bold text-lg flex-shrink-0',
+                        t.type === 'income' ? 'text-green-600' : 'text-red-600'
+                      )}>
+                        {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                      </span>
+                    </div>
+
+                    {/* Category Selector */}
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1.5">בחר קטגוריה</label>
+                      <CategoryDropdown
+                        value={reviewCategories[t.rowNum] || ''}
+                        onChange={(value) => handleCategoryChange(t.rowNum, value)}
+                        categories={getCategoriesForType(t.type)}
+                        isOpen={openDropdown === t.rowNum}
+                        onToggle={() => setOpenDropdown(openDropdown === t.rowNum ? null : t.rowNum)}
+                        onClose={() => setOpenDropdown(null)}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -666,7 +779,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                 <div className="mt-4 flex flex-wrap gap-2 justify-center">
                   {stats.cached > 0 && (
                     <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
-                      📚 {stats.cached} מהמטמון
+                      📚 {stats.cached} שמורים
                     </span>
                   )}
                   {stats.aiClassified > 0 && (
@@ -711,7 +824,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                   ועוד {errors.length - 5} שורות...
                 </p>
               )}
-          </div>
+            </div>
           )}
         </div>
 
@@ -732,11 +845,11 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
           )}
 
           {phase === 'review' && (
-          <button
+            <button
               onClick={handleCompleteReview}
               disabled={!needsReview.every(t => reviewCategories[t.rowNum])}
-            className="btn-primary flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+              className="btn-primary flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <Brain className="w-4 h-4" />
               שמור ולמד
             </button>
@@ -748,7 +861,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
               className="btn-primary flex-1 justify-center"
             >
               נסה שוב
-          </button>
+            </button>
           )}
         </div>
       </div>

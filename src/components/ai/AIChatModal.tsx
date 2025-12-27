@@ -11,19 +11,19 @@ import { getTopic, getDefaultTopic, AITopic } from '@/lib/ai/topics';
  */
 function renderMarkdown(text: string): React.ReactNode {
   if (!text) return null;
-  
+
   const lines = text.split('\n');
   const elements: React.ReactNode[] = [];
-  
+
   lines.forEach((line, lineIndex) => {
     const trimmedLine = line.trim();
-    
+
     // Empty line = paragraph break
     if (trimmedLine === '') {
       elements.push(<br key={`br-${lineIndex}`} />);
       return;
     }
-    
+
     // Headers (support ### **text** pattern too)
     const h3Match = trimmedLine.match(/^###\s*\*?\*?(.+?)\*?\*?\s*$/);
     if (trimmedLine.startsWith('###')) {
@@ -35,7 +35,7 @@ function renderMarkdown(text: string): React.ReactNode {
       );
       return;
     }
-    
+
     const h2Match = trimmedLine.match(/^##\s+/);
     if (h2Match) {
       const content = trimmedLine.replace(/^##\s*/, '');
@@ -46,7 +46,7 @@ function renderMarkdown(text: string): React.ReactNode {
       );
       return;
     }
-    
+
     const h1Match = trimmedLine.match(/^#\s+/);
     if (h1Match) {
       const content = trimmedLine.replace(/^#\s*/, '');
@@ -57,7 +57,7 @@ function renderMarkdown(text: string): React.ReactNode {
       );
       return;
     }
-    
+
     // Bullet lists (support * **text**: description pattern)
     if (trimmedLine.match(/^[\-•]\s/) || (trimmedLine.startsWith('* ') && !trimmedLine.startsWith('**'))) {
       const content = trimmedLine.replace(/^[\-•\*]\s*/, '');
@@ -69,7 +69,7 @@ function renderMarkdown(text: string): React.ReactNode {
       );
       return;
     }
-    
+
     // Numbered lists
     const numberedMatch = trimmedLine.match(/^(\d+)[.\)]\s+(.+)$/);
     if (numberedMatch) {
@@ -81,7 +81,7 @@ function renderMarkdown(text: string): React.ReactNode {
       );
       return;
     }
-    
+
     // Regular paragraph
     elements.push(
       <p key={lineIndex} className="mb-1">
@@ -89,7 +89,7 @@ function renderMarkdown(text: string): React.ReactNode {
       </p>
     );
   });
-  
+
   return <>{elements}</>;
 }
 
@@ -98,29 +98,29 @@ function renderMarkdown(text: string): React.ReactNode {
  */
 function renderInlineMarkdown(text: string): React.ReactNode {
   if (!text) return null;
-  
+
   // Simple approach: split by ** and * patterns
   const parts: React.ReactNode[] = [];
   let remaining = text;
   let keyIndex = 0;
-  
+
   while (remaining.length > 0) {
     // Bold: **text**
     const boldMatch = remaining.match(/\*\*([^*]+)\*\*/);
-    
+
     if (boldMatch && boldMatch.index !== undefined) {
       // Add text before match
       if (boldMatch.index > 0) {
         parts.push(<span key={keyIndex++}>{remaining.slice(0, boldMatch.index)}</span>);
       }
-      
+
       // Add bold text
       parts.push(
         <strong key={keyIndex++} className="font-semibold text-slate-900">
           {boldMatch[1]}
         </strong>
       );
-      
+
       remaining = remaining.slice(boldMatch.index + boldMatch[0].length);
     } else {
       // No more matches, add remaining text
@@ -130,7 +130,7 @@ function renderInlineMarkdown(text: string): React.ReactNode {
       break;
     }
   }
-  
+
   return parts.length === 0 ? text : <>{parts}</>;
 }
 
@@ -164,7 +164,7 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
   const inputRef = useRef<HTMLInputElement>(null);
   const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const messagesRef = useRef<Message[]>([]);
-  
+
   // Keep ref in sync with state
   messagesRef.current = messages;
 
@@ -205,22 +205,22 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
   const startTypingAnimation = useCallback((fullText: string, messageId: string) => {
     setIsTypingAnimation(true);
     setDisplayedText('');
-    
+
     let charIndex = 0;
     const charsPerTick = 1; // Type 1 character at a time for natural feel
-    
+
     typingIntervalRef.current = setInterval(() => {
       charIndex += charsPerTick;
       const newText = fullText.slice(0, charIndex);
       setDisplayedText(newText);
-      
+
       if (charIndex >= fullText.length) {
         if (typingIntervalRef.current) {
           clearInterval(typingIntervalRef.current);
         }
         setIsTypingAnimation(false);
         // Update the message with full content
-        setMessages(prev => prev.map(m => 
+        setMessages(prev => prev.map(m =>
           m.id === messageId ? { ...m, content: fullText, isTyping: false } : m
         ));
       }
@@ -267,7 +267,7 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
 
       const data = await response.json();
       const assistantMessageId = (Date.now() + 1).toString();
-      
+
       // Add placeholder message for typing animation
       const assistantMessage: Message = {
         id: assistantMessageId,
@@ -278,7 +278,7 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
 
       setMessages(prev => [...prev, assistantMessage]);
       setIsLoading(false);
-      
+
       // Start typing animation
       startTypingAnimation(data.response, assistantMessageId);
     } catch (error) {
@@ -311,9 +311,9 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
@@ -333,7 +333,7 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
               </p>
             </div>
           </div>
-          <button 
+          <button
             onClick={onClose}
             className="p-2 rounded-lg hover:bg-white/20 transition-colors"
           >
@@ -350,7 +350,7 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
               <p className="text-xs text-slate-400 mb-4 max-w-xs">
                 אני כאן כדי להסביר מושגים פיננסיים בצורה פשוטה וברורה
               </p>
-              
+
               {/* Suggested Questions */}
               <div className="flex flex-wrap justify-center gap-2 max-w-md">
                 {topic.suggestedQuestions.slice(0, 6).map((question, idx) => (
@@ -376,11 +376,11 @@ export default function AIChatModal({ isOpen, onClose, context }: AIChatModalPro
             >
               <div className={cn(
                 'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
-                message.role === 'user' 
-                  ? 'bg-blue-100' 
+                message.role === 'user'
+                  ? 'bg-blue-100'
                   : 'bg-indigo-100'
               )}>
-                {message.role === 'user' 
+                {message.role === 'user'
                   ? <User className="w-4 h-4 text-blue-600" />
                   : <Bot className="w-4 h-4 text-indigo-600" />
                 }
