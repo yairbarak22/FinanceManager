@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/authHelpers';
 import { groq } from '@ai-sdk/groq';
 import { generateText } from 'ai';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 // ============================================
@@ -488,12 +488,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Read Excel file as array of arrays
-    const buffer = await file.arrayBuffer();
-    const workbook = XLSX.read(buffer, { type: 'array' });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as unknown[][];
+    // Read Excel file as array of arrays using exceljs (secure alternative to xlsx)
+    const arrayBuffer = await file.arrayBuffer();
+    const workbook = new ExcelJS.Workbook();
+    // Type assertion needed due to TypeScript Buffer type mismatch
+    await workbook.xlsx.load(Buffer.from(arrayBuffer) as any);
+
+    // Get first worksheet
+    const worksheet = workbook.worksheets[0];
+    if (!worksheet) {
+      return NextResponse.json(
+        { error: 'הקובץ לא מכיל גליונות עבודה' },
+        { status: 400 }
+      );
+    }
+
+    // Convert worksheet to array of arrays (similar to xlsx output)
+    const rawData: unknown[][] = [];
+    worksheet.eachRow((row, rowNumber) => {
+      const rowData: unknown[] = [];
+      // Note: ExcelJS rows are 1-indexed, values array includes index 0 as undefined
+      for (let colNumber = 1; colNumber <= row.cellCount; colNumber++) {
+        const cell = row.getCell(colNumber);
+        // Get cell value, handling dates and formulas
+        let value: unknown = cell.value;
+
+        // Handle date cells
+        if (cell.type === ExcelJS.ValueType.Date && cell.value instanceof Date) {
+          value = cell.value;
+        }
+        // Handle formula cells - get the result
+        else if (cell.type === ExcelJS.ValueType.Formula && typeof cell.value === 'object' && cell.value !== null && 'result' in cell.value) {
+          value = (cell.value as { result: unknown }).result;
+        }
+        // Handle rich text
+        else if (cell.type === ExcelJS.ValueType.RichText && typeof cell.value === 'object' && cell.value !== null && 'richText' in cell.value) {
+          value = (cell.value as { richText: Array<{ text: string }> }).richText.map(t => t.text).join('');
+        }
+
+        rowData.push(value);
+      }
+      rawData.push(rowData);
+    });
     
     if (rawData.length === 0) {
       return NextResponse.json(
