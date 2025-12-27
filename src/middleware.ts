@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { config as appConfig } from './lib/config';
+import { logAuditEvent, AuditAction, getRequestInfo } from './lib/auditLog';
 
 function isAdmin(email: string | null | undefined): boolean {
   if (!email) return false;
@@ -38,6 +39,20 @@ export async function middleware(request: NextRequest) {
   if (!isSafeMethod && isApiRoute && !isAuthRoute) {
     const csrfHeader = request.headers.get('X-CSRF-Protection');
     if (csrfHeader !== '1') {
+      // Audit log: CSRF violation
+      const { ipAddress, userAgent } = getRequestInfo(request.headers);
+      logAuditEvent({
+        userId: token?.sub,
+        action: AuditAction.CSRF_VIOLATION,
+        metadata: {
+          path: pathname,
+          method: request.method,
+          header: csrfHeader || 'missing',
+        },
+        ipAddress,
+        userAgent,
+      });
+
       return new NextResponse(
         JSON.stringify({
           error: 'CSRF protection required',
@@ -54,6 +69,20 @@ export async function middleware(request: NextRequest) {
   // SECURITY: Block non-admin users from /admin/* routes
   if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
     if (!isAdmin(token.email as string)) {
+      // Audit log: Unauthorized admin access attempt
+      const { ipAddress, userAgent } = getRequestInfo(request.headers);
+      logAuditEvent({
+        userId: token?.sub,
+        action: AuditAction.UNAUTHORIZED_ACCESS,
+        metadata: {
+          path: pathname,
+          email: token?.email,
+          attemptedResource: 'admin',
+        },
+        ipAddress,
+        userAgent,
+      });
+
       // Return 403 Forbidden for non-admin users
       return new NextResponse(
         JSON.stringify({ error: 'Forbidden - Admin access required' }),

@@ -321,6 +321,7 @@ enum AuditAction {
   PASSWORD_CHANGE
   RATE_LIMITED
   UNAUTHORIZED_ACCESS
+  CSRF_VIOLATION
 }
 
 model AuditLog {

@@ -488,6 +488,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // File size validation (max 10MB)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        {
+          error: 'הקובץ גדול מדי. גודל מקסימלי: 10MB',
+          details: `גודל הקובץ: ${(file.size / (1024 * 1024)).toFixed(2)}MB`
+        },
+        { status: 413 } // 413 Payload Too Large
+      );
+    }
+
     // Read Excel file as array of arrays using exceljs (secure alternative to xlsx)
     const arrayBuffer = await file.arrayBuffer();
     const workbook = new ExcelJS.Workbook();

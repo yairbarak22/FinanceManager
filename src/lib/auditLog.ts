@@ -5,7 +5,6 @@
 
 import { prisma } from './prisma';
 import { AuditAction, Prisma } from '@prisma/client';
-import { createHash } from 'crypto';
 import { config } from './config';
 
 export { AuditAction };
@@ -22,17 +21,20 @@ export interface AuditLogParams {
 
 /**
  * Hash IP address for privacy (GDPR compliance)
- * Uses SHA-256 with encryption key as salt
+ * Uses Web Crypto API (works in both Node.js and Edge Runtime)
  * Returns first 16 characters of hash for storage efficiency
  */
-function hashIp(ip: string): string {
+async function hashIp(ip: string): Promise<string> {
   if (!ip || ip === 'unknown') return 'unknown';
 
-  const hash = createHash('sha256')
-    .update(ip + config.encryptionKey)
-    .digest('hex');
+  // Use Web Crypto API (available in Edge Runtime)
+  const encoder = new TextEncoder();
+  const data = encoder.encode(ip + config.encryptionKey);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-  return hash.substring(0, 16); // Shortened for storage
+  return hashHex.substring(0, 16); // Shortened for storage
 }
 
 /**
@@ -53,7 +55,7 @@ export async function logAuditEvent(params: AuditLogParams): Promise<void> {
         entityType: params.entityType ?? null,
         entityId: params.entityId ?? null,
         metadata: sanitizedMetadata as Prisma.InputJsonValue | undefined,
-        ipAddress: params.ipAddress ? hashIp(params.ipAddress) : null, // Hash IP for privacy
+        ipAddress: params.ipAddress ? await hashIp(params.ipAddress) : null, // Hash IP for privacy
         userAgent: params.userAgent?.substring(0, 500) ?? null, // Limit length
       },
     });

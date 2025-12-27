@@ -6,6 +6,7 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { config } from './config';
+import { logAuditEvent, AuditAction } from './auditLog';
 
 export interface RateLimitConfig {
   // Maximum number of requests allowed in the window
@@ -212,7 +213,7 @@ if (!isUpstashAvailable) {
  * Check if a request should be rate limited
  * Uses Upstash Redis if available, falls back to in-memory for development
  *
- * @param identifier - Unique identifier for the client (e.g., IP or userId)
+ * @param identifier - Unique identifier for the client (e.g., "api:userId" or "download:userId")
  * @param rateLimitConfig - Rate limit configuration
  * @returns RateLimitResult indicating if request is allowed
  */
@@ -220,13 +221,33 @@ export async function checkRateLimit(
   identifier: string,
   rateLimitConfig: RateLimitConfig
 ): Promise<RateLimitResult> {
+  let result: RateLimitResult;
+
   if (isUpstashAvailable && rateLimiters) {
     // Use Upstash Redis (production)
-    return await checkRateLimitUpstash(identifier, rateLimitConfig);
+    result = await checkRateLimitUpstash(identifier, rateLimitConfig);
   } else {
     // Fallback to in-memory (development only)
-    return checkRateLimitInMemory(identifier, rateLimitConfig);
+    result = checkRateLimitInMemory(identifier, rateLimitConfig);
   }
+
+  // Audit log when rate limit is exceeded
+  if (!result.success) {
+    // Extract userId from identifier (format: "type:userId")
+    const userId = identifier.includes(':') ? identifier.split(':')[1] : null;
+
+    logAuditEvent({
+      userId,
+      action: AuditAction.RATE_LIMITED,
+      metadata: {
+        identifier,
+        limit: result.limit,
+        resetTime: new Date(result.resetTime).toISOString(),
+      },
+    });
+  }
+
+  return result;
 }
 
 /**
