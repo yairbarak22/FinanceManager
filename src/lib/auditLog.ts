@@ -5,6 +5,8 @@
 
 import { prisma } from './prisma';
 import { AuditAction, Prisma } from '@prisma/client';
+import { createHash } from 'crypto';
+import { config } from './config';
 
 export { AuditAction };
 
@@ -16,6 +18,21 @@ export interface AuditLogParams {
   metadata?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
+}
+
+/**
+ * Hash IP address for privacy (GDPR compliance)
+ * Uses SHA-256 with encryption key as salt
+ * Returns first 16 characters of hash for storage efficiency
+ */
+function hashIp(ip: string): string {
+  if (!ip || ip === 'unknown') return 'unknown';
+
+  const hash = createHash('sha256')
+    .update(ip + config.encryptionKey)
+    .digest('hex');
+
+  return hash.substring(0, 16); // Shortened for storage
 }
 
 /**
@@ -36,7 +53,7 @@ export async function logAuditEvent(params: AuditLogParams): Promise<void> {
         entityType: params.entityType ?? null,
         entityId: params.entityId ?? null,
         metadata: sanitizedMetadata as Prisma.InputJsonValue | undefined,
-        ipAddress: params.ipAddress ?? null,
+        ipAddress: params.ipAddress ? hashIp(params.ipAddress) : null, // Hash IP for privacy
         userAgent: params.userAgent?.substring(0, 500) ?? null, // Limit length
       },
     });
