@@ -469,7 +469,7 @@ export async function POST(request: NextRequest) {
     if (error) return error;
 
     // Rate limiting for import endpoint (heavy operation)
-    const rateLimitResult = checkRateLimit(`import:${userId}`, RATE_LIMITS.import);
+    const rateLimitResult = await checkRateLimit(`import:${userId}`, RATE_LIMITS.import);
     
     if (!rateLimitResult.success) {
       return NextResponse.json(

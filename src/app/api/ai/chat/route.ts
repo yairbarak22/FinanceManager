@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     }
 
     // Rate limiting for AI endpoint (more restrictive)
-    const rateLimitResult = checkRateLimit(`ai:${session.user.id}`, RATE_LIMITS.ai);
+    const rateLimitResult = await checkRateLimit(`ai:${session.user.id}`, RATE_LIMITS.ai);
     
     if (!rateLimitResult.success) {
       return NextResponse.json(

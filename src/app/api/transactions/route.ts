@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     if (error) return error;
 
     // Rate limiting
-    const rateLimitResult = checkRateLimit(`api:${userId}`, RATE_LIMITS.api);
+    const rateLimitResult = await checkRateLimit(`api:${userId}`, RATE_LIMITS.api);
     if (!rateLimitResult.success) {
       return NextResponse.json({ error: 'יותר מדי בקשות. אנא המתן ונסה שוב.' }, { status: 429 });
     }
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     if (error) return error;
 
     // Rate limiting
-    const rateLimitResult = checkRateLimit(`api:${userId}`, RATE_LIMITS.api);
+    const rateLimitResult = await checkRateLimit(`api:${userId}`, RATE_LIMITS.api);
     if (!rateLimitResult.success) {
       return NextResponse.json({ error: 'יותר מדי בקשות. אנא המתן ונסה שוב.' }, { status: 429 });
     }

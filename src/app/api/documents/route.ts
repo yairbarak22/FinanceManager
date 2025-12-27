@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     if (error) return error;
 
     // Rate limiting for file uploads (strict)
-    const rateLimitResult = checkRateLimit(`upload:${userId}`, RATE_LIMITS.upload);
+    const rateLimitResult = await checkRateLimit(`upload:${userId}`, RATE_LIMITS.upload);
     if (!rateLimitResult.success) {
       return NextResponse.json(
         { error: 'יותר מדי העלאות. אנא המתן ונסה שוב.' },

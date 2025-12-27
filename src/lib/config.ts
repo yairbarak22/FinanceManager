@@ -27,6 +27,10 @@ interface Config {
   groqApiKey?: string;
   googleAiApiKey?: string;
 
+  // Rate Limiting (Upstash Redis)
+  upstashRedisRestUrl?: string;
+  upstashRedisRestToken?: string;
+
   // Environment
   nodeEnv: 'development' | 'production' | 'test';
 }
@@ -92,6 +96,10 @@ function loadConfig(): Config {
     gaMeasurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
     groqApiKey: process.env.GROQ_API_KEY,
     googleAiApiKey: process.env.GOOGLE_AI_API_KEY,
+
+    // Rate Limiting (Upstash Redis)
+    upstashRedisRestUrl: process.env.UPSTASH_REDIS_REST_URL,
+    upstashRedisRestToken: process.env.UPSTASH_REDIS_REST_TOKEN,
 
     // Environment
     nodeEnv: (process.env.NODE_ENV as Config['nodeEnv']) || 'development',
