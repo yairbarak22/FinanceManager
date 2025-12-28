@@ -143,8 +143,8 @@ export default function TransactionModal({
                 <CategorySelect
                   value={category}
                   onChange={setCategory}
-                  defaultCategories={currentCategories.default}
-                  customCategories={currentCategories.custom}
+                  defaultCategories={type === 'income' ? incomeCategories.default : expenseCategories.default}
+                  customCategories={type === 'income' ? incomeCategories.custom : expenseCategories.custom}
                   placeholder="בחר קטגוריה"
                   onAddNew={() => setShowAddCategory(true)}
                   required

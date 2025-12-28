@@ -24,9 +24,20 @@ interface RecentTransactionsProps {
   onUpdateCategory?: (transactionId: string, newCategory: string, merchantName: string, saveBehavior: SaveBehavior) => void;
   onNewTransaction: () => void;
   onImport: () => void;
+  customExpenseCategories?: CategoryInfo[];
+  customIncomeCategories?: CategoryInfo[];
 }
 
-export default function RecentTransactions({ transactions, onDelete, onDeleteMultiple, onUpdateCategory, onNewTransaction, onImport }: RecentTransactionsProps) {
+export default function RecentTransactions({
+  transactions,
+  onDelete,
+  onDeleteMultiple,
+  onUpdateCategory,
+  onNewTransaction,
+  onImport,
+  customExpenseCategories = [],
+  customIncomeCategories = []
+}: RecentTransactionsProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; description: string }>({
     isOpen: false,
     id: '',
@@ -82,7 +93,11 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
   };
 
   const getCategoriesForType = (type: string): CategoryInfo[] => {
-    return type === 'income' ? incomeCategories : expenseCategories;
+    if (type === 'income') {
+      return [...incomeCategories, ...customIncomeCategories];
+    } else {
+      return [...expenseCategories, ...customExpenseCategories];
+    }
   };
 
   const toggleSelectMode = () => {
@@ -185,9 +200,13 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
       {/* Transactions List */}
       <div className="space-y-2">
         {transactions.map((transaction) => {
+          const customCategories = transaction.type === 'income'
+            ? customIncomeCategories
+            : customExpenseCategories;
           const categoryInfo = getCategoryInfo(
             transaction.category,
-            transaction.type as 'income' | 'expense'
+            transaction.type as 'income' | 'expense',
+            customCategories
           );
           const Icon = categoryInfo?.icon;
           const isIncome = transaction.type === 'income';
@@ -386,7 +405,11 @@ export default function RecentTransactions({ transactions, onDelete, onDeleteMul
                       )}
                     >
                       <span>
-                        {getCategoryInfo(selectedCategory, editingTransaction.type as 'income' | 'expense')?.nameHe || 'בחר קטגוריה...'}
+                        {getCategoryInfo(
+                          selectedCategory,
+                          editingTransaction.type as 'income' | 'expense',
+                          editingTransaction.type === 'income' ? customIncomeCategories : customExpenseCategories
+                        )?.nameHe || 'בחר קטגוריה...'}
                       </span>
                       <ChevronDown className={cn(
                         'w-4 h-4 flex-shrink-0 transition-transform',

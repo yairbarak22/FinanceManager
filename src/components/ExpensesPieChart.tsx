@@ -4,13 +4,14 @@ import { PieChart as PieChartIcon } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
 import { Transaction } from '@/lib/types';
-import { getCategoryInfo } from '@/lib/categories';
+import { getCategoryInfo, CategoryInfo } from '@/lib/categories';
 
 interface ExpensesPieChartProps {
   transactions: Transaction[];
+  customExpenseCategories?: CategoryInfo[];
 }
 
-export default function ExpensesPieChart({ transactions }: ExpensesPieChartProps) {
+export default function ExpensesPieChart({ transactions, customExpenseCategories = [] }: ExpensesPieChartProps) {
   // Calculate expenses by category
   const expensesByCategory = transactions
     .filter((t) => t.type === 'expense')
@@ -23,7 +24,7 @@ export default function ExpensesPieChart({ transactions }: ExpensesPieChartProps
 
   const data = Object.entries(expensesByCategory)
     .map(([category, amount]) => {
-      const categoryInfo = getCategoryInfo(category, 'expense');
+      const categoryInfo = getCategoryInfo(category, 'expense', customExpenseCategories);
       return {
         name: categoryInfo?.nameHe || category,
         value: amount,

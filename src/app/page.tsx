@@ -726,7 +726,7 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Expenses Pie Chart - 1/3 */}
           <Card padding="sm" className="max-h-[500px] overflow-y-auto lg:col-span-1">
-            <ExpensesPieChart transactions={filteredTransactions} />
+            <ExpensesPieChart transactions={filteredTransactions} customExpenseCategories={expenseCats.custom} />
           </Card>
 
           {/* Recent Transactions - 2/3 */}
@@ -738,6 +738,8 @@ export default function Home() {
               onUpdateCategory={handleUpdateTransactionCategory}
               onNewTransaction={() => setIsTransactionModalOpen(true)}
               onImport={() => setIsImportModalOpen(true)}
+              customExpenseCategories={expenseCats.custom}
+              customIncomeCategories={incomeCats.custom}
             />
           </Card>
         </div>
