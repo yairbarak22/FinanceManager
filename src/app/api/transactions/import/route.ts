@@ -495,9 +495,12 @@ async function classifyMerchantsWithAI(
 // ============================================
 
 export async function POST(request: NextRequest) {
+  let userId: string | undefined;
+
   try {
-    const { userId, error } = await requireAuth();
-    if (error) return error;
+    const authResult = await requireAuth();
+    if (authResult.error) return authResult.error;
+    userId = authResult.userId;
 
     // Rate limiting for import endpoint (heavy operation)
     const rateLimitResult = await checkRateLimit(`import:${userId}`, RATE_LIMITS.import);
