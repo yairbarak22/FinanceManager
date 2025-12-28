@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Plus, Pencil, Trash2, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
 import { RecurringTransaction } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
-import { getCategoryInfo } from '@/lib/categories';
+import { getCategoryInfo, CategoryInfo } from '@/lib/categories';
 import ConfirmDialog from './modals/ConfirmDialog';
 import Card from './ui/Card';
 interface RecurringTransactionsProps {
@@ -13,6 +13,8 @@ interface RecurringTransactionsProps {
   onEdit: (transaction: RecurringTransaction) => void;
   onDelete: (id: string) => void;
   onToggle: (id: string, isActive: boolean) => void;
+  customExpenseCategories?: CategoryInfo[];
+  customIncomeCategories?: CategoryInfo[];
 }
 
 export default function RecurringTransactions({
@@ -21,6 +23,8 @@ export default function RecurringTransactions({
   onEdit,
   onDelete,
   onToggle,
+  customExpenseCategories = [],
+  customIncomeCategories = [],
 }: RecurringTransactionsProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; name: string }>({
     isOpen: false,
@@ -67,9 +71,13 @@ export default function RecurringTransactions({
       {/* Transactions List */}
       <div className="space-y-2">
         {transactions.map((transaction) => {
+          const customCategories = transaction.type === 'income'
+            ? customIncomeCategories
+            : customExpenseCategories;
           const categoryInfo = getCategoryInfo(
             transaction.category,
-            transaction.type as 'income' | 'expense'
+            transaction.type as 'income' | 'expense',
+            customCategories
           );
 
           return (

@@ -694,6 +694,8 @@ export default function Home() {
               }}
               onDelete={handleDeleteRecurring}
               onToggle={handleToggleRecurring}
+              customExpenseCategories={expenseCats.custom}
+              customIncomeCategories={incomeCats.custom}
             />
           </div>
         </div>
