@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { CategoryInfo, customCategoryToInfo } from '@/lib/categories';
+import { apiFetch } from '@/lib/utils';
 
 // API response type (serializable)
 interface CustomCategoryResponse {
@@ -32,7 +33,7 @@ export function useCategories() {
 
   const fetchCategories = useCallback(async () => {
     try {
-      const response = await fetch('/api/categories');
+      const response = await apiFetch('/api/categories');
       if (!response.ok) throw new Error('Failed to fetch categories');
       const data = await response.json();
       setCustomCategories(data);
@@ -73,7 +74,7 @@ export function useCategories() {
       name: string,
       type: 'expense' | 'income' | 'asset' | 'liability'
     ): Promise<CategoryInfo> => {
-      const response = await fetch('/api/categories', {
+      const response = await apiFetch('/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, type }),
@@ -99,7 +100,7 @@ export function useCategories() {
 
   const deleteCustomCategory = useCallback(
     async (id: string, type: 'expense' | 'income' | 'asset' | 'liability') => {
-      const response = await fetch(`/api/categories/${id}`, {
+      const response = await apiFetch(`/api/categories/${id}`, {
         method: 'DELETE',
       });
 
