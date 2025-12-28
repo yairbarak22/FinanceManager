@@ -1,16 +1,35 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from './auth';
-import { config } from './config';
+
+/**
+ * Get admin emails from environment (safe for client-side)
+ * Returns empty array if not available (e.g., client-side)
+ */
+function getAdminEmails(): string[] {
+  // In client-side context, process.env might not have ADMIN_EMAILS
+  // Return empty array to fail safely (user won't be admin)
+  if (typeof window !== 'undefined') {
+    // Client-side: return empty array (server will validate anyway)
+    return [];
+  }
+
+  // Server-side: parse from environment
+  return (process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map(email => email.trim().toLowerCase())
+    .filter(Boolean);
+}
 
 /**
  * Check if an email is an admin
  * Uses strict lowercase comparison
- * Admin emails are configured in centralized config module
+ * Admin emails are configured via ADMIN_EMAILS environment variable
  */
 export function isAdmin(email: string | null | undefined): boolean {
   if (!email) return false;
-  return config.adminEmails.includes(email.toLowerCase());
+  const adminEmails = getAdminEmails();
+  return adminEmails.includes(email.toLowerCase());
 }
 
 /**
