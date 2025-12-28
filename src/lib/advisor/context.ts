@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { FinancialContext, FinancialMetrics, UserWithProfile } from './types';
 import { Asset, Liability, Transaction, RecurringTransaction } from '@/lib/types';
 import { LIQUID_ASSET_TYPES, INTEREST_THRESHOLDS } from './constants';
+import { decrypt } from '@/lib/encryption';
 
 /**
  * Get user financial context for advisor engine
@@ -58,7 +59,7 @@ export async function getUserFinancialContext(userId: string): Promise<Financial
     throw new Error('User not found');
   }
 
-  // Transform user to our type
+  // Transform user to our type (decrypt encrypted fields)
   const user: UserWithProfile = {
     id: userWithProfile.id,
     name: userWithProfile.name,
@@ -66,14 +67,15 @@ export async function getUserFinancialContext(userId: string): Promise<Financial
     profile: userWithProfile.profile ? {
       id: userWithProfile.profile.id,
       userId: userWithProfile.profile.userId,
-      militaryStatus: userWithProfile.profile.militaryStatus as 'none' | 'reserve' | 'career' | undefined,
-      maritalStatus: userWithProfile.profile.maritalStatus as 'single' | 'married' | 'divorced' | 'widowed' | undefined,
-      employmentType: userWithProfile.profile.employmentType as 'employee' | 'self_employed' | 'both' | 'student' | undefined,
+      // Decrypt encrypted profile fields
+      militaryStatus: decrypt(userWithProfile.profile.militaryStatus || '') as 'none' | 'reserve' | 'career' | undefined || undefined,
+      maritalStatus: decrypt(userWithProfile.profile.maritalStatus || '') as 'single' | 'married' | 'divorced' | 'widowed' | undefined || undefined,
+      employmentType: decrypt(userWithProfile.profile.employmentType || '') as 'employee' | 'self_employed' | 'both' | 'student' | undefined || undefined,
       hasChildren: userWithProfile.profile.hasChildren,
       childrenCount: userWithProfile.profile.childrenCount,
-      ageRange: userWithProfile.profile.ageRange as '18-25' | '26-35' | '36-45' | '46-55' | '56-65' | '65+' | undefined,
+      ageRange: decrypt(userWithProfile.profile.ageRange || '') as '18-25' | '26-35' | '36-45' | '46-55' | '56-65' | '65+' | undefined || undefined,
       monthlyIncome: userWithProfile.profile.monthlyIncome ?? undefined,
-      riskTolerance: userWithProfile.profile.riskTolerance as 'low' | 'medium' | 'high' | undefined,
+      riskTolerance: decrypt(userWithProfile.profile.riskTolerance || '') as 'low' | 'medium' | 'high' | undefined || undefined,
       isStudent: userWithProfile.profile.isStudent,
       graduationDate: userWithProfile.profile.graduationDate?.toISOString(),
       hasIndependentAccount: userWithProfile.profile.hasIndependentAccount,

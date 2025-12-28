@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, TrendingUp, BarChart3 } from 'lucide-react';
 import { Holding, InvestmentCalculation } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import ConfirmDialog from '@/components/modals/ConfirmDialog';
+import Card from '@/components/ui/Card';
 
 interface HoldingsListProps {
   holdings: Holding[];
@@ -37,24 +38,31 @@ export default function HoldingsList({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+    <Card padding="md">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
             <BarChart3 className="w-5 h-5 text-indigo-600" />
           </div>
-          <div>
-            <h3 className="font-semibold text-slate-900">האחזקות שלי</h3>
-            <p className="text-sm text-slate-500">
-              {holdings.length} נכסים • {formatCurrency(totalValue)}
-            </p>
-          </div>
+          <h3 className="font-semibold text-slate-900">האחזקות שלי</h3>
         </div>
-        <button onClick={onAdd} className="btn-primary">
+        <button onClick={onAdd} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
           <Plus className="w-4 h-4" />
-          הוסף נכס
+          הוסף
         </button>
+      </div>
+
+      {/* Summary */}
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <div className="bg-indigo-50 rounded-xl p-3 border border-indigo-100">
+          <p className="text-xs text-slate-500">סה"כ נכסים</p>
+          <p className="text-base font-bold text-indigo-600">{holdings.length}</p>
+        </div>
+        <div className="bg-slate-50 rounded-xl p-3 border border-slate-100">
+          <p className="text-xs text-slate-500">שווי תיק</p>
+          <p className="text-base font-bold text-slate-900">{formatCurrency(totalValue)}</p>
+        </div>
       </div>
 
       {/* Allocation Warning */}
@@ -67,10 +75,10 @@ export default function HoldingsList({
       )}
 
       {/* Holdings List */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         {holdings.map((holding) => {
-          const currentAllocation = totalValue > 0 
-            ? (holding.currentValue / totalValue) * 100 
+          const currentAllocation = totalValue > 0
+            ? (holding.currentValue / totalValue) * 100
             : 0;
           const calc = getCalculation(holding.id);
           const allocationDiff = currentAllocation - holding.targetAllocation;
@@ -78,79 +86,59 @@ export default function HoldingsList({
           return (
             <div
               key={holding.id}
-              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 sm:p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
+              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-lg bg-slate-50 transition-all"
             >
               {/* Top row: Icon + Details + Value (mobile) */}
-              <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
                 {/* Icon */}
-                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
+                <div className="w-9 h-9 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-4 h-4 text-slate-600" />
                 </div>
 
                 {/* Details */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-slate-900 text-sm sm:text-base truncate">{holding.name}</p>
-                    {holding.symbol && (
-                      <span className="hidden sm:inline text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded">
-                        {holding.symbol}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs sm:text-sm text-slate-500">
+                  <p className="font-medium text-slate-900 text-sm truncate">{holding.name}</p>
+                  <p className="text-xs text-slate-500 truncate">
                     {holding.type === 'etf' ? 'קרן סל' : 'קרן מחקה'}
-                    {holding.symbol && <span className="sm:hidden"> • {holding.symbol}</span>}
+                    {holding.symbol && ` • ${holding.symbol}`}
                   </p>
                 </div>
 
                 {/* Value - mobile only */}
-                <div className="text-left flex-shrink-0 sm:hidden">
-                  <p className="font-bold text-slate-900 text-sm">{formatCurrency(holding.currentValue)}</p>
-                  <p className="text-xs text-slate-500">
-                    {currentAllocation.toFixed(1)}%
-                  </p>
-                </div>
+                <p className="text-sm font-bold text-slate-900 flex-shrink-0 sm:hidden">
+                  {formatCurrency(holding.currentValue)}
+                </p>
               </div>
 
               {/* Bottom row (mobile) / Continue (desktop): Value + Allocation + Actions */}
-              <div className="flex items-center gap-2 sm:gap-4 justify-between sm:justify-end mr-12 sm:mr-0">
+              <div className="flex items-center gap-2 justify-end mr-12 sm:mr-0">
                 {/* Value - desktop only */}
-                <div className="hidden sm:block text-left flex-shrink-0">
-                  <p className="font-bold text-slate-900">{formatCurrency(holding.currentValue)}</p>
-                  <p className="text-xs text-slate-500">
-                    {currentAllocation.toFixed(1)}% נוכחי
-                  </p>
-                </div>
+                <p className="hidden sm:block text-sm font-bold text-slate-900 flex-shrink-0">
+                  {formatCurrency(holding.currentValue)}
+                </p>
 
-                {/* Allocation */}
-                <div className="text-right sm:text-left flex-shrink-0 sm:w-24">
-                  <p className={cn(
-                    "font-medium text-sm sm:text-base",
-                    allocationDiff > 5 ? "text-red-500" : 
-                    allocationDiff < -5 ? "text-green-500" : "text-slate-700"
-                  )}>
-                    יעד: {holding.targetAllocation}%
-                  </p>
-                  {calc && calc.amountToInvest > 0 && (
-                    <p className="text-xs text-indigo-600 font-medium">
-                      להשקיע: {formatCurrency(calc.amountToInvest)}
-                    </p>
-                  )}
-                </div>
+                {/* Allocation badge */}
+                <span className={cn(
+                  "text-xs px-2 py-1 rounded-full font-medium",
+                  allocationDiff > 5 ? "bg-rose-100 text-rose-700" :
+                  allocationDiff < -5 ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"
+                )}>
+                  {currentAllocation.toFixed(1)}% / {holding.targetAllocation}%
+                </span>
 
                 {/* Actions */}
                 <div className="flex gap-1 flex-shrink-0">
                   <button
                     onClick={() => onEdit(holding)}
-                    className="p-1.5 sm:p-2 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-600"
+                    className="p-1.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-600"
                   >
-                    <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <Pencil className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => setDeleteConfirm({ isOpen: true, id: holding.id, name: holding.name })}
-                    className="p-1.5 sm:p-2 rounded-lg hover:bg-red-100 text-slate-500 hover:text-red-500"
+                    className="p-1.5 rounded hover:bg-red-100 text-slate-500 hover:text-red-500"
                   >
-                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -175,7 +163,7 @@ export default function HoldingsList({
         title="מחיקת אחזקה"
         message={`האם אתה בטוח שברצונך למחוק את "${deleteConfirm.name}"?`}
       />
-    </div>
+    </Card>
   );
 }
 

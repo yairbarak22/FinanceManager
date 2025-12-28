@@ -9,14 +9,14 @@ interface AllocationChartsProps {
 }
 
 const COLORS = [
-  '#6366f1', // indigo
-  '#8b5cf6', // violet
-  '#a855f7', // purple
-  '#d946ef', // fuchsia
-  '#ec4899', // pink
-  '#f43f5e', // rose
-  '#14b8a6', // teal
-  '#22c55e', // green
+  '#6366f1', // indigo-500
+  '#0ea5e9', // sky-500
+  '#14b8a6', // teal-500
+  '#22c55e', // green-500
+  '#eab308', // yellow-500
+  '#f97316', // orange-500
+  '#64748b', // slate-500
+  '#06b6d4', // cyan-500
 ];
 
 export default function AllocationCharts({ holdings }: AllocationChartsProps) {

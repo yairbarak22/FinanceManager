@@ -1,34 +1,31 @@
 /**
- * הלוואת מועדון צרכנות (חבר / אשמורת / הייטקזון)
- * 
- * תנאי: חבר במועדון צרכנות + צריך מימון
- * עדיפות: בינונית
+ * הלוואה ללא ריבית במועדון חבר
+ *
+ * תנאי: איש קבע
+ * עדיפות: גבוהה
  */
 
 import { createRule } from '../ruleFactory';
-import { hasHighInterestDebt, hasTransactionsWithKeywords } from '../helpers';
-import { SERVICE_URLS, KEYWORDS } from '../constants';
+import { isCareer } from '../helpers';
 
 export default createRule({
-  id: 'consumer-club-loans',
-  name: 'הלוואות מועדון צרכנות',
-  
+  id: 'haver-club-loan',
+  name: 'הלוואה ללא ריבית במועדון חבר',
+
   condition: (ctx) => {
-    // Check if user has transactions related to consumer clubs
-    const hasClubActivity = hasTransactionsWithKeywords(ctx, KEYWORDS.CONSUMER_CLUBS);
-    if (!hasClubActivity) return false;
-    
-    // Has debt that could benefit from cheaper financing
-    return hasHighInterestDebt(ctx, 4);
+    return isCareer(ctx);
   },
-  
+
+  getEligibilityReason: () => {
+    return 'סטטוס צבאי: קבע';
+  },
+
   recommendation: {
-    title: 'הלוואות מועדון צרכנות בתנאים מועדפים',
-    description: 'כחבר/ת מועדון צרכנות (חבר, אשמורת ועוד), את/ה עשוי/ה להיות זכאי/ת להלוואות בתנאים מסובסדים או אפילו ללא ריבית. בדוק/י הצעות עדכניות במועדון שלך.',
+    title: 'הלוואה של 10,000₪ ללא ריבית במועדון חבר',
+    description: 'כאיש/אשת קבע, את/ה זכאי/ת להלוואה של 10,000₪ ללא ריבית במועדון חבר. אפשר לקחת את ההלוואה ולהשקיע את הכסף, ובכך להגדיל את ההון תוך ניצול כסף "חינמי".',
     type: 'banking',
-    priority: 'medium',
-    actionUrl: SERVICE_URLS.CONSUMER_CLUBS,
-    potentialValue: 1500,
+    priority: 'high',
+    actionUrl: 'https://www.hever.co.il/',
+    potentialValue: 10000,
   },
 });
-

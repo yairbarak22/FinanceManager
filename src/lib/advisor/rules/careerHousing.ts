@@ -1,39 +1,36 @@
 /**
  * עמותת מגורים לאנשי קבע
- * 
- * תנאי: איש קבע + גיל 24-45 + אין נכס נדל"ן
+ *
+ * תנאי: איש קבע + גיל 24-45
  * עדיפות: גבוהה
  */
 
 import { createRule } from '../ruleFactory';
-import { isCareer, isInAgeRange, hasNoRealEstate, getEstimatedAge, getRealEstateCount } from '../helpers';
-import { SERVICE_URLS, ESTIMATED_VALUES, AGE_RANGES } from '../constants';
+import { isCareer, isInAgeRange, getEstimatedAge } from '../helpers';
+import { AGE_RANGES } from '../constants';
 
 export default createRule({
   id: 'career-housing-association',
   name: 'עמותת מגורים לאנשי קבע',
-  
+
   condition: (ctx) => {
     return (
       isCareer(ctx) &&
-      isInAgeRange(ctx, AGE_RANGES.CAREER_HOUSING_MIN, AGE_RANGES.CAREER_HOUSING_MAX) &&
-      hasNoRealEstate(ctx)
+      isInAgeRange(ctx, AGE_RANGES.CAREER_HOUSING_MIN, AGE_RANGES.CAREER_HOUSING_MAX)
     );
   },
 
   getEligibilityReason: (ctx) => {
     const age = getEstimatedAge(ctx);
-    const realEstateCount = getRealEstateCount(ctx);
-    
-    return `סטטוס צבאי: קבע, גיל משוער: ${age} (בטווח ${AGE_RANGES.CAREER_HOUSING_MIN}-${AGE_RANGES.CAREER_HOUSING_MAX}), נכסי נדל"ן: ${realEstateCount} (נדרש: 0)`;
+    return `סטטוס צבאי: קבע, גיל משוער: ${age} (בטווח ${AGE_RANGES.CAREER_HOUSING_MIN}-${AGE_RANGES.CAREER_HOUSING_MAX})`;
   },
-  
+
   recommendation: {
     title: 'עמותת המגורים לאנשי קבע',
-    description: 'כאיש/אשת קבע בטווח הגילאים 24-45 ללא דירה בבעלותך, את/ה זכאי/ת להצטרף לעמותת המגורים. העמותה מציעה דירות במחירים מוזלים משמעותית מתחת למחיר השוק.',
+    description: 'כאיש/אשת קבע בטווח הגילאים 24-45, את/ה זכאי/ת להצטרף לעמותת המגורים. העמותה מציעה דירות במחירים מוזלים משמעותית מתחת למחיר השוק.',
     type: 'savings',
     priority: 'high',
-    actionUrl: SERVICE_URLS.CAREER_HOUSING,
-    potentialValue: ESTIMATED_VALUES.CAREER_HOUSING_SAVINGS,
+    actionUrl: 'https://www.amutot-megurim.co.il/מיזמים/',
+    potentialValue: 300000,
   },
 });
