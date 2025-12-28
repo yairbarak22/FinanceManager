@@ -53,8 +53,8 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
       setError(null);
 
       const [membersRes, invitesRes] = await Promise.all([
-        fetch('/api/account/members'),
-        fetch('/api/account/invite'),
+        apiFetch('/api/account/members'),
+        apiFetch('/api/account/invite'),
       ]);
 
       if (membersRes.ok) {
