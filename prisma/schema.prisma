@@ -216,11 +216,12 @@ model UserProfile {
   ageRange       String?   // 18-25 | 26-35 | 36-45 | 46-55 | 56-65 | 65+
   monthlyIncome  String?   // income ranges
   riskTolerance  String?   // low | medium | high
-  isStudent      Boolean   @default(false)
-  graduationDate DateTime? // לזיכוי מס אקדמי
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isStudent             Boolean   @default(false)
+  graduationDate        DateTime? // לזיכוי מס אקדמי
+  hasIndependentAccount Boolean   @default(false)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ============================================

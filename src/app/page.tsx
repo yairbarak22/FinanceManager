@@ -120,44 +120,11 @@ export default function Home() {
   // Section navigation state
   const [activeSection, setActiveSection] = useState<NavSection>('dashboard');
 
-  // Section refs for scrolling
+  // Section refs for scrolling (only used within dashboard view)
   const transactionsRef = useRef<HTMLDivElement>(null);
   const recurringRef = useRef<HTMLDivElement>(null);
   const assetsRef = useRef<HTMLDivElement>(null);
   const liabilitiesRef = useRef<HTMLDivElement>(null);
-
-  // Handle section navigation with scroll
-  const handleSectionChange = (section: NavSection) => {
-    setActiveSection(section);
-
-    // Scroll to section
-    const scrollToRef = (ref: React.RefObject<HTMLDivElement | null>) => {
-      if (ref.current) {
-        const headerOffset = 80; // Account for sticky header
-        const elementPosition = ref.current.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
-      }
-    };
-
-    switch (section) {
-      case 'transactions':
-        scrollToRef(transactionsRef);
-        break;
-      case 'recurring':
-        scrollToRef(recurringRef);
-        break;
-      case 'assets':
-        scrollToRef(assetsRef);
-        break;
-      case 'liabilities':
-        scrollToRef(liabilitiesRef);
-        break;
-      case 'dashboard':
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        break;
-    }
-  };
 
   // Categories hook - custom categories from API
   const { getCustomByType, addCustomCategory } = useCategories();
@@ -602,7 +569,8 @@ export default function Home() {
       <HeaderBar
         activeSection={activeSection}
         onSectionChange={(section) => {
-          handleSectionChange(section);
+          setActiveSection(section);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
           analytics.trackTabChange(section);
         }}
         onOpenProfile={() => setIsProfileModalOpen(true)}
@@ -615,6 +583,14 @@ export default function Home() {
       />
 
       <div className="max-w-7xl mx-auto py-6 px-4 md:px-6 lg:px-8">
+        {/* Investments View - Replaces Dashboard */}
+        {activeSection === 'investments' && (
+          <InvestmentsTab />
+        )}
+
+        {/* Dashboard View */}
+        {activeSection !== 'investments' && (
+          <>
 
         {/* All sections with consistent spacing */}
         <div className="flex flex-col gap-6">
@@ -765,6 +741,8 @@ export default function Home() {
         </div>
 
       </div>{/* End of flex container */}
+          </>
+        )}
     </div>
 
       {/* ============================================

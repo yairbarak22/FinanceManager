@@ -1,14 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Holding, InvestmentCalculation } from '@/lib/types';
+import { Holding, InvestmentCalculation, UserProfile } from '@/lib/types';
 import { apiFetch } from '@/lib/utils';
-import HoldingsList from './HoldingsList';
-import AllocationCharts from './AllocationCharts';
-import InvestmentCalculator from './InvestmentCalculator';
-import HoldingModal from './HoldingModal';
+import InvestmentOnboarding from './InvestmentOnboarding';
+import InvestmentDashboard from './InvestmentDashboard';
 
 export default function InvestmentsTab() {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [calculations, setCalculations] = useState<InvestmentCalculation[]>([]);
   const [calculationSummary, setCalculationSummary] = useState<{
@@ -19,27 +18,35 @@ export default function InvestmentsTab() {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCalculating, setIsCalculating] = useState(false);
-  
-  // Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingHolding, setEditingHolding] = useState<Holding | null>(null);
 
-  // Fetch holdings
-  const fetchHoldings = useCallback(async () => {
+  // Fetch profile and holdings
+  const fetchData = useCallback(async () => {
     try {
-      const res = await apiFetch('/api/holdings');
-      const data = await res.json();
-      setHoldings(data);
-      setIsLoading(false);
+      setIsLoading(true);
+      const [profileRes, holdingsRes] = await Promise.all([
+        apiFetch('/api/profile'),
+        apiFetch('/api/holdings')
+      ]);
+
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+        setProfile(profileData);
+      }
+
+      if (holdingsRes.ok) {
+        const holdingsData = await holdingsRes.json();
+        setHoldings(holdingsData);
+      }
     } catch (error) {
-      console.error('Error fetching holdings:', error);
+      console.error('Error fetching data:', error);
+    } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchHoldings();
-  }, [fetchHoldings]);
+    fetchData();
+  }, [fetchData]);
 
   // Calculate investment allocation
   const handleCalculate = async (amount: number) => {
@@ -85,22 +92,43 @@ export default function InvestmentsTab() {
 
       const data = await res.json();
       alert(data.message);
-      
-      // Refresh holdings and recalculate
-      await fetchHoldings();
-      // Recalculate with the same amount to show updated state
-      await handleCalculate(amount);
+
+      // Refresh data and clear calculations
+      await fetchData();
+      setCalculations([]);
+      setCalculationSummary(null);
     } catch (error) {
       console.error('Error applying investment:', error);
       alert('שגיאה בהכנסת השקעה');
     }
   };
 
-  // CRUD handlers
-  const handleAddHolding = async (data: Omit<Holding, 'id' | 'createdAt' | 'updatedAt'>) => {
+  // Declare account - update profile with hasIndependentAccount
+  const handleDeclareAccount = async () => {
     try {
-      const url = editingHolding ? `/api/holdings/${editingHolding.id}` : '/api/holdings';
-      const method = editingHolding ? 'PUT' : 'POST';
+      const res = await apiFetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...profile,
+          hasIndependentAccount: true
+        })
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setProfile(updated);
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
+  };
+
+  // CRUD handlers
+  const handleAddHolding = async (data: any) => {
+    try {
+      const url = data.id ? `/api/holdings/${data.id}` : '/api/holdings';
+      const method = data.id ? 'PUT' : 'POST';
 
       const res = await apiFetch(url, {
         method,
@@ -114,11 +142,10 @@ export default function InvestmentsTab() {
         return;
       }
 
-      setEditingHolding(null);
       // Clear calculations when holdings change
       setCalculations([]);
       setCalculationSummary(null);
-      await fetchHoldings();
+      await fetchData();
     } catch (error) {
       console.error('Error saving holding:', error);
       alert('שגיאה בשמירה');
@@ -131,7 +158,7 @@ export default function InvestmentsTab() {
       // Clear calculations when holdings change
       setCalculations([]);
       setCalculationSummary(null);
-      await fetchHoldings();
+      await fetchData();
     } catch (error) {
       console.error('Error deleting holding:', error);
     }
@@ -145,62 +172,23 @@ export default function InvestmentsTab() {
     );
   }
 
+  // Conditional rendering based on hasIndependentAccount
+  if (!profile?.hasIndependentAccount) {
+    return <InvestmentOnboarding onDeclare={handleDeclareAccount} />;
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Charts - shown first on mobile for context */}
-      <div className="lg:hidden">
-        <AllocationCharts holdings={holdings} />
-      </div>
-
-      {/* Top Row: Calculator + Charts (desktop) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calculator */}
-        <div className="lg:col-span-1">
-          <div className="lg:h-[400px]">
-            <InvestmentCalculator
-              onCalculate={handleCalculate}
-              onApplyInvestment={handleApplyInvestment}
-              calculations={calculations}
-              summary={calculationSummary}
-              isLoading={isCalculating}
-            />
-          </div>
-        </div>
-
-        {/* Charts - hidden on mobile (shown above), visible on desktop */}
-        <div className="hidden lg:block lg:col-span-2">
-          <div className="h-[400px]">
-            <AllocationCharts holdings={holdings} />
-          </div>
-        </div>
-      </div>
-
-      {/* Holdings List */}
-      <HoldingsList
-        holdings={holdings}
-        calculations={calculations}
-        onAdd={() => {
-          setEditingHolding(null);
-          setIsModalOpen(true);
-        }}
-        onEdit={(holding) => {
-          setEditingHolding(holding);
-          setIsModalOpen(true);
-        }}
-        onDelete={handleDeleteHolding}
-      />
-
-      {/* Modal */}
-      <HoldingModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingHolding(null);
-        }}
-        onSave={handleAddHolding}
-        holding={editingHolding}
-      />
-    </div>
+    <InvestmentDashboard
+      holdings={holdings}
+      calculations={calculations}
+      calculationSummary={calculationSummary}
+      isCalculating={isCalculating}
+      onCalculate={handleCalculate}
+      onApplyInvestment={handleApplyInvestment}
+      onAddHolding={handleAddHolding}
+      onDeleteHolding={handleDeleteHolding}
+      onRefresh={fetchData}
+    />
   );
 }
 

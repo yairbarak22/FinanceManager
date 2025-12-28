@@ -186,6 +186,7 @@ export interface UserProfile {
   riskTolerance?: 'low' | 'medium' | 'high';
   isStudent: boolean;
   graduationDate?: string;
+  hasIndependentAccount: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

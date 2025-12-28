@@ -76,6 +76,7 @@ export async function getUserFinancialContext(userId: string): Promise<Financial
       riskTolerance: userWithProfile.profile.riskTolerance as 'low' | 'medium' | 'high' | undefined,
       isStudent: userWithProfile.profile.isStudent,
       graduationDate: userWithProfile.profile.graduationDate?.toISOString(),
+      hasIndependentAccount: userWithProfile.profile.hasIndependentAccount,
     } : null,
   };
 

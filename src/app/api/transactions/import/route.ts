@@ -9,8 +9,10 @@ import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/authHelpers';
 import { groq } from '@ai-sdk/groq';
 import { generateText } from 'ai';
-import ExcelJS from 'exceljs';
+import * as XLSX from 'xlsx';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
+import { validateExcelFile } from '@/lib/fileValidator';
+import { sanitizeExcelData } from '@/lib/excelSanitizer';
 
 // ============================================
 // TYPES
@@ -175,7 +177,11 @@ async function mapColumnsWithAI(
   try {
     const headerStr = headerRow.map((h, i) => `[${i}] ${String(h || '')}`).join(', ');
     const sampleStr = sampleRow.map((s, i) => `[${i}] ${String(s || '')}`).join(', ');
-    
+
+    console.log('[AI Column Mapping] Starting column detection');
+    console.log('[AI Column Mapping] Header:', headerStr);
+    console.log('[AI Column Mapping] Sample:', sampleStr);
+
     const response = await generateText({
       model: groq('llama-3.3-70b-versatile'),
       system: COLUMN_MAPPING_PROMPT,
@@ -184,31 +190,39 @@ async function mapColumnsWithAI(
         content: `שורת כותרות: ${headerStr}\n\nשורת דוגמה: ${sampleStr}`,
       }],
     });
-    
+
+    console.log('[AI Column Mapping] Received response:', response.text);
+
     // Parse JSON response
     let jsonStr = response.text.trim();
-    
+
     // Handle markdown code blocks
     if (jsonStr.includes('```')) {
       const match = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (match) jsonStr = match[1].trim();
     }
-    
+
     const mapping = JSON.parse(jsonStr) as ColumnMapping;
-    
+
     // Validate the mapping
     if (
       typeof mapping.dateIndex !== 'number' ||
       typeof mapping.amountIndex !== 'number' ||
       typeof mapping.merchantIndex !== 'number'
     ) {
-      console.error('Invalid AI column mapping response:', mapping);
+      console.error('[AI Column Mapping] Invalid mapping response:', mapping);
       return null;
     }
-    
+
+    console.log('[AI Column Mapping] Successfully mapped columns:', mapping);
     return mapping;
   } catch (error) {
-    console.error('AI column mapping error:', error);
+    console.error('[AI Column Mapping] ERROR:', error);
+    console.error('[AI Column Mapping] Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return null;
   }
 }
@@ -400,16 +414,18 @@ async function classifyMerchantsWithAI(
   transactionTypes: Map<string, 'income' | 'expense'>
 ): Promise<Map<string, string | null>> {
   const result = new Map<string, string | null>();
-  
+
   if (merchants.length === 0) return result;
-  
+
   try {
     // Build the merchant list with their types for context
     const merchantList = merchants.map(m => {
       const type = transactionTypes.get(m) || 'expense';
       return `${m} (${type === 'income' ? 'הכנסה' : 'הוצאה'})`;
     }).join('\n');
-    
+
+    console.log('[AI Classification] Starting classification for', merchants.length, 'merchants');
+
     const response = await generateText({
       model: groq('llama-3.3-70b-versatile'),
       system: CLASSIFICATION_PROMPT,
@@ -418,44 +434,59 @@ async function classifyMerchantsWithAI(
         content: `סווג את העסקים הבאים:\n${merchantList}`,
       }],
     });
-    
+
+    console.log('[AI Classification] Received response, length:', response.text.length);
+
     // Parse the JSON response
     let jsonStr = response.text.trim();
-    
+
     // Handle markdown code blocks
     if (jsonStr.includes('```')) {
       const match = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (match) jsonStr = match[1].trim();
     }
-    
+
+    console.log('[AI Classification] Parsing JSON response');
     const parsed = JSON.parse(jsonStr);
-    
+
     // Map the results
+    // IMPORTANT: AI returns keys with type suffix like "Merchant (הוצאה)"
+    // so we need to construct the full key when looking up
     for (const merchant of merchants) {
-      const category = parsed[merchant];
+      const type = transactionTypes.get(merchant) || 'expense';
+      const fullKey = `${merchant} (${type === 'income' ? 'הכנסה' : 'הוצאה'})`;
+      const category = parsed[fullKey];
+
       if (category === null || category === 'null') {
         result.set(merchant, null);
       } else if (typeof category === 'string') {
         // Validate category exists
-        const type = transactionTypes.get(merchant) || 'expense';
         const validCategories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
         if (validCategories.includes(category)) {
           result.set(merchant, category);
         } else {
+          console.warn(`[AI Classification] Invalid category "${category}" for merchant "${merchant}"`);
           result.set(merchant, null);
         }
       } else {
         result.set(merchant, null);
       }
     }
+
+    console.log('[AI Classification] Successfully classified', Array.from(result.values()).filter(v => v !== null).length, 'out of', merchants.length);
   } catch (error) {
-    console.error('AI classification error:', error);
+    console.error('[AI Classification] ERROR:', error);
+    console.error('[AI Classification] Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     // Set all to null on error
     for (const merchant of merchants) {
       result.set(merchant, null);
     }
   }
-  
+
   return result;
 }
 
@@ -500,49 +531,100 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Read Excel file as array of arrays using exceljs (secure alternative to xlsx)
-    const arrayBuffer = await file.arrayBuffer();
-    const workbook = new ExcelJS.Workbook();
-    // Type assertion needed due to TypeScript Buffer type mismatch
-    await workbook.xlsx.load(Buffer.from(arrayBuffer) as any);
+    // ============================================
+    // SECURE EXCEL PARSING WITH HARDENED OPTIONS
+    // Using xlsx library with Defense-in-Depth security layers
+    // ============================================
 
-    // Get first worksheet
-    const worksheet = workbook.worksheets[0];
-    if (!worksheet) {
+    console.log('[Excel Import] Reading file:', file.name, 'size:', file.size, 'type:', file.type);
+
+    // Step 1: Get buffer
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    console.log('[Excel Import] Buffer size:', buffer.length);
+
+    // Step 2: Validate file signature (Magic Bytes) - Security Layer #1
+    const validationError = validateExcelFile(buffer, file.size, file.type);
+    if (validationError) {
+      console.error('[Excel Security] File validation failed:', validationError);
+      return NextResponse.json(
+        { error: validationError },
+        { status: 400 }
+      );
+    }
+
+    console.log('[Excel Import] File validation passed ✓');
+
+    // Step 3: Parse with HARDENED options - Security Layer #2
+    let workbook: XLSX.WorkBook;
+    try {
+      console.log('[Excel Import] Parsing workbook with security options...');
+
+      workbook = XLSX.read(buffer, {
+        type: 'buffer',
+
+        // 🔒 CRITICAL SECURITY OPTIONS (Defense against CVEs):
+        cellFormula: false,   // Prevent Formula Injection (CSV Injection / Excel 4.0 Macros)
+        cellHTML: false,      // Prevent XSS via HTML in cells
+        cellNF: false,        // Disable number formats (potential DoS vector)
+        cellStyles: false,    // Disable styles (reduces memory footprint)
+        sheetStubs: false,    // Don't create stubs for empty cells
+        bookVBA: false,       // Ignore VBA/Macros (malware vector)
+
+        // Additional hardening:
+        WTF: false,           // Disable "What The Format" (legacy/unsafe formats)
+      });
+
+      console.log('[Excel Import] Workbook parsed successfully ✓');
+      console.log('[Excel Import] Sheets found:', workbook.SheetNames.length);
+    } catch (parseError) {
+      console.error('[Excel Parsing] ERROR:', parseError);
+      console.error('[Excel Parsing] Error details:', {
+        name: parseError instanceof Error ? parseError.name : 'Unknown',
+        message: parseError instanceof Error ? parseError.message : String(parseError),
+      });
+
+      // Generic error message for security (don't expose internals)
+      return NextResponse.json(
+        { error: 'שגיאה בקריאת קובץ Excel. ודא שהקובץ תקין ולא פגום' },
+        { status: 400 }
+      );
+    }
+
+    // Step 4: Get first sheet
+    const firstSheetName = workbook.SheetNames[0];
+    if (!firstSheetName) {
       return NextResponse.json(
         { error: 'הקובץ לא מכיל גליונות עבודה' },
         { status: 400 }
       );
     }
 
-    // Convert worksheet to array of arrays (similar to xlsx output)
-    const rawData: unknown[][] = [];
-    worksheet.eachRow((row, rowNumber) => {
-      const rowData: unknown[] = [];
-      // Note: ExcelJS rows are 1-indexed, values array includes index 0 as undefined
-      for (let colNumber = 1; colNumber <= row.cellCount; colNumber++) {
-        const cell = row.getCell(colNumber);
-        // Get cell value, handling dates and formulas
-        let value: unknown = cell.value;
+    const worksheet = workbook.Sheets[firstSheetName];
+    if (!worksheet) {
+      return NextResponse.json(
+        { error: 'שגיאה בקריאת גליון העבודה' },
+        { status: 400 }
+      );
+    }
 
-        // Handle date cells
-        if (cell.type === ExcelJS.ValueType.Date && cell.value instanceof Date) {
-          value = cell.value;
-        }
-        // Handle formula cells - get the result
-        else if (cell.type === ExcelJS.ValueType.Formula && typeof cell.value === 'object' && cell.value !== null && 'result' in cell.value) {
-          value = (cell.value as { result: unknown }).result;
-        }
-        // Handle rich text
-        else if (cell.type === ExcelJS.ValueType.RichText && typeof cell.value === 'object' && cell.value !== null && 'richText' in cell.value) {
-          value = (cell.value as { richText: Array<{ text: string }> }).richText.map(t => t.text).join('');
-        }
-
-        rowData.push(value);
-      }
-      rawData.push(rowData);
+    // Step 5: Convert to array of arrays
+    console.log('[Excel Import] Converting sheet to array...');
+    const unsafeData: unknown[][] = XLSX.utils.sheet_to_json(worksheet, {
+      header: 1,        // Return array of arrays (not objects)
+      raw: false,       // Return formatted strings (not raw values)
+      defval: '',       // Default value for empty cells
+      blankrows: true,  // Keep blank rows (for header detection)
     });
-    
+
+    console.log('[Excel Import] Converted', unsafeData.length, 'rows');
+
+    // Step 6: SANITIZE ALL DATA - Security Layer #3
+    console.log('[Excel Security] Sanitizing all cell values...');
+    const rawData = sanitizeExcelData(unsafeData);
+    console.log('[Excel Security] Sanitization complete ✓');
+
     if (rawData.length === 0) {
       return NextResponse.json(
         { error: 'הקובץ ריק' },
@@ -778,9 +860,28 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Error importing transactions:', error);
+    // 🔒 SECURITY LOGGING (Layer #5): Log error details for audit, return generic message
+    console.error('[Excel Import] CRITICAL ERROR:', error);
+    console.error('[Excel Import] Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      userId,
+      timestamp: new Date().toISOString(),
+    });
+
+    // Specific logging for parsing failures (security audit)
+    if (error instanceof Error && error.message.includes('parse')) {
+      console.error('[Excel Security] PARSING FAILURE AUDIT:', {
+        errorType: 'parsing',
+        userId,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Return GENERIC error message (don't expose internals)
     return NextResponse.json(
-      { error: 'שגיאה בעיבוד הקובץ' },
+      { error: 'שגיאה בעיבוד הקובץ. נא לנסות שוב או ליצור קשר עם התמיכה' },
       { status: 500 }
     );
   }

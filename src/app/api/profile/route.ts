@@ -71,6 +71,7 @@ export async function PUT(request: Request) {
       ageRange: validateEnum(data.ageRange, VALID_AGE_RANGE),
       monthlyIncome: validateEnum(data.monthlyIncome, VALID_MONTHLY_INCOME),
       riskTolerance: validateEnum(data.riskTolerance, VALID_RISK_TOLERANCE),
+      hasIndependentAccount: Boolean(data.hasIndependentAccount),
     };
 
     // Encrypt sensitive fields before storing

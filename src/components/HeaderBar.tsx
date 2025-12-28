@@ -16,7 +16,7 @@ import {
 import { useOnboarding } from '@/hooks/useOnboarding';
 import MonthFilter from './MonthFilter';
 
-export type NavSection = 'dashboard' | 'transactions' | 'recurring' | 'assets' | 'liabilities';
+export type NavSection = 'dashboard' | 'transactions' | 'recurring' | 'assets' | 'liabilities' | 'investments';
 
 interface HeaderBarProps {
   activeSection: NavSection;
@@ -62,7 +62,7 @@ export default function HeaderBar({
 
   const navTabs: { id: NavSection; label: string }[] = [
     { id: 'dashboard', label: 'דשבורד' },
-    { id: 'assets', label: 'תיק השקעות' },
+    { id: 'investments', label: 'תיק השקעות' },
     { id: 'transactions', label: 'עזרה' },
   ];
 

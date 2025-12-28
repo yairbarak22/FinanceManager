@@ -101,25 +101,43 @@ export async function apiFetch(
   url: string,
   options?: RequestInit
 ): Promise<Response> {
-  const headers = new Headers(options?.headers);
-
   // Add CSRF protection header for non-safe methods
   const method = options?.method?.toUpperCase() || 'GET';
   const isSafeMethod = ['GET', 'HEAD', 'OPTIONS'].includes(method);
 
-  if (!isSafeMethod) {
-    headers.set('X-CSRF-Protection', '1');
-  }
+  // Check if body is FormData (file upload)
+  const isFormData = options?.body instanceof FormData;
 
-  // Ensure Content-Type is set for JSON payloads
-  if (options?.body && typeof options.body === 'string' && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json');
-  }
+  // For FormData, we must NOT set Content-Type (browser sets it with boundary)
+  // For other requests, we can safely create a Headers object
+  if (isFormData) {
+    // For FormData: only add CSRF header, let browser handle Content-Type
+    const headers = new Headers(options?.headers);
+    if (!isSafeMethod) {
+      headers.set('X-CSRF-Protection', '1');
+    }
+    return fetch(url, {
+      ...options,
+      headers,
+    });
+  } else {
+    // For non-FormData requests: normal header handling
+    const headers = new Headers(options?.headers);
 
-  return fetch(url, {
-    ...options,
-    headers,
-  });
+    if (!isSafeMethod) {
+      headers.set('X-CSRF-Protection', '1');
+    }
+
+    // Ensure Content-Type is set for JSON payloads
+    if (options?.body && typeof options.body === 'string' && !headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
+    }
+
+    return fetch(url, {
+      ...options,
+      headers,
+    });
+  }
 }
 
 /**
