@@ -12,7 +12,6 @@ import {
   XCircle,
   ArrowLeft
 } from 'lucide-react';
-import { isAdmin } from '@/lib/adminHelpers';
 import { apiFetch } from '@/lib/utils';
 
 interface UserData {
@@ -36,30 +35,30 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // SECURITY: Client-side check (server also validates)
-  const userIsAdmin = isAdmin(session?.user?.email);
+  const [isAccessDenied, setIsAccessDenied] = useState(false);
 
   useEffect(() => {
     if (status === 'loading') return;
-    
-    if (!session || !userIsAdmin) {
+
+    if (!session) {
+      setIsAccessDenied(true);
       setLoading(false);
       return;
     }
 
     fetchUsers();
-  }, [session, status, userIsAdmin]);
+  }, [session, status]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
       setError(null);
+      setIsAccessDenied(false);
       const res = await apiFetch('/api/admin/users');
-      
+
       if (!res.ok) {
-        if (res.status === 403) {
-          setError('אין לך הרשאה לצפות בעמוד זה');
+        if (res.status === 403 || res.status === 401) {
+          setIsAccessDenied(true);
         } else {
           setError('שגיאה בטעינת המשתמשים');
         }
@@ -85,8 +84,8 @@ export default function AdminUsersPage() {
     });
   };
 
-  // Show access denied if not admin
-  if (status !== 'loading' && (!session || !userIsAdmin)) {
+  // Show access denied if API returned 403/401
+  if (isAccessDenied) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="text-center p-8">
