@@ -17,6 +17,8 @@ interface HelpTriggerProps {
   showLabel?: boolean;
   /** מיקום - מוסיף מרווח מתאים */
   className?: string;
+  /** מזהה HTML לכפתור */
+  id?: string;
 }
 
 /**
@@ -29,13 +31,14 @@ interface HelpTriggerProps {
  *   contextData={{ totalValue: 500000 }}
  * />
  */
-export default function HelpTrigger({ 
+export default function HelpTrigger({
   topicId,
   contextDescription,
   contextData,
   size = 'md',
   showLabel = false,
   className,
+  id,
 }: HelpTriggerProps) {
   const { openChat } = useAIChat();
 
@@ -50,6 +53,7 @@ export default function HelpTrigger({
   return (
     <button
       type="button"
+      id={id}
       onClick={handleClick}
       className={cn(
         'inline-flex items-center justify-center gap-1.5 rounded-full transition-all',

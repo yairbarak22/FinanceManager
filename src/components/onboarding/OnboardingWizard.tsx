@@ -1,267 +1,582 @@
 'use client';
 
-import { useState } from 'react';
-import { 
-  Wallet, 
-  User, 
-  Building2, 
-  CreditCard, 
-  Sparkles,
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  User,
+  Wallet,
+  CreditCard,
+  TrendingUp,
+  TrendingDown,
+  Wand2,
   ChevronLeft,
   ChevronRight,
-  X
+  ChevronDown,
+  X,
+  Sparkles,
+  Check,
+  Bot,
+  Upload,
+  Play,
 } from 'lucide-react';
+import { useOnboarding } from '@/context/OnboardingContext';
+import { useAutopilot } from '@/hooks/useAutopilot';
+import { onboardingSteps, OnboardingStep, StepField } from './stepsConfig';
 
-interface OnboardingWizardProps {
-  onComplete: () => void;
+/**
+ * Icon mapping for steps
+ */
+const stepIcons = {
+  user: User,
+  wallet: Wallet,
+  'credit-card': CreditCard,
+  'trending-up': TrendingUp,
+  'trending-down': TrendingDown,
+};
+
+/**
+ * Styled Select Component - matching site design
+ */
+interface StyledSelectProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
 }
 
-const TOTAL_STEPS = 5;
+function StyledSelect({ value, onChange, options, placeholder = 'בחר...' }: StyledSelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
-  const [step, setStep] = useState(0);
+  const selectedOption = options.find((opt) => opt.value === value);
 
-  const nextStep = () => {
-    if (step < TOTAL_STEPS - 1) {
-      setStep(step + 1);
-    } else {
-      onComplete();
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
     }
-  };
-
-  const prevStep = () => {
-    if (step > 0) {
-      setStep(step - 1);
-    }
-  };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-gradient-to-br from-gray-900/95 via-slate-900/90 to-blue-900/80 backdrop-blur-sm" />
-      
-      {/* Card */}
-      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
-        {/* Skip button */}
-        <button
-          onClick={onComplete}
-          className="absolute top-4 left-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors z-10"
-          title="דלג"
+    <div className="relative" ref={dropdownRef}>
+      {/* Trigger Button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`
+          w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm
+          flex items-center justify-between gap-2
+          hover:border-indigo-300 hover:bg-slate-50
+          focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+          transition-all duration-200
+          ${!selectedOption ? 'text-slate-400' : 'text-slate-900'}
+        `}
+      >
+        <span className="flex-1 text-right truncate">
+          {selectedOption?.label || placeholder}
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-slate-400 transition-transform flex-shrink-0 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+
+      {/* Dropdown */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.96 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-50 mt-2 w-full bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden"
+          >
+            <div className="max-h-48 overflow-y-auto py-1">
+              {options.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                  }}
+                  className={`
+                    w-full px-4 py-2.5 text-sm flex items-center justify-between gap-2
+                    hover:bg-indigo-50 transition-colors text-right
+                    ${value === option.value ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700'}
+                  `}
+                >
+                  <span className="flex-1">{option.label}</span>
+                  {value === option.value && (
+                    <Check className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/**
+ * OnboardingWizard - Apple-style onboarding modal
+ */
+export default function OnboardingWizard() {
+  const {
+    isWizardOpen,
+    wizardData,
+    currentStepIndex,
+    setWizardData,
+    setCurrentStepIndex,
+    startAutopilot,
+    closeWizard,
+    endTour,
+  } = useOnboarding();
+
+  const { runAutopilotSequence, runFeatureDemo } = useAutopilot();
+
+  const [direction, setDirection] = useState(0);
+
+  // Track last saved profile data to detect changes
+  const [lastSavedProfileData, setLastSavedProfileData] = useState<Record<string, string> | null>(null);
+
+  const currentStep = onboardingSteps[currentStepIndex];
+  const isFirstStep = currentStepIndex === 0;
+  const isLastStep = currentStepIndex === onboardingSteps.length - 1;
+
+  const handleFieldChange = useCallback(
+    (key: string, value: string) => {
+      setWizardData({ ...wizardData, [key]: value });
+    },
+    [wizardData, setWizardData]
+  );
+
+  const goToNextStep = useCallback(() => {
+    if (!isLastStep) {
+      setDirection(1);
+      setCurrentStepIndex(currentStepIndex + 1);
+    }
+  }, [currentStepIndex, isLastStep, setCurrentStepIndex]);
+
+  const goToPreviousStep = useCallback(() => {
+    if (!isFirstStep) {
+      setDirection(-1);
+      setCurrentStepIndex(currentStepIndex - 1);
+    }
+  }, [currentStepIndex, isFirstStep, setCurrentStepIndex]);
+
+  /**
+   * Check if profile data has changed from last saved
+   */
+  const hasProfileDataChanged = useMemo((): boolean => {
+    // If never saved, any data is a change
+    if (!lastSavedProfileData) return true;
+
+    const profileFields = ['ageRange', 'employmentType', 'militaryStatus'];
+    for (const key of profileFields) {
+      if (wizardData[key] !== lastSavedProfileData[key]) {
+        return true;
+      }
+    }
+    return false;
+  }, [wizardData, lastSavedProfileData]);
+
+  /**
+   * Check if all required fields for current step are filled
+   */
+  const areRequiredFieldsFilled = useCallback((): boolean => {
+    const step = onboardingSteps[currentStepIndex];
+    if (!step) return false;
+
+    // For features step, no validation needed
+    if (step.id === 'features') return true;
+
+    // For profile step, also check if data has changed
+    if (step.id === 'profile' && !hasProfileDataChanged) {
+      return false;
+    }
+
+    // Get visible fields based on step logic
+    const visibleFields = step.id === 'liabilities'
+      ? step.fields.filter((field) => {
+          if (field.key === 'liabilityType') return true;
+          const hasLiability = wizardData.liabilityType === 'mortgage' || wizardData.liabilityType === 'loan';
+          return hasLiability;
+        })
+      : step.fields;
+
+    // Check all required visible fields
+    for (const field of visibleFields) {
+      // Skip feature-demos type fields
+      if (field.type === 'feature-demos') continue;
+
+      if (field.required) {
+        const value = wizardData[field.key];
+        if (!value || value.trim() === '') {
+          return false;
+        }
+      }
+    }
+
+    // Special case for liabilities - if "none" is selected, that's valid
+    if (step.id === 'liabilities' && wizardData.liabilityType === 'none') {
+      return true;
+    }
+
+    return true;
+  }, [currentStepIndex, wizardData, hasProfileDataChanged]);
+
+  const handleShowMe = useCallback(async () => {
+    console.log('[Onboarding] Starting autopilot for step:', currentStep.id);
+    startAutopilot(currentStep.id, wizardData);
+    await new Promise(resolve => setTimeout(resolve, 100));
+    const result = await runAutopilotSequence(currentStep.id, wizardData);
+    console.log('[Onboarding] Autopilot result:', result);
+
+    // Save profile data after successful autopilot for profile step
+    if (currentStep.id === 'profile' && result.success) {
+      setLastSavedProfileData({
+        ageRange: wizardData.ageRange || '',
+        employmentType: wizardData.employmentType || '',
+        militaryStatus: wizardData.militaryStatus || '',
+      });
+    }
+  }, [currentStep, wizardData, startAutopilot, runAutopilotSequence]);
+
+  /**
+   * Handle feature demo button click
+   */
+  const handleFeatureDemoClick = useCallback(async (demoId: string) => {
+    console.log('[Onboarding] Starting feature demo:', demoId);
+    // Close the wizard first so user can see the demo
+    closeWizard();
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const result = await runFeatureDemo(demoId);
+    console.log('[Onboarding] Feature demo result:', result);
+  }, [closeWizard, runFeatureDemo]);
+
+  /**
+   * Get icon component for feature demos
+   */
+  const getFeatureIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'sparkles': return Sparkles;
+      case 'bot': return Bot;
+      case 'upload': return Upload;
+      default: return Sparkles;
+    }
+  };
+
+  /**
+   * Render a form field
+   */
+  const renderField = (field: StepField) => {
+    const value = wizardData[field.key] || '';
+
+    // Feature demo card
+    if (field.type === 'feature-demos') {
+      const FeatureIcon = getFeatureIcon(field.featureIcon || 'sparkles');
+      return (
+        <div
+          key={field.key}
+          className="bg-slate-50 rounded-xl p-4 border border-slate-100 hover:border-indigo-200 transition-all"
         >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Content */}
-        <div className="p-8 pt-12">
-          {step === 0 && <StepWelcome />}
-          {step === 1 && <StepProfile />}
-          {step === 2 && <StepAssets />}
-          {step === 3 && <StepTransactions />}
-          {step === 4 && <StepReady />}
-        </div>
-
-        {/* Footer */}
-        <div className="px-8 pb-8">
-          {/* Progress dots */}
-          <div className="flex justify-center gap-2 mb-6">
-            {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-              <div
-                key={i}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  i === step 
-                    ? 'w-8 bg-blue-500' 
-                    : i < step 
-                      ? 'w-2 bg-blue-300' 
-                      : 'w-2 bg-slate-200'
-                }`}
-              />
-            ))}
-          </div>
-
-          {/* Buttons */}
-          <div className="flex gap-3">
-            {step > 0 && step < TOTAL_STEPS - 1 && (
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <FeatureIcon className="w-5 h-5 text-indigo-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-slate-900 text-sm">{field.label}</h4>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">{field.helperText}</p>
               <button
-                onClick={prevStep}
-                className="flex items-center justify-center gap-2 px-4 py-3 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                onClick={() => field.demoId && handleFeatureDemoClick(field.demoId)}
+                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors"
               >
-                <ChevronRight className="w-4 h-4" />
-                הקודם
+                <Play className="w-3.5 h-3.5" />
+                הראה לי
               </button>
-            )}
-            
-            <button
-              onClick={nextStep}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-xl font-medium hover:from-blue-600 hover:to-cyan-600 transition-all"
-            >
-              {step === TOTAL_STEPS - 1 ? 'קדימה לעבודה!' : 'הבא'}
-              {step < TOTAL_STEPS - 1 && <ChevronLeft className="w-4 h-4" />}
-            </button>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
+      );
+    }
 
-// Step Components
+    if (field.type === 'select') {
+      return (
+        <div key={field.key} className="space-y-2">
+          <label className="block text-sm font-medium text-slate-700">
+            {field.label}
+            {field.required && <span className="text-rose-500 mr-1">*</span>}
+          </label>
+          <StyledSelect
+            value={value}
+            onChange={(v) => handleFieldChange(field.key, v)}
+            options={field.options || []}
+            placeholder="בחר..."
+          />
+        </div>
+      );
+    }
 
-function StepWelcome() {
-  return (
-    <div className="text-center">
-      <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center">
-        <Wallet className="w-10 h-10 text-blue-500" />
-      </div>
-      <h2 className="text-2xl font-bold text-slate-900 mb-2">
-        הכסף שלך. התמונה המלאה.
-      </h2>
-      <div className="text-slate-600 space-y-3 mt-6 text-right">
-        <p>
-          Finance Manager מרכז את כל המידע הפיננסי שלך במקום אחד.
-        </p>
-        <p>
-          תראה בדיוק לאן הולך הכסף, כמה שווים הנכסים שלך, ומה נשאר בסוף החודש.
-        </p>
-        <p>
-          המערכת תזהה הזדמנויות לחיסכון ותציע המלצות שיעזרו לך לבנות עושר לאורך זמן.
-        </p>
-      </div>
-    </div>
-  );
-}
+    if (field.type === 'currency' || field.type === 'number') {
+      return (
+        <div key={field.key} className="space-y-2">
+          <label className="block text-sm font-medium text-slate-700">
+            {field.label}
+            {field.required && <span className="text-rose-500 mr-1">*</span>}
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={value}
+              onChange={(e) => {
+                const cleaned = e.target.value.replace(/[^\d,]/g, '');
+                handleFieldChange(field.key, cleaned);
+              }}
+              placeholder={field.placeholder}
+              className={`w-full py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm
+                         hover:border-indigo-300 hover:bg-slate-50
+                         focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                         transition-all duration-200 text-left
+                         ${field.type === 'currency' ? 'pl-10 pr-4' : 'px-4'}`}
+              dir="ltr"
+            />
+            {field.type === 'currency' && (
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium pointer-events-none">
+                ₪
+              </span>
+            )}
+          </div>
+          {field.helperText && (
+            <p className="text-xs text-slate-500">{field.helperText}</p>
+          )}
+        </div>
+      );
+    }
 
-function StepProfile() {
-  return (
-    <div className="text-center">
-      <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-sky-100 to-indigo-100 rounded-2xl flex items-center justify-center">
-        <User className="w-10 h-10 text-sky-500" />
+    // Default text input
+    return (
+      <div key={field.key} className="space-y-2">
+        <label className="block text-sm font-medium text-slate-700">
+          {field.label}
+          {field.required && <span className="text-rose-500 mr-1">*</span>}
+        </label>
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => handleFieldChange(field.key, e.target.value)}
+          placeholder={field.placeholder}
+          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm
+                     hover:border-indigo-300 hover:bg-slate-50
+                     focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                     transition-all duration-200"
+          dir="rtl"
+        />
+        {field.helperText && (
+          <p className="text-xs text-slate-500">{field.helperText}</p>
+        )}
       </div>
-      <h2 className="text-2xl font-bold text-slate-900 mb-2">
-        הצעד הראשון: הפרופיל שלך
-      </h2>
-      <div className="text-slate-600 space-y-3 mt-6 text-right">
-        <p>
-          כדי שנוכל להתאים לך המלצות רלוונטיות, מלא את הפרטים האישיים שלך.
-        </p>
-        <div className="bg-blue-50 rounded-xl p-4 text-sm">
-          <p className="font-medium text-blue-700 mb-2">איפה זה?</p>
-          <p className="text-blue-600">
-            לחץ על התמונה שלך בפינה השמאלית העליונה ← בחר &quot;פרטים אישיים&quot;
+    );
+  };
+
+  /**
+   * Filter fields based on conditional logic (for liabilities step)
+   */
+  const getVisibleFields = (step: OnboardingStep): StepField[] => {
+    if (step.id !== 'liabilities') {
+      return step.fields;
+    }
+
+    // For liabilities, show detail fields only if user selected mortgage or loan
+    const hasLiability = wizardData.liabilityType === 'mortgage' || wizardData.liabilityType === 'loan';
+
+    return step.fields.filter((field) => {
+      // Always show the type selector
+      if (field.key === 'liabilityType') {
+        return true;
+      }
+      // Show amount, interest, and term only if user has a liability
+      return hasLiability;
+    });
+  };
+
+  /**
+   * Render step content
+   */
+  const renderStepContent = (step: OnboardingStep) => {
+    const Icon = stepIcons[step.icon];
+    const visibleFields = getVisibleFields(step);
+
+    return (
+      <motion.div
+        key={step.id}
+        initial={{ opacity: 0, x: direction * 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: direction * -50 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="space-y-6"
+      >
+        {/* Step Header */}
+        <div className="text-center space-y-3">
+          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-indigo-100 to-indigo-50 rounded-2xl flex items-center justify-center shadow-sm">
+            <Icon className="w-8 h-8 text-indigo-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900">{step.title}</h2>
+          <p className="text-slate-600 text-sm max-w-sm mx-auto leading-relaxed">
+            {step.description}
           </p>
         </div>
-        <p>
-          זה לוקח פחות מדקה ויעזור לנו למצוא:
-        </p>
-        <ul className="space-y-2 pr-4">
-          <li className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-            הטבות מס שמגיעות לך
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-            אפשרויות חיסכון מותאמות
-          </li>
-          <li className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-            המלצות השקעה לפי המצב שלך
-          </li>
-        </ul>
-      </div>
-    </div>
-  );
-}
 
-function StepAssets() {
-  return (
-    <div className="text-center">
-      <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-2xl flex items-center justify-center">
-        <Building2 className="w-10 h-10 text-emerald-500" />
-      </div>
-      <h2 className="text-2xl font-bold text-slate-900 mb-2">
-        מה יש לך? מה אתה חייב?
-      </h2>
-      <div className="text-slate-600 space-y-3 mt-6 text-right">
-        <div className="flex gap-6 justify-center text-sm mb-4">
-          <div className="bg-emerald-50 px-4 py-2 rounded-lg">
-            <span className="font-medium text-emerald-700">נכסים</span>
-            <span className="text-emerald-600"> – דירה, חסכונות, פנסיה</span>
-          </div>
-          <div className="bg-red-50 px-4 py-2 rounded-lg">
-            <span className="font-medium text-red-700">התחייבויות</span>
-            <span className="text-red-600"> – משכנתא, הלוואות</span>
-          </div>
-        </div>
-        <p>
-          הזן פעם אחת את הפרטים. פעם בחודש – עדכן את השווי.
-        </p>
-        <p>
-          ככה תוכל לעקוב אחרי השווי הנקי שלך ולראות איך הוא גדל.
-        </p>
-      </div>
-    </div>
-  );
-}
+        {/* Form Fields */}
+        <div className="space-y-4">{visibleFields.map(renderField)}</div>
+      </motion.div>
+    );
+  };
 
-function StepTransactions() {
-  return (
-    <div className="text-center">
-      <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center">
-        <CreditCard className="w-10 h-10 text-amber-500" />
-      </div>
-      <h2 className="text-2xl font-bold text-slate-900 mb-2">
-        לאן הולך הכסף?
-      </h2>
-      <div className="text-slate-600 space-y-3 mt-6 text-right">
-        <p>
-          פעם בחודש, העלה קובץ עם פירוט האשראי שלך.
-        </p>
-        <div className="bg-slate-50 rounded-xl p-4 text-sm">
-          <p className="font-medium text-slate-700 mb-2">איך עושים את זה:</p>
-          <ol className="space-y-1.5 text-slate-600">
-            <li>1. הורד דוח עסקאות מהבנק או מחברת האשראי</li>
-            <li>2. לחץ על &quot;ייבוא עסקאות&quot;</li>
-            <li>3. המערכת תעשה את השאר</li>
-          </ol>
-        </div>
-        <p>
-          תוך שניות תקבל פירוט לפי קטגוריות וגרפים שמראים את התמונה המלאה.
-        </p>
-      </div>
-    </div>
-  );
-}
+  if (!isWizardOpen) return null;
 
-function StepReady() {
   return (
-    <div className="text-center">
-      <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center">
-        <Sparkles className="w-10 h-10 text-blue-500" />
-      </div>
-      <h2 className="text-2xl font-bold text-slate-900 mb-2">
-        אתה בפנים! 🎉
-      </h2>
-      <div className="text-slate-600 space-y-3 mt-6 text-right">
-        <p>
-          עכשיו אתה יכול להתחיל.
-        </p>
-        <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4">
-          <p className="font-medium text-slate-700 mb-3">הצעדים הראשונים:</p>
-          <ul className="space-y-2 text-slate-600">
-            <li className="flex items-center gap-2">
-              <span className="w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">1</span>
-              מלא את הפרטים האישיים שלך
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">2</span>
-              הוסף נכס או התחייבות ראשונים
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs">3</span>
-              העלה קובץ עסקאות
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
+    <AnimatePresence>
+      {isWizardOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm"
+            onClick={closeWizard}
+          />
+
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+          >
+            <div
+              className="relative w-full max-w-md h-[600px] bg-white rounded-3xl shadow-2xl border border-slate-100 pointer-events-auto flex flex-col"
+              dir="rtl"
+            >
+              {/* Close Button */}
+              <button
+                onClick={closeWizard}
+                className="absolute top-4 left-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              {/* Content - Scrollable */}
+              <div className="flex-1 overflow-y-auto p-8 pt-12">
+                <AnimatePresence mode="wait" initial={false}>
+                  {renderStepContent(currentStep)}
+                </AnimatePresence>
+              </div>
+
+              {/* Footer - Fixed at bottom */}
+              <div className="flex-shrink-0 px-8 pb-6 pt-4 border-t border-slate-100 space-y-4">
+                {/* "Show Me" Button - with step-specific text (hidden on features step) */}
+                {currentStep.id !== 'features' && (
+                  <motion.button
+                    onClick={handleShowMe}
+                    disabled={!areRequiredFieldsFilled()}
+                    whileHover={areRequiredFieldsFilled() ? { scale: 1.02 } : {}}
+                    whileTap={areRequiredFieldsFilled() ? { scale: 0.98 } : {}}
+                    className={`w-full py-4 px-6 font-semibold rounded-2xl
+                               flex items-center justify-center gap-2 transition-all duration-200
+                               ${areRequiredFieldsFilled()
+                                 ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 cursor-pointer'
+                                 : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                               }`}
+                  >
+                    <Wand2 className="w-5 h-5" />
+                    <span>
+                      {currentStep.id === 'profile' && 'הראה לי איך לעדכן פרופיל'}
+                      {currentStep.id === 'assets' && 'הראה לי איך להוסיף נכס'}
+                      {currentStep.id === 'liabilities' && 'הראה לי איך להוסיף התחייבות'}
+                      {currentStep.id === 'income' && 'הראה לי איך להוסיף הכנסה'}
+                      {currentStep.id === 'expenses' && 'הראה לי איך להוסיף הוצאה'}
+                    </span>
+                    <Sparkles className="w-4 h-4 opacity-70" />
+                  </motion.button>
+                )}
+
+                {/* Finish Button - only on features step */}
+                {currentStep.id === 'features' && (
+                  <motion.button
+                    onClick={endTour}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full py-4 px-6 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-semibold rounded-2xl
+                               shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30
+                               flex items-center justify-center gap-2 transition-all duration-200"
+                  >
+                    <Check className="w-5 h-5" />
+                    <span>סיימתי! בואו נתחיל</span>
+                    <Sparkles className="w-4 h-4 opacity-70" />
+                  </motion.button>
+                )}
+
+                {/* Navigation */}
+                <div className="flex items-center justify-between">
+                  {/* Back Button */}
+                  <button
+                    onClick={goToPreviousStep}
+                    disabled={isFirstStep}
+                    className={`flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-xl transition-all
+                      ${
+                        isFirstStep
+                          ? 'text-slate-300 cursor-not-allowed'
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      }`}
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                    הקודם
+                  </button>
+
+                  {/* Progress Dots */}
+                  <div className="flex items-center gap-2">
+                    {onboardingSteps.map((_, index) => (
+                      <motion.div
+                        key={index}
+                        initial={false}
+                        animate={{
+                          scale: index === currentStepIndex ? 1.2 : 1,
+                          backgroundColor:
+                            index === currentStepIndex
+                              ? '#6366f1'
+                              : index < currentStepIndex
+                              ? '#a5b4fc'
+                              : '#e2e8f0',
+                        }}
+                        className="w-2 h-2 rounded-full"
+                      />
+                    ))}
+                  </div>
+
+                  {/* Next/Skip Button */}
+                  <button
+                    onClick={isLastStep ? endTour : goToNextStep}
+                    className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all"
+                  >
+                    {isLastStep ? 'סיום' : 'דלג'}
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }

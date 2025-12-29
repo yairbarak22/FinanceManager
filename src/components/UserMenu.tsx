@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { LogOut, User, ChevronDown, HelpCircle, UserCog, Users } from 'lucide-react';
-import { useOnboarding } from '@/hooks/useOnboarding';
+import { LogOut, User, ChevronDown, UserCog, Users, Sparkles } from 'lucide-react';
+import { useOnboarding } from '@/context/OnboardingContext';
 
 interface UserMenuProps {
   onOpenProfile?: () => void;
@@ -12,9 +12,9 @@ interface UserMenuProps {
 
 export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserMenuProps) {
   const { data: session } = useSession();
+  const { startTour } = useOnboarding();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const { startOnboarding } = useOnboarding();
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -98,16 +98,15 @@ export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserM
                 שיתוף חשבון
               </button>
             )}
-            <div className="my-1 border-t border-slate-100" />
             <button
               onClick={() => {
                 setIsOpen(false);
-                startOnboarding();
+                startTour();
               }}
               className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
             >
-              <HelpCircle className="w-4 h-4 text-indigo-500" />
-              הצג מדריך למתחילים
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              סיור במערכת
             </button>
             <div className="my-1 border-t border-slate-100" />
             <button

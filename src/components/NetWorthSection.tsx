@@ -27,7 +27,7 @@ export default function NetWorthSection({
   const isPositiveNetWorth = netWorth >= 0;
 
   return (
-    <Card className="h-full">
+    <Card id="card-net-worth" className="h-full">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">

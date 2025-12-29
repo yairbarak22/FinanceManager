@@ -6,6 +6,7 @@ interface CardProps {
     padding?: 'none' | 'sm' | 'md' | 'lg';
     variant?: 'default' | 'flat';
     style?: React.CSSProperties;
+    id?: string;
 }
 
 /**
@@ -21,7 +22,8 @@ const Card = forwardRef<HTMLDivElement, CardProps>(({
     className = '',
     padding = 'md',
     variant = 'default',
-    style
+    style,
+    id
 }, ref) => {
     const paddingClasses = {
         none: '',
@@ -38,6 +40,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(({
     return (
         <div
             ref={ref}
+            id={id}
             className={`${variantClasses[variant]} ${paddingClasses[padding]} ${className}`}
             style={style}
         >

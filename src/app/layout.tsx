@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Heebo, Inter } from "next/font/google";
 import Providers from "@/components/Providers";
-import OnboardingProvider from "@/components/onboarding/OnboardingProvider";
 import AIChatProvider from "@/components/ai/AIChatProvider";
+import { OnboardingProvider } from "@/context/OnboardingContext";
+import OnboardingLayer from "@/components/onboarding/OnboardingLayer";
 import Analytics from "@/components/Analytics";
 import CookieConsent from "@/components/CookieConsent";
 import { AccessibilityStatement } from "@/components/AccessibilityStatement";
@@ -35,11 +36,12 @@ export default function RootLayout({
     <html lang="he" dir="rtl">
       <body className={`${heebo.variable} ${inter.variable} font-sans antialiased`}>
         <Providers>
-          <AIChatProvider>
-            <OnboardingProvider>
+          <OnboardingProvider>
+            <AIChatProvider>
               {children}
-            </OnboardingProvider>
-          </AIChatProvider>
+            </AIChatProvider>
+            <OnboardingLayer />
+          </OnboardingProvider>
           <Analytics />
           <CookieConsent />
           <AccessibilityStatement />

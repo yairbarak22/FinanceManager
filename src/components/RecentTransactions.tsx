@@ -179,6 +179,7 @@ export default function RecentTransactions({
                 </button>
               )}
               <button
+                id="btn-import-transactions"
                 onClick={onImport}
                 className="text-sm text-slate-600 hover:text-slate-700 font-medium flex items-center gap-1"
               >
@@ -186,6 +187,7 @@ export default function RecentTransactions({
                 ייבוא
               </button>
               <button
+                id="btn-global-add"
                 onClick={onNewTransaction}
                 className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
               >
