@@ -89,6 +89,7 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
         {/* Recommendations Button */}
         {onGetRecommendations && (
           <button
+            id="btn-get-recommendations"
             onClick={onGetRecommendations}
             className="flex items-center gap-2 px-4 py-2 text-white rounded-xl transition-all duration-300 text-sm font-medium cursor-pointer hover:scale-105 hover:shadow-xl"
             style={{

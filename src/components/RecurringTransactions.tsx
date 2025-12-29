@@ -50,7 +50,7 @@ export default function RecurringTransactions({
           </div>
           <h3 className="font-semibold text-slate-900">עסקאות קבועות</h3>
         </div>
-        <button onClick={onAdd} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
+        <button id="btn-add-recurring" onClick={onAdd} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
           <Plus className="w-4 h-4" />
           הוסף
         </button>

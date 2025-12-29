@@ -16,7 +16,7 @@ export default function SummaryCards({ totalBalance, totalIncome, totalExpenses 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {/* Balance Card */}
-      <Card padding="sm">
+      <Card padding="sm" id="card-cash-flow">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-slate-500 text-sm font-medium mb-1">תזרים</p>

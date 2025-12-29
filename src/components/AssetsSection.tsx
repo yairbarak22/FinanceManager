@@ -47,12 +47,13 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
             <p className="text-xs text-emerald-600 font-medium">{formatCurrency(totalAssets)}</p>
           </div>
           <HelpTrigger
+            id="btn-ai-help-assets"
             topicId="assets"
             contextData={assetsContextData}
             size="sm"
           />
         </div>
-        <button onClick={onAdd} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
+        <button id="btn-add-asset" onClick={onAdd} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
           <Plus className="w-4 h-4" />
           הוסף
         </button>

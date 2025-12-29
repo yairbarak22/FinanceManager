@@ -6,14 +6,14 @@ import {
   PieChart,
   LogOut,
   User,
-  HelpCircle,
   UserCog,
   Users,
   Bell,
   ChevronLeft,
-  ChevronDown
+  ChevronDown,
+  Sparkles,
 } from 'lucide-react';
-import { useOnboarding } from '@/hooks/useOnboarding';
+import { useOnboarding } from '@/context/OnboardingContext';
 import MonthFilter from './MonthFilter';
 
 export type NavSection = 'dashboard' | 'transactions' | 'recurring' | 'assets' | 'liabilities' | 'investments';
@@ -43,9 +43,9 @@ export default function HeaderBar({
   currentMonth,
 }: HeaderBarProps) {
   const { data: session } = useSession();
+  const { startTour } = useOnboarding();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const { startOnboarding } = useOnboarding();
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -149,6 +149,7 @@ export default function HeaderBar({
             {session?.user && (
               <div className="relative" ref={userMenuRef}>
                 <button
+                  id="nav-profile-btn"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                   className="flex items-center gap-2 rounded-xl p-0.5 md:p-1 hover:bg-white/50 transition-all"
                 >
@@ -202,16 +203,15 @@ export default function HeaderBar({
                           שיתוף חשבון
                         </button>
                       )}
-                      <div className="my-1 border-t border-slate-100" />
                       <button
                         onClick={() => {
                           setIsUserMenuOpen(false);
-                          startOnboarding();
+                          startTour();
                         }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                       >
-                        <HelpCircle className="w-4 h-4 text-indigo-500" />
-                        הצג מדריך למתחילים
+                        <Sparkles className="w-4 h-4 text-amber-500" />
+                        סיור במערכת
                       </button>
                       <div className="my-1 border-t border-slate-100" />
                       <button
