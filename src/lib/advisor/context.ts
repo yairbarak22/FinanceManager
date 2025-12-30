@@ -6,7 +6,7 @@
 import { prisma } from '@/lib/prisma';
 import { FinancialContext, FinancialMetrics, UserWithProfile } from './types';
 import { Asset, Liability, Transaction, RecurringTransaction } from '@/lib/types';
-import { LIQUID_ASSET_TYPES, INTEREST_THRESHOLDS } from './constants';
+import { LIQUID_ASSET_TYPES, INTEREST_THRESHOLDS, REAL_ESTATE_CATEGORIES } from './constants';
 import { decrypt } from '@/lib/encryption';
 
 /**
@@ -140,7 +140,8 @@ export async function getUserFinancialContext(userId: string): Promise<Financial
     transformedAssets,
     transformedLiabilities,
     transformedTransactions,
-    transformedRecurring
+    transformedRecurring,
+    user
   );
 
   return {
@@ -160,52 +161,88 @@ function calculateMetrics(
   assets: Asset[],
   liabilities: Liability[],
   transactions: Transaction[],
-  recurring: RecurringTransaction[]
+  recurring: RecurringTransaction[],
+  user: UserWithProfile
 ): FinancialMetrics {
   // Total assets
   const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
-  
+
   // Total liabilities (remaining amounts)
   const totalLiabilities = liabilities.reduce(
-    (sum, l) => sum + (l.remainingAmount ?? l.totalAmount), 
+    (sum, l) => sum + (l.remainingAmount ?? l.totalAmount),
     0
   );
-  
+
   // Net worth
   const netWorth = totalAssets - totalLiabilities;
-  
+
   // Liquid assets (immediate + short_term)
   const liquidAssets = assets
     .filter(a => LIQUID_ASSET_TYPES.includes(a.liquidity as 'immediate' | 'short_term'))
     .reduce((sum, a) => sum + a.value, 0);
-  
+
+  // Uninvested cash (only immediate liquidity)
+  const uninvestedCash = assets
+    .filter(a => a.liquidity === 'immediate')
+    .reduce((sum, a) => sum + a.value, 0);
+
   // High interest debt
   const highInterestDebt = liabilities
     .filter(l => l.interestRate > INTEREST_THRESHOLDS.HIGH_INTEREST_RATE)
     .reduce((sum, l) => sum + (l.remainingAmount ?? l.totalAmount), 0);
-  
+
   // Monthly income from recurring
   const monthlyIncome = recurring
     .filter(r => r.type === 'income' && r.isActive)
     .reduce((sum, r) => sum + r.amount, 0);
-  
+
   // Monthly expenses from recurring + liability payments
   const recurringExpenses = recurring
     .filter(r => r.type === 'expense' && r.isActive)
     .reduce((sum, r) => sum + Math.abs(r.amount), 0);
-  
+
   const liabilityPayments = liabilities.reduce((sum, l) => sum + l.monthlyPayment, 0);
   const monthlyExpenses = recurringExpenses + liabilityPayments;
-  
+
   // Monthly cash flow
   const monthlyCashFlow = monthlyIncome - monthlyExpenses;
-  
+
   // Savings rate
-  const savingsRate = monthlyIncome > 0 
-    ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100 
+  const savingsRate = monthlyIncome > 0
+    ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100
     : 0;
-  
+
+  // === Strategic Indicators ===
+
+  // Monthly burn rate (average of last 3 months expenses + recurring)
+  const expenseTransactions = transactions.filter(t => t.type === 'expense');
+  const transactionExpensesTotal = expenseTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+  const monthsOfData = 3; // We fetch 3 months of transactions
+  const avgTransactionExpenses = transactionExpensesTotal / monthsOfData;
+  const monthlyBurnRate = Math.max(avgTransactionExpenses, recurringExpenses + liabilityPayments);
+
+  // Emergency fund months (liquid assets / monthly burn rate)
+  const emergencyFundMonths = monthlyBurnRate > 0
+    ? liquidAssets / monthlyBurnRate
+    : liquidAssets > 0 ? 12 : 0; // If no expenses but has liquid, assume 12 months
+
+  // Has real estate
+  const hasRealEstate = assets.some(a =>
+    REAL_ESTATE_CATEGORIES.some(cat =>
+      a.category.toLowerCase().includes(cat.toLowerCase())
+    )
+  );
+
+  // Is reservist
+  const isReservist = user.profile?.militaryStatus === 'reserve';
+
+  // Debt to income ratio
+  const debtToIncomeRatio = monthlyIncome > 0
+    ? totalLiabilities / (monthlyIncome * 12)
+    : totalLiabilities > 0 ? 999 : 0; // If no income but has debt, high ratio
+
   return {
+    // Basic metrics
     netWorth,
     totalAssets,
     totalLiabilities,
@@ -215,6 +252,13 @@ function calculateMetrics(
     monthlyCashFlow,
     liquidAssets,
     highInterestDebt,
+    // Strategic indicators
+    monthlyBurnRate,
+    emergencyFundMonths,
+    uninvestedCash,
+    hasRealEstate,
+    isReservist,
+    debtToIncomeRatio,
   };
 }
 

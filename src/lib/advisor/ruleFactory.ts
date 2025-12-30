@@ -28,28 +28,29 @@ export function createRule(config: RuleConfig): FinancialRule {
   return {
     id: config.id,
     name: config.name,
-    
+
     async evaluate(context: FinancialContext): Promise<Recommendation | null> {
       try {
         // Check if condition is met
         const conditionResult = config.condition(context);
-        const isMet = conditionResult instanceof Promise 
-          ? await conditionResult 
+        const isMet = conditionResult instanceof Promise
+          ? await conditionResult
           : conditionResult;
-        
+
         if (!isMet) {
           return null;
         }
-        
+
         // Generate eligibility reason if function provided
-        const eligibilityReason = config.getEligibilityReason 
+        const eligibilityReason = config.getEligibilityReason
           ? config.getEligibilityReason(context)
           : undefined;
-        
-        // Return recommendation with ID and eligibility reason
+
+        // Return recommendation with ID, category (default: benefit), and eligibility reason
         return {
           id: config.id,
           ...config.recommendation,
+          category: config.recommendation.category || 'benefit', // Default to benefit
           ...(eligibilityReason && { eligibilityReason }),
         };
       } catch (error) {

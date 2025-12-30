@@ -15,6 +15,7 @@ export interface UserWithProfile {
 
 // Calculated financial metrics
 export interface FinancialMetrics {
+  // Basic metrics
   netWorth: number;
   totalAssets: number;
   totalLiabilities: number;
@@ -24,6 +25,14 @@ export interface FinancialMetrics {
   monthlyCashFlow: number;
   liquidAssets: number;
   highInterestDebt: number;
+
+  // Strategic indicators
+  monthlyBurnRate: number;        // ממוצע הוצאות חודשיות (3 חודשים אחרונים + שוטפות)
+  emergencyFundMonths: number;    // חודשי קרן חירום (נכסים נזילים / הוצאות חודשיות)
+  uninvestedCash: number;         // מזומן לא מושקע (נכסים עם נזילות 'immediate')
+  hasRealEstate: boolean;         // האם יש נדל"ן
+  isReservist: boolean;           // האם מילואימניק
+  debtToIncomeRatio: number;      // יחס חוב להכנסה
 }
 
 // Full context for evaluating rules
@@ -37,12 +46,15 @@ export interface FinancialContext {
 }
 
 // Recommendation types
-export type RecommendationType = 
+export type RecommendationType =
   | 'tax_benefit'   // הטבות מס
   | 'savings'       // חיסכון
   | 'insurance'     // ביטוח
   | 'banking'       // בנקאות
   | 'general';      // כללי
+
+// Recommendation category (strategy vs benefit)
+export type RecommendationCategory = 'strategy' | 'benefit';
 
 // Priority levels
 export type RecommendationPriority = 'high' | 'medium' | 'low';
@@ -54,6 +66,7 @@ export interface Recommendation {
   description: string;
   type: RecommendationType;
   priority: RecommendationPriority;
+  category: RecommendationCategory;  // אסטרטגיה (מאקרו) או הטבה (מיקרו)
   actionUrl?: string;
   potentialValue?: number;
   eligibilityReason?: string; // הסבר למה המשתמש זכאי להמלצה
@@ -64,8 +77,20 @@ export interface RuleConfig {
   id: string;
   name: string;
   condition: (ctx: FinancialContext) => boolean | Promise<boolean>;
-  recommendation: Omit<Recommendation, 'id' | 'eligibilityReason'>;
+  recommendation: Omit<Recommendation, 'id' | 'eligibilityReason' | 'category'> & {
+    category?: RecommendationCategory; // ברירת מחדל: 'benefit'
+  };
   getEligibilityReason?: (ctx: FinancialContext) => string; // פונקציה דינמית להסבר הזכאות
+}
+
+// Advisor response structure
+export interface AdvisorResponse {
+  strategies: Recommendation[];  // המלצות אסטרטגיות (מאקרו)
+  benefits: Recommendation[];    // הטבות ספציפיות (מיקרו)
+  stats: {
+    totalPotentialValue: number; // סה"כ ערך פוטנציאלי
+    activeRulesCount: number;    // מספר חוקים שהופעלו
+  };
 }
 
 // A financial rule interface
@@ -96,4 +121,10 @@ export const PRIORITY_LABELS: Record<RecommendationPriority, string> = {
   high: 'גבוהה',
   medium: 'בינונית',
   low: 'נמוכה',
+};
+
+// Category labels in Hebrew
+export const CATEGORY_LABELS: Record<RecommendationCategory, string> = {
+  strategy: 'אסטרטגיה',
+  benefit: 'הטבה',
 };

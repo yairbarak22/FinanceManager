@@ -1,11 +1,15 @@
 /**
  * Financial Advisor Engine - Main Engine
  * המנוע הראשי שמריץ את כל החוקים ומחזיר המלצות
+ *
+ * מבנה חדש:
+ * - strategies: המלצות אסטרטגיות (מאקרו) - הקצאת הון כללית
+ * - benefits: הטבות ספציפיות (מיקרו) - זכויות, הטבות מס, חסכונות
  */
 
-import { FinancialContext, FinancialRule, Recommendation, PRIORITY_ORDER } from './types';
+import { FinancialContext, FinancialRule, Recommendation, AdvisorResponse, PRIORITY_ORDER } from './types';
 
-// Import existing rules
+// Import existing rules (legacy - will be categorized as benefits)
 import careerHousingRule from './rules/careerHousing';
 import ogenLoansRule from './rules/ogenLoans';
 import ogenReservistLoanRule from './rules/ogenReservistLoan';
@@ -29,6 +33,12 @@ import harHakesefRule from './rules/harHakesef';
 import daycareSubsidyRule from './rules/daycareSubsidy';
 import kerenHishtalmutMaxRule from './rules/kerenHishtalmutMax';
 
+// Import new Strategy rules
+import { firstHomePurchaseRule, investExcessCashRule, payOffDebtRule } from './rules/strategy';
+
+// Import new Benefit rules
+import { reservistRightsRule, selfEmployedKerenHishtalmutRule, childTaxCreditsRule } from './rules/benefits';
+
 /**
  * All registered rules
  * To add a new rule:
@@ -37,7 +47,18 @@ import kerenHishtalmutMaxRule from './rules/kerenHishtalmutMax';
  * 3. Add it to this array
  */
 const ALL_RULES: FinancialRule[] = [
-  // Existing rules
+  // === STRATEGY RULES (Macro) ===
+  firstHomePurchaseRule,
+  investExcessCashRule,
+  payOffDebtRule,
+
+  // === BENEFIT RULES (Micro) ===
+  // New benefit rules
+  reservistRightsRule,
+  selfEmployedKerenHishtalmutRule,
+  childTaxCreditsRule,
+
+  // Legacy rules (default to 'benefit' category)
   careerHousingRule,
   ogenLoansRule,
   ogenReservistLoanRule,
@@ -75,20 +96,53 @@ export class AdvisorEngine {
 
   /**
    * Generate recommendations for a given financial context
-   * Runs all rules in parallel and returns sorted results
+   * Returns structured response with strategies and benefits separated
    */
-  async generateRecommendations(context: FinancialContext): Promise<Recommendation[]> {
+  async generateRecommendations(context: FinancialContext): Promise<AdvisorResponse> {
     // Run all rules in parallel
     const results = await Promise.all(
       this.rules.map(rule => rule.evaluate(context))
     );
 
-    // Filter out nulls and sort by priority
-    const recommendations = results
-      .filter((r): r is Recommendation => r !== null)
-      .sort((a, b) => PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority]);
+    // Filter out nulls
+    const allRecommendations = results.filter((r): r is Recommendation => r !== null);
 
-    return recommendations;
+    // Sort by priority (high > medium > low)
+    const sortByPriority = (a: Recommendation, b: Recommendation) =>
+      PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
+
+    // Split into strategies and benefits
+    const strategies = allRecommendations
+      .filter(r => r.category === 'strategy')
+      .sort(sortByPriority);
+
+    const benefits = allRecommendations
+      .filter(r => r.category === 'benefit')
+      .sort(sortByPriority);
+
+    // Calculate stats
+    const totalPotentialValue = allRecommendations.reduce(
+      (sum, r) => sum + (r.potentialValue ?? 0),
+      0
+    );
+
+    return {
+      strategies,
+      benefits,
+      stats: {
+        totalPotentialValue,
+        activeRulesCount: allRecommendations.length,
+      },
+    };
+  }
+
+  /**
+   * Legacy method - returns flat array (for backward compatibility)
+   * @deprecated Use generateRecommendations() instead
+   */
+  async generateRecommendationsLegacy(context: FinancialContext): Promise<Recommendation[]> {
+    const response = await this.generateRecommendations(context);
+    return [...response.strategies, ...response.benefits];
   }
 
   /**
@@ -111,9 +165,20 @@ export const advisorEngine = new AdvisorEngine();
 
 /**
  * Convenience function to generate recommendations
+ * Returns structured AdvisorResponse with strategies and benefits
  */
 export async function generateRecommendations(
   context: FinancialContext
-): Promise<Recommendation[]> {
+): Promise<AdvisorResponse> {
   return advisorEngine.generateRecommendations(context);
+}
+
+/**
+ * Legacy convenience function - returns flat array
+ * @deprecated Use generateRecommendations() instead
+ */
+export async function generateRecommendationsLegacy(
+  context: FinancialContext
+): Promise<Recommendation[]> {
+  return advisorEngine.generateRecommendationsLegacy(context);
 }

@@ -19,6 +19,7 @@ import HelpTrigger from '@/components/ai/HelpTrigger';
 // Types matching the backend
 type RecommendationType = 'tax_benefit' | 'savings' | 'insurance' | 'banking' | 'general';
 type RecommendationPriority = 'high' | 'medium' | 'low';
+type RecommendationCategory = 'strategy' | 'benefit';
 
 interface Recommendation {
   id: string;
@@ -26,9 +27,19 @@ interface Recommendation {
   description: string;
   type: RecommendationType;
   priority: RecommendationPriority;
+  category: RecommendationCategory;
   actionUrl?: string;
   potentialValue?: number;
   eligibilityReason?: string;
+}
+
+interface AdvisorResponse {
+  strategies: Recommendation[];
+  benefits: Recommendation[];
+  stats: {
+    totalPotentialValue: number;
+    activeRulesCount: number;
+  };
 }
 
 interface AdvisorModalProps {
@@ -78,7 +89,9 @@ const TYPE_LABELS: Record<RecommendationType, string> = {
 };
 
 export default function AdvisorModal({ isOpen, onClose }: AdvisorModalProps) {
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [strategies, setStrategies] = useState<Recommendation[]>([]);
+  const [benefits, setBenefits] = useState<Recommendation[]>([]);
+  const [stats, setStats] = useState<{ totalPotentialValue: number; activeRulesCount: number } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -96,8 +109,10 @@ export default function AdvisorModal({ isOpen, onClose }: AdvisorModalProps) {
         throw new Error('Failed to fetch recommendations');
       }
 
-      const data = await response.json();
-      setRecommendations(data.recommendations || []);
+      const data: AdvisorResponse & { success: boolean } = await response.json();
+      setStrategies(data.strategies || []);
+      setBenefits(data.benefits || []);
+      setStats(data.stats || null);
     } catch (err) {
       console.error('Error fetching recommendations:', err);
       setError('שגיאה בטעינת ההמלצות');
@@ -159,7 +174,7 @@ export default function AdvisorModal({ isOpen, onClose }: AdvisorModalProps) {
                 נסה שוב
               </button>
             </div>
-          ) : recommendations.length === 0 ? (
+          ) : strategies.length === 0 && benefits.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center mb-4">
                 <Sparkles className="w-8 h-8 text-green-500" />
@@ -171,10 +186,60 @@ export default function AdvisorModal({ isOpen, onClose }: AdvisorModalProps) {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {recommendations.map((rec) => (
-                <RecommendationCard key={rec.id} recommendation={rec} />
-              ))}
+            <div className="space-y-6">
+              {/* Stats Summary */}
+              {stats && stats.totalPotentialValue > 0 && (
+                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-slate-600">חיסכון פוטנציאלי כולל</p>
+                      <p className="text-2xl font-bold text-indigo-700">
+                        ₪{stats.totalPotentialValue.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm text-slate-600">המלצות פעילות</p>
+                      <p className="text-2xl font-bold text-indigo-700">{stats.activeRulesCount}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Strategies Section */}
+              {strategies.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+                      <Lightbulb className="w-4 h-4 text-indigo-600" />
+                    </div>
+                    <h4 className="font-semibold text-slate-900">אסטרטגיות פיננסיות</h4>
+                    <span className="text-xs text-slate-500">({strategies.length})</span>
+                  </div>
+                  <div className="space-y-3">
+                    {strategies.map((rec) => (
+                      <RecommendationCard key={rec.id} recommendation={rec} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Benefits Section */}
+              {benefits.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <h4 className="font-semibold text-slate-900">הטבות וזכויות</h4>
+                    <span className="text-xs text-slate-500">({benefits.length})</span>
+                  </div>
+                  <div className="space-y-3">
+                    {benefits.map((rec) => (
+                      <RecommendationCard key={rec.id} recommendation={rec} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
