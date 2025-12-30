@@ -33,8 +33,29 @@ import harHakesefRule from './rules/harHakesef';
 import daycareSubsidyRule from './rules/daycareSubsidy';
 import kerenHishtalmutMaxRule from './rules/kerenHishtalmutMax';
 
-// Import new Strategy rules
-import { firstHomePurchaseRule, investExcessCashRule, payOffDebtRule } from './rules/strategy';
+// Import Strategy rules
+import {
+  // Original strategy rules
+  firstHomePurchaseRule,
+  investExcessCashRule,
+  payOffDebtRule,
+  // Category A: Real Estate
+  firstHomeLotteryRule,
+  swapHomeTaxWindowRule,
+  peripheryGrantRule,
+  leveragedRealEstateRule,
+  taxOptimizationMultiHomeRule,
+  // Category B: Capital Markets & Pension
+  maxKerenHishtalmutStrategyRule,
+  tikun190Rule,
+  pensionMatchRule,
+  taxLossHarvestingRule,
+  cashYieldOptimizationRule,
+  // Category C: Credit & Tax
+  hishtalmutLoanRule,
+  selfEmployedExpensesRule,
+  donationTaxCreditRule,
+} from './rules/strategy';
 
 // Import new Benefit rules
 import { reservistRightsRule, selfEmployedKerenHishtalmutRule, childTaxCreditsRule } from './rules/benefits';
@@ -48,9 +69,29 @@ import { reservistRightsRule, selfEmployedKerenHishtalmutRule, childTaxCreditsRu
  */
 const ALL_RULES: FinancialRule[] = [
   // === STRATEGY RULES (Macro) ===
+  // Original strategies
   firstHomePurchaseRule,
   investExcessCashRule,
   payOffDebtRule,
+
+  // Category A: Real Estate (נדל"ן)
+  firstHomeLotteryRule,
+  swapHomeTaxWindowRule,
+  peripheryGrantRule,
+  leveragedRealEstateRule,
+  taxOptimizationMultiHomeRule,
+
+  // Category B: Capital Markets & Pension (שוק ההון ופנסיה)
+  maxKerenHishtalmutStrategyRule,
+  tikun190Rule,
+  pensionMatchRule,
+  taxLossHarvestingRule,
+  cashYieldOptimizationRule,
+
+  // Category C: Credit & Tax (אשראי ומס)
+  hishtalmutLoanRule,
+  selfEmployedExpensesRule,
+  donationTaxCreditRule,
 
   // === BENEFIT RULES (Micro) ===
   // New benefit rules

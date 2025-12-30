@@ -421,3 +421,198 @@ export function getRecurringExpenses(ctx: FinancialContext): number {
     .filter(r => r.type === 'expense' && r.isActive)
     .reduce((sum, r) => sum + Math.abs(r.amount), 0);
 }
+
+// ============================================
+// Income & Tax Helpers - עזרים להכנסה ומס
+// ============================================
+
+/**
+ * Get estimated age from profile (alias for getEstimatedAge)
+ */
+export function getAge(ctx: FinancialContext): number {
+  return getEstimatedAge(ctx) ?? 30; // Default to 30 if unknown
+}
+
+/**
+ * Get liquid assets value (alias for getLiquidAssetsValue)
+ */
+export function getLiquidAssets(ctx: FinancialContext): number {
+  return getLiquidAssetsValue(ctx);
+}
+
+/**
+ * Get Keren Hishtalmut balance (alias for getKerenHishtalmutValue)
+ */
+export function getKerenHishtalmutBalance(ctx: FinancialContext): number {
+  return getKerenHishtalmutValue(ctx);
+}
+
+/**
+ * Get estimated annual income
+ * Based on recurring income × 12 or transactions average
+ */
+export function getAnnualIncome(ctx: FinancialContext): number {
+  // Primary: recurring income × 12
+  const recurringAnnual = ctx.metrics.monthlyIncome * 12;
+  if (recurringAnnual > 0) return recurringAnnual;
+
+  // Fallback: transaction income × 4 (3 months data → annual)
+  const transactionIncome = ctx.transactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+  return transactionIncome * 4;
+}
+
+/**
+ * Get estimated taxable income (annual)
+ * For simplicity, uses gross income (real calculation would subtract deductions)
+ */
+export function getTaxableIncome(ctx: FinancialContext): number {
+  return getAnnualIncome(ctx);
+}
+
+/**
+ * Get donation sum for current year
+ * Searches transactions for donation-related keywords
+ */
+export function getDonationSum(ctx: FinancialContext): number {
+  const donationKeywords = [
+    'תרומה', 'תרומות', 'עמותת', 'עמותה', 'צדקה',
+    'jgive', 'israelgives', 'donation', 'charity'
+  ];
+
+  const currentYear = new Date().getFullYear();
+
+  return ctx.transactions
+    .filter(t => {
+      // Only expenses (donations are expenses)
+      if (t.type !== 'expense') return false;
+
+      // Check if in current year
+      const transactionYear = new Date(t.date).getFullYear();
+      if (transactionYear !== currentYear) return false;
+
+      // Check keywords
+      const desc = t.description.toLowerCase();
+      const cat = t.category.toLowerCase();
+      return donationKeywords.some(kw =>
+        desc.includes(kw.toLowerCase()) || cat.includes(kw.toLowerCase())
+      );
+    })
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+}
+
+// ============================================
+// Real Estate Helpers - עזרים לנדל"ן
+// ============================================
+
+/**
+ * Check if user bought a property recently (within specified months)
+ * Looks for real estate assets created recently
+ */
+export function boughtPropertyRecently(ctx: FinancialContext, monthsAgo: number = 18): boolean {
+  const cutoffDate = new Date();
+  cutoffDate.setMonth(cutoffDate.getMonth() - monthsAgo);
+
+  return ctx.assets.some(a => {
+    // Check if it's real estate
+    const isRealEstate = REAL_ESTATE_CATEGORIES.some(cat =>
+      a.category.toLowerCase().includes(cat.toLowerCase())
+    );
+    if (!isRealEstate) return false;
+
+    // Check if created recently
+    if (!a.createdAt) return false;
+    const createdDate = new Date(a.createdAt);
+    return createdDate >= cutoffDate;
+  });
+}
+
+/**
+ * Get total real estate value
+ */
+export function getRealEstateValue(ctx: FinancialContext): number {
+  return ctx.assets
+    .filter(a => REAL_ESTATE_CATEGORIES.some(cat =>
+      a.category.toLowerCase().includes(cat.toLowerCase())
+    ))
+    .reduce((sum, a) => sum + a.value, 0);
+}
+
+// ============================================
+// Pension & Benefits Helpers - עזרים לפנסיה והטבות
+// ============================================
+
+/**
+ * Get estimated pension contribution percentage
+ * Returns a default based on employment type (real data would come from profile)
+ */
+export function getPensionContributionPct(ctx: FinancialContext): number {
+  // Default assumption: most employees contribute 5.5-6%
+  // Self-employed often contribute less
+  if (isSelfEmployed(ctx) && !isEmployee(ctx)) {
+    return 4; // Self-employed typically contribute less
+  }
+  return 5.5; // Default employee contribution
+}
+
+/**
+ * Check if user has pension assets
+ */
+export function hasPension(ctx: FinancialContext): boolean {
+  return ctx.assets.some(a =>
+    a.category === 'pension' ||
+    a.name.includes('פנסיה') ||
+    a.name.includes('קופת גמל')
+  );
+}
+
+/**
+ * Get pension total value
+ */
+export function getPensionValue(ctx: FinancialContext): number {
+  return ctx.assets
+    .filter(a =>
+      a.category === 'pension' ||
+      a.name.includes('פנסיה') ||
+      a.name.includes('קופת גמל')
+    )
+    .reduce((sum, a) => sum + a.value, 0);
+}
+
+// ============================================
+// Investment Helpers - עזרים להשקעות
+// ============================================
+
+/**
+ * Get investment assets (stocks, crypto, etc.)
+ */
+export function getInvestmentAssets(ctx: FinancialContext): number {
+  const investmentCategories = ['stocks', 'crypto', 'investments', 'שוק ההון', 'קריפטו'];
+  return ctx.assets
+    .filter(a => investmentCategories.some(cat =>
+      a.category.toLowerCase().includes(cat.toLowerCase())
+    ))
+    .reduce((sum, a) => sum + a.value, 0);
+}
+
+/**
+ * Get uninvested cash (immediate liquidity)
+ */
+export function getUninvestedCash(ctx: FinancialContext): number {
+  return ctx.metrics.uninvestedCash;
+}
+
+/**
+ * Get current month (1-12)
+ */
+export function getCurrentMonth(): number {
+  return new Date().getMonth() + 1;
+}
+
+/**
+ * Check if it's end of year (November or December)
+ */
+export function isEndOfYear(): boolean {
+  return getCurrentMonth() >= 11;
+}
