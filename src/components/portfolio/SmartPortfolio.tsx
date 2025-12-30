@@ -1,10 +1,27 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, TrendingUp, TrendingDown, Wallet, AlertCircle } from 'lucide-react';
+import { RefreshCw, TrendingUp, TrendingDown, Wallet, AlertCircle, X, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { RiskGauge } from './RiskGauge';
 import { HoldingsTable } from './HoldingsTable';
 import { DiversificationHeatmap } from './DiversificationHeatmap';
+import { AddAssetButton } from './AddAssetButton';
+import { apiFetch } from '@/lib/utils';
+
+interface HoldingData {
+  id?: string;
+  symbol: string;
+  name: string;
+  quantity: number;
+  priceILS: number;
+  valueILS: number;
+  beta: number;
+  sector: string;
+  changePercent: number;
+  weight: number;
+  sparklineData: number[];
+}
 
 interface PortfolioData {
   equity: number;
@@ -14,23 +31,221 @@ interface PortfolioData {
   dailyChangeILS: number;
   diversificationScore: number;
   sectorAllocation: { sector: string; value: number; percent: number }[];
-  holdings: Array<{
-    symbol: string;
-    name: string;
-    quantity: number;
-    priceILS: number;
-    valueILS: number;
-    beta: number;
-    sector: string;
-    changePercent: number;
-    weight: number;
-    sparklineData: number[];
-  }>;
+  holdings: HoldingData[];
   riskLevel: 'conservative' | 'moderate' | 'aggressive';
 }
 
 interface SmartPortfolioProps {
   className?: string;
+}
+
+/**
+ * Edit Holding Modal
+ */
+function EditHoldingModal({
+  holding,
+  onClose,
+  onSave,
+}: {
+  holding: HoldingData;
+  onClose: () => void;
+  onSave: (id: string, quantity: number) => Promise<void>;
+}) {
+  const [quantity, setQuantity] = useState(holding.quantity.toString());
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSave = async () => {
+    const qty = parseFloat(quantity);
+    if (!qty || qty <= 0) {
+      setError('נא להזין כמות תקינה');
+      return;
+    }
+
+    if (!holding.id) {
+      setError('לא ניתן לערוך אחזקה זו');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await onSave(holding.id, qty);
+      onClose();
+    } catch {
+      setError('שגיאה בשמירת השינויים');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <>
+      <motion.div
+        key="edit-backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
+      />
+      <motion.div
+        key="edit-modal"
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm z-50"
+      >
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden mx-4 p-5">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-slate-900">עריכת אחזקה</h3>
+            <button
+              onClick={onClose}
+              className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-400" />
+            </button>
+          </div>
+
+          {/* Stock Info */}
+          <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl mb-4">
+            <div className="flex-1 text-right">
+              <p className="font-bold text-slate-900">{holding.symbol}</p>
+              <p className="text-sm text-slate-500 truncate">{holding.name}</p>
+            </div>
+          </div>
+
+          {/* Quantity Input */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
+              כמות יחידות
+            </label>
+            <input
+              type="number"
+              value={quantity}
+              onChange={(e) => {
+                setQuantity(e.target.value);
+                setError('');
+              }}
+              className={`w-full px-4 py-3 text-lg text-right rounded-xl border transition-colors outline-none ${
+                error
+                  ? 'border-rose-300 bg-rose-50 focus:border-rose-500'
+                  : 'border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
+              }`}
+              min="0"
+              step="0.01"
+              dir="ltr"
+              autoFocus
+            />
+            {error && (
+              <p className="mt-1 text-sm text-rose-500 text-right">{error}</p>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-3 text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors"
+            >
+              ביטול
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex-1 px-4 py-3 text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {isSaving ? (
+                <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+              ) : (
+                'שמור'
+              )}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </>
+  );
+}
+
+/**
+ * Delete Confirmation Modal
+ */
+function DeleteConfirmModal({
+  holding,
+  onClose,
+  onConfirm,
+}: {
+  holding: HoldingData;
+  onClose: () => void;
+  onConfirm: (id: string) => Promise<void>;
+}) {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!holding.id) return;
+
+    setIsDeleting(true);
+    try {
+      await onConfirm(holding.id);
+      onClose();
+    } catch {
+      // Error handled in parent
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <>
+      <motion.div
+        key="delete-backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
+      />
+      <motion.div
+        key="delete-modal"
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm z-50"
+      >
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden mx-4 p-5 text-center">
+          <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-6 h-6 text-rose-600" />
+          </div>
+
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">מחיקת אחזקה</h3>
+          <p className="text-slate-500 mb-4">
+            האם למחוק את <span className="font-semibold text-slate-700">{holding.symbol}</span> מהתיק?
+          </p>
+
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-3 text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors"
+            >
+              ביטול
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="flex-1 px-4 py-3 text-white bg-rose-600 rounded-xl hover:bg-rose-700 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {isDeleting ? (
+                <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+              ) : (
+                'מחק'
+              )}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </>
+  );
 }
 
 /**
@@ -42,6 +257,10 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  // Edit/Delete state
+  const [editingHolding, setEditingHolding] = useState<HoldingData | null>(null);
+  const [deletingHolding, setDeletingHolding] = useState<HoldingData | null>(null);
 
   const fetchPortfolioData = useCallback(async () => {
     try {
@@ -62,6 +281,61 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
       setLoading(false);
     }
   }, []);
+
+  const handleAddAsset = async (assetData: { symbol: string; name: string; quantity: number; price: number }) => {
+    try {
+      // Use existing holdings API - currentValue represents quantity for portfolio analysis
+      const response = await apiFetch('/api/holdings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: assetData.name,
+          symbol: assetData.symbol,
+          currentValue: assetData.quantity, // quantity becomes currentValue in DB
+          targetAllocation: 0, // Default, user can adjust later
+          type: 'stock',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add asset');
+      }
+
+      // Refresh portfolio data after adding
+      await fetchPortfolioData();
+    } catch (err) {
+      console.error('Error adding asset:', err);
+      throw err;
+    }
+  };
+
+  // Edit holding handler
+  const handleEditHolding = async (id: string, quantity: number) => {
+    const response = await apiFetch(`/api/holdings/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentValue: quantity }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update holding');
+    }
+
+    await fetchPortfolioData();
+  };
+
+  // Delete holding handler
+  const handleDeleteHolding = async (id: string) => {
+    const response = await apiFetch(`/api/holdings/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete holding');
+    }
+
+    await fetchPortfolioData();
+  };
 
   useEffect(() => {
     fetchPortfolioData();
@@ -101,12 +375,13 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
   if (!data || data.holdings.length === 0) {
     return (
       <div className={`bg-slate-50 min-h-[400px] flex items-center justify-center ${className}`}>
-        <div className="flex flex-col items-center gap-3 text-center max-w-md">
+        <div className="flex flex-col items-center gap-4 text-center max-w-md">
           <Wallet className="w-12 h-12 text-slate-300" />
           <h3 className="text-lg font-semibold text-slate-700">אין אחזקות בתיק</h3>
           <p className="text-slate-500 text-sm">
             הוסף אחזקות עם סימבול מניה (למשל AAPL, MSFT) כדי לראות ניתוח התיק
           </p>
+          <AddAssetButton onAddAsset={handleAddAsset} />
         </div>
       </div>
     );
@@ -135,6 +410,7 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
           >
             <RefreshCw className={`w-4 h-4 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
           </button>
+          <AddAssetButton onAddAsset={handleAddAsset} />
         </div>
       </div>
 
@@ -223,9 +499,31 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
 
         {/* Right Column - Holdings Table */}
         <div className="lg:col-span-2">
-          <HoldingsTable holdings={data.holdings} />
+          <HoldingsTable
+            holdings={data.holdings}
+            onEdit={(holding) => setEditingHolding(holding)}
+            onDelete={(holding) => setDeletingHolding(holding)}
+          />
         </div>
       </div>
+
+      {/* Edit Modal */}
+      {editingHolding && (
+        <EditHoldingModal
+          holding={editingHolding}
+          onClose={() => setEditingHolding(null)}
+          onSave={handleEditHolding}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingHolding && (
+        <DeleteConfirmModal
+          holding={deletingHolding}
+          onClose={() => setDeletingHolding(null)}
+          onConfirm={handleDeleteHolding}
+        />
+      )}
     </div>
   );
 }

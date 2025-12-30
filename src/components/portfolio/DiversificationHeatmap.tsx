@@ -15,8 +15,9 @@ interface DiversificationHeatmapProps {
   className?: string;
 }
 
-// Sector name translations
+// Sector name translations (GICS sectors + ETF categories)
 const SECTOR_NAMES: Record<string, string> = {
+  // GICS Sectors
   'Technology': 'טכנולוגיה',
   'Healthcare': 'בריאות',
   'Financial Services': 'פיננסים',
@@ -28,11 +29,37 @@ const SECTOR_NAMES: Record<string, string> = {
   'Real Estate': 'נדל"ן',
   'Basic Materials': 'חומרי גלם',
   'Communication Services': 'תקשורת',
+
+  // ETF Categories - Style
+  'Large Blend': 'מניות גדולות',
+  'Large Growth': 'צמיחה גדולות',
+  'Large Value': 'ערך גדולות',
+  'Mid-Cap Blend': 'מניות בינוניות',
+  'Mid-Cap Growth': 'צמיחה בינוניות',
+  'Mid-Cap Value': 'ערך בינוניות',
+  'Small Blend': 'מניות קטנות',
+  'Small Growth': 'צמיחה קטנות',
+  'Small Value': 'ערך קטנות',
+
+  // ETF Categories - Asset Class
+  'Commodities Focused': 'סחורות',
+  'Commodities Broad Basket': 'סחורות מגוונות',
+  'Equity Precious Metals': 'מתכות יקרות',
+  'Foreign Large Blend': 'מניות זרות',
+  'World Large Stock': 'מניות עולמיות',
+  'Diversified Emerging Mkts': 'שווקים מתפתחים',
+
+  // Bonds
+  'Intermediate Core Bond': 'אג"ח ממשלתי',
+  'Corporate Bond': 'אג"ח קונצרני',
+  'High Yield Bond': 'אג"ח High Yield',
+
   'Unknown': 'אחר',
 };
 
 // Sector colors
 const SECTOR_COLORS: Record<string, string> = {
+  // GICS Sectors
   'Technology': '#6366f1',      // indigo-500
   'Healthcare': '#14b8a6',      // teal-500
   'Financial Services': '#0ea5e9', // sky-500
@@ -44,6 +71,31 @@ const SECTOR_COLORS: Record<string, string> = {
   'Real Estate': '#ec4899',     // pink-500
   'Basic Materials': '#84cc16', // lime-500
   'Communication Services': '#06b6d4', // cyan-500
+
+  // ETF Categories - Style (blues/grays)
+  'Large Blend': '#64748b',     // slate-500
+  'Large Growth': '#3b82f6',    // blue-500
+  'Large Value': '#475569',     // slate-600
+  'Mid-Cap Blend': '#94a3b8',   // slate-400
+  'Mid-Cap Growth': '#60a5fa',  // blue-400
+  'Mid-Cap Value': '#6b7280',   // gray-500
+  'Small Blend': '#9ca3af',     // gray-400
+  'Small Growth': '#93c5fd',    // blue-300
+  'Small Value': '#4b5563',     // gray-600
+
+  // ETF Categories - Asset Class
+  'Commodities Focused': '#eab308', // yellow-500
+  'Commodities Broad Basket': '#ca8a04', // yellow-600
+  'Equity Precious Metals': '#fcd34d', // yellow-300
+  'Foreign Large Blend': '#06b6d4', // cyan-500
+  'World Large Stock': '#0891b2', // cyan-600
+  'Diversified Emerging Mkts': '#22d3ee', // cyan-400
+
+  // Bonds
+  'Intermediate Core Bond': '#a78bfa', // violet-400
+  'Corporate Bond': '#8b5cf6', // violet-500
+  'High Yield Bond': '#7c3aed', // violet-600
+
   'Unknown': '#94a3b8',         // slate-400
 };
 

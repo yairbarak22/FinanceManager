@@ -65,16 +65,18 @@ export function RiskGauge({ beta, className = '' }: RiskGaugeProps) {
         </div>
       </div>
 
-      {/* Gauge */}
+      {/* Gauge - scale 0.0 to 2.0 left to right */}
       <div className="relative">
         {/* Background track with zones */}
         <div className="h-3 rounded-full overflow-hidden flex">
-          {/* Safe zone: 0 - 0.8 (40%) */}
-          <div className="w-[40%] bg-emerald-200" />
-          {/* Market zone: 0.8 - 1.2 (20%) */}
-          <div className="w-[20%] bg-sky-200" />
           {/* Aggressive zone: 1.2 - 2.0 (40%) */}
           <div className="w-[40%] bg-rose-200" />
+           {/* Market zone: 0.8 - 1.2 (20%) */}
+          <div className="w-[20%] bg-sky-200" />
+          {/* Safe zone: 0 - 0.8 (40%) */}
+          <div className="w-[40%] bg-emerald-200" />
+         
+          
         </div>
 
         {/* Marker */}
@@ -86,11 +88,11 @@ export function RiskGauge({ beta, className = '' }: RiskGaugeProps) {
         </div>
 
         {/* Scale labels */}
-        <div className="flex justify-between mt-2 text-xs text-slate-400">
-          <span>0.0</span>
-          <span className="absolute left-[40%] -translate-x-1/2">0.8</span>
-          <span className="absolute left-[60%] -translate-x-1/2">1.2</span>
+        <div className="flex justify-between mt-2 text-xs text-slate-400 relative">
           <span>2.0</span>
+          <span className="absolute left-[60%] -translate-x-1/2">0.8</span>
+          <span className="absolute left-[40%] -translate-x-1/2">1.2</span>
+          <span>0.0</span>
         </div>
       </div>
 

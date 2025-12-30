@@ -85,6 +85,7 @@ export async function GET() {
     const holdings: Holding[] = dbHoldings
       .filter(h => h.symbol && h.currentValue > 0)
       .map(h => ({
+        id: h.id, // Include database ID for edit/delete
         symbol: h.symbol!,
         quantity: h.currentValue,
       }));

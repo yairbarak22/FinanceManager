@@ -3,7 +3,10 @@
  * Based on CAPM and Risk Diversification principles
  */
 
-import yahooFinance from 'yahoo-finance2';
+import YahooFinance from 'yahoo-finance2';
+
+// Initialize yahoo-finance2 v3 instance with suppressed notices
+const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 
 // Yahoo Finance Quote type (simplified)
 interface YahooQuote {
@@ -13,8 +16,25 @@ interface YahooQuote {
   regularMarketPrice?: number;
   regularMarketChangePercent?: number;
   currency?: string;
-  beta?: number;
-  sector?: string;
+}
+
+// Yahoo Finance QuoteSummary types
+interface YahooQuoteSummary {
+  summaryDetail?: {
+    beta?: number;
+  };
+  assetProfile?: {
+    sector?: string;
+    industry?: string;
+  };
+  fundProfile?: {
+    categoryName?: string;
+    family?: string;
+    legalType?: string;
+  };
+  defaultKeyStatistics?: {
+    beta3Year?: number;
+  };
 }
 
 // Yahoo Finance Chart type
@@ -31,11 +51,13 @@ interface YahooChartResult {
 
 // Types
 export interface Holding {
+  id?: string; // Database ID (optional)
   symbol: string;
   quantity: number;
 }
 
 export interface EnrichedHolding {
+  id?: string; // Database ID (optional)
   symbol: string;
   name: string;
   quantity: number;
@@ -120,6 +142,38 @@ async function getSparklineData(symbol: string): Promise<number[]> {
 }
 
 /**
+ * Fetch beta and sector from quoteSummary
+ * Handles both stocks (assetProfile) and ETFs (fundProfile)
+ */
+async function getBetaAndSector(symbol: string): Promise<{ beta: number; sector: string }> {
+  try {
+    const summary = await yahooFinance.quoteSummary(symbol, {
+      modules: ['summaryDetail', 'assetProfile', 'fundProfile', 'defaultKeyStatistics'],
+    }) as YahooQuoteSummary;
+
+    // Beta: prefer summaryDetail.beta (stocks), fall back to defaultKeyStatistics.beta3Year (ETFs)
+    let beta = summary.summaryDetail?.beta;
+    if (beta === undefined || beta === null) {
+      beta = summary.defaultKeyStatistics?.beta3Year ?? 1.0;
+    }
+
+    // Sector: try assetProfile first (stocks), then fundProfile.categoryName (ETFs)
+    let sector = summary.assetProfile?.sector;
+    if (!sector && summary.fundProfile?.categoryName) {
+      sector = summary.fundProfile.categoryName;
+    }
+
+    return {
+      beta,
+      sector: sector ?? 'Unknown',
+    };
+  } catch (error) {
+    console.error(`Error fetching beta/sector for ${symbol}:`, error);
+    return { beta: 1.0, sector: 'Unknown' };
+  }
+}
+
+/**
  * Fetch enriched data for a single holding
  */
 async function enrichHolding(
@@ -127,9 +181,10 @@ async function enrichHolding(
   exchangeRate: number
 ): Promise<EnrichedHolding | null> {
   try {
-    const [quote, sparklineData] = await Promise.all([
+    const [quote, sparklineData, betaSector] = await Promise.all([
       yahooFinance.quote(holding.symbol) as Promise<YahooQuote>,
       getSparklineData(holding.symbol),
+      getBetaAndSector(holding.symbol),
     ]);
 
     const price = quote.regularMarketPrice ?? 0;
@@ -141,6 +196,7 @@ async function enrichHolding(
     const valueILS = value * rate;
 
     return {
+      id: holding.id, // Pass through database ID
       symbol: holding.symbol,
       name: quote.shortName ?? quote.longName ?? holding.symbol,
       quantity: holding.quantity,
@@ -148,8 +204,8 @@ async function enrichHolding(
       priceILS: price * rate,
       value,
       valueILS,
-      beta: quote.beta ?? 1.0, // Default beta = 1 (market)
-      sector: quote.sector ?? 'Unknown',
+      beta: betaSector.beta,
+      sector: betaSector.sector,
       currency,
       changePercent: quote.regularMarketChangePercent ?? 0,
       weight: 0, // Will be calculated after all holdings
@@ -275,13 +331,19 @@ export async function analyzePortfolio(holdings: Holding[]): Promise<PortfolioAn
  */
 export async function getQuote(symbol: string) {
   try {
-    const quote = await yahooFinance.quote(symbol) as YahooQuote;
+    const [quote, betaSector] = await Promise.all([
+      yahooFinance.quote(symbol) as Promise<YahooQuote>,
+      getBetaAndSector(symbol),
+    ]);
+
     return {
       symbol: quote.symbol,
       name: quote.shortName ?? quote.longName ?? symbol,
       price: quote.regularMarketPrice ?? 0,
       currency: quote.currency ?? 'USD',
       changePercent: quote.regularMarketChangePercent ?? 0,
+      beta: betaSector.beta,
+      sector: betaSector.sector,
     };
   } catch (error) {
     console.error(`Error fetching quote for ${symbol}:`, error);
