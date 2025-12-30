@@ -7,6 +7,7 @@ import { FinancialContext } from './types';
 import {
   REAL_ESTATE_CATEGORIES,
   LIQUID_ASSET_TYPES,
+  LIQUID_ASSET_CATEGORIES,
   INTEREST_THRESHOLDS,
   KEYWORDS,
 } from './constants';
@@ -169,10 +170,25 @@ export function hasLiquidAssets(ctx: FinancialContext): boolean {
 
 /**
  * Get total liquid assets value
+ * Includes assets with explicit liquidity type OR assets in liquid categories (cash, stocks, etc.)
  */
 export function getLiquidAssetsValue(ctx: FinancialContext): number {
   return ctx.assets
-    .filter(a => LIQUID_ASSET_TYPES.includes(a.liquidity as 'immediate' | 'short_term'))
+    .filter(a => {
+      // Check explicit liquidity field
+      if (LIQUID_ASSET_TYPES.includes(a.liquidity as 'immediate' | 'short_term')) {
+        return true;
+      }
+
+      // Check if category is inherently liquid
+      const categoryLower = (a.category || '').toLowerCase();
+      const nameLower = (a.name || '').toLowerCase();
+
+      return LIQUID_ASSET_CATEGORIES.some(liquidCat => {
+        const catLower = liquidCat.toLowerCase();
+        return categoryLower.includes(catLower) || nameLower.includes(catLower);
+      });
+    })
     .reduce((sum, a) => sum + a.value, 0);
 }
 

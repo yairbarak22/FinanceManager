@@ -90,6 +90,26 @@ export const LIQUID_ASSET_TYPES = [
   'short_term',
 ] as const;
 
+// Asset categories that are inherently liquid (cash, stocks, etc.)
+export const LIQUID_ASSET_CATEGORIES = [
+  'cash',
+  'מזומן',
+  'עו"ש',
+  'חשבון עו"ש',
+  'checking',
+  'savings',
+  'חיסכון',
+  'פקדון',
+  'deposit',
+  'stocks',
+  'שוק ההון',
+  'מניות',
+  'crypto',
+  'קריפטו',
+  'investments',
+  'השקעות',
+] as const;
+
 // URLs for various services
 export const SERVICE_URLS = {
   // Existing
