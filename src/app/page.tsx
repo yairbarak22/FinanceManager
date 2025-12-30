@@ -21,7 +21,7 @@ import AmortizationModal from '@/components/modals/AmortizationModal';
 import ImportModal from '@/components/modals/ImportModal';
 import DocumentsModal from '@/components/modals/DocumentsModal';
 import AdvisorModal from '@/components/modals/AdvisorModal';
-import InvestmentsTab from '@/components/investments/InvestmentsTab';
+import { SmartPortfolio } from '@/components/portfolio';
 import UserMenu from '@/components/UserMenu';
 import ProfileModal from '@/components/ProfileModal';
 import AccountSettings from '@/components/AccountSettings';
@@ -583,9 +583,9 @@ export default function Home() {
       />
 
       <div className="max-w-7xl mx-auto py-6 px-4 md:px-6 lg:px-8">
-        {/* Investments View - Replaces Dashboard */}
+        {/* Investments View - Smart Portfolio */}
         {activeSection === 'investments' && (
-          <InvestmentsTab />
+          <SmartPortfolio />
         )}
 
         {/* Dashboard View */}

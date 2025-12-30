@@ -73,8 +73,11 @@ export default function HeaderBar({
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
 
-          {/* Right: Logo & Brand */}
-          <div className="flex items-center gap-3 group">
+          {/* Right: Logo & Brand - Clickable to navigate to dashboard */}
+          <button
+            onClick={() => onSectionChange('dashboard')}
+            className="flex items-center gap-3 group cursor-pointer hover:opacity-80 transition-opacity"
+          >
             <div className="flex items-center gap-0">
               <PieChart
                 className="w-10 h-10 text-[#2B4699]"
@@ -83,7 +86,7 @@ export default function HeaderBar({
               />
               <span className="text-2xl font-black text-[#1D1D1F]" style={{ fontFamily: 'var(--font-heebo)' }}>NET</span>
             </div>
-          </div>
+          </button>
 
           <nav className="hidden md:flex items-center gap-6">
             {navTabs.map((tab) => {
