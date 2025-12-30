@@ -1,7 +1,7 @@
 /**
  * אסטרטגיה: מזומן בעו"ש שלא עובד
  *
- * תנאי: מזומן נזיל > 30,000₪, קרן חירום >= 3 חודשים
+ * תנאי: מזומן נזיל > 30,000₪
  * קטגוריה: strategy
  */
 
@@ -9,23 +9,16 @@ import { createRule } from '../../ruleFactory';
 import { getLiquidAssets } from '../../helpers';
 
 const MIN_IDLE_CASH = 30000; // מינימום להמלצה
-const MIN_EMERGENCY_MONTHS = 3; // מינימום חודשי קרן חירום
 
 export default createRule({
   id: 'idle-cash-optimization',
   name: 'מזומן בעו"ש שלא עובד',
 
   condition: (ctx) => {
-    const { metrics } = ctx;
     const liquidAssets = getLiquidAssets(ctx);
 
     // מזומן נזיל > 30,000₪
-    if (liquidAssets <= MIN_IDLE_CASH) return false;
-
-    // קרן חירום >= 3 חודשים (יש כיסוי בסיסי)
-    if (metrics.emergencyFundMonths < MIN_EMERGENCY_MONTHS) return false;
-
-    return true;
+    return liquidAssets > MIN_IDLE_CASH;
   },
 
   recommendation: {
