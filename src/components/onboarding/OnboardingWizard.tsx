@@ -452,7 +452,7 @@ export default function OnboardingWizard() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm"
-            onClick={closeWizard}
+            onClick={endTour}
           />
 
           {/* Modal */}
@@ -464,12 +464,12 @@ export default function OnboardingWizard() {
             className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
           >
             <div
-              className="relative w-full max-w-md h-[600px] bg-white rounded-3xl shadow-2xl border border-slate-100 pointer-events-auto flex flex-col"
+              className="relative w-full max-w-md h-[600px] bg-white rounded-3xl shadow-2xl border border-slate-100 pointer-events-auto flex flex-col overflow-hidden"
               dir="rtl"
             >
               {/* Close Button */}
               <button
-                onClick={closeWizard}
+                onClick={endTour}
                 className="absolute top-4 left-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all z-10"
               >
                 <X className="w-5 h-5" />
