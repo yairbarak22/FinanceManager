@@ -1,7 +1,7 @@
 /**
  * אסטרטגיה: רכישת דירה ראשונה
  *
- * תנאי: אין נדל"ן, נכסים נזילים > 400,000, גיל > 25
+ * תנאי: אין נדל"ן, נכסים נזילים > 200,000, גיל > 22
  * קטגוריה: strategy
  */
 
@@ -25,12 +25,12 @@ export default createRule({
     // אין נדל"ן
     if (metrics.hasRealEstate) return false;
 
-    // נכסים נזילים > 400,000
-    if (metrics.liquidAssets <= 400000) return false;
+    // נכסים נזילים > 200,000
+    if (metrics.liquidAssets <= 200000) return false;
 
     // גיל > 25
     const age = getMinAgeFromRange(user.profile?.ageRange);
-    if (age < 26) return false;
+    if (age < 22) return false;
 
     return true;
   },

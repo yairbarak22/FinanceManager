@@ -37,7 +37,7 @@ export default createRule({
 💡 המלצה:
 השאר 1-2 חודשי הוצאות בעו"ש, והשאר העבר לאפיק שמניב תשואה.`,
     type: 'savings',
-    priority: 'medium',
+    priority: 'high',
     category: 'strategy',
     actionUrl: 'https://www.boi.org.il/he/markets/bonds/',
     potentialValue: 2000,

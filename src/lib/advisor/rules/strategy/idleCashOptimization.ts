@@ -45,7 +45,7 @@ export default createRule({
 
 💡 המלצה: השאר 3-6 חודשי הוצאות בעו"ש כקרן חירום, והשאר העבר לקרן כספית או תיק השקעות.`,
     type: 'savings',
-    priority: 'medium',
+    priority: 'high',
     category: 'strategy',
     actionUrl: 'https://www.bizportal.co.il/capitalmarket/quote/generalview/1159943', // קרן כספית לדוגמה
     potentialValue: undefined, // Dynamic
