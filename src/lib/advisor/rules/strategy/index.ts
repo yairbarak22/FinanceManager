@@ -20,6 +20,7 @@ export { default as tikun190Rule } from './tikun190';
 export { default as pensionMatchRule } from './pensionMatch';
 export { default as taxLossHarvestingRule } from './taxLossHarvesting';
 export { default as cashYieldOptimizationRule } from './cashYieldOptimization';
+export { default as idleCashOptimizationRule } from './idleCashOptimization';
 
 // === Category C: Credit & Tax (אשראי ומס) ===
 export { default as hishtalmutLoanRule } from './hishtalmutLoan';

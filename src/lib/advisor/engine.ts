@@ -51,6 +51,7 @@ import {
   pensionMatchRule,
   taxLossHarvestingRule,
   cashYieldOptimizationRule,
+  idleCashOptimizationRule,
   // Category C: Credit & Tax
   hishtalmutLoanRule,
   selfEmployedExpensesRule,
@@ -87,6 +88,7 @@ const ALL_RULES: FinancialRule[] = [
   pensionMatchRule,
   taxLossHarvestingRule,
   cashYieldOptimizationRule,
+  idleCashOptimizationRule,
 
   // Category C: Credit & Tax (אשראי ומס)
   hishtalmutLoanRule,
