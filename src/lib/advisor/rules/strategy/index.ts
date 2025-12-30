@@ -15,9 +15,7 @@ export { default as leveragedRealEstateRule } from './leveragedRealEstate';
 export { default as taxOptimizationMultiHomeRule } from './taxOptimizationMultiHome';
 
 // === Category B: Capital Markets & Pension (שוק ההון ופנסיה) ===
-export { default as maxKerenHishtalmutStrategyRule } from './maxKerenHishtalmutStrategy';
 export { default as tikun190Rule } from './tikun190';
-export { default as pensionMatchRule } from './pensionMatch';
 export { default as taxLossHarvestingRule } from './taxLossHarvesting';
 export { default as cashYieldOptimizationRule } from './cashYieldOptimization';
 export { default as idleCashOptimizationRule } from './idleCashOptimization';

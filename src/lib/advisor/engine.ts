@@ -46,9 +46,7 @@ import {
   leveragedRealEstateRule,
   taxOptimizationMultiHomeRule,
   // Category B: Capital Markets & Pension
-  maxKerenHishtalmutStrategyRule,
   tikun190Rule,
-  pensionMatchRule,
   taxLossHarvestingRule,
   cashYieldOptimizationRule,
   idleCashOptimizationRule,
@@ -83,9 +81,7 @@ const ALL_RULES: FinancialRule[] = [
   taxOptimizationMultiHomeRule,
 
   // Category B: Capital Markets & Pension (שוק ההון ופנסיה)
-  maxKerenHishtalmutStrategyRule,
   tikun190Rule,
-  pensionMatchRule,
   taxLossHarvestingRule,
   cashYieldOptimizationRule,
   idleCashOptimizationRule,
