@@ -14,12 +14,13 @@ const SMARTLOOK_REGION = 'eu';
  * - EU region for GDPR compliance
  */
 export default function Smartlook() {
-  const [consentGiven, setConsentGiven] = useState<boolean | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Initialize Smartlook with privacy settings
   const initSmartlook = useCallback(() => {
     if (typeof window === 'undefined' || isLoaded) return;
+
+    console.log('[Smartlook] Loading script...');
 
     // Load Smartlook script
     (function(d) {
@@ -38,6 +39,7 @@ export default function Smartlook() {
 
     // Initialize with project key and region
     window.smartlook('init', SMARTLOOK_PROJECT_KEY, { region: SMARTLOOK_REGION });
+    console.log('[Smartlook] Initialized with key:', SMARTLOOK_PROJECT_KEY);
 
     // Configure recording to mask sensitive data
     // This tells Smartlook to mask form inputs, emails, and numbers
@@ -49,36 +51,14 @@ export default function Smartlook() {
     });
 
     setIsLoaded(true);
+    console.log('[Smartlook] Recording started');
   }, [isLoaded]);
 
-  // Check initial consent on mount
+  // TEMPORARY: Load immediately without consent check (for debugging)
+  // TODO: Restore consent check after debugging
   useEffect(() => {
-    const consent = localStorage.getItem('analytics-consent');
-    if (consent === 'true') {
-      setConsentGiven(true);
-    } else if (consent === 'false') {
-      setConsentGiven(false);
-    }
-    // If no consent stored, stay null (banner will show)
-  }, []);
-
-  // Listen for consent changes
-  useEffect(() => {
-    const handleConsentChange = () => {
-      const consent = localStorage.getItem('analytics-consent');
-      setConsentGiven(consent === 'true');
-    };
-
-    window.addEventListener('analytics-consent-change', handleConsentChange);
-    return () => window.removeEventListener('analytics-consent-change', handleConsentChange);
-  }, []);
-
-  // Load Smartlook when consent is given
-  useEffect(() => {
-    if (consentGiven && !isLoaded) {
-      initSmartlook();
-    }
-  }, [consentGiven, isLoaded, initSmartlook]);
+    initSmartlook();
+  }, [initSmartlook]);
 
   // This component doesn't render anything visible
   return null;

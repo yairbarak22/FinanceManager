@@ -32,11 +32,11 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://web-sdk.smartlook.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://accounts.google.com https://api.openai.com https://*.vercel-storage.com",
+              "connect-src 'self' https://accounts.google.com https://api.openai.com https://*.vercel-storage.com https://*.smartlook.com wss://*.smartlook.com",
               "frame-src 'self' https://accounts.google.com",
               "frame-ancestors 'none'",
               "form-action 'self'",

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Heebo, Inter } from "next/font/google";
+import Script from "next/script";
 import Providers from "@/components/Providers";
 import AIChatProvider from "@/components/ai/AIChatProvider";
 import { OnboardingProvider } from "@/context/OnboardingContext";
 import OnboardingLayer from "@/components/onboarding/OnboardingLayer";
 import Analytics from "@/components/Analytics";
-import Smartlook from "@/components/Smartlook";
 import SmartlookIdentify from "@/components/SmartlookIdentify";
 import CookieConsent from "@/components/CookieConsent";
 import { AccessibilityStatement } from "@/components/AccessibilityStatement";
@@ -36,6 +36,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="he" dir="rtl">
+      <head>
+        {/* Smartlook - Session Recording */}
+        <Script
+          id="smartlook-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.smartlook||(function(d) {
+                var o=smartlook=function(){ o.api.push(arguments)},h=d.getElementsByTagName('head')[0];
+                var c=d.createElement('script');o.api=new Array();c.async=true;c.type='text/javascript';
+                c.charset='utf-8';c.src='https://web-sdk.smartlook.com/recorder.js';h.appendChild(c);
+              })(document);
+              smartlook('init', 'ff3850f57f63db3eeb1e38ed64c7c1d592664267', { region: 'eu' });
+            `,
+          }}
+        />
+      </head>
       <body className={`${heebo.variable} ${inter.variable} font-sans antialiased`}>
         <Providers>
           <OnboardingProvider>
@@ -45,7 +62,6 @@ export default function RootLayout({
             <OnboardingLayer />
           </OnboardingProvider>
           <Analytics />
-          <Smartlook />
           <SmartlookIdentify />
           <CookieConsent />
           <AccessibilityStatement />
