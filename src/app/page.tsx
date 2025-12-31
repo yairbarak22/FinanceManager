@@ -252,7 +252,6 @@ export default function Home() {
         if (res.ok) {
           const data = await res.json();
           if (!data.hasSeenOnboarding) {
-            // First-time user - start onboarding tour
             startTour();
           }
         }
