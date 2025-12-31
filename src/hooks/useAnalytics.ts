@@ -90,15 +90,6 @@ export function useAnalytics() {
     trackEvent('add_custom_category', { category_type: type });
   }, []);
 
-  // Investment events
-  const trackInvestmentCalculation = useCallback((amount: number) => {
-    trackEvent('investment_calculation', { monthly_amount: amount });
-  }, []);
-
-  const trackApplyInvestment = useCallback((amount: number) => {
-    trackEvent('apply_investment', { total_amount: amount });
-  }, []);
-
   // Document events
   const trackDocumentUpload = useCallback((entityType: 'asset' | 'liability') => {
     trackEvent('document_upload', { entity_type: entityType });
@@ -133,9 +124,6 @@ export function useAnalytics() {
     trackTabChange,
     // Categories
     trackAddCustomCategory,
-    // Investments
-    trackInvestmentCalculation,
-    trackApplyInvestment,
     // Documents
     trackDocumentUpload,
     // Auth

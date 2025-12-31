@@ -109,18 +109,6 @@ export interface CustomCategory {
   createdAt?: string;
 }
 
-// חישוב פילוח השקעה
-export interface InvestmentCalculation {
-  holdingId: string;
-  holdingName: string;
-  currentValue: number;
-  targetAllocation: number;
-  currentAllocation: number;
-  amountToInvest: number;
-  newValue: number;
-  newAllocation: number;
-}
-
 // Category definitions
 export type ExpenseCategory = 
   | 'housing'      // דיור
