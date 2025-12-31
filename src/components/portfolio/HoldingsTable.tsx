@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, Minus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { SensitiveData } from '../common/SensitiveData';
 
 interface Holding {
   id?: string;
@@ -194,8 +195,12 @@ export function HoldingsTable({ holdings, className = '', onEdit, onDelete }: Ho
                 {/* Symbol & Name */}
                 <td className="px-5 py-4">
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{holding.symbol}</p>
-                    <p className="text-xs text-slate-400 truncate max-w-[150px]">{holding.name}</p>
+                    <SensitiveData as="p" className="text-sm font-semibold text-slate-900">
+                      {holding.symbol}
+                    </SensitiveData>
+                    <SensitiveData as="p" className="text-xs text-slate-400 truncate max-w-[150px]">
+                      {holding.name}
+                    </SensitiveData>
                   </div>
                 </td>
 
@@ -242,16 +247,16 @@ export function HoldingsTable({ holdings, className = '', onEdit, onDelete }: Ho
 
                 {/* Value */}
                 <td className="px-5 py-4 text-left">
-                  <p className="text-sm font-semibold text-slate-900 smartlook-mask">
+                  <SensitiveData as="p" className="text-sm font-semibold text-slate-900">
                     {holding.valueILS.toLocaleString('he-IL', {
                       style: 'currency',
                       currency: 'ILS',
                       maximumFractionDigits: 0,
                     })}
-                  </p>
-                  <p className="text-xs text-slate-400">
+                  </SensitiveData>
+                  <SensitiveData as="p" className="text-xs text-slate-400">
                     {holding.quantity.toLocaleString()} יח'
-                  </p>
+                  </SensitiveData>
                 </td>
 
                 {/* Actions */}

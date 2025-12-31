@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Loader2, ChevronDown, Check } from 'lucide-react';
 import { cn, apiFetch } from '@/lib/utils';
+import { SensitiveData } from './common/SensitiveData';
 
 interface UserProfile {
   militaryStatus: string | null;
@@ -65,9 +66,9 @@ function StyledSelect({ value, onChange, options, placeholder }: StyledSelectPro
           !selectedOption && 'text-slate-400'
         )}
       >
-        <span className={cn('flex-1 text-right smartlook-mask', selectedOption ? 'text-slate-900' : 'text-slate-400')}>
+        <SensitiveData className={cn('flex-1 text-right', selectedOption ? 'text-slate-900' : 'text-slate-400')}>
           {selectedOption?.label || placeholder}
-        </span>
+        </SensitiveData>
         <ChevronDown
           className={cn(
             'w-4 h-4 text-slate-400 transition-transform',

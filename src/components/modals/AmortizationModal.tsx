@@ -4,6 +4,7 @@ import { X, Calendar, TrendingDown, Banknote, Percent } from 'lucide-react';
 import { Liability, AmortizationRow } from '@/lib/types';
 import { generateAmortizationSchedule, getCurrentMonthPayment } from '@/lib/loanCalculations';
 import { formatCurrency, cn } from '@/lib/utils';
+import { SensitiveData } from '../common/SensitiveData';
 
 interface AmortizationModalProps {
   isOpen: boolean;
@@ -75,9 +76,9 @@ export default function AmortizationModal({
                 <Banknote className="w-4 h-4 text-blue-600" />
                 <span className="text-xs text-slate-500">סכום הלוואה</span>
               </div>
-              <p className="text-lg font-bold text-blue-600">
+              <SensitiveData as="p" className="text-lg font-bold text-blue-600">
                 {formatCurrency(liability.totalAmount)}
-              </p>
+              </SensitiveData>
             </div>
             
             <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
@@ -105,9 +106,9 @@ export default function AmortizationModal({
                 <TrendingDown className="w-4 h-4 text-indigo-600" />
                 <span className="text-xs text-slate-500">סה"כ ריבית</span>
               </div>
-              <p className="text-lg font-bold text-indigo-600">
+              <SensitiveData as="p" className="text-lg font-bold text-indigo-600">
                 {formatCurrency(totalInterest)}
-              </p>
+              </SensitiveData>
             </div>
           </div>
 
@@ -118,22 +119,28 @@ export default function AmortizationModal({
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center">
                   <p className="text-xs text-slate-500">תשלום</p>
-                  <p className="text-lg font-bold text-slate-900">{formatCurrency(currentPayment.payment)}</p>
+                  <SensitiveData as="p" className="text-lg font-bold text-slate-900">
+                    {formatCurrency(currentPayment.payment)}
+                  </SensitiveData>
                 </div>
                 <div className="text-center">
                   <p className="text-xs text-slate-500">קרן</p>
-                  <p className="text-lg font-bold text-green-600">{formatCurrency(currentPayment.principal)}</p>
+                  <SensitiveData as="p" className="text-lg font-bold text-green-600">
+                    {formatCurrency(currentPayment.principal)}
+                  </SensitiveData>
                 </div>
                 <div className="text-center">
                   <p className="text-xs text-slate-500">ריבית</p>
-                  <p className="text-lg font-bold text-indigo-600">{formatCurrency(currentPayment.interest)}</p>
+                  <SensitiveData as="p" className="text-lg font-bold text-indigo-600">
+                    {formatCurrency(currentPayment.interest)}
+                  </SensitiveData>
                 </div>
               </div>
               {liability.hasInterestRebate && (
                 <div className="mt-3 text-center">
-                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                  <SensitiveData className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
                     החיוב בפועל (עם זיכוי): {formatCurrency(currentPayment.principal)}
-                  </span>
+                  </SensitiveData>
                 </div>
               )}
             </div>
@@ -168,19 +175,19 @@ export default function AmortizationModal({
                     >
                       <td className="p-3">{row.month}</td>
                       <td className="p-3">{formatDate(row.date)}</td>
-                      <td className="p-3">{formatCurrency(row.payment)}</td>
-                      <td className="p-3 text-green-600">{formatCurrency(row.principal)}</td>
-                      <td className="p-3 text-indigo-600">{formatCurrency(row.interest)}</td>
-                      <td className="p-3 font-medium">{formatCurrency(row.balance)}</td>
+                      <SensitiveData as="td" className="p-3">{formatCurrency(row.payment)}</SensitiveData>
+                      <SensitiveData as="td" className="p-3 text-green-600">{formatCurrency(row.principal)}</SensitiveData>
+                      <SensitiveData as="td" className="p-3 text-indigo-600">{formatCurrency(row.interest)}</SensitiveData>
+                      <SensitiveData as="td" className="p-3 font-medium">{formatCurrency(row.balance)}</SensitiveData>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot className="bg-slate-100 font-medium sticky bottom-0">
                   <tr className="border-t-2 border-gray-300">
                     <td className="p-3" colSpan={2}>סה"כ</td>
-                    <td className="p-3">{formatCurrency(totalPayments)}</td>
-                    <td className="p-3 text-green-600">{formatCurrency(totalPrincipal)}</td>
-                    <td className="p-3 text-indigo-600">{formatCurrency(totalInterest)}</td>
+                    <SensitiveData as="td" className="p-3">{formatCurrency(totalPayments)}</SensitiveData>
+                    <SensitiveData as="td" className="p-3 text-green-600">{formatCurrency(totalPrincipal)}</SensitiveData>
+                    <SensitiveData as="td" className="p-3 text-indigo-600">{formatCurrency(totalInterest)}</SensitiveData>
                     <td className="p-3">-</td>
                   </tr>
                 </tfoot>

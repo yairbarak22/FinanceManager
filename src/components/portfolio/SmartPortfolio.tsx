@@ -8,6 +8,7 @@ import { HoldingsTable } from './HoldingsTable';
 import { DiversificationHeatmap } from './DiversificationHeatmap';
 import { AddAssetButton } from './AddAssetButton';
 import { apiFetch } from '@/lib/utils';
+import { SensitiveData } from '../common/SensitiveData';
 
 interface HoldingData {
   id?: string;
@@ -440,13 +441,13 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
         {/* Total Value */}
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <p className="text-xs text-slate-400 mb-1">שווי התיק</p>
-          <p className="text-2xl font-light text-slate-900 smartlook-mask">
+          <SensitiveData as="p" className="text-2xl font-light text-slate-900">
             {data.equityILS.toLocaleString('he-IL', {
               style: 'currency',
               currency: 'ILS',
               maximumFractionDigits: 0,
             })}
-          </p>
+          </SensitiveData>
         </div>
 
         {/* Daily Change */}
@@ -467,12 +468,12 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
               {data.dailyChangePercent.toFixed(2)}%
             </span>
           </div>
-          <p className={`text-xs mt-1 smartlook-mask ${
+          <SensitiveData as="p" className={`text-xs mt-1 ${
             data.dailyChangeILS >= 0 ? 'text-emerald-600' : 'text-rose-500'
           }`}>
             {data.dailyChangeILS >= 0 ? '+' : ''}
             {data.dailyChangeILS.toLocaleString('he-IL')}₪
-          </p>
+          </SensitiveData>
         </div>
 
         {/* Beta */}

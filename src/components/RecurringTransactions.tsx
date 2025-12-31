@@ -7,6 +7,8 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { getCategoryInfo, CategoryInfo } from '@/lib/categories';
 import ConfirmDialog from './modals/ConfirmDialog';
 import Card from './ui/Card';
+import { SensitiveData } from './common/SensitiveData';
+
 interface RecurringTransactionsProps {
   transactions: RecurringTransaction[];
   onAdd: () => void;
@@ -60,11 +62,15 @@ export default function RecurringTransactions({
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
           <p className="text-xs text-slate-500">הכנסות</p>
-          <p className="text-base font-bold text-emerald-600 smartlook-mask">{formatCurrency(fixedIncome)}</p>
+          <SensitiveData as="p" className="text-base font-bold text-emerald-600">
+            {formatCurrency(fixedIncome)}
+          </SensitiveData>
         </div>
         <div className="bg-rose-50 rounded-xl p-3 border border-rose-100">
           <p className="text-xs text-slate-500">הוצאות</p>
-          <p className="text-base font-bold text-rose-600 smartlook-mask">{formatCurrency(fixedExpenses)}</p>
+          <SensitiveData as="p" className="text-base font-bold text-rose-600">
+            {formatCurrency(fixedExpenses)}
+          </SensitiveData>
         </div>
       </div>
 
@@ -106,34 +112,38 @@ export default function RecurringTransactions({
 
                 {/* Details */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-900 text-sm truncate smartlook-mask">{transaction.name}</p>
+                  <SensitiveData as="p" className="font-medium text-slate-900 text-sm truncate">
+                    {transaction.name}
+                  </SensitiveData>
                   <p className="text-xs text-slate-500 truncate">{categoryInfo?.nameHe}</p>
                 </div>
 
                 {/* Amount - visible on mobile */}
-                <p
+                <SensitiveData
+                  as="p"
                   className={cn(
-                    'text-sm font-bold flex-shrink-0 sm:hidden smartlook-mask',
+                    'text-sm font-bold flex-shrink-0 sm:hidden',
                     transaction.type === 'income' ? 'text-green-600' : 'text-rose-600'
                   )}
                 >
                   {transaction.type === 'income' ? '+' : '-'}
                   {formatCurrency(transaction.amount)}
-                </p>
+                </SensitiveData>
               </div>
 
               {/* Bottom row (mobile) / Continue (desktop): Amount + Toggle + Actions */}
               <div className="flex items-center gap-2 justify-end mr-12 sm:mr-0">
                 {/* Amount - visible on desktop */}
-                <p
+                <SensitiveData
+                  as="p"
                   className={cn(
-                    'hidden sm:block text-sm font-bold flex-shrink-0 smartlook-mask',
+                    'hidden sm:block text-sm font-bold flex-shrink-0',
                     transaction.type === 'income' ? 'text-green-600' : 'text-rose-600'
                   )}
                 >
                   {transaction.type === 'income' ? '+' : '-'}
                   {formatCurrency(transaction.amount)}
-                </p>
+                </SensitiveData>
 
                 {/* Toggle */}
                 <button

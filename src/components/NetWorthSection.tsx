@@ -3,6 +3,7 @@
 import { Landmark, TrendingUp, TrendingDown, Banknote } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import Card from './ui/Card';
+import { SensitiveData } from './common/SensitiveData';
 
 interface NetWorthSectionProps {
   netWorth: number;
@@ -38,12 +39,12 @@ export default function NetWorthSection({
 
       {/* Main Net Worth */}
       <div className="mb-6">
-        <p className={cn(
-          "text-4xl font-bold smartlook-mask",
+        <SensitiveData as="p" className={cn(
+          "text-4xl font-bold",
           isPositiveNetWorth ? "text-emerald-500" : "text-rose-500"
         )}>
           {formatCurrency(netWorth)}
-        </p>
+        </SensitiveData>
       </div>
 
       {/* Summary Cards */}
@@ -56,7 +57,9 @@ export default function NetWorthSection({
             </div>
             <span className="text-sm font-medium text-slate-700">נכסים</span>
           </div>
-          <span className="font-bold text-emerald-600 smartlook-mask">{formatCurrency(totalAssets)}</span>
+          <SensitiveData className="font-bold text-emerald-600">
+            {formatCurrency(totalAssets)}
+          </SensitiveData>
         </div>
 
         {/* Liabilities */}
@@ -67,7 +70,9 @@ export default function NetWorthSection({
             </div>
             <span className="text-sm font-medium text-slate-700">התחייבויות</span>
           </div>
-          <span className="font-bold text-rose-600 smartlook-mask">{formatCurrency(totalLiabilities)}</span>
+          <SensitiveData className="font-bold text-rose-600">
+            {formatCurrency(totalLiabilities)}
+          </SensitiveData>
         </div>
 
         {/* Monthly Cash Flow */}
@@ -86,9 +91,9 @@ export default function NetWorthSection({
             </div>
             <span className="text-sm font-medium text-slate-700">תזרים חודשי</span>
           </div>
-          <span className={cn("font-bold smartlook-mask", isPositiveCashFlow ? "text-emerald-600" : "text-rose-600")}>
+          <SensitiveData className={cn("font-bold", isPositiveCashFlow ? "text-emerald-600" : "text-rose-600")}>
             {isPositiveCashFlow ? '+' : ''}{formatCurrency(monthlyCashFlow)}
-          </span>
+          </SensitiveData>
         </div>
       </div>
     </Card>

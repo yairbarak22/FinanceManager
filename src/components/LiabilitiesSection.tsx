@@ -8,6 +8,7 @@ import { getCategoryInfo } from '@/lib/categories';
 import { getEffectiveMonthlyExpense, getCurrentMonthPayment } from '@/lib/loanCalculations';
 import ConfirmDialog from './modals/ConfirmDialog';
 import HelpTrigger from './ai/HelpTrigger';
+import { SensitiveData } from './common/SensitiveData';
 
 interface LiabilitiesSectionProps {
   liabilities: Liability[];
@@ -52,7 +53,9 @@ export default function LiabilitiesSection({
           </div>
           <div>
             <h3 className="font-semibold text-slate-900">התחייבויות</h3>
-            <p className="text-xs text-rose-600 font-medium smartlook-mask">{formatCurrency(totalLiabilities)}</p>
+            <SensitiveData as="p" className="text-xs text-rose-600 font-medium">
+              {formatCurrency(totalLiabilities)}
+            </SensitiveData>
           </div>
           <HelpTrigger
             topicId="liabilities"
@@ -70,7 +73,9 @@ export default function LiabilitiesSection({
       <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 mb-4">
         <div className="flex items-center justify-between">
           <span className="text-xs text-slate-600">תשלום חודשי כולל</span>
-          <span className="text-sm font-bold text-rose-600 smartlook-mask">{formatCurrency(monthlyPayments)}</span>
+          <SensitiveData className="text-sm font-bold text-rose-600">
+            {formatCurrency(monthlyPayments)}
+          </SensitiveData>
         </div>
       </div>
 
@@ -102,35 +107,37 @@ export default function LiabilitiesSection({
 
                 {/* Details */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-900 text-sm truncate smartlook-mask">{liability.name}</p>
-                  <p className="text-xs text-slate-500 truncate smartlook-mask">
+                  <SensitiveData as="p" className="font-medium text-slate-900 text-sm truncate">
+                    {liability.name}
+                  </SensitiveData>
+                  <SensitiveData as="p" className="text-xs text-slate-500 truncate">
                     {categoryInfo?.nameHe} • {formatCurrency(liability.monthlyPayment)}/חודש
                     {liability.hasInterestRebate && (
                       <span className="text-green-600"> • זיכוי ריבית</span>
                     )}
-                  </p>
+                  </SensitiveData>
                   {hasLoanDetails && currentPayment && (
-                    <p className="text-xs text-slate-500 mt-0.5 truncate">
+                    <SensitiveData as="p" className="text-xs text-slate-500 mt-0.5 truncate">
                       חודש {currentPayment.currentMonth}/{liability.loanTermMonths}
                       {liability.hasInterestRebate && (
                         <span className="text-green-600"> • חיוב: {formatCurrency(effectiveExpense)}</span>
                       )}
-                    </p>
+                    </SensitiveData>
                   )}
                 </div>
 
                 {/* Value - visible on mobile in this row */}
-                <p className="text-sm font-bold text-red-600 flex-shrink-0 sm:hidden smartlook-mask">
+                <SensitiveData as="p" className="text-sm font-bold text-red-600 flex-shrink-0 sm:hidden">
                   {formatCurrency(liability.totalAmount)}
-                </p>
+                </SensitiveData>
               </div>
 
               {/* Bottom row (mobile) / Continue (desktop): Value + Actions */}
               <div className="flex items-center gap-2 justify-end sm:gap-1 mr-12 sm:mr-0">
                 {/* Value - visible on desktop */}
-                <p className="hidden sm:block text-sm font-bold text-red-600 flex-shrink-0 ml-2 smartlook-mask">
+                <SensitiveData as="p" className="hidden sm:block text-sm font-bold text-red-600 flex-shrink-0 ml-2">
                   {formatCurrency(liability.totalAmount)}
-                </p>
+                </SensitiveData>
 
                 {/* Actions */}
                 <div className="flex gap-1 flex-shrink-0">

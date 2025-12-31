@@ -7,6 +7,7 @@ import { Transaction } from '@/lib/types';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { getCategoryInfo, expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
 import ConfirmDialog from './modals/ConfirmDialog';
+import { SensitiveData } from './common/SensitiveData';
 
 // Save behavior options
 type SaveBehavior = 'once' | 'always' | 'alwaysAsk';
@@ -266,25 +267,28 @@ export default function RecentTransactions({
               {/* Transaction Details */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="font-medium text-slate-900 text-sm truncate smartlook-mask">
+                  <p className="font-medium text-slate-900 text-sm truncate">
                     {categoryInfo?.nameHe || transaction.category}
                   </p>
                   <span className="text-xs text-slate-500">
                     {formatDate(transaction.date)}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 truncate smartlook-mask">{transaction.description}</p>
+                <SensitiveData as="p" className="text-xs text-slate-500 truncate">
+                  {transaction.description}
+                </SensitiveData>
               </div>
 
               {/* Amount */}
-              <p
+              <SensitiveData
+                as="p"
                 className={cn(
-                  'text-sm font-bold flex-shrink-0 smartlook-mask',
+                  'text-sm font-bold flex-shrink-0',
                   isIncome ? 'text-green-600' : 'text-rose-600'
                 )}
               >
                 {isIncome ? '+' : '-'}{formatCurrency(transaction.amount)}
-              </p>
+              </SensitiveData>
 
               {/* Action Buttons (only in normal mode) - Always visible */}
               {!isSelectMode && (
@@ -384,10 +388,12 @@ export default function RecentTransactions({
                 {/* Transaction info */}
                 <div className="p-3 bg-slate-50 rounded-xl">
                   <p className="text-sm text-slate-600">עסקה:</p>
-                  <p className="font-medium text-slate-900 smartlook-mask">{editingTransaction.description}</p>
-                  <p className="text-sm text-slate-500 smartlook-mask">
+                  <SensitiveData as="p" className="font-medium text-slate-900">
+                    {editingTransaction.description}
+                  </SensitiveData>
+                  <SensitiveData as="p" className="text-sm text-slate-500">
                     {formatCurrency(editingTransaction.amount)} • {formatDate(editingTransaction.date)}
-                  </p>
+                  </SensitiveData>
                 </div>
 
                 {/* Category dropdown */}

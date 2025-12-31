@@ -5,6 +5,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { LogOut, User, ChevronDown, UserCog, Users, Sparkles } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { resetUser } from '@/lib/smartlook';
+import { SensitiveData } from './common/SensitiveData';
 
 interface UserMenuProps {
   onOpenProfile?: () => void;
@@ -52,9 +53,9 @@ export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserM
             <User className="w-4 h-4 text-indigo-600" />
           </div>
         )}
-        <span className="text-sm font-medium text-slate-700 hidden sm:block max-w-[120px] truncate smartlook-mask">
+        <SensitiveData className="text-sm font-medium text-slate-700 hidden sm:block max-w-[120px] truncate">
           {name || email}
-        </span>
+        </SensitiveData>
         <ChevronDown
           className={`w-4 h-4 text-slate-400 transition-transform ${
             isOpen ? 'rotate-180' : ''
@@ -67,10 +68,12 @@ export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserM
         <div className="absolute left-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50 animate-scale-in">
           {/* User Info */}
           <div className="px-4 py-3 border-b border-slate-100">
-            <p className="text-sm font-medium text-slate-900 truncate smartlook-mask">
+            <SensitiveData as="p" className="text-sm font-medium text-slate-900 truncate">
               {name || 'משתמש'}
-            </p>
-            <p className="text-xs text-slate-500 truncate smartlook-mask">{email}</p>
+            </SensitiveData>
+            <SensitiveData as="p" className="text-xs text-slate-500 truncate">
+              {email}
+            </SensitiveData>
           </div>
 
           {/* Menu Items */}

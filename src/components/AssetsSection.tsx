@@ -7,6 +7,7 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
 import ConfirmDialog from './modals/ConfirmDialog';
 import HelpTrigger from './ai/HelpTrigger';
+import { SensitiveData } from './common/SensitiveData';
 
 interface AssetsSectionProps {
   assets: Asset[];
@@ -44,7 +45,9 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
           </div>
           <div>
             <h3 className="font-semibold text-slate-900">נכסים</h3>
-            <p className="text-xs text-emerald-600 font-medium smartlook-mask">{formatCurrency(totalAssets)}</p>
+            <SensitiveData as="p" className="text-xs text-emerald-600 font-medium">
+              {formatCurrency(totalAssets)}
+            </SensitiveData>
           </div>
           <HelpTrigger
             id="btn-ai-help-assets"
@@ -85,22 +88,24 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
 
                 {/* Details */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-900 text-sm truncate smartlook-mask">{asset.name}</p>
+                  <SensitiveData as="p" className="font-medium text-slate-900 text-sm truncate">
+                    {asset.name}
+                  </SensitiveData>
                   <p className="text-xs text-slate-500 truncate">{categoryInfo?.nameHe}</p>
                 </div>
 
                 {/* Value - visible on mobile in this row */}
-                <p className="text-sm font-bold text-green-600 flex-shrink-0 sm:hidden smartlook-mask">
+                <SensitiveData as="p" className="text-sm font-bold text-green-600 flex-shrink-0 sm:hidden">
                   {formatCurrency(asset.value)}
-                </p>
+                </SensitiveData>
               </div>
 
               {/* Bottom row (mobile) / Continue (desktop): Value + Actions */}
               <div className="flex items-center gap-2 justify-end sm:gap-1 mr-12 sm:mr-0">
                 {/* Value - visible on desktop */}
-                <p className="hidden sm:block text-sm font-bold text-slate-900 flex-shrink-0 ml-2 smartlook-mask">
+                <SensitiveData as="p" className="hidden sm:block text-sm font-bold text-slate-900 flex-shrink-0 ml-2">
                   {formatCurrency(asset.value)}
-                </p>
+                </SensitiveData>
 
                 {/* Actions */}
                 <div className="flex gap-1 flex-shrink-0">

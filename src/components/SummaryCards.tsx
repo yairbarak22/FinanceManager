@@ -3,6 +3,7 @@
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import Card from './ui/Card';
+import { SensitiveData } from './common/SensitiveData';
 
 interface SummaryCardsProps {
   totalBalance: number;
@@ -20,12 +21,12 @@ export default function SummaryCards({ totalBalance, totalIncome, totalExpenses 
         <div className="flex items-center justify-between">
           <div>
             <p className="text-slate-500 text-sm font-medium mb-1">תזרים</p>
-            <p className={cn(
-              "text-3xl font-bold tracking-tight smartlook-mask",
+            <SensitiveData as="p" className={cn(
+              "text-3xl font-bold tracking-tight",
               isPositiveBalance ? "text-emerald-500" : "text-rose-500"
             )}>
               {formatCurrency(totalBalance)}
-            </p>
+            </SensitiveData>
             <p className="text-slate-400 text-xs mt-1">
               {isPositiveBalance ? 'חיובי' : 'שלילי'}
             </p>
@@ -47,9 +48,9 @@ export default function SummaryCards({ totalBalance, totalIncome, totalExpenses 
         <div className="flex items-center justify-between">
           <div>
             <p className="text-slate-500 text-sm font-medium mb-1">סה"כ הכנסות</p>
-            <p className="text-3xl font-bold tracking-tight text-emerald-500 smartlook-mask">
+            <SensitiveData as="p" className="text-3xl font-bold tracking-tight text-emerald-500">
               {formatCurrency(totalIncome)}
-            </p>
+            </SensitiveData>
             <p className="text-slate-400 text-xs mt-1">כולל קבועות</p>
           </div>
           <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center">
@@ -63,9 +64,9 @@ export default function SummaryCards({ totalBalance, totalIncome, totalExpenses 
         <div className="flex items-center justify-between">
           <div>
             <p className="text-slate-500 text-sm font-medium mb-1">סה"כ הוצאות</p>
-            <p className="text-3xl font-bold tracking-tight text-rose-500 smartlook-mask">
+            <SensitiveData as="p" className="text-3xl font-bold tracking-tight text-rose-500">
               {formatCurrency(totalExpenses)}
-            </p>
+            </SensitiveData>
             <p className="text-slate-400 text-xs mt-1">כולל קבועות + התחייבויות</p>
           </div>
           <div className="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center">

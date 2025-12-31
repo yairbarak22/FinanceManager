@@ -20,6 +20,7 @@ import {
 import { formatCurrency, apiFetch } from '@/lib/utils';
 import { expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
 import { cn } from '@/lib/utils';
+import { SensitiveData } from '../common/SensitiveData';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -339,17 +340,19 @@ function TransactionCard({
       {/* Merchant name and amount */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-slate-900 truncate">{transaction.merchantName}</p>
+          <SensitiveData as="p" className="font-medium text-slate-900 truncate">
+            {transaction.merchantName}
+          </SensitiveData>
           <p className="text-sm text-slate-500">
             {new Date(transaction.date).toLocaleDateString('he-IL')}
           </p>
         </div>
-        <span className={cn(
+        <SensitiveData className={cn(
           'font-bold text-lg whitespace-nowrap',
           transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
         )}>
           {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-        </span>
+        </SensitiveData>
       </div>
       
       {/* Category selector - full width on mobile */}
@@ -764,15 +767,17 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                         {needsReview.map((t) => (
                           <tr key={t.rowNum} className="hover:bg-slate-50">
                             <td className="px-4 py-3">
-                              <span className="font-medium text-slate-900">{t.merchantName}</span>
+                              <SensitiveData className="font-medium text-slate-900">
+                                {t.merchantName}
+                              </SensitiveData>
                             </td>
                             <td className="px-4 py-3">
-                              <span className={cn(
+                              <SensitiveData className={cn(
                                 'font-medium',
                                 t.type === 'income' ? 'text-green-600' : 'text-red-600'
                               )}>
                                 {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
-                              </span>
+                              </SensitiveData>
                             </td>
                             <td className="px-4 py-3 text-slate-600">
                               {new Date(t.date).toLocaleDateString('he-IL')}

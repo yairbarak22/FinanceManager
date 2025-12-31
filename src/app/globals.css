@@ -132,11 +132,6 @@
     @apply w-full px-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all appearance-none cursor-pointer;
   }
 
-  /* Smartlook privacy masking - empty class for Smartlook SDK to detect */
-  .smartlook-mask {
-    /* Smartlook will mask content in elements with this class */
-  }
-
   .label {
     @apply block text-sm font-medium text-slate-700 mb-1.5;
   }

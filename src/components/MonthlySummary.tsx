@@ -5,6 +5,8 @@ import { ChevronDown, ChevronUp, TrendingUp, TrendingDown, CalendarDays } from '
 import { formatCurrency, cn } from '@/lib/utils';
 import { MonthlySummary as MonthlySummaryType } from '@/lib/types';
 import Card from './ui/Card';
+import { SensitiveData } from './common/SensitiveData';
+
 interface MonthlySummaryProps {
   summaries: MonthlySummaryType[];
   totalIncome: number;
@@ -56,20 +58,24 @@ export default function MonthlySummary({
         <div className="grid grid-cols-3 gap-3 text-center">
           <div>
             <p className="text-xs text-slate-500 mb-1">הכנסות</p>
-            <p className="text-sm font-bold text-emerald-600 smartlook-mask">{formatCurrency(totalIncome)}</p>
+            <SensitiveData as="p" className="text-sm font-bold text-emerald-600">
+              {formatCurrency(totalIncome)}
+            </SensitiveData>
           </div>
           <div>
             <p className="text-xs text-slate-500 mb-1">הוצאות</p>
-            <p className="text-sm font-bold text-rose-600 smartlook-mask">{formatCurrency(totalExpenses)}</p>
+            <SensitiveData as="p" className="text-sm font-bold text-rose-600">
+              {formatCurrency(totalExpenses)}
+            </SensitiveData>
           </div>
           <div>
             <p className="text-xs text-slate-500 mb-1">יתרה</p>
-            <p className={cn(
-              'text-sm font-bold smartlook-mask',
+            <SensitiveData as="p" className={cn(
+              'text-sm font-bold',
               totalBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'
             )}>
               {formatCurrency(totalBalance)}
-            </p>
+            </SensitiveData>
           </div>
         </div>
       </div>
@@ -110,14 +116,15 @@ export default function MonthlySummary({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <p
+                  <SensitiveData
+                    as="p"
                     className={cn(
-                      'text-sm font-bold smartlook-mask',
+                      'text-sm font-bold',
                       isPositive ? 'text-green-600' : 'text-red-600'
                     )}
                   >
                     {isPositive ? '+' : ''}{formatCurrency(summary.balance)}
-                  </p>
+                  </SensitiveData>
                   {isExpanded ? (
                     <ChevronUp className="w-4 h-4 text-slate-500" />
                   ) : (
@@ -132,15 +139,15 @@ export default function MonthlySummary({
                   <div className="grid grid-cols-2 gap-2 pt-3">
                     <div className="text-center">
                       <p className="text-xs text-slate-500">הכנסות</p>
-                      <p className="text-sm font-semibold text-emerald-600 smartlook-mask">
+                      <SensitiveData as="p" className="text-sm font-semibold text-emerald-600">
                         {formatCurrency(summary.income)}
-                      </p>
+                      </SensitiveData>
                     </div>
                     <div className="text-center">
                       <p className="text-xs text-slate-500">הוצאות</p>
-                      <p className="text-sm font-semibold text-rose-600 smartlook-mask">
+                      <SensitiveData as="p" className="text-sm font-semibold text-rose-600">
                         {formatCurrency(summary.expenses)}
-                      </p>
+                      </SensitiveData>
                     </div>
                   </div>
                   {summary.savingsRate > 0 && (

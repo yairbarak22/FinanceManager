@@ -7,7 +7,6 @@ import { OnboardingProvider } from "@/context/OnboardingContext";
 import OnboardingLayer from "@/components/onboarding/OnboardingLayer";
 import Analytics from "@/components/Analytics";
 import SmartlookIdentify from "@/components/SmartlookIdentify";
-import SmartlookMasking from "@/components/SmartlookMasking";
 import CookieConsent from "@/components/CookieConsent";
 import { AccessibilityStatement } from "@/components/AccessibilityStatement";
 import "./globals.css";
@@ -54,7 +53,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${heebo.variable} ${inter.variable} font-sans antialiased`} data-smartlook-mask="true">
+      <body className={`${heebo.variable} ${inter.variable} font-sans antialiased`}>
         <Providers>
           <OnboardingProvider>
             <AIChatProvider>
@@ -64,7 +63,6 @@ export default function RootLayout({
           </OnboardingProvider>
           <Analytics />
           <SmartlookIdentify />
-          <SmartlookMasking />
           <CookieConsent />
           <AccessibilityStatement />
         </Providers>

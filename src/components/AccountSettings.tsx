@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { X, Users, UserPlus, Copy, Trash2, Crown, User, Mail, Check, Loader2 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
+import { SensitiveData } from './common/SensitiveData';
 
 interface Member {
   id: string;
@@ -237,9 +238,9 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
                         className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg"
                       >
                         <div>
-                          <p className="text-sm font-medium text-slate-900 smartlook-mask" dir="ltr">
+                          <SensitiveData as="p" className="text-sm font-medium text-slate-900" dir="ltr">
                             {invite.email}
-                          </p>
+                          </SensitiveData>
                           <p className="text-xs text-slate-500">
                             פג תוקף: {new Date(invite.expiresAt).toLocaleDateString('he-IL')}
                           </p>
@@ -293,16 +294,16 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
                         )}
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-slate-900 smartlook-mask">
+                            <SensitiveData as="p" className="text-sm font-medium text-slate-900">
                               {member.user.name || 'ללא שם'}
-                            </p>
+                            </SensitiveData>
                             {member.role === 'OWNER' && (
                               <Crown className="w-4 h-4 text-amber-500" />
                             )}
                           </div>
-                          <p className="text-xs text-slate-500 smartlook-mask" dir="ltr">
+                          <SensitiveData as="p" className="text-xs text-slate-500" dir="ltr">
                             {member.user.email}
-                          </p>
+                          </SensitiveData>
                         </div>
                       </div>
                       {isOwner && member.role !== 'OWNER' && (
