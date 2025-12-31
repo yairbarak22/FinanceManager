@@ -38,6 +38,7 @@ import { getEffectiveMonthlyExpense } from '@/lib/loanCalculations';
 import { useCategories } from '@/hooks/useCategories';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useToast } from '@/hooks/useToast';
+import { useOnboarding } from '@/context/OnboardingContext';
 import ToastContainer from '@/components/ui/Toast';
 import {
   expenseCategories as defaultExpenseCategories,
@@ -134,6 +135,10 @@ export default function Home() {
 
   // Toast notifications
   const toast = useToast();
+
+  // Onboarding
+  const { startTour } = useOnboarding();
+  const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
 
 
   // Memoized categories: defaults from client-side + custom from API
@@ -236,6 +241,30 @@ export default function Home() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Check if user needs onboarding (first-time user)
+  useEffect(() => {
+    if (isLoading || hasCheckedOnboarding) return;
+
+    const checkOnboarding = async () => {
+      try {
+        const res = await apiFetch('/api/user/onboarding');
+        if (res.ok) {
+          const data = await res.json();
+          if (!data.hasSeenOnboarding) {
+            // First-time user - start onboarding tour
+            startTour();
+          }
+        }
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+      } finally {
+        setHasCheckedOnboarding(true);
+      }
+    };
+
+    checkOnboarding();
+  }, [isLoading, hasCheckedOnboarding, startTour]);
 
   // Calculate recurring totals (only active ones)
   const fixedIncome = recurringTransactions

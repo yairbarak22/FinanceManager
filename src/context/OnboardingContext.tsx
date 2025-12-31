@@ -142,13 +142,20 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
   /**
    * End the onboarding tour
    */
-  const endTour = useCallback(() => {
+  const endTour = useCallback(async () => {
     setIsTourActive(false);
     setCurrentTourStep('idle');
     setCursorTarget(null);
     setCursorLabelState('');
     setIsCursorClicking(false);
     setIsWizardOpen(false);
+
+    // Mark onboarding as completed in the database
+    try {
+      await fetch('/api/user/onboarding', { method: 'POST' });
+    } catch (error) {
+      console.error('[Onboarding] Failed to mark onboarding as complete:', error);
+    }
   }, []);
 
   /**
