@@ -54,7 +54,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${heebo.variable} ${inter.variable} font-sans antialiased`}>
+      <body className={`${heebo.variable} ${inter.variable} font-sans antialiased`} data-smartlook-mask="true">
         <Providers>
           <OnboardingProvider>
             <AIChatProvider>

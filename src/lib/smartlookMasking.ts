@@ -6,64 +6,74 @@ import { isSmartlookAvailable } from './smartlook';
  * Smartlook Complete Masking Utility
  * 
  * Masks ALL text and numbers in Smartlook recordings.
- * This includes static content, user input, buttons, and any visible text.
+ * Uses aggressive global masking to ensure nothing is visible.
  */
 
 /**
  * Comprehensive list of CSS selectors to mask
- * Covers all text-containing elements
+ * Includes global containers and all text-containing elements
  */
 const ALL_TEXT_SELECTORS = [
+  // GLOBAL MASKING - Most aggressive approach
+  'body',
+  
+  // Global containers
+  'main',
+  'section',
+  'article',
+  'header',
+  'footer',
+  'nav',
+  'aside',
+  
+  // ALL div elements (not just those with specific classes)
+  'div',
+  
   // Text elements
   'p',
   'span',
   'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
   'label',
-  'td', 'th',
-  'li',
+  'td', 'th', 'tr',
+  'li', 'ul', 'ol',
   'a',
   'strong', 'em', 'b', 'i', 'small',
   'blockquote',
   'pre', 'code',
+  'figcaption',
+  'caption',
+  'summary',
+  'details',
   
   // Form elements (input content)
   'input',
   'textarea',
   'select',
   'option',
+  'optgroup',
   
   // Buttons (mask text content)
   'button',
   
-  // Common financial/amount classes
-  '[class*="amount"]',
-  '[class*="currency"]',
-  '[class*="balance"]',
-  '[class*="value"]',
-  '[class*="price"]',
-  '[class*="total"]',
-  '[class*="sum"]',
-  '[class*="cost"]',
+  // SVG text elements
+  'text',
+  'tspan',
   
-  // Data attributes for sensitive data
-  '[data-amount]',
-  '[data-value]',
-  '[data-balance]',
-  '[data-sensitive]',
+  // Data display elements
+  'time',
+  'data',
+  'output',
+  'meter',
+  'progress',
   
-  // Smartlook mask class (for manually marked elements)
+  // Custom classes for sensitive data
   '.smartlook-mask',
   '.sensitive-data',
   
-  // Div elements that typically contain text
-  // (being more specific to avoid masking layout containers)
-  'div[class*="text"]',
-  'div[class*="content"]',
-  'div[class*="title"]',
-  'div[class*="description"]',
-  'div[class*="label"]',
-  'div[class*="name"]',
-  'div[class*="message"]',
+  // Elements with data attributes
+  '[data-sensitive]',
+  '[data-amount]',
+  '[data-value]',
 ];
 
 /**
@@ -92,7 +102,7 @@ export function applyCompleteMasking(): void {
 
 /**
  * MutationObserver to mask dynamically added content
- * Watches for new elements and applies masking
+ * Watches for new elements, text changes, and attribute changes
  */
 let maskingObserver: MutationObserver | null = null;
 
@@ -101,30 +111,41 @@ export function startMaskingObserver(): void {
     return;
   }
 
-  // Re-apply masking whenever new nodes are added
+  // Re-apply masking whenever DOM changes
   maskingObserver = new MutationObserver((mutations) => {
-    let hasNewNodes = false;
+    let shouldReapply = false;
 
     mutations.forEach((mutation) => {
+      // Check for added nodes
       if (mutation.addedNodes.length > 0) {
-        hasNewNodes = true;
+        shouldReapply = true;
+      }
+      // Check for text content changes
+      if (mutation.type === 'characterData') {
+        shouldReapply = true;
+      }
+      // Check for attribute changes (class changes might add new text)
+      if (mutation.type === 'attributes') {
+        shouldReapply = true;
       }
     });
 
-    // If new nodes were added, re-apply masking
-    // Debounce to avoid excessive calls
-    if (hasNewNodes) {
+    // If changes detected, re-apply masking
+    if (shouldReapply) {
       debouncedApplyMasking();
     }
   });
 
-  // Observe the entire document for added nodes
+  // Observe the entire document for all types of changes
   maskingObserver.observe(document.body, {
     childList: true,
     subtree: true,
+    characterData: true,  // Detect text content changes
+    attributes: true,     // Detect attribute changes
+    attributeFilter: ['class', 'style', 'data-sensitive'],  // Only watch relevant attributes
   });
 
-  console.debug('[Smartlook Masking] MutationObserver started');
+  console.debug('[Smartlook Masking] MutationObserver started with enhanced detection');
 }
 
 export function stopMaskingObserver(): void {
@@ -137,7 +158,7 @@ export function stopMaskingObserver(): void {
 
 /**
  * Debounced version of applyCompleteMasking
- * Prevents excessive masking calls when many DOM changes occur
+ * Reduced to 100ms for faster response to DOM changes
  */
 let maskingTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -149,7 +170,7 @@ function debouncedApplyMasking(): void {
   maskingTimeout = setTimeout(() => {
     applyCompleteMasking();
     maskingTimeout = null;
-  }, 500); // Wait 500ms after last DOM change
+  }, 100); // Reduced from 500ms to 100ms for faster masking
 }
 
 /**
@@ -169,4 +190,3 @@ export function initializeCompleteMasking(): void {
  * Export selectors for reference
  */
 export { ALL_TEXT_SELECTORS };
-
