@@ -5,6 +5,8 @@ import AIChatProvider from "@/components/ai/AIChatProvider";
 import { OnboardingProvider } from "@/context/OnboardingContext";
 import OnboardingLayer from "@/components/onboarding/OnboardingLayer";
 import Analytics from "@/components/Analytics";
+import Smartlook from "@/components/Smartlook";
+import SmartlookIdentify from "@/components/SmartlookIdentify";
 import CookieConsent from "@/components/CookieConsent";
 import { AccessibilityStatement } from "@/components/AccessibilityStatement";
 import "./globals.css";
@@ -43,6 +45,8 @@ export default function RootLayout({
             <OnboardingLayer />
           </OnboardingProvider>
           <Analytics />
+          <Smartlook />
+          <SmartlookIdentify />
           <CookieConsent />
           <AccessibilityStatement />
         </Providers>

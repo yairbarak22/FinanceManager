@@ -1,16 +1,34 @@
 'use client';
 
 import { useCallback } from 'react';
+import { isSmartlookAvailable, trackSmartlookEvent } from '@/lib/smartlook';
 
 // Check if gtag is available
 function isGtagAvailable(): boolean {
   return typeof window !== 'undefined' && typeof window.gtag === 'function';
 }
 
-// Generic event tracking function
+// Generic event tracking function - sends to both GA and Smartlook
 function trackEvent(eventName: string, params?: Record<string, unknown>) {
+  // Track in Google Analytics
   if (isGtagAvailable()) {
     window.gtag('event', eventName, params);
+  }
+
+  // Track in Smartlook
+  if (isSmartlookAvailable()) {
+    // Convert params to Smartlook-compatible format (string | number | boolean only)
+    const smartlookParams: Record<string, string | number | boolean> = {};
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+          smartlookParams[key] = value;
+        } else if (value !== null && value !== undefined) {
+          smartlookParams[key] = String(value);
+        }
+      }
+    }
+    trackSmartlookEvent(eventName, smartlookParams);
   }
 }
 
@@ -104,6 +122,20 @@ export function useAnalytics() {
     trackEvent('logout');
   }, []);
 
+  // AI events
+  const trackAIChat = useCallback((context?: string) => {
+    trackEvent('ai_chat', { context: context || 'general' });
+  }, []);
+
+  // Onboarding events
+  const trackOnboardingStep = useCallback((step: string) => {
+    trackEvent('onboarding_step', { step_name: step });
+  }, []);
+
+  const trackOnboardingComplete = useCallback(() => {
+    trackEvent('onboarding_complete');
+  }, []);
+
   return {
     // Page
     trackPageView,
@@ -129,6 +161,10 @@ export function useAnalytics() {
     // Auth
     trackLogin,
     trackLogout,
+    // AI
+    trackAIChat,
+    // Onboarding
+    trackOnboardingStep,
+    trackOnboardingComplete,
   };
 }
-
