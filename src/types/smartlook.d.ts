@@ -13,7 +13,9 @@ type SmartlookCommand =
   | 'consentAPI'
   | 'getData'
   | 'restart'
-  | 'error';
+  | 'error'
+  | 'mask'
+  | 'unmask';
 
 interface SmartlookInitOptions {
   region?: 'eu' | 'us';
@@ -49,6 +51,8 @@ interface SmartlookFunction {
   (command: 'getData', callback: (data: { visitorId: string; sessionId: string; recordId: string }) => void): void;
   (command: 'restart'): void;
   (command: 'error', error: Error): void;
+  (command: 'mask', selector: string): void;
+  (command: 'unmask', selector: string): void;
   api: unknown[];
 }
 
