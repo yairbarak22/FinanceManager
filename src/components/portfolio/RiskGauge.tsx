@@ -90,8 +90,8 @@ export function RiskGauge({ beta, className = '' }: RiskGaugeProps) {
         {/* Scale labels */}
         <div className="flex justify-between mt-2 text-xs text-slate-400 relative">
           <span>2.0</span>
-          <span className="absolute left-[60%] -translate-x-1/2">0.8</span>
-          <span className="absolute left-[40%] -translate-x-1/2">1.2</span>
+          <span className="absolute left-[40%] -translate-x-1/2">0.8</span>
+          <span className="absolute left-[60%] -translate-x-1/2">1.2</span>
           <span>0.0</span>
         </div>
       </div>

@@ -268,14 +268,23 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
       setError(null);
 
       const response = await fetch('/api/portfolio/analyze');
-      if (!response.ok) {
-        throw new Error('Failed to fetch portfolio data');
+
+      // Check content type to ensure we got JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        throw new Error('יש להתחבר מחדש למערכת');
       }
 
       const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to fetch portfolio data');
+      }
+
       setData(result);
       setLastUpdated(new Date());
     } catch (err) {
+      console.error('Portfolio fetch error:', err);
       setError(err instanceof Error ? err.message : 'שגיאה בטעינת הנתונים');
     } finally {
       setLoading(false);
