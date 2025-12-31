@@ -5,7 +5,15 @@ import { Plus } from 'lucide-react';
 import { AddAssetDialog } from './AddAssetDialog';
 
 interface AddAssetButtonProps {
-  onAddAsset: (data: { symbol: string; name: string; quantity: number; price: number }) => void;
+  onAddAsset: (data: {
+    symbol: string;
+    name: string;
+    quantity: number;
+    price: number;
+    priceILS: number;
+    provider: 'YAHOO' | 'EOD';
+    currency: string;
+  }) => void;
 }
 
 export function AddAssetButton({ onAddAsset }: AddAssetButtonProps) {

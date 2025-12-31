@@ -18,6 +18,8 @@ interface HoldingData {
   valueILS: number;
   beta: number;
   sector: string;
+  currency?: 'USD' | 'ILS';
+  provider?: 'YAHOO' | 'EOD';
   changePercent: number;
   weight: number;
   sparklineData: number[];
@@ -291,7 +293,15 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
     }
   }, []);
 
-  const handleAddAsset = async (assetData: { symbol: string; name: string; quantity: number; price: number }) => {
+  const handleAddAsset = async (assetData: {
+    symbol: string;
+    name: string;
+    quantity: number;
+    price: number;
+    priceILS: number;
+    provider: 'YAHOO' | 'EOD';
+    currency: string;
+  }) => {
     try {
       // Use existing holdings API - currentValue represents quantity for portfolio analysis
       const response = await apiFetch('/api/holdings', {
@@ -303,6 +313,8 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
           currentValue: assetData.quantity, // quantity becomes currentValue in DB
           targetAllocation: 0, // Default, user can adjust later
           type: 'stock',
+          provider: assetData.provider,
+          currency: assetData.currency,
         }),
       });
 
@@ -465,7 +477,7 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
 
         {/* Beta */}
         <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <p className="text-xs text-slate-400 mb-1">Beta משוקלל</p>
+          <p className="text-xs text-slate-400 mb-1">סיכון משוקלל</p>
           <p className={`text-2xl font-light ${
             data.beta < 0.8 ? 'text-emerald-600' :
             data.beta <= 1.2 ? 'text-sky-600' : 'text-rose-500'

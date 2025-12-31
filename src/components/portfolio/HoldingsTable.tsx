@@ -13,6 +13,8 @@ interface Holding {
   valueILS: number;
   beta: number;
   sector: string;
+  currency?: 'USD' | 'ILS';
+  provider?: 'YAHOO' | 'EOD';
   changePercent: number;
   weight: number;
   sparklineData: number[];
@@ -172,12 +174,12 @@ export function HoldingsTable({ holdings, className = '', onEdit, onDelete }: Ho
         <table className="w-full">
           <thead>
             <tr className="text-xs text-slate-400 border-b border-slate-100">
-              <th className="text-right font-medium px-5 py-3">נייר</th>
-              <th className="text-left font-medium px-3 py-3">7 ימים</th>
-              <th className="text-left font-medium px-3 py-3">שינוי</th>
-              <th className="text-left font-medium px-3 py-3">Beta</th>
-              <th className="text-left font-medium px-3 py-3">משקל</th>
-              <th className="text-left font-medium px-5 py-3">שווי</th>
+              <th className="text-center font-medium px-5 py-3">נייר</th>
+              <th className="text-center font-medium px-3 py-3">7 ימים</th>
+              <th className="text-center font-medium px-3 py-3">שינוי</th>
+              <th className="text-center font-medium px-3 py-3">סיכון משוקלל</th>
+              <th className="text-center font-medium px-3 py-3">אחוז מהתיק</th>
+              <th className="text-center font-medium px-5 py-3">שווי בש"ח</th>
               {(onEdit || onDelete) && <th className="w-10"></th>}
             </tr>
           </thead>

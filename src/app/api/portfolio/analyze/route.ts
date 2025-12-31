@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
-import { analyzePortfolio, type Holding } from '@/lib/finance/engine';
+import { analyzePortfolio, detectAssetType } from '@/lib/finance/marketService';
+import type { HybridHolding } from '@/lib/finance/types';
 
 /**
  * POST /api/portfolio/analyze
- * Analyze portfolio holdings with real-time market data
+ * Analyze portfolio holdings with EOD Historical Data API
  */
 export async function POST(request: Request) {
   try {
@@ -13,13 +14,23 @@ export async function POST(request: Request) {
     if (error) return error;
 
     const body = await request.json();
-    let holdings: Holding[] = [];
+    let holdings: HybridHolding[] = [];
 
     // Option 1: Use provided holdings array
     if (body.holdings && Array.isArray(body.holdings)) {
-      holdings = body.holdings.filter(
-        (h: Holding) => h.symbol && typeof h.quantity === 'number' && h.quantity > 0
-      );
+      holdings = body.holdings
+        .filter((h: { symbol?: string; quantity?: number }) =>
+          h.symbol && typeof h.quantity === 'number' && h.quantity > 0
+        )
+        .map((h: { symbol: string; quantity: number; provider?: string; currency?: string }) => {
+          const assetInfo = detectAssetType(h.symbol);
+          return {
+            symbol: h.symbol,
+            quantity: h.quantity,
+            provider: 'EOD' as const,
+            currency: (h.currency || (assetInfo.isIsraeli ? 'ILS' : 'USD')) as 'USD' | 'ILS',
+          };
+        });
     }
     // Option 2: Fetch from database if no holdings provided
     else {
@@ -33,10 +44,15 @@ export async function POST(request: Request) {
 
       holdings = dbHoldings
         .filter(h => h.symbol && h.currentValue > 0)
-        .map(h => ({
-          symbol: h.symbol!,
-          quantity: h.currentValue, // Treat currentValue as quantity for now
-        }));
+        .map(h => {
+          const assetInfo = detectAssetType(h.symbol!);
+          return {
+            symbol: h.symbol!,
+            quantity: h.currentValue,
+            provider: 'EOD' as const,
+            currency: (h.currency as 'USD' | 'ILS') || (assetInfo.isIsraeli ? 'ILS' : 'USD'),
+          };
+        });
     }
 
     if (holdings.length === 0) {
@@ -68,7 +84,7 @@ export async function POST(request: Request) {
 
 /**
  * GET /api/portfolio/analyze
- * Analyze portfolio using holdings from database
+ * Analyze portfolio using holdings from database (EOD Historical Data API)
  */
 export async function GET() {
   try {
@@ -83,13 +99,18 @@ export async function GET() {
       },
     });
 
-    const holdings: Holding[] = dbHoldings
+    const holdings: HybridHolding[] = dbHoldings
       .filter(h => h.symbol && h.currentValue > 0)
-      .map(h => ({
-        id: h.id, // Include database ID for edit/delete
-        symbol: h.symbol!,
-        quantity: h.currentValue,
-      }));
+      .map(h => {
+        const assetInfo = detectAssetType(h.symbol!);
+        return {
+          id: h.id, // Include database ID for edit/delete
+          symbol: h.symbol!,
+          quantity: h.currentValue,
+          provider: 'EOD' as const,
+          currency: (h.currency as 'USD' | 'ILS') || (assetInfo.isIsraeli ? 'ILS' : 'USD'),
+        };
+      });
 
     if (holdings.length === 0) {
       return NextResponse.json({

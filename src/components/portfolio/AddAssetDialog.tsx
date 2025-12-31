@@ -11,26 +11,91 @@ interface SearchResult {
   name: string;
   exchange?: string;
   type?: string;
+  provider: 'YAHOO' | 'EOD';
   price: number;
+  priceILS: number;
   currency: string;
   changePercent: number;
+  beta?: number;
+  sector?: string;
   logo?: string | null;
 }
+
+// Helper to get country info from symbol exchange suffix
+const getCountryInfo = (symbol: string): { flag: string; label: string; isIsraeli: boolean } => {
+  const upperSymbol = symbol.toUpperCase();
+
+  // Israeli stocks (.TA or 6-9 digit security number)
+  if (upperSymbol.endsWith('.TA') || /^\d{6,9}$/.test(symbol.split('.')[0])) {
+    return { flag: '🇮🇱', label: 'ת"א', isIsraeli: true };
+  }
+
+  // US stocks
+  if (upperSymbol.endsWith('.US') || !upperSymbol.includes('.')) {
+    return { flag: '🇺🇸', label: 'US', isIsraeli: false };
+  }
+
+  // Extract exchange suffix
+  const parts = upperSymbol.split('.');
+  const exchange = parts[parts.length - 1];
+
+  // Country mapping
+  const countryMap: Record<string, { flag: string; label: string }> = {
+    'VN': { flag: '🇻🇳', label: 'VN' },
+    'HK': { flag: '🇭🇰', label: 'HK' },
+    'LSE': { flag: '🇬🇧', label: 'UK' },
+    'L': { flag: '🇬🇧', label: 'UK' },
+    'PA': { flag: '🇫🇷', label: 'FR' },
+    'DE': { flag: '🇩🇪', label: 'DE' },
+    'F': { flag: '🇩🇪', label: 'DE' },
+    'TO': { flag: '🇨🇦', label: 'CA' },
+    'V': { flag: '🇨🇦', label: 'CA' },
+    'AS': { flag: '🇳🇱', label: 'NL' },
+    'SW': { flag: '🇨🇭', label: 'CH' },
+    'AU': { flag: '🇦🇺', label: 'AU' },
+    'SG': { flag: '🇸🇬', label: 'SG' },
+    'KS': { flag: '🇰🇷', label: 'KR' },
+    'T': { flag: '🇯🇵', label: 'JP' },
+    'SS': { flag: '🇨🇳', label: 'CN' },
+    'SZ': { flag: '🇨🇳', label: 'CN' },
+    'CC': { flag: '🪙', label: 'Crypto' },
+    'INDX': { flag: '📊', label: 'Index' },
+    'FOREX': { flag: '💱', label: 'FX' },
+  };
+
+  const country = countryMap[exchange];
+  if (country) {
+    return { ...country, isIsraeli: false };
+  }
+
+  // Default: show exchange code
+  return { flag: '🌐', label: exchange, isIsraeli: false };
+};
 
 interface QuoteData {
   symbol: string;
   name: string;
   price: number;
+  priceILS: number;
   currency: string;
   changePercent: number;
   beta: number;
   sector: string;
+  provider: 'YAHOO' | 'EOD';
 }
 
 interface AddAssetDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddAsset: (data: { symbol: string; name: string; quantity: number; price: number }) => void;
+  onAddAsset: (data: {
+    symbol: string;
+    name: string;
+    quantity: number;
+    price: number;
+    priceILS: number;
+    provider: 'YAHOO' | 'EOD';
+    currency: string;
+  }) => void;
 }
 
 type FlowStep = 'search' | 'quantity';
@@ -139,6 +204,9 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
         name: selectedStock.name,
         quantity: qty,
         price: quoteData?.price ?? selectedStock.price,
+        priceILS: quoteData?.priceILS ?? selectedStock.priceILS,
+        provider: selectedStock.provider,
+        currency: selectedStock.currency,
       });
       onClose();
     } catch (error) {
@@ -234,38 +302,49 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                             onSelect={() => handleSelectStock(result)}
                             className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors data-[selected=true]:bg-slate-100"
                           >
-                            {/* Logo */}
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                              {result.logo ? (
-                                <img
-                                  src={result.logo}
-                                  alt={result.symbol}
-                                  className="w-6 h-6 object-contain"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                  }}
-                                />
-                              ) : (
-                                <TrendingUp className="w-5 h-5 text-slate-400" />
-                              )}
-                            </div>
+                            {/* Logo / Flag Badge */}
+                            {(() => {
+                              const countryInfo = getCountryInfo(result.symbol);
+                              return (
+                                <>
+                                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+                                    {result.logo ? (
+                                      <img
+                                        src={result.logo}
+                                        alt={result.symbol}
+                                        className="w-6 h-6 object-contain"
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).style.display = 'none';
+                                        }}
+                                      />
+                                    ) : (
+                                      <span className="text-lg">{countryInfo.flag}</span>
+                                    )}
+                                  </div>
 
-                            {/* Info */}
-                            <div className="flex-1 min-w-0 text-right">
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold text-slate-900">{result.symbol}</span>
-                                {result.exchange && (
-                                  <span className="text-xs text-slate-400">{result.exchange}</span>
-                                )}
-                              </div>
-                              <p className="text-sm text-slate-500 truncate">{result.name}</p>
-                            </div>
+                                  {/* Info */}
+                                  <div className="flex-1 min-w-0 text-right">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold text-slate-900">{result.symbol}</span>
+                                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                                        countryInfo.isIsraeli
+                                          ? 'bg-blue-100 text-blue-700'
+                                          : 'bg-slate-100 text-slate-500'
+                                      }`}>
+                                        {countryInfo.label}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-slate-500 truncate">{result.name}</p>
+                                  </div>
+                                </>
+                              );
+                            })()}
 
                             {/* Price */}
-                            {result.price > 0 && (
+                            {result.priceILS > 0 && (
                               <div className="text-left flex-shrink-0">
                                 <p className="font-medium text-slate-900">
-                                  {formatPrice(result.price, result.currency)}
+                                  ₪{result.priceILS.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </p>
                                 <p className={`text-xs ${result.changePercent >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
                                   {result.changePercent >= 0 ? '+' : ''}{result.changePercent.toFixed(2)}%
@@ -278,7 +357,7 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
 
                       {/* Helper */}
                       <div className="px-4 py-3 border-t border-slate-100 text-xs text-slate-400 text-center">
-                        הקלד סימבול מניה (למשל AAPL) או שם חברה
+                        חפש מניות אמריקאיות (AAPL) או ישראליות (מספר ני"ע)
                       </div>
                     </Command>
                   </motion.div>
@@ -310,25 +389,39 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                     </div>
 
                     {/* Selected Stock Token */}
-                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl mb-4">
-                      <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center">
-                        <TrendingUp className="w-6 h-6 text-indigo-500" />
-                      </div>
-                      <div className="flex-1 text-right">
-                        <p className="font-bold text-slate-900">{selectedStock.symbol}</p>
-                        <p className="text-sm text-slate-500 truncate">{selectedStock.name}</p>
-                      </div>
-                      {quoteData && (
-                        <div className="text-left">
-                          <p className="font-semibold text-slate-900">
-                            {formatPrice(quoteData.price, quoteData.currency)}
-                          </p>
-                          <p className={`text-xs ${quoteData.changePercent >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                            {quoteData.changePercent >= 0 ? '+' : ''}{quoteData.changePercent.toFixed(2)}%
-                          </p>
+                    {(() => {
+                      const countryInfo = getCountryInfo(selectedStock.symbol);
+                      return (
+                        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl mb-4">
+                          <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center">
+                            <span className="text-2xl">{countryInfo.flag}</span>
+                          </div>
+                          <div className="flex-1 text-right">
+                            <div className="flex items-center gap-2">
+                              <p className="font-bold text-slate-900">{selectedStock.symbol}</p>
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                                countryInfo.isIsraeli
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-slate-100 text-slate-500'
+                              }`}>
+                                {countryInfo.label}
+                              </span>
+                            </div>
+                            <p className="text-sm text-slate-500 truncate">{selectedStock.name}</p>
+                          </div>
+                          {quoteData && (
+                            <div className="text-left">
+                              <p className="font-semibold text-slate-900">
+                                ₪{quoteData.priceILS.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </p>
+                              <p className={`text-xs ${quoteData.changePercent >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                                {quoteData.changePercent >= 0 ? '+' : ''}{quoteData.changePercent.toFixed(2)}%
+                              </p>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      );
+                    })()}
 
                     {/* Beta Warning */}
                     {quoteData && quoteData.beta > 1.2 && (
@@ -371,10 +464,10 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                     {/* Live Price Helper */}
                     {quoteData && (
                       <p className="text-sm text-slate-500 mb-4 text-right">
-                        מחיר אחרון: {formatPrice(quoteData.price, quoteData.currency)}
+                        מחיר אחרון: ₪{quoteData.priceILS.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         {quantity && parseFloat(quantity) > 0 && (
                           <span className="text-slate-400">
-                            {' '}• שווי משוער: {formatPrice(quoteData.price * parseFloat(quantity), quoteData.currency)}
+                            {' '}• שווי משוער: ₪{(quoteData.priceILS * parseFloat(quantity)).toLocaleString('he-IL', { maximumFractionDigits: 0 })}
                           </span>
                         )}
                       </p>

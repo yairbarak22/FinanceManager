@@ -60,7 +60,7 @@ export function RiskGauge({ beta, className = '' }: RiskGaugeProps) {
           </div>
         </div>
         <div className="text-left">
-          <p className="text-xs text-slate-400">Beta</p>
+          <p className="text-xs text-slate-400">סיכון משוקלל</p>
           <p className="text-2xl font-light text-slate-900">{beta.toFixed(2)}</p>
         </div>
       </div>
@@ -81,10 +81,10 @@ export function RiskGauge({ beta, className = '' }: RiskGaugeProps) {
 
         {/* Marker */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all duration-500"
+          className="absolute top-1/6 -translate-y-1/2 -translate-x-1/2 transition-all duration-500"
           style={{ left: `${position}%` }}
         >
-          <div className={`w-5 h-5 rounded-full ${riskBg} border-2 border-white shadow-lg`} />
+          <div className={`w-6 h-6 rounded-full ${riskBg} border-2 border-white shadow-lg`} />
         </div>
 
         {/* Scale labels */}
@@ -98,17 +98,18 @@ export function RiskGauge({ beta, className = '' }: RiskGaugeProps) {
 
       {/* Zone labels */}
       <div className="flex justify-between mt-4 text-xs">
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-emerald-400" />
-          <span className="text-slate-500">שמרני</span>
+      <div className="flex items-center gap-1.5">
+          <div className="w-2 h-2 rounded-full bg-rose-400" />
+          <span className="text-slate-500">אגרסיבי</span>
         </div>
+        
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-sky-400" />
           <span className="text-slate-500">שוק</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-rose-400" />
-          <span className="text-slate-500">אגרסיבי</span>
+          <div className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span className="text-slate-500">שמרני</span>
         </div>
       </div>
 
