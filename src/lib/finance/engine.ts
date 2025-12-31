@@ -90,6 +90,30 @@ let usdIlsRate: number | null = null;
 let rateLastFetched: number = 0;
 const RATE_CACHE_MS = 60 * 60 * 1000; // 1 hour
 
+// Beta/Sector cache to reduce API calls
+const betaSectorCache = new Map<string, { beta: number; sector: string; timestamp: number }>();
+const BETA_CACHE_MS = 24 * 60 * 60 * 1000; // 24 hours (beta doesn't change often)
+
+// Simple delay function for rate limiting
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Process items with rate limiting (sequential with delay)
+async function processWithThrottle<T, R>(
+  items: T[],
+  processor: (item: T) => Promise<R>,
+  delayMs: number = 200
+): Promise<R[]> {
+  const results: R[] = [];
+  for (const item of items) {
+    const result = await processor(item);
+    results.push(result);
+    if (items.indexOf(item) < items.length - 1) {
+      await delay(delayMs);
+    }
+  }
+  return results;
+}
+
 /**
  * Get USD to ILS exchange rate
  */
@@ -144,8 +168,17 @@ async function getSparklineData(symbol: string): Promise<number[]> {
 /**
  * Fetch beta and sector from quoteSummary
  * Handles both stocks (assetProfile) and ETFs (fundProfile)
+ * Uses cache to reduce API calls (beta doesn't change frequently)
  */
 async function getBetaAndSector(symbol: string): Promise<{ beta: number; sector: string }> {
+  const now = Date.now();
+
+  // Check cache first
+  const cached = betaSectorCache.get(symbol);
+  if (cached && (now - cached.timestamp) < BETA_CACHE_MS) {
+    return { beta: cached.beta, sector: cached.sector };
+  }
+
   try {
     const summary = await yahooFinance.quoteSummary(symbol, {
       modules: ['summaryDetail', 'assetProfile', 'fundProfile', 'defaultKeyStatistics'],
@@ -163,29 +196,40 @@ async function getBetaAndSector(symbol: string): Promise<{ beta: number; sector:
       sector = summary.fundProfile.categoryName;
     }
 
-    return {
+    const result = {
       beta,
       sector: sector ?? 'Unknown',
     };
+
+    // Cache the result
+    betaSectorCache.set(symbol, { ...result, timestamp: now });
+
+    return result;
   } catch (error) {
     console.error(`Error fetching beta/sector for ${symbol}:`, error);
+    // Return cached value if available (even if expired), otherwise defaults
+    if (cached) {
+      return { beta: cached.beta, sector: cached.sector };
+    }
     return { beta: 1.0, sector: 'Unknown' };
   }
 }
 
 /**
  * Fetch enriched data for a single holding
+ * Uses sequential requests to avoid Yahoo rate limits
  */
 async function enrichHolding(
   holding: Holding,
   exchangeRate: number
 ): Promise<EnrichedHolding | null> {
   try {
-    const [quote, sparklineData, betaSector] = await Promise.all([
-      yahooFinance.quote(holding.symbol) as Promise<YahooQuote>,
-      getSparklineData(holding.symbol),
-      getBetaAndSector(holding.symbol),
-    ]);
+    // Sequential requests to avoid rate limiting (429 errors)
+    const quote = await yahooFinance.quote(holding.symbol) as YahooQuote;
+    await delay(100);
+    const betaSector = await getBetaAndSector(holding.symbol);
+    await delay(100);
+    const sparklineData = await getSparklineData(holding.symbol);
 
     const price = quote.regularMarketPrice ?? 0;
     const currency = quote.currency ?? 'USD';
@@ -267,9 +311,11 @@ export async function analyzePortfolio(holdings: Holding[]): Promise<PortfolioAn
   // Get exchange rate
   const exchangeRate = await getUsdIlsRate();
 
-  // Enrich all holdings in parallel
-  const enrichedResults = await Promise.all(
-    holdings.map(h => enrichHolding(h, exchangeRate))
+  // Enrich holdings with throttling to avoid Yahoo rate limits (429)
+  const enrichedResults = await processWithThrottle(
+    holdings,
+    (h) => enrichHolding(h, exchangeRate),
+    300 // 300ms delay between each holding
   );
 
   // Filter out failed fetches

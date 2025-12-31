@@ -57,9 +57,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json(analysis);
   } catch (error) {
-    console.error('Error analyzing portfolio:', error);
+    console.error('Error analyzing portfolio (POST):', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to analyze portfolio' },
+      { error: `Failed to analyze portfolio: ${errorMessage}` },
       { status: 500 }
     );
   }
@@ -108,9 +109,10 @@ export async function GET() {
 
     return NextResponse.json(analysis);
   } catch (error) {
-    console.error('Error analyzing portfolio:', error);
+    console.error('Error analyzing portfolio (GET):', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Failed to analyze portfolio' },
+      { error: `Failed to analyze portfolio: ${errorMessage}` },
       { status: 500 }
     );
   }

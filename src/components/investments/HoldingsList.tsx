@@ -1,0 +1,181 @@
+'use client';
+
+import { useState } from 'react';
+import { Plus, Pencil, Trash2, TrendingUp, BarChart3 } from 'lucide-react';
+import { Holding, InvestmentCalculation } from '@/lib/types';
+import { formatCurrency, cn } from '@/lib/utils';
+import ConfirmDialog from '@/components/modals/ConfirmDialog';
+
+interface HoldingsListProps {
+  holdings: Holding[];
+  calculations: InvestmentCalculation[];
+  onAdd: () => void;
+  onEdit: (holding: Holding) => void;
+  onDelete: (id: string) => void;
+}
+
+export default function HoldingsList({ 
+  holdings, 
+  calculations, 
+  onAdd, 
+  onEdit, 
+  onDelete 
+}: HoldingsListProps) {
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; name: string }>({
+    isOpen: false,
+    id: '',
+    name: '',
+  });
+
+  const totalValue = holdings.reduce((sum, h) => sum + h.currentValue, 0);
+  const totalAllocation = holdings.reduce((sum, h) => sum + h.targetAllocation, 0);
+  const isAllocationValid = Math.abs(totalAllocation - 100) < 0.01;
+
+  // Get calculation for a specific holding
+  const getCalculation = (holdingId: string) => {
+    return calculations.find(c => c.holdingId === holdingId);
+  };
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+            <BarChart3 className="w-5 h-5 text-indigo-600" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-slate-900">האחזקות שלי</h3>
+            <p className="text-sm text-slate-500">
+              {holdings.length} נכסים • {formatCurrency(totalValue)}
+            </p>
+          </div>
+        </div>
+        <button onClick={onAdd} className="btn-primary">
+          <Plus className="w-4 h-4" />
+          הוסף נכס
+        </button>
+      </div>
+
+      {/* Allocation Warning */}
+      {holdings.length > 0 && !isAllocationValid && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex items-center gap-2">
+          <span className="text-amber-600 text-sm">
+            ⚠️ סכום הפילוחים הוא {totalAllocation.toFixed(1)}% במקום 100%
+          </span>
+        </div>
+      )}
+
+      {/* Holdings List */}
+      <div className="space-y-3">
+        {holdings.map((holding) => {
+          const currentAllocation = totalValue > 0 
+            ? (holding.currentValue / totalValue) * 100 
+            : 0;
+          const calc = getCalculation(holding.id);
+          const allocationDiff = currentAllocation - holding.targetAllocation;
+
+          return (
+            <div
+              key={holding.id}
+              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 sm:p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
+            >
+              {/* Top row: Icon + Details + Value (mobile) */}
+              <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                {/* Icon */}
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
+                </div>
+
+                {/* Details */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-slate-900 text-sm sm:text-base truncate">{holding.name}</p>
+                    {holding.symbol && (
+                      <span className="hidden sm:inline text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded">
+                        {holding.symbol}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-500">
+                    {holding.type === 'etf' ? 'קרן סל' : 'קרן מחקה'}
+                    {holding.symbol && <span className="sm:hidden"> • {holding.symbol}</span>}
+                  </p>
+                </div>
+
+                {/* Value - mobile only */}
+                <div className="text-left flex-shrink-0 sm:hidden">
+                  <p className="font-bold text-slate-900 text-sm">{formatCurrency(holding.currentValue)}</p>
+                  <p className="text-xs text-slate-500">
+                    {currentAllocation.toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+
+              {/* Bottom row (mobile) / Continue (desktop): Value + Allocation + Actions */}
+              <div className="flex items-center gap-2 sm:gap-4 justify-between sm:justify-end mr-12 sm:mr-0">
+                {/* Value - desktop only */}
+                <div className="hidden sm:block text-left flex-shrink-0">
+                  <p className="font-bold text-slate-900">{formatCurrency(holding.currentValue)}</p>
+                  <p className="text-xs text-slate-500">
+                    {currentAllocation.toFixed(1)}% נוכחי
+                  </p>
+                </div>
+
+                {/* Allocation */}
+                <div className="text-right sm:text-left flex-shrink-0 sm:w-24">
+                  <p className={cn(
+                    "font-medium text-sm sm:text-base",
+                    allocationDiff > 5 ? "text-red-500" : 
+                    allocationDiff < -5 ? "text-green-500" : "text-slate-700"
+                  )}>
+                    יעד: {holding.targetAllocation}%
+                  </p>
+                  {calc && calc.amountToInvest > 0 && (
+                    <p className="text-xs text-indigo-600 font-medium">
+                      להשקיע: {formatCurrency(calc.amountToInvest)}
+                    </p>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => onEdit(holding)}
+                    className="p-1.5 sm:p-2 rounded-lg hover:bg-slate-200 text-slate-500 hover:text-slate-600"
+                  >
+                    <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirm({ isOpen: true, id: holding.id, name: holding.name })}
+                    className="p-1.5 sm:p-2 rounded-lg hover:bg-red-100 text-slate-500 hover:text-red-500"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {holdings.length === 0 && (
+          <div className="text-center py-12 text-slate-500">
+            <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p>אין אחזקות עדיין</p>
+            <p className="text-sm mt-1">הוסף את האחזקות שלך כדי להתחיל</p>
+          </div>
+        )}
+      </div>
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: '', name: '' })}
+        onConfirm={() => onDelete(deleteConfirm.id)}
+        title="מחיקת אחזקה"
+        message={`האם אתה בטוח שברצונך למחוק את "${deleteConfirm.name}"?`}
+      />
+    </div>
+  );
+}
+
