@@ -97,11 +97,36 @@ const BETA_CACHE_MS = 24 * 60 * 60 * 1000; // 24 hours (beta doesn't change ofte
 // Simple delay function for rate limiting
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// Retry with exponential backoff
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelayMs: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      // Check if it's a rate limit error
+      if (lastError.message.includes('Too Many Requests') || lastError.message.includes('429')) {
+        const delayTime = baseDelayMs * Math.pow(2, i); // Exponential backoff
+        console.log(`Rate limited, waiting ${delayTime}ms before retry ${i + 1}/${maxRetries}`);
+        await delay(delayTime);
+      } else {
+        throw lastError; // Don't retry non-rate-limit errors
+      }
+    }
+  }
+  throw lastError;
+}
+
 // Process items with rate limiting (sequential with delay)
 async function processWithThrottle<T, R>(
   items: T[],
   processor: (item: T) => Promise<R>,
-  delayMs: number = 200
+  delayMs: number = 500
 ): Promise<R[]> {
   const results: R[] = [];
   for (const item of items) {
@@ -180,9 +205,13 @@ async function getBetaAndSector(symbol: string): Promise<{ beta: number; sector:
   }
 
   try {
-    const summary = await yahooFinance.quoteSummary(symbol, {
-      modules: ['summaryDetail', 'assetProfile', 'fundProfile', 'defaultKeyStatistics'],
-    }) as YahooQuoteSummary;
+    const summary = await retryWithBackoff(
+      () => yahooFinance.quoteSummary(symbol, {
+        modules: ['summaryDetail', 'assetProfile', 'fundProfile', 'defaultKeyStatistics'],
+      }) as Promise<YahooQuoteSummary>,
+      3,
+      2000
+    );
 
     // Beta: prefer summaryDetail.beta (stocks), fall back to defaultKeyStatistics.beta3Year (ETFs)
     let beta = summary.summaryDetail?.beta;
@@ -217,18 +246,22 @@ async function getBetaAndSector(symbol: string): Promise<{ beta: number; sector:
 
 /**
  * Fetch enriched data for a single holding
- * Uses sequential requests to avoid Yahoo rate limits
+ * Uses sequential requests with retry to avoid Yahoo rate limits
  */
 async function enrichHolding(
   holding: Holding,
   exchangeRate: number
 ): Promise<EnrichedHolding | null> {
   try {
-    // Sequential requests to avoid rate limiting (429 errors)
-    const quote = await yahooFinance.quote(holding.symbol) as YahooQuote;
-    await delay(100);
+    // Sequential requests with retry and longer delays
+    const quote = await retryWithBackoff(
+      () => yahooFinance.quote(holding.symbol) as Promise<YahooQuote>,
+      3,
+      2000
+    );
+    await delay(500);
     const betaSector = await getBetaAndSector(holding.symbol);
-    await delay(100);
+    await delay(500);
     const sparklineData = await getSparklineData(holding.symbol);
 
     const price = quote.regularMarketPrice ?? 0;
@@ -315,7 +348,7 @@ export async function analyzePortfolio(holdings: Holding[]): Promise<PortfolioAn
   const enrichedResults = await processWithThrottle(
     holdings,
     (h) => enrichHolding(h, exchangeRate),
-    300 // 300ms delay between each holding
+    1500 // 1.5s delay between each holding to avoid rate limits
   );
 
   // Filter out failed fetches
