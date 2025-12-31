@@ -23,7 +23,7 @@ import type {
   AssetType,
 } from '../types';
 
-const EOD_API_TOKEN = process.env.EOD_API_TOKEN || '6954faf60fce81.25134920';
+const EOD_API_TOKEN = process.env.EOD_API_TOKEN || '';
 const EOD_BASE_URL = 'https://eodhistoricaldata.com/api';
 
 // ============================================================================
