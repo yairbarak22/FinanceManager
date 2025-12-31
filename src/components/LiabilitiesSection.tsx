@@ -52,7 +52,7 @@ export default function LiabilitiesSection({
           </div>
           <div>
             <h3 className="font-semibold text-slate-900">התחייבויות</h3>
-            <p className="text-xs text-rose-600 font-medium">{formatCurrency(totalLiabilities)}</p>
+            <p className="text-xs text-rose-600 font-medium smartlook-mask">{formatCurrency(totalLiabilities)}</p>
           </div>
           <HelpTrigger
             topicId="liabilities"
@@ -70,7 +70,7 @@ export default function LiabilitiesSection({
       <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 mb-4">
         <div className="flex items-center justify-between">
           <span className="text-xs text-slate-600">תשלום חודשי כולל</span>
-          <span className="text-sm font-bold text-rose-600">{formatCurrency(monthlyPayments)}</span>
+          <span className="text-sm font-bold text-rose-600 smartlook-mask">{formatCurrency(monthlyPayments)}</span>
         </div>
       </div>
 
@@ -102,8 +102,8 @@ export default function LiabilitiesSection({
 
                 {/* Details */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-900 text-sm truncate">{liability.name}</p>
-                  <p className="text-xs text-slate-500 truncate">
+                  <p className="font-medium text-slate-900 text-sm truncate smartlook-mask">{liability.name}</p>
+                  <p className="text-xs text-slate-500 truncate smartlook-mask">
                     {categoryInfo?.nameHe} • {formatCurrency(liability.monthlyPayment)}/חודש
                     {liability.hasInterestRebate && (
                       <span className="text-green-600"> • זיכוי ריבית</span>
@@ -120,7 +120,7 @@ export default function LiabilitiesSection({
                 </div>
 
                 {/* Value - visible on mobile in this row */}
-                <p className="text-sm font-bold text-red-600 flex-shrink-0 sm:hidden">
+                <p className="text-sm font-bold text-red-600 flex-shrink-0 sm:hidden smartlook-mask">
                   {formatCurrency(liability.totalAmount)}
                 </p>
               </div>
@@ -128,7 +128,7 @@ export default function LiabilitiesSection({
               {/* Bottom row (mobile) / Continue (desktop): Value + Actions */}
               <div className="flex items-center gap-2 justify-end sm:gap-1 mr-12 sm:mr-0">
                 {/* Value - visible on desktop */}
-                <p className="hidden sm:block text-sm font-bold text-red-600 flex-shrink-0 ml-2">
+                <p className="hidden sm:block text-sm font-bold text-red-600 flex-shrink-0 ml-2 smartlook-mask">
                   {formatCurrency(liability.totalAmount)}
                 </p>
 

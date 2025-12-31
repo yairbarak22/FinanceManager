@@ -44,7 +44,7 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
           </div>
           <div>
             <h3 className="font-semibold text-slate-900">נכסים</h3>
-            <p className="text-xs text-emerald-600 font-medium">{formatCurrency(totalAssets)}</p>
+            <p className="text-xs text-emerald-600 font-medium smartlook-mask">{formatCurrency(totalAssets)}</p>
           </div>
           <HelpTrigger
             id="btn-ai-help-assets"
@@ -85,12 +85,12 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
 
                 {/* Details */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-900 text-sm truncate">{asset.name}</p>
+                  <p className="font-medium text-slate-900 text-sm truncate smartlook-mask">{asset.name}</p>
                   <p className="text-xs text-slate-500 truncate">{categoryInfo?.nameHe}</p>
                 </div>
 
                 {/* Value - visible on mobile in this row */}
-                <p className="text-sm font-bold text-green-600 flex-shrink-0 sm:hidden">
+                <p className="text-sm font-bold text-green-600 flex-shrink-0 sm:hidden smartlook-mask">
                   {formatCurrency(asset.value)}
                 </p>
               </div>
@@ -98,7 +98,7 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
               {/* Bottom row (mobile) / Continue (desktop): Value + Actions */}
               <div className="flex items-center gap-2 justify-end sm:gap-1 mr-12 sm:mr-0">
                 {/* Value - visible on desktop */}
-                <p className="hidden sm:block text-sm font-bold text-slate-900 flex-shrink-0 ml-2">
+                <p className="hidden sm:block text-sm font-bold text-slate-900 flex-shrink-0 ml-2 smartlook-mask">
                   {formatCurrency(asset.value)}
                 </p>
 

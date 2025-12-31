@@ -39,7 +39,7 @@ export default function NetWorthSection({
       {/* Main Net Worth */}
       <div className="mb-6">
         <p className={cn(
-          "text-4xl font-bold",
+          "text-4xl font-bold smartlook-mask",
           isPositiveNetWorth ? "text-emerald-500" : "text-rose-500"
         )}>
           {formatCurrency(netWorth)}
@@ -56,7 +56,7 @@ export default function NetWorthSection({
             </div>
             <span className="text-sm font-medium text-slate-700">נכסים</span>
           </div>
-          <span className="font-bold text-emerald-600">{formatCurrency(totalAssets)}</span>
+          <span className="font-bold text-emerald-600 smartlook-mask">{formatCurrency(totalAssets)}</span>
         </div>
 
         {/* Liabilities */}
@@ -67,7 +67,7 @@ export default function NetWorthSection({
             </div>
             <span className="text-sm font-medium text-slate-700">התחייבויות</span>
           </div>
-          <span className="font-bold text-rose-600">{formatCurrency(totalLiabilities)}</span>
+          <span className="font-bold text-rose-600 smartlook-mask">{formatCurrency(totalLiabilities)}</span>
         </div>
 
         {/* Monthly Cash Flow */}
@@ -86,7 +86,7 @@ export default function NetWorthSection({
             </div>
             <span className="text-sm font-medium text-slate-700">תזרים חודשי</span>
           </div>
-          <span className={cn("font-bold", isPositiveCashFlow ? "text-emerald-600" : "text-rose-600")}>
+          <span className={cn("font-bold smartlook-mask", isPositiveCashFlow ? "text-emerald-600" : "text-rose-600")}>
             {isPositiveCashFlow ? '+' : ''}{formatCurrency(monthlyCashFlow)}
           </span>
         </div>

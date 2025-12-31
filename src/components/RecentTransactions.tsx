@@ -266,20 +266,20 @@ export default function RecentTransactions({
               {/* Transaction Details */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="font-medium text-slate-900 text-sm truncate">
+                  <p className="font-medium text-slate-900 text-sm truncate smartlook-mask">
                     {categoryInfo?.nameHe || transaction.category}
                   </p>
                   <span className="text-xs text-slate-500">
                     {formatDate(transaction.date)}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 truncate">{transaction.description}</p>
+                <p className="text-xs text-slate-500 truncate smartlook-mask">{transaction.description}</p>
               </div>
 
               {/* Amount */}
               <p
                 className={cn(
-                  'text-sm font-bold flex-shrink-0',
+                  'text-sm font-bold flex-shrink-0 smartlook-mask',
                   isIncome ? 'text-green-600' : 'text-rose-600'
                 )}
               >
@@ -384,8 +384,8 @@ export default function RecentTransactions({
                 {/* Transaction info */}
                 <div className="p-3 bg-slate-50 rounded-xl">
                   <p className="text-sm text-slate-600">עסקה:</p>
-                  <p className="font-medium text-slate-900">{editingTransaction.description}</p>
-                  <p className="text-sm text-slate-500">
+                  <p className="font-medium text-slate-900 smartlook-mask">{editingTransaction.description}</p>
+                  <p className="text-sm text-slate-500 smartlook-mask">
                     {formatCurrency(editingTransaction.amount)} • {formatDate(editingTransaction.date)}
                   </p>
                 </div>

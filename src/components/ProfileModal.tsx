@@ -65,7 +65,7 @@ function StyledSelect({ value, onChange, options, placeholder }: StyledSelectPro
           !selectedOption && 'text-slate-400'
         )}
       >
-        <span className={cn('flex-1 text-right', selectedOption ? 'text-slate-900' : 'text-slate-400')}>
+        <span className={cn('flex-1 text-right smartlook-mask', selectedOption ? 'text-slate-900' : 'text-slate-400')}>
           {selectedOption?.label || placeholder}
         </span>
         <ChevronDown

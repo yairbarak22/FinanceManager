@@ -21,7 +21,7 @@ export default function SummaryCards({ totalBalance, totalIncome, totalExpenses 
           <div>
             <p className="text-slate-500 text-sm font-medium mb-1">תזרים</p>
             <p className={cn(
-              "text-3xl font-bold tracking-tight",
+              "text-3xl font-bold tracking-tight smartlook-mask",
               isPositiveBalance ? "text-emerald-500" : "text-rose-500"
             )}>
               {formatCurrency(totalBalance)}
@@ -47,7 +47,7 @@ export default function SummaryCards({ totalBalance, totalIncome, totalExpenses 
         <div className="flex items-center justify-between">
           <div>
             <p className="text-slate-500 text-sm font-medium mb-1">סה"כ הכנסות</p>
-            <p className="text-3xl font-bold tracking-tight text-emerald-500">
+            <p className="text-3xl font-bold tracking-tight text-emerald-500 smartlook-mask">
               {formatCurrency(totalIncome)}
             </p>
             <p className="text-slate-400 text-xs mt-1">כולל קבועות</p>
@@ -63,7 +63,7 @@ export default function SummaryCards({ totalBalance, totalIncome, totalExpenses 
         <div className="flex items-center justify-between">
           <div>
             <p className="text-slate-500 text-sm font-medium mb-1">סה"כ הוצאות</p>
-            <p className="text-3xl font-bold tracking-tight text-rose-500">
+            <p className="text-3xl font-bold tracking-tight text-rose-500 smartlook-mask">
               {formatCurrency(totalExpenses)}
             </p>
             <p className="text-slate-400 text-xs mt-1">כולל קבועות + התחייבויות</p>

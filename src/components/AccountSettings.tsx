@@ -237,7 +237,7 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
                         className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg"
                       >
                         <div>
-                          <p className="text-sm font-medium text-slate-900" dir="ltr">
+                          <p className="text-sm font-medium text-slate-900 smartlook-mask" dir="ltr">
                             {invite.email}
                           </p>
                           <p className="text-xs text-slate-500">
@@ -293,14 +293,14 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
                         )}
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-slate-900">
+                            <p className="text-sm font-medium text-slate-900 smartlook-mask">
                               {member.user.name || 'ללא שם'}
                             </p>
                             {member.role === 'OWNER' && (
                               <Crown className="w-4 h-4 text-amber-500" />
                             )}
                           </div>
-                          <p className="text-xs text-slate-500" dir="ltr">
+                          <p className="text-xs text-slate-500 smartlook-mask" dir="ltr">
                             {member.user.email}
                           </p>
                         </div>

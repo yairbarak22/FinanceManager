@@ -56,16 +56,16 @@ export default function MonthlySummary({
         <div className="grid grid-cols-3 gap-3 text-center">
           <div>
             <p className="text-xs text-slate-500 mb-1">הכנסות</p>
-            <p className="text-sm font-bold text-emerald-600">{formatCurrency(totalIncome)}</p>
+            <p className="text-sm font-bold text-emerald-600 smartlook-mask">{formatCurrency(totalIncome)}</p>
           </div>
           <div>
             <p className="text-xs text-slate-500 mb-1">הוצאות</p>
-            <p className="text-sm font-bold text-rose-600">{formatCurrency(totalExpenses)}</p>
+            <p className="text-sm font-bold text-rose-600 smartlook-mask">{formatCurrency(totalExpenses)}</p>
           </div>
           <div>
             <p className="text-xs text-slate-500 mb-1">יתרה</p>
             <p className={cn(
-              'text-sm font-bold',
+              'text-sm font-bold smartlook-mask',
               totalBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'
             )}>
               {formatCurrency(totalBalance)}
@@ -112,7 +112,7 @@ export default function MonthlySummary({
                 <div className="flex items-center gap-2">
                   <p
                     className={cn(
-                      'text-sm font-bold',
+                      'text-sm font-bold smartlook-mask',
                       isPositive ? 'text-green-600' : 'text-red-600'
                     )}
                   >
@@ -132,13 +132,13 @@ export default function MonthlySummary({
                   <div className="grid grid-cols-2 gap-2 pt-3">
                     <div className="text-center">
                       <p className="text-xs text-slate-500">הכנסות</p>
-                      <p className="text-sm font-semibold text-emerald-600">
+                      <p className="text-sm font-semibold text-emerald-600 smartlook-mask">
                         {formatCurrency(summary.income)}
                       </p>
                     </div>
                     <div className="text-center">
                       <p className="text-xs text-slate-500">הוצאות</p>
-                      <p className="text-sm font-semibold text-rose-600">
+                      <p className="text-sm font-semibold text-rose-600 smartlook-mask">
                         {formatCurrency(summary.expenses)}
                       </p>
                     </div>
