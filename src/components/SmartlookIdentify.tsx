@@ -25,9 +25,18 @@ export default function SmartlookIdentify() {
     const checkAndIdentify = () => {
       if (isSmartlookAvailable() && session.user) {
         // PRIVACY: Only pass internal userId - NO PII (email, name, etc.)
-        const userId = session.user.id || 'anonymous';
-        identifyUser(userId);
-        hasIdentified.current = true;
+        // Ensure we never send email as user ID - only use the database CUID
+        const userId = session.user.id;
+        
+        // Only identify if we have a proper CUID (not email)
+        // CUIDs look like: "cmj8phrqa0000zf4374r18w73"
+        if (userId && !userId.includes('@')) {
+          identifyUser(userId);
+          hasIdentified.current = true;
+        } else {
+          // If no proper ID, don't identify - keep user anonymous
+          console.debug('[Smartlook] Skipping identify - no valid non-PII user ID');
+        }
       }
     };
 

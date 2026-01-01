@@ -37,7 +37,7 @@ export default function RootLayout({
   return (
     <html lang="he" dir="rtl">
       <head>
-        {/* Smartlook - Session Recording */}
+        {/* Smartlook - Session Recording with Privacy Settings */}
         <Script
           id="smartlook-init"
           strategy="afterInteractive"
@@ -49,6 +49,16 @@ export default function RootLayout({
                 c.charset='utf-8';c.src='https://web-sdk.smartlook.com/recorder.js';h.appendChild(c);
               })(document);
               smartlook('init', 'ff3850f57f63db3eeb1e38ed64c7c1d592664267', { region: 'eu' });
+              
+              // PRIVACY: Disable automatic email and number collection
+              smartlook('record', { 
+                emails: false,   // Don't collect emails
+                numbers: false,  // Don't collect numbers  
+                forms: true      // Mask all form inputs
+              });
+              
+              // PRIVACY: Disable IP tracking
+              smartlook('consentIP', false);
             `,
           }}
         />
