@@ -40,6 +40,7 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { useToast } from '@/hooks/useToast';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import ToastContainer from '@/components/ui/Toast';
 import {
   expenseCategories as defaultExpenseCategories,
@@ -50,6 +51,8 @@ import {
 import Card from '@/components/ui/Card';
 
 export default function Home() {
+  const router = useRouter();
+
   // Data state
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([]);
@@ -600,6 +603,12 @@ export default function Home() {
       <HeaderBar
         activeSection={activeSection}
         onSectionChange={(section) => {
+          // Navigate to /help for the help section
+          if (section === 'help') {
+            router.push('/help');
+            analytics.trackTabChange(section);
+            return;
+          }
           setActiveSection(section);
           window.scrollTo({ top: 0, behavior: 'smooth' });
           analytics.trackTabChange(section);
