@@ -6,7 +6,6 @@ import AIChatProvider from "@/components/ai/AIChatProvider";
 import { OnboardingProvider } from "@/context/OnboardingContext";
 import OnboardingLayer from "@/components/onboarding/OnboardingLayer";
 import Analytics from "@/components/Analytics";
-import SmartlookIdentify from "@/components/SmartlookIdentify";
 import CookieConsent from "@/components/CookieConsent";
 import { AccessibilityStatement } from "@/components/AccessibilityStatement";
 import "./globals.css";
@@ -50,14 +49,15 @@ export default function RootLayout({
               })(document);
               smartlook('init', 'ff3850f57f63db3eeb1e38ed64c7c1d592664267', { region: 'eu' });
               
-              // PRIVACY: Disable automatic email and number collection
+              // PRIVACY: Complete anonymization - disable ALL data collection
               smartlook('record', { 
+                forms: false,    // Don't record form inputs
+                numbers: false,  // Don't collect numbers
                 emails: false,   // Don't collect emails
-                numbers: false,  // Don't collect numbers  
-                forms: true      // Mask all form inputs
+                ips: false       // Don't collect IPs
               });
               
-              // PRIVACY: Disable IP tracking
+              // PRIVACY: Disable IP consent tracking
               smartlook('consentIP', false);
             `,
           }}
@@ -72,7 +72,6 @@ export default function RootLayout({
             <OnboardingLayer />
           </OnboardingProvider>
           <Analytics />
-          <SmartlookIdentify />
           <CookieConsent />
           <AccessibilityStatement />
         </Providers>

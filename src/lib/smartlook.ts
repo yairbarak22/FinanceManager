@@ -3,11 +3,12 @@
 /**
  * Smartlook Utility Functions
  * 
+ * PRIVACY: Complete anonymization mode - NO user identification is sent.
+ * All users appear as "Anonymous Visitor" in the dashboard.
+ * 
  * Provides helper functions for:
- * - User identification
- * - User anonymization (logout)
- * - Custom event tracking
- * - Sensitive data masking
+ * - Custom event tracking (anonymous)
+ * - Recording control (pause/resume)
  */
 
 /**
@@ -15,44 +16,6 @@
  */
 export function isSmartlookAvailable(): boolean {
   return typeof window !== 'undefined' && typeof window.smartlook === 'function';
-}
-
-/**
- * Identify a user in Smartlook
- * Call this after successful login
- * 
- * PRIVACY: This function only passes the userId for session linking.
- * NO PII (email, name, etc.) is sent to Smartlook.
- * 
- * @param userId - Unique user identifier (internal ID only, not email)
- * @param metadata - Optional non-personal metadata (e.g., planType, role)
- */
-export function identifyUser(
-  userId: string,
-  metadata?: Record<string, string | number | boolean>
-): void {
-  if (!isSmartlookAvailable()) {
-    console.debug('[Smartlook] Not available, skipping identify');
-    return;
-  }
-
-  // Only pass userId and non-personal metadata - NO PII
-  window.smartlook('identify', userId, metadata);
-  console.debug('[Smartlook] User identified:', userId);
-}
-
-/**
- * Anonymize the current user (reset identification)
- * Call this on logout
- */
-export function resetUser(): void {
-  if (!isSmartlookAvailable()) {
-    console.debug('[Smartlook] Not available, skipping anonymize');
-    return;
-  }
-
-  window.smartlook('anonymize');
-  console.debug('[Smartlook] User anonymized');
 }
 
 /**

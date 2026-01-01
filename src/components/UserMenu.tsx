@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { LogOut, User, ChevronDown, UserCog, Users, Sparkles } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
-import { resetUser } from '@/lib/smartlook';
 import { SensitiveData } from './common/SensitiveData';
 
 interface UserMenuProps {
@@ -116,8 +115,6 @@ export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserM
             <button
               onClick={() => {
                 setIsOpen(false);
-                // Reset Smartlook user identification before signing out
-                resetUser();
                 signOut({ callbackUrl: '/login' });
               }}
               className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
