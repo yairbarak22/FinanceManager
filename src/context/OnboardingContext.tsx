@@ -158,7 +158,15 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     while (!success && attempts < maxAttempts) {
       attempts++;
       try {
-        const response = await fetch('/api/user/onboarding', { method: 'POST' });
+        // IMPORTANT: Must include X-CSRF-Protection header for POST requests
+        const response = await fetch('/api/user/onboarding', { 
+          method: 'POST',
+          headers: {
+            'X-CSRF-Protection': '1',
+            'Content-Type': 'application/json',
+          },
+        });
+        
         if (response.ok) {
           // Verify the update succeeded by checking the status
           const verifyResponse = await fetch('/api/user/onboarding');
@@ -169,6 +177,8 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
               console.debug('[Onboarding] Successfully marked as complete');
             }
           }
+        } else {
+          console.error(`[Onboarding] POST failed with status ${response.status}:`, await response.text());
         }
         
         if (!success && attempts < maxAttempts) {
