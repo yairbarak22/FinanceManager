@@ -22,6 +22,7 @@ import ImportModal from '@/components/modals/ImportModal';
 import DocumentsModal from '@/components/modals/DocumentsModal';
 import AdvisorModal from '@/components/modals/AdvisorModal';
 import { SmartPortfolio } from '@/components/portfolio';
+import AcademySection from '@/components/academy/AcademySection';
 import UserMenu from '@/components/UserMenu';
 import ProfileModal from '@/components/ProfileModal';
 import AccountSettings from '@/components/AccountSettings';
@@ -40,7 +41,6 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { useToast } from '@/hooks/useToast';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import ToastContainer from '@/components/ui/Toast';
 import {
   expenseCategories as defaultExpenseCategories,
@@ -51,8 +51,6 @@ import {
 import Card from '@/components/ui/Card';
 
 export default function Home() {
-  const router = useRouter();
-
   // Data state
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([]);
@@ -603,12 +601,6 @@ export default function Home() {
       <HeaderBar
         activeSection={activeSection}
         onSectionChange={(section) => {
-          // Navigate to /help for the help section
-          if (section === 'help') {
-            router.push('/help');
-            analytics.trackTabChange(section);
-            return;
-          }
           setActiveSection(section);
           window.scrollTo({ top: 0, behavior: 'smooth' });
           analytics.trackTabChange(section);
@@ -628,8 +620,13 @@ export default function Home() {
           <SmartPortfolio />
         )}
 
+        {/* Help/Academy View */}
+        {activeSection === 'help' && (
+          <AcademySection />
+        )}
+
         {/* Dashboard View */}
-        {activeSection !== 'investments' && (
+        {activeSection !== 'investments' && activeSection !== 'help' && (
           <>
 
         {/* All sections with consistent spacing */}
