@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAuth, withUserId } from '@/lib/authHelpers';
+import { requireAuth, withUserId, withSharedAccount } from '@/lib/authHelpers';
 
 // Serializable custom category type for API response
 interface CustomCategoryResponse {
@@ -19,9 +19,10 @@ export async function GET(request: NextRequest) {
   if (error) return error;
 
   try {
-    // Get user's custom categories
+    // Get custom categories from all users in the shared account
+    // This ensures shared account members can see each other's custom categories
     const customCategories = await prisma.customCategory.findMany({
-      where: withUserId(userId),
+      where: await withSharedAccount(userId),
       orderBy: { createdAt: 'asc' },
     });
 
