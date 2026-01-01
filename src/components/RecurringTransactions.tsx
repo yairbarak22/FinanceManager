@@ -115,7 +115,7 @@ export default function RecurringTransactions({
                   <SensitiveData as="p" className="font-medium text-slate-900 text-sm truncate">
                     {transaction.name}
                   </SensitiveData>
-                  <p className="text-xs text-slate-500 truncate">{categoryInfo?.nameHe}</p>
+                  <SensitiveData as="p" className="text-xs text-slate-500 truncate">{categoryInfo?.nameHe}</SensitiveData>
                 </div>
 
                 {/* Amount - visible on mobile */}

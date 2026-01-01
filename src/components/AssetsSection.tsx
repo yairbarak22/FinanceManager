@@ -91,7 +91,7 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
                   <SensitiveData as="p" className="font-medium text-slate-900 text-sm truncate">
                     {asset.name}
                   </SensitiveData>
-                  <p className="text-xs text-slate-500 truncate">{categoryInfo?.nameHe}</p>
+                  <SensitiveData as="p" className="text-xs text-slate-500 truncate">{categoryInfo?.nameHe}</SensitiveData>
                 </div>
 
                 {/* Value - visible on mobile in this row */}

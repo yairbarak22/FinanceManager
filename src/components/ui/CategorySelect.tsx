@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { ChevronDown, Plus, Check, Star } from 'lucide-react';
 import { CategoryInfo, defaultCustomIcon } from '@/lib/categories';
 import { cn } from '@/lib/utils';
+import { SensitiveData } from '../common/SensitiveData';
 
 interface CategorySelectProps {
   value: string;
@@ -135,7 +136,7 @@ export default function CategorySelect({
         >
           <IconComponent className="w-4 h-4" />
         </div>
-        <span className="flex-1 text-right">{category.nameHe}</span>
+        <SensitiveData as="span" className="flex-1 text-right">{category.nameHe}</SensitiveData>
         {showCheckmark && isSelected && (
           <Check className="w-4 h-4 text-indigo-500" />
         )}
@@ -225,9 +226,9 @@ export default function CategorySelect({
                 <Star className="w-4 h-4" />
               )}
             </div>
-            <span className="flex-1 text-right text-slate-900">
+            <SensitiveData as="span" className="flex-1 text-right text-slate-900">
               {selectedCategory.nameHe}
-            </span>
+            </SensitiveData>
           </>
         ) : (
           <>

@@ -5,6 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
 import { Transaction } from '@/lib/types';
 import { getCategoryInfo, CategoryInfo } from '@/lib/categories';
+import { SensitiveData } from './common/SensitiveData';
 
 interface ExpensesPieChartProps {
   transactions: Transaction[];
@@ -73,15 +74,19 @@ export default function ExpensesPieChart({ transactions, customExpenseCategories
               ))}
             </Pie>
             <Tooltip
-              contentStyle={{
-                backgroundColor: 'white',
-                border: '1px solid #e5e7eb',
-                borderRadius: '12px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                fontSize: '13px',
-                direction: 'rtl',
+              content={({ active, payload }: any) => {
+                if (active && payload && payload.length) {
+                  const item = payload[0].payload;
+                  return (
+                    <div className="bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-lg" dir="rtl">
+                      <SensitiveData as="p" className="font-semibold text-slate-900 text-sm">{item.name}</SensitiveData>
+                      <SensitiveData as="p" className="text-sm text-slate-600 mt-1">{formatCurrency(item.value)}</SensitiveData>
+                      <SensitiveData as="p" className="text-xs text-slate-500">{item.percentage}%</SensitiveData>
+                    </div>
+                  );
+                }
+                return null;
               }}
-              formatter={(value: number, name: string) => [formatCurrency(value), name]}
             />
           </PieChart>
         </ResponsiveContainer>
@@ -95,8 +100,8 @@ export default function ExpensesPieChart({ transactions, customExpenseCategories
               className="w-3 h-3 rounded-full flex-shrink-0"
               style={{ backgroundColor: item.color }}
             />
-            <span className="text-xs text-slate-600 truncate flex-1">{item.name}</span>
-            <span className="text-xs text-slate-500 flex-shrink-0">{item.percentage}%</span>
+            <SensitiveData as="span" className="text-xs text-slate-600 truncate flex-1">{item.name}</SensitiveData>
+            <SensitiveData as="span" className="text-xs text-slate-500 flex-shrink-0">{item.percentage}%</SensitiveData>
           </div>
         ))}
       </div>

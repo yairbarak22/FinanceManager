@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Treemap, ResponsiveContainer, Tooltip } from 'recharts';
 import { PieChart } from 'lucide-react';
+import { SensitiveData } from '../common/SensitiveData';
 
 interface SectorAllocation {
   sector: string;
@@ -198,6 +199,9 @@ const CustomTreemapContent = (props: TreemapContentProps) => {
             fill="#ffffff"
             fontSize={nameFontSize}
             fontWeight={600}
+            className="sl-mask"
+            data-sl="mask"
+            data-privacy="masked"
             style={{
               textShadow: '0 1px 2px rgba(0,0,0,0.3)',
               pointerEvents: 'none',
@@ -214,6 +218,9 @@ const CustomTreemapContent = (props: TreemapContentProps) => {
             fill="rgba(255,255,255,0.85)"
             fontSize={percentFontSize}
             fontWeight={500}
+            className="sl-mask"
+            data-sl="mask"
+            data-privacy="masked"
             style={{
               textShadow: '0 1px 2px rgba(0,0,0,0.2)',
               pointerEvents: 'none',
@@ -234,6 +241,9 @@ const CustomTreemapContent = (props: TreemapContentProps) => {
           fill="#ffffff"
           fontSize={10}
           fontWeight={600}
+          className="sl-mask"
+          data-sl="mask"
+          data-privacy="masked"
           style={{
             textShadow: '0 1px 2px rgba(0,0,0,0.3)',
             pointerEvents: 'none',
@@ -275,24 +285,24 @@ const CustomTooltip = ({ active, payload }: TooltipProps) => {
           className="w-3 h-3 rounded-full"
           style={{ backgroundColor: color }}
         />
-        <p className="font-semibold text-base">{hebrewName}</p>
+        <SensitiveData as="p" className="font-semibold text-base">{hebrewName}</SensitiveData>
       </div>
 
       {/* Stats */}
       <div className="space-y-1 text-sm">
         <div className="flex justify-between gap-6">
           <span className="text-slate-400">שווי:</span>
-          <span className="font-medium text-white">
+          <SensitiveData as="span" className="font-medium text-white">
             {data.value.toLocaleString('he-IL', {
               style: 'currency',
               currency: 'ILS',
               maximumFractionDigits: 0,
             })}
-          </span>
+          </SensitiveData>
         </div>
         <div className="flex justify-between gap-6">
           <span className="text-slate-400">אחוז מהתיק:</span>
-          <span className="font-medium text-white">{data.percent.toFixed(1)}%</span>
+          <SensitiveData as="span" className="font-medium text-white">{data.percent.toFixed(1)}%</SensitiveData>
         </div>
       </div>
     </div>
@@ -437,12 +447,12 @@ export function DiversificationHeatmap({
                 className="w-3 h-3 rounded-full shadow-sm transition-transform group-hover:scale-110"
                 style={{ backgroundColor: SECTOR_COLORS[s.sector] || SECTOR_COLORS['Unknown'] }}
               />
-              <span className="text-xs text-slate-600 font-medium">
+              <SensitiveData as="span" className="text-xs text-slate-600 font-medium">
                 {SECTOR_NAMES[s.sector] || s.sector}
-              </span>
-              <span className="text-xs text-slate-400">
+              </SensitiveData>
+              <SensitiveData as="span" className="text-xs text-slate-400">
                 {s.percent.toFixed(0)}%
-              </span>
+              </SensitiveData>
             </div>
           ))}
         </div>

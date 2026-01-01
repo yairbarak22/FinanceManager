@@ -7,6 +7,7 @@ import { formatCurrency } from '@/lib/utils';
 import { Asset } from '@/lib/types';
 import { assetCategories, getCategoryInfo } from '@/lib/categories';
 import Card from './ui/Card';
+import { SensitiveData } from './common/SensitiveData';
 interface AssetAllocationChartProps {
   assets: Asset[];
   onGetRecommendations?: () => void;
@@ -63,9 +64,9 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
       const data = payload[0].payload;
       return (
         <div className="bg-white px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.15)] rounded-xl border border-slate-100">
-          <p className="font-semibold text-slate-900">{data.name}</p>
-          <p className="text-sm text-slate-600 mt-1">{formatCurrency(data.value)}</p>
-          <p className="text-xs text-slate-500">{data.percentage}% מסך הנכסים</p>
+          <SensitiveData as="p" className="font-semibold text-slate-900">{data.name}</SensitiveData>
+          <SensitiveData as="p" className="text-sm text-slate-600 mt-1">{formatCurrency(data.value)}</SensitiveData>
+          <SensitiveData as="p" className="text-xs text-slate-500">{data.percentage}% מסך הנכסים</SensitiveData>
         </div>
       );
     }
@@ -150,8 +151,8 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
                   style={{ backgroundColor: item.color }}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-slate-700 truncate">{item.name}</p>
-                  <p className="text-xs text-slate-500">{item.percentage}%</p>
+                  <SensitiveData as="p" className="text-xs font-medium text-slate-700 truncate">{item.name}</SensitiveData>
+                  <SensitiveData as="p" className="text-xs text-slate-500">{item.percentage}%</SensitiveData>
                 </div>
               </div>
             ))}
