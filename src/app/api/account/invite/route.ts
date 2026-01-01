@@ -110,41 +110,50 @@ export async function POST(request: Request) {
     try {
       if (resendClient) {
         await resendClient.emails.send({
-        from: 'Finance Manager <onboarding@resend.dev>',
+        from: 'NETO <onboarding@resend.dev>',
         to: email.toLowerCase(),
-        subject: 'הוזמנת לשתף חשבון ב-Finance Manager',
+        subject: 'הוזמנת לשתף חשבון ב-NETO',
         html: `
-          <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #ec4899; margin: 0;">Finance Manager</h1>
-              <p style="color: #6b7280; margin-top: 5px;">ניהול פיננסי חכם</p>
+          <div dir="rtl" style="font-family: 'Segoe UI', Tahoma, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 16px; overflow: hidden;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%); padding: 32px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 36px; font-weight: 800; letter-spacing: -1px;">NETO</h1>
+              <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px;">ניהול הון חכם</p>
             </div>
             
-            <div style="background: #f9fafb; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-              <h2 style="color: #111827; margin-top: 0;">הוזמנת לשתף חשבון!</h2>
-              <p style="color: #4b5563; line-height: 1.6;">
-                <strong>${inviter?.name || inviter?.email || 'משתמש'}</strong> מזמין אותך להצטרף לחשבון המשותף שלו ב-Finance Manager.
+            <!-- Content -->
+            <div style="padding: 32px;">
+              <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+                <h2 style="color: #f1f5f9; margin: 0 0 16px 0; font-size: 20px;">🎉 הוזמנת לשתף חשבון!</h2>
+                <p style="color: #94a3b8; line-height: 1.7; margin: 0 0 12px 0;">
+                  <strong style="color: #e2e8f0;">${inviter?.name || inviter?.email || 'משתמש'}</strong> מזמין אותך להצטרף לחשבון המשותף שלו ב-NETO.
+                </p>
+                <p style="color: #94a3b8; line-height: 1.7; margin: 0;">
+                  שיתוף חשבון מאפשר לכם לנהל יחד את התקציב, לעקוב אחרי הוצאות והכנסות, ולצפות במצב הפיננסי המשותף.
+                </p>
+              </div>
+              
+              <!-- CTA Button -->
+              <div style="text-align: center; margin-bottom: 24px;">
+                <a href="${inviteUrl}" style="display: inline-block; background: linear-gradient(135deg, #06b6d4, #3b82f6); color: white; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);">
+                  הצטרף לחשבון
+                </a>
+              </div>
+              
+              <p style="color: #64748b; font-size: 13px; text-align: center; margin: 0;">
+                הקישור תקף עד ${new Date(invite.expiresAt).toLocaleDateString('he-IL')}
               </p>
-              <p style="color: #4b5563; line-height: 1.6;">
-                שיתוף חשבון מאפשר לכם לנהל יחד את התקציב, לעקוב אחרי הוצאות והכנסות, ולצפות במצב הפיננסי המשותף.
+            </div>
+            
+            <!-- Footer -->
+            <div style="background: rgba(0,0,0,0.2); padding: 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05);">
+              <p style="color: #64748b; font-size: 12px; margin: 0;">
+                אם לא ביקשת הזמנה זו, ניתן להתעלם ממייל זה.
+              </p>
+              <p style="color: #475569; font-size: 11px; margin: 12px 0 0 0;">
+                © ${new Date().getFullYear()} NETO - ניהול הון חכם
               </p>
             </div>
-            
-            <div style="text-align: center; margin-bottom: 24px;">
-              <a href="${inviteUrl}" style="display: inline-block; background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: bold; font-size: 16px;">
-                הצטרף לחשבון
-              </a>
-            </div>
-            
-            <p style="color: #9ca3af; font-size: 14px; text-align: center;">
-              הקישור תקף עד ${new Date(invite.expiresAt).toLocaleDateString('he-IL')}
-            </p>
-            
-            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-            
-            <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-              אם לא ביקשת הזמנה זו, ניתן להתעלם ממייל זה.
-            </p>
           </div>
         `,
         });
@@ -154,16 +163,16 @@ export async function POST(request: Request) {
       // Continue even if email fails - user can still copy the link
     }
 
-    // SECURITY: Don't expose the token to the client (only the URL)
-    // The token is already in the URL, no need to send it separately
+    // Return invite data including token (needed for copy link functionality)
+    // Note: token is already exposed via inviteUrl, so including it separately is not a security issue
     return NextResponse.json({
       id: invite.id,
       sharedAccountId: invite.sharedAccountId,
       email: invite.email,
+      token: invite.token,  // Needed for copyInviteLink in frontend
       expiresAt: invite.expiresAt,
       createdAt: invite.createdAt,
       inviteUrl,
-      // token field is intentionally excluded for security
     });
   } catch (error) {
     console.error('Error creating invite:', error);
