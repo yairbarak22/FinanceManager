@@ -44,9 +44,9 @@ export default function MonthlySummary({
   };
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="flex flex-col" style={{ height: '450px' }}>
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-4 flex-shrink-0">
         <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
           <CalendarDays className="w-5 h-5 text-indigo-600" />
         </div>
@@ -54,7 +54,7 @@ export default function MonthlySummary({
       </div>
 
       {/* Overall Summary */}
-      <div className="bg-slate-50 rounded-xl p-4 mb-4 border border-slate-200">
+      <div className="bg-slate-50 rounded-xl p-4 mb-4 border border-slate-200 flex-shrink-0">
         <div className="grid grid-cols-3 gap-3 text-center">
           <div>
             <p className="text-xs text-slate-500 mb-1">הכנסות</p>
@@ -80,8 +80,8 @@ export default function MonthlySummary({
         </div>
       </div>
 
-      {/* Monthly Cards */}
-      <div className="space-y-2 flex-1 overflow-y-auto">
+      {/* Monthly Cards - Scrollable area */}
+      <div className="space-y-2 flex-1 overflow-y-auto min-h-0">
         {summaries.map((summary) => {
           const monthKey = `${summary.year}-${summary.month}`;
           const isExpanded = expandedMonths.includes(monthKey);

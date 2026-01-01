@@ -311,38 +311,98 @@ function parseAmount(value: unknown): number | null {
 
 /**
  * Parse date from various formats
- * Handles: Excel serial numbers, DD/MM/YYYY, YYYY-MM-DD, etc.
+ * Handles: Excel serial numbers, DD/MM/YYYY, MM/DD/YY, YYYY-MM-DD, etc.
+ * 
+ * Key insight: When XLSX reads Excel dates, it often converts them to
+ * American format (MM/DD/YY) with slashes, regardless of the original format.
  */
-function parseDate(value: unknown): Date | null {
-  if (value === null || value === undefined || value === '') return null;
+function parseDate(value: unknown, enableLogging = false): Date | null {
+  const log = (msg: string) => {
+    if (enableLogging) console.log(`[parseDate] ${msg}`);
+  };
+  
+  log(`Input: ${JSON.stringify(value)}, type: ${typeof value}`);
+  
+  if (value === null || value === undefined || value === '') {
+    log('Empty value, returning null');
+    return null;
+  }
   
   // Handle Excel serial date number
   if (typeof value === 'number') {
+    log(`Detected NUMBER: ${value}`);
     if (value > 30000 && value < 100000) {
       // Excel dates start from 1899-12-30
       const date = new Date((value - 25569) * 86400 * 1000);
+      log(`Excel serial conversion: ${value} -> ${date.toISOString()}`);
       if (!isNaN(date.getTime())) return date;
     }
+    log('Number out of Excel serial range, returning null');
     return null;
   }
   
   const str = String(value).trim();
+  log(`String value: "${str}"`);
   if (!str) return null;
   
-  // Handle DD/MM/YYYY or DD-MM-YYYY format (Israeli standard)
-  const ddmmyyyyMatch = str.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
-  if (ddmmyyyyMatch) {
-    const day = parseInt(ddmmyyyyMatch[1], 10);
-    const month = parseInt(ddmmyyyyMatch[2], 10) - 1; // 0-indexed
-    let year = parseInt(ddmmyyyyMatch[3], 10);
+  // Detect separator type - this is KEY for format detection
+  const hasSlash = str.includes('/');
+  const hasDot = str.includes('.');
+  const hasDash = str.includes('-') && !str.startsWith('-'); // exclude negative numbers
+  
+  // Handle date formats: DD/MM/YYYY, MM/DD/YY, DD-MM-YYYY, DD.MM.YYYY
+  const dateMatch = str.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (dateMatch) {
+    const first = parseInt(dateMatch[1], 10);
+    const second = parseInt(dateMatch[2], 10);
+    let year = parseInt(dateMatch[3], 10);
+    const is2DigitYear = dateMatch[3].length === 2;
     
     // Handle 2-digit year
     if (year < 100) {
       year += year > 50 ? 1900 : 2000;
     }
     
-    if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+    let day: number, month: number;
+    
+    // FORMAT DETECTION LOGIC:
+    // 1. Slashes with 2-digit year (e.g., "12/7/25") → XLSX converted to American MM/DD/YY
+    // 2. Dots (e.g., "7.12.2025") → Israeli DD.MM.YYYY
+    // 3. If second > 12 → Must be MM/DD (month can't be > 12)
+    // 4. If first > 12 → Must be DD/MM (month can't be > 12)
+    // 5. Otherwise, use separator as hint
+    
+    if (second > 12) {
+      // Second value > 12 means it MUST be the day (MM/DD format)
+      month = first - 1;
+      day = second;
+      log(`MM/DD format detected (second > 12): month=${first}, day=${second}, year=${year}`);
+    } else if (first > 12) {
+      // First value > 12 means it MUST be the day (DD/MM format)
+      day = first;
+      month = second - 1;
+      log(`DD/MM format detected (first > 12): day=${first}, month=${second}, year=${year}`);
+    } else if (hasSlash && is2DigitYear) {
+      // Slashes with 2-digit year = XLSX converted American format (MM/DD/YY)
+      // This is the most reliable indicator for Excel-sourced dates
+      month = first - 1;
+      day = second;
+      log(`MM/DD/YY format (XLSX American): month=${first}, day=${second}, year=${year}`);
+    } else if (hasDot) {
+      // Dots = Israeli format (DD.MM.YYYY)
+      day = first;
+      month = second - 1;
+      log(`DD.MM format (Israeli with dots): day=${first}, month=${second}, year=${year}`);
+    } else {
+      // Default: assume DD/MM/YYYY (Israeli standard for ambiguous cases with dashes)
+      day = first;
+      month = second - 1;
+      log(`DD/MM format assumed (default): day=${first}, month=${second}, year=${year}`);
+    }
+    
+    if (!isNaN(day) && !isNaN(month) && !isNaN(year) && month >= 0 && month <= 11 && day >= 1 && day <= 31) {
       const date = new Date(year, month, day);
+      log(`Created date: ${date.toISOString()}`);
       if (!isNaN(date.getTime())) return date;
     }
   }
@@ -354,16 +414,24 @@ function parseDate(value: unknown): Date | null {
     const month = parseInt(isoMatch[2], 10) - 1;
     const day = parseInt(isoMatch[3], 10);
     
+    log(`ISO match: year=${year}, month=${month + 1}, day=${day}`);
+    
     if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
       const date = new Date(year, month, day);
+      log(`Created date: ${date.toISOString()}`);
       if (!isNaN(date.getTime())) return date;
     }
   }
   
   // Try standard date parsing as last resort
+  log('Trying fallback Date parsing');
   const date = new Date(str);
-  if (!isNaN(date.getTime())) return date;
+  if (!isNaN(date.getTime())) {
+    log(`Fallback succeeded: ${date.toISOString()}`);
+    return date;
+  }
   
+  log('All parsing failed, returning null');
   return null;
 }
 
@@ -654,6 +722,10 @@ export async function POST(request: NextRequest) {
     const errors: string[] = [];
     let lastColumnMapping: ColumnMapping | null = null;
 
+    // DEBUG: Counter for logging first 10 rows
+    let debugRowCount = 0;
+    const DEBUG_MAX_ROWS = 10;
+
     for (let tableIdx = 0; tableIdx < headerRows.length; tableIdx++) {
       const headerRowIndex = headerRows[tableIdx];
       const headerRow = rawData[headerRowIndex] || [];
@@ -676,6 +748,11 @@ export async function POST(request: NextRequest) {
         columnMapping = findColumnsFallback(headerRow);
       }
       
+      // DEBUG: Log column mapping
+      console.log('[IMPORT DEBUG] Column mapping:', JSON.stringify(columnMapping));
+      console.log('[IMPORT DEBUG] Header row:', JSON.stringify(headerRow));
+      console.log('[IMPORT DEBUG] First data row:', JSON.stringify(firstDataRow));
+      
       lastColumnMapping = columnMapping;
 
       // Process rows in this table
@@ -693,6 +770,15 @@ export async function POST(request: NextRequest) {
         
         if (!merchant && !amount && !date) continue;
 
+        // DEBUG: Log first 10 rows with detailed date parsing
+        const shouldLog = debugRowCount < DEBUG_MAX_ROWS;
+        if (shouldLog) {
+          console.log(`\n[IMPORT DEBUG] ===== Row ${rowNum} =====`);
+          console.log(`[IMPORT DEBUG] Raw date value: ${JSON.stringify(date)}, type: ${typeof date}`);
+          console.log(`[IMPORT DEBUG] Merchant: ${merchant}`);
+          console.log(`[IMPORT DEBUG] Amount: ${amount}`);
+        }
+
         try {
           // Extract merchant name
           const merchantName = String(merchant || '').trim();
@@ -708,8 +794,12 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Parse date
-          const parsedDate = parseDate(date);
+        // Parse date - enable logging for first 10 rows
+          const parsedDate = parseDate(date, shouldLog);
+          if (shouldLog) {
+            console.log(`[IMPORT DEBUG] Parsed date result: ${parsedDate ? parsedDate.toISOString() : 'null'}`);
+            debugRowCount++;
+          }
           if (!parsedDate) {
             errors.push(`שורה ${rowNum}: תאריך לא תקין - ${String(date)}`);
           continue;
