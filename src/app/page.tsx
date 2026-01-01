@@ -39,6 +39,7 @@ import { useCategories } from '@/hooks/useCategories';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useToast } from '@/hooks/useToast';
 import { useOnboarding } from '@/context/OnboardingContext';
+import { useSession } from 'next-auth/react';
 import ToastContainer from '@/components/ui/Toast';
 import {
   expenseCategories as defaultExpenseCategories,
@@ -139,6 +140,7 @@ export default function Home() {
   // Onboarding
   const { startTour } = useOnboarding();
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
+  const { status: sessionStatus } = useSession();
 
 
   // Memoized categories: defaults from client-side + custom from API
@@ -243,8 +245,9 @@ export default function Home() {
   }, [fetchData]);
 
   // Check if user needs onboarding (first-time user)
+  // Only check when authenticated to avoid race conditions
   useEffect(() => {
-    if (isLoading || hasCheckedOnboarding) return;
+    if (sessionStatus !== 'authenticated' || isLoading || hasCheckedOnboarding) return;
 
     const checkOnboarding = async () => {
       try {
@@ -263,7 +266,7 @@ export default function Home() {
     };
 
     checkOnboarding();
-  }, [isLoading, hasCheckedOnboarding, startTour]);
+  }, [sessionStatus, isLoading, hasCheckedOnboarding, startTour]);
 
   // Calculate recurring totals (only active ones)
   const fixedIncome = recurringTransactions

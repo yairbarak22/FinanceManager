@@ -150,11 +150,42 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     setIsCursorClicking(false);
     setIsWizardOpen(false);
 
-    // Mark onboarding as completed in the database
-    try {
-      await fetch('/api/user/onboarding', { method: 'POST' });
-    } catch (error) {
-      console.error('[Onboarding] Failed to mark onboarding as complete:', error);
+    // Mark onboarding as completed in the database with retry logic
+    let success = false;
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (!success && attempts < maxAttempts) {
+      attempts++;
+      try {
+        const response = await fetch('/api/user/onboarding', { method: 'POST' });
+        if (response.ok) {
+          // Verify the update succeeded by checking the status
+          const verifyResponse = await fetch('/api/user/onboarding');
+          if (verifyResponse.ok) {
+            const data = await verifyResponse.json();
+            if (data.hasSeenOnboarding === true) {
+              success = true;
+              console.debug('[Onboarding] Successfully marked as complete');
+            }
+          }
+        }
+        
+        if (!success && attempts < maxAttempts) {
+          // Wait before retry (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+        }
+      } catch (error) {
+        console.error(`[Onboarding] Failed to mark onboarding as complete (attempt ${attempts}/${maxAttempts}):`, error);
+        if (attempts < maxAttempts) {
+          // Wait before retry (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+        }
+      }
+    }
+
+    if (!success) {
+      console.error('[Onboarding] Failed to mark onboarding as complete after all retries');
     }
   }, []);
 
