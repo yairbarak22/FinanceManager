@@ -24,12 +24,9 @@ export default function SmartlookIdentify() {
     // Wait for Smartlook to be available (might still be loading)
     const checkAndIdentify = () => {
       if (isSmartlookAvailable() && session.user) {
-        const userId = session.user.id || session.user.email || 'anonymous';
-        identifyUser(
-          userId,
-          session.user.email,
-          session.user.name
-        );
+        // PRIVACY: Only pass internal userId - NO PII (email, name, etc.)
+        const userId = session.user.id || 'anonymous';
+        identifyUser(userId);
         hasIdentified.current = true;
       }
     };

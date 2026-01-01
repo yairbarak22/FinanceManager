@@ -21,37 +21,23 @@ export function isSmartlookAvailable(): boolean {
  * Identify a user in Smartlook
  * Call this after successful login
  * 
- * @param userId - Unique user identifier
- * @param email - User's email (will be masked in recordings)
- * @param name - User's display name
- * @param additionalProps - Any additional properties to track
+ * PRIVACY: This function only passes the userId for session linking.
+ * NO PII (email, name, etc.) is sent to Smartlook.
+ * 
+ * @param userId - Unique user identifier (internal ID only, not email)
+ * @param metadata - Optional non-personal metadata (e.g., planType, role)
  */
 export function identifyUser(
   userId: string,
-  email?: string | null,
-  name?: string | null,
-  additionalProps?: Record<string, string | number | boolean>
+  metadata?: Record<string, string | number | boolean>
 ): void {
   if (!isSmartlookAvailable()) {
     console.debug('[Smartlook] Not available, skipping identify');
     return;
   }
 
-  const properties: Record<string, string | number | boolean | undefined> = {
-    ...additionalProps,
-  };
-
-  // Add email if provided (Smartlook will mask it in recordings)
-  if (email) {
-    properties.email = email;
-  }
-
-  // Add name if provided
-  if (name) {
-    properties.name = name;
-  }
-
-  window.smartlook('identify', userId, properties);
+  // Only pass userId and non-personal metadata - NO PII
+  window.smartlook('identify', userId, metadata);
   console.debug('[Smartlook] User identified:', userId);
 }
 
