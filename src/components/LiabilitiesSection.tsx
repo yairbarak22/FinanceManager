@@ -91,10 +91,10 @@ export default function LiabilitiesSection({
           return (
             <div
               key={liability.id}
-              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 bg-slate-50 rounded-lg"
+              className="p-3 bg-slate-50 rounded-lg"
             >
-              {/* Top row: Icon + Details + Value (mobile) */}
-              <div className="flex items-center gap-3 flex-1 min-w-0">
+              {/* Row 1: Icon + Name + Details */}
+              <div className="flex items-start gap-3 mb-2">
                 {/* Icon */}
                 <div
                   className={cn(
@@ -105,19 +105,19 @@ export default function LiabilitiesSection({
                   <Icon className={cn('w-4 h-4', categoryInfo?.textColor || 'text-slate-600')} />
                 </div>
 
-                {/* Details */}
-                <div className="flex-1 min-w-0">
-                  <SensitiveData as="p" className="font-medium text-slate-900 text-sm truncate">
+                {/* Details - full width, allow wrapping */}
+                <div className="flex-1">
+                  <SensitiveData as="p" className="font-medium text-slate-900 text-sm leading-tight">
                     {liability.name}
                   </SensitiveData>
-                  <SensitiveData as="p" className="text-xs text-slate-500 truncate">
+                  <SensitiveData as="p" className="text-xs text-slate-500 mt-0.5">
                     {categoryInfo?.nameHe} • {formatCurrency(liability.monthlyPayment)}/חודש
                     {liability.hasInterestRebate && (
                       <span className="text-green-600"> • זיכוי ריבית</span>
                     )}
                   </SensitiveData>
                   {hasLoanDetails && currentPayment && (
-                    <SensitiveData as="p" className="text-xs text-slate-500 mt-0.5 truncate">
+                    <SensitiveData as="p" className="text-xs text-slate-500 mt-0.5">
                       חודש {currentPayment.currentMonth}/{liability.loanTermMonths}
                       {liability.hasInterestRebate && (
                         <span className="text-green-600"> • חיוב: {formatCurrency(effectiveExpense)}</span>
@@ -125,22 +125,17 @@ export default function LiabilitiesSection({
                     </SensitiveData>
                   )}
                 </div>
-
-                {/* Value - visible on mobile in this row */}
-                <SensitiveData as="p" className="text-sm font-bold text-red-600 flex-shrink-0 sm:hidden">
-                  {formatCurrency(liability.totalAmount)}
-                </SensitiveData>
               </div>
 
-              {/* Bottom row (mobile) / Continue (desktop): Value + Actions */}
-              <div className="flex items-center gap-2 justify-end sm:gap-1 mr-12 sm:mr-0">
-                {/* Value - visible on desktop */}
-                <SensitiveData as="p" className="hidden sm:block text-sm font-bold text-red-600 flex-shrink-0 ml-2">
+              {/* Row 2: Value + Actions */}
+              <div className="flex items-center justify-between mr-12">
+                {/* Value */}
+                <SensitiveData as="p" className="text-sm font-bold text-red-600">
                   {formatCurrency(liability.totalAmount)}
                 </SensitiveData>
 
                 {/* Actions */}
-                <div className="flex gap-1 flex-shrink-0">
+                <div className="flex gap-1">
                   <button
                     onClick={() => onViewDocuments(liability)}
                     className="p-1.5 rounded hover:bg-indigo-100 text-slate-500 hover:text-indigo-600"
