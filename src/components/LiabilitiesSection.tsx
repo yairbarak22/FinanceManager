@@ -5,7 +5,7 @@ import { Plus, Pencil, Trash2, Banknote, Home, TrendingDown, Table, FolderOpen }
 import { Liability } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
-import { getEffectiveMonthlyExpense, getCurrentMonthPayment } from '@/lib/loanCalculations';
+import { getEffectiveMonthlyExpense, getCurrentMonthPayment, getRemainingBalance } from '@/lib/loanCalculations';
 import ConfirmDialog from './modals/ConfirmDialog';
 import HelpTrigger from './ai/HelpTrigger';
 import { SensitiveData } from './common/SensitiveData';
@@ -32,7 +32,7 @@ export default function LiabilitiesSection({
     id: '',
     name: '',
   });
-  const totalLiabilities = liabilities.reduce((sum, l) => sum + l.totalAmount, 0);
+  const totalLiabilities = liabilities.reduce((sum, l) => sum + getRemainingBalance(l), 0);
   const monthlyPayments = liabilities.reduce((sum, l) => sum + l.monthlyPayment, 0);
 
   // Dynamic context data for AI Help
@@ -129,9 +129,9 @@ export default function LiabilitiesSection({
 
               {/* Row 2: Value + Actions */}
               <div className="flex items-center justify-between mr-12">
-                {/* Value */}
+                {/* Value - Remaining Balance */}
                 <SensitiveData as="p" className="text-sm font-bold text-red-600">
-                  {formatCurrency(liability.totalAmount)}
+                  {formatCurrency(getRemainingBalance(liability))}
                 </SensitiveData>
 
                 {/* Actions */}

@@ -36,7 +36,7 @@ import {
   MonthlySummary as MonthlySummaryType,
 } from '@/lib/types';
 import { getMonthKey, calculateSavingsRate, apiFetch } from '@/lib/utils';
-import { getEffectiveMonthlyExpense } from '@/lib/loanCalculations';
+import { getEffectiveMonthlyExpense, getRemainingBalance } from '@/lib/loanCalculations';
 import { useCategories } from '@/hooks/useCategories';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useToast } from '@/hooks/useToast';
@@ -304,7 +304,7 @@ export default function Home() {
   const totalBalance = totalIncome - totalExpenses;
 
   const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
-  const totalLiabilities = liabilities.reduce((sum, l) => sum + l.totalAmount, 0);
+  const totalLiabilities = liabilities.reduce((sum, l) => sum + getRemainingBalance(l), 0);
   const netWorth = totalAssets - totalLiabilities;
 
   // Calculate monthly summaries (including recurring transactions)
