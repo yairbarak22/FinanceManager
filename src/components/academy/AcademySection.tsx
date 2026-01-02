@@ -1,6 +1,5 @@
 'use client';
 
-import { useRef } from 'react';
 import Card from '@/components/ui/Card';
 import AcademyGrid from './AcademyGrid';
 import CompoundInterest from './CompoundInterest';
@@ -13,12 +12,6 @@ import FinancialPrinciples from './FinancialPrinciples';
  * Contains: Topic Grid, Calculator, and Principles Accordion
  */
 export default function AcademySection() {
-  const calculatorRef = useRef<HTMLDivElement>(null);
-
-  const scrollToCalculator = () => {
-    calculatorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   return (
     <div className="flex flex-col gap-6">
       {/* Page Title */}
@@ -29,12 +22,12 @@ export default function AcademySection() {
 
       {/* Topics Grid */}
       <Card padding="md">
-        <AcademyGrid onScrollToCalculator={scrollToCalculator} />
+        <AcademyGrid />
       </Card>
 
       {/* Compound Interest Calculator */}
       <Card padding="md">
-        <CompoundInterest ref={calculatorRef} />
+        <CompoundInterest />
       </Card>
 
       {/* Financial Principles Accordion */}
@@ -49,4 +42,3 @@ export default function AcademySection() {
     </div>
   );
 }
-

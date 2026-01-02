@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Home, Shield, Calculator, X, CheckCircle2, AlertCircle, PiggyBank } from 'lucide-react';
+import { TrendingUp, Home, Shield, X, CheckCircle2, AlertCircle, PiggyBank } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 // ============================================
@@ -17,8 +17,6 @@ type AcademyItem = {
   themeColor: string;
   themeColorLight: string;
   fullContent: React.ReactNode;
-  gridClassName?: string;
-  isScrollAction?: boolean;
 };
 
 // ============================================
@@ -265,7 +263,6 @@ const academyItems: AcademyItem[] = [
     themeColor: 'from-indigo-500 to-purple-600',
     themeColorLight: 'bg-indigo-100',
     fullContent: <PassiveInvestingContent />,
-    gridClassName: 'md:col-span-2',
   },
   {
     id: 'first-home',
@@ -285,16 +282,6 @@ const academyItems: AcademyItem[] = [
     themeColorLight: 'bg-purple-100',
     fullContent: <PensionTaxesContent />,
   },
-  {
-    id: 'calculator',
-    title: 'מחשבון ריבית דריבית',
-    subtitle: 'גלה כמה הכסף שלך יכול לצמוח עם הזמן.',
-    icon: Calculator,
-    themeColor: 'from-amber-500 to-orange-600',
-    themeColorLight: 'bg-amber-100',
-    fullContent: null,
-    isScrollAction: true,
-  },
 ];
 
 // ============================================
@@ -311,11 +298,7 @@ const springTransition = {
 // Main Component
 // ============================================
 
-interface AcademyGridProps {
-  onScrollToCalculator?: () => void;
-}
-
-export default function AcademyGrid({ onScrollToCalculator }: AcademyGridProps) {
+export default function AcademyGrid() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedItem = academyItems.find(item => item.id === selectedId);
 
@@ -341,11 +324,7 @@ export default function AcademyGrid({ onScrollToCalculator }: AcademyGridProps) 
   }, [selectedId, handleKeyDown]);
 
   const handleCardClick = (item: AcademyItem) => {
-    if (item.isScrollAction) {
-      onScrollToCalculator?.();
-    } else {
-      setSelectedId(item.id);
-    }
+    setSelectedId(item.id);
   };
 
   return (
@@ -358,8 +337,8 @@ export default function AcademyGrid({ onScrollToCalculator }: AcademyGridProps) 
         <h2 className="text-lg font-semibold text-slate-900">למד את הבסיס</h2>
       </div>
 
-      {/* Bento Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+      {/* Grid - 3 equal cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {academyItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -370,11 +349,7 @@ export default function AcademyGrid({ onScrollToCalculator }: AcademyGridProps) 
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
               transition={springTransition}
-              className={`
-                relative overflow-hidden rounded-2xl p-5 cursor-pointer
-                bg-slate-50 border border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/30
-                transition-colors ${item.gridClassName || ''}
-              `}
+              className="relative overflow-hidden rounded-2xl p-5 cursor-pointer bg-slate-50 border border-slate-200 hover:border-indigo-200 hover:bg-indigo-50/30 transition-colors min-h-[140px]"
             >
               {/* Icon */}
               <motion.div 
@@ -397,13 +372,6 @@ export default function AcademyGrid({ onScrollToCalculator }: AcademyGridProps) 
               >
                 {item.subtitle}
               </motion.p>
-
-              {/* Scroll indicator for calculator */}
-              {item.isScrollAction && (
-                <div className="absolute bottom-3 left-3 text-xs text-indigo-500 font-medium">
-                  גלול למטה ↓
-                </div>
-              )}
             </motion.div>
           );
         })}
@@ -425,11 +393,11 @@ export default function AcademyGrid({ onScrollToCalculator }: AcademyGridProps) 
               aria-hidden="true"
             />
 
-            {/* Expanded Card */}
+            {/* Expanded Card - Full Page */}
             <motion.div
               layoutId={selectedId}
               transition={springTransition}
-              className="fixed inset-4 md:inset-8 lg:inset-16 xl:inset-24 z-[70] bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col"
+              className="fixed inset-0 z-[70] bg-white overflow-hidden shadow-2xl flex flex-col"
               role="dialog"
               aria-modal="true"
               aria-labelledby="expanded-title"
