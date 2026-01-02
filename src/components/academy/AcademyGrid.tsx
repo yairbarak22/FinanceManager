@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, Home, Shield, X, CheckCircle2, AlertCircle, PiggyBank } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -377,82 +378,78 @@ export default function AcademyGrid() {
         })}
       </div>
 
-      {/* Expanded Overlay */}
-      <AnimatePresence>
-        {selectedId && selectedItem && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              key="backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60]"
-              onClick={() => setSelectedId(null)}
-              aria-hidden="true"
-            />
-
-            {/* Expanded Card - Full Page */}
-            <motion.div
-              layoutId={selectedId}
-              transition={springTransition}
-              className="fixed inset-0 z-[70] bg-white overflow-hidden shadow-2xl flex flex-col"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="expanded-title"
-            >
-              {/* Header with gradient */}
-              <div className={`bg-gradient-to-br ${selectedItem.themeColor} p-6 md:p-8`}>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-4">
-                    <motion.div 
-                      layoutId={`icon-${selectedId}`}
-                      className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center"
-                    >
-                      <selectedItem.icon className="w-7 h-7 md:w-8 md:h-8 text-white" />
-                    </motion.div>
-                    <div>
-                      <motion.h2 
-                        layoutId={`title-${selectedId}`}
-                        id="expanded-title"
-                        className="text-xl md:text-2xl font-bold text-white"
-                      >
-                        {selectedItem.title}
-                      </motion.h2>
-                      <motion.p 
-                        layoutId={`subtitle-${selectedId}`}
-                        className="text-white/80 text-sm md:text-base mt-1"
-                      >
-                        {selectedItem.subtitle}
-                      </motion.p>
-                    </div>
-                  </div>
-
-                  {/* Close button */}
-                  <button
-                    onClick={() => setSelectedId(null)}
-                    className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors"
-                    aria-label="סגור"
-                  >
-                    <X className="w-5 h-5 text-white" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Scrollable content */}
+      {/* Expanded Overlay - Rendered via Portal to document.body */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {selectedId && selectedItem && (
+            <>
+              {/* Backdrop */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15, duration: 0.3 }}
-                className="flex-1 overflow-y-auto p-6 md:p-8"
+                key="backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
+                onClick={() => setSelectedId(null)}
+                aria-hidden="true"
+              />
+
+              {/* Expanded Card - Full Page */}
+              <motion.div
+                key="expanded-card"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={springTransition}
+                className="fixed inset-0 z-[9999] bg-white overflow-hidden flex flex-col"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="expanded-title"
               >
-                {selectedItem.fullContent}
+                {/* Header with gradient */}
+                <div className={`bg-gradient-to-br ${selectedItem.themeColor} p-6 md:p-8 flex-shrink-0`}>
+                  <div className="flex items-start justify-between max-w-4xl mx-auto">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                        <selectedItem.icon className="w-7 h-7 md:w-8 md:h-8 text-white" />
+                      </div>
+                      <div>
+                        <h2 
+                          id="expanded-title"
+                          className="text-xl md:text-2xl font-bold text-white"
+                        >
+                          {selectedItem.title}
+                        </h2>
+                        <p className="text-white/80 text-sm md:text-base mt-1">
+                          {selectedItem.subtitle}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Close button */}
+                    <button
+                      onClick={() => setSelectedId(null)}
+                      className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors"
+                      aria-label="סגור"
+                    >
+                      <X className="w-5 h-5 text-white" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Scrollable content */}
+                <div className="flex-1 overflow-y-auto p-6 md:p-8">
+                  <div className="max-w-4xl mx-auto">
+                    {selectedItem.fullContent}
+                  </div>
+                </div>
               </motion.div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
