@@ -2,9 +2,10 @@
 
 import { useState, useMemo } from 'react';
 import { Plus, Pencil, Trash2, TrendingUp, HelpCircle, FolderOpen } from 'lucide-react';
-import { Asset } from '@/lib/types';
+import { Asset, AssetValueHistory } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
+import { getAssetValueForMonth, getTotalAssetsForMonth } from '@/lib/assetUtils';
 import ConfirmDialog from './modals/ConfirmDialog';
 import HelpTrigger from './ai/HelpTrigger';
 import { SensitiveData } from './common/SensitiveData';
@@ -15,15 +16,27 @@ interface AssetsSectionProps {
   onEdit: (asset: Asset) => void;
   onDelete: (id: string) => void;
   onViewDocuments: (asset: Asset) => void;
+  selectedMonth?: string; // Format: 'YYYY-MM' or 'all'
+  assetHistory?: AssetValueHistory[];
 }
 
-export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewDocuments }: AssetsSectionProps) {
+export default function AssetsSection({ 
+  assets, 
+  onAdd, 
+  onEdit, 
+  onDelete, 
+  onViewDocuments,
+  selectedMonth = 'all',
+  assetHistory = []
+}: AssetsSectionProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; name: string }>({
     isOpen: false,
     id: '',
     name: '',
   });
-  const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
+  
+  // Calculate total assets for the selected month
+  const totalAssets = getTotalAssetsForMonth(assets, assetHistory, selectedMonth);
 
   // Dynamic context data for AI Help (summary only, not full asset list)
   const assetsContextData = useMemo(() => {
@@ -68,6 +81,8 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
           const categoryInfo = getCategoryInfo(asset.category, 'asset');
           // Use icon from categoryInfo, or fallback to HelpCircle if not found
           const Icon = categoryInfo?.icon || HelpCircle;
+          // Get value for the selected month (uses history if available)
+          const displayValue = getAssetValueForMonth(asset, assetHistory, selectedMonth);
 
           return (
             <div
@@ -97,9 +112,9 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
 
               {/* Row 2: Value + Actions */}
               <div className="flex items-center justify-between mr-12">
-                {/* Value */}
+                {/* Value - Historical value for selected month */}
                 <SensitiveData as="p" className="text-sm font-bold text-green-600">
-                  {formatCurrency(asset.value)}
+                  {formatCurrency(displayValue)}
                 </SensitiveData>
 
                 {/* Actions */}

@@ -98,8 +98,9 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
               boxShadow: '0 4px 12px rgba(43, 70, 153, 0.25)'
             }}
           >
-            <Lightbulb className="w-4 h-4" />
+            
             קבל המלצות
+            <Lightbulb className="w-4 h-4" />
           </button>
         )}
       </div>

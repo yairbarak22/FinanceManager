@@ -31,12 +31,14 @@ import {
   Transaction,
   RecurringTransaction,
   Asset,
+  AssetValueHistory,
   Liability,
   NetWorthHistory,
   MonthlySummary as MonthlySummaryType,
 } from '@/lib/types';
 import { getMonthKey, calculateSavingsRate, apiFetch } from '@/lib/utils';
 import { getEffectiveMonthlyExpense, getRemainingBalance } from '@/lib/loanCalculations';
+import { getTotalAssetsForMonth } from '@/lib/assetUtils';
 import { useCategories } from '@/hooks/useCategories';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useToast } from '@/hooks/useToast';
@@ -56,6 +58,7 @@ export default function Home() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [assetHistory, setAssetHistory] = useState<AssetValueHistory[]>([]);
   const [liabilities, setLiabilities] = useState<Liability[]>([]);
   const [netWorthHistory, setNetWorthHistory] = useState<NetWorthHistory[]>([]);
 
@@ -169,30 +172,33 @@ export default function Home() {
   // Fetch all data
   const fetchData = useCallback(async () => {
     try {
-      const [txRes, recRes, assetsRes, liabRes, historyRes] = await Promise.all([
+      const [txRes, recRes, assetsRes, liabRes, historyRes, detailedHistoryRes] = await Promise.all([
         apiFetch('/api/transactions'),
         apiFetch('/api/recurring'),
         apiFetch('/api/assets'),
         apiFetch('/api/liabilities'),
         apiFetch('/api/assets/history'),
+        apiFetch('/api/assets/history?detailed=true'),
       ]);
 
       // Check all responses before parsing
-      if (!txRes.ok || !recRes.ok || !assetsRes.ok || !liabRes.ok || !historyRes.ok) {
+      if (!txRes.ok || !recRes.ok || !assetsRes.ok || !liabRes.ok || !historyRes.ok || !detailedHistoryRes.ok) {
         throw new Error('Failed to fetch data from one or more endpoints');
       }
 
-      const [txData, recData, assetsData, liabData, historyData] = await Promise.all([
+      const [txData, recData, assetsData, liabData, historyData, detailedHistoryData] = await Promise.all([
         txRes.json(),
         recRes.json(),
         assetsRes.json(),
         liabRes.json(),
         historyRes.json(),
+        detailedHistoryRes.json(),
       ]);
 
       setTransactions(txData);
       setRecurringTransactions(recData);
       setAssets(assetsData);
+      setAssetHistory(detailedHistoryData);
       setLiabilities(liabData);
 
       // Track which months have transaction data
@@ -303,7 +309,8 @@ export default function Home() {
   const totalExpenses = transactionExpenses + ((fixedExpenses + monthlyLiabilityPayments) * monthsCount);
   const totalBalance = totalIncome - totalExpenses;
 
-  const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
+  // Calculate total assets for selected month (using history for past months)
+  const totalAssets = getTotalAssetsForMonth(assets, assetHistory, selectedMonth);
   // Calculate remaining balance as of selected month (or current date if 'all')
   const selectedMonthDate = selectedMonth === 'all' 
     ? new Date() 
@@ -687,6 +694,8 @@ export default function Home() {
             <Card ref={assetsRef} padding="sm" className="max-h-[500px]">
               <AssetsSection
                 assets={assets}
+                selectedMonth={selectedMonth}
+                assetHistory={assetHistory}
                 onAdd={() => {
                   setEditingAsset(null);
                   setIsAssetModalOpen(true);

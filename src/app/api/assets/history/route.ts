@@ -1,11 +1,15 @@
 import { prisma } from '@/lib/prisma';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, getSharedUserIds } from '@/lib/authHelpers';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const { userId, error } = await requireAuth();
     if (error) return error;
+
+    // Check for detailed query parameter
+    const { searchParams } = new URL(request.url);
+    const detailed = searchParams.get('detailed') === 'true';
 
     // Get all user IDs in the shared account
     const userIds = await getSharedUserIds(userId);
@@ -20,6 +24,12 @@ export async function GET() {
       orderBy: { monthKey: 'asc' },
     });
 
+    // If detailed requested, return individual records
+    if (detailed) {
+      return NextResponse.json(historyRecords);
+    }
+
+    // Default: return aggregated data
     const aggregatedHistory = historyRecords.reduce((acc, record) => {
       if (!acc[record.monthKey]) {
         acc[record.monthKey] = 0;

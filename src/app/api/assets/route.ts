@@ -1,9 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
+import { requireAuth, withSharedAccount, getSharedUserIds } from '@/lib/authHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
+import { saveAssetHistory } from '@/lib/assetHistory';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const { userId, error } = await requireAuth();
     if (error) return error;
@@ -14,9 +15,43 @@ export async function GET() {
       return NextResponse.json({ error: 'יותר מדי בקשות' }, { status: 429 });
     }
 
+    // Check for month query parameter
+    const { searchParams } = new URL(request.url);
+    const monthKey = searchParams.get('month');
+
     // Use shared account to get assets from all members
     const sharedWhere = await withSharedAccount(userId);
     
+    // Fetch assets with optional history for specific month
+    if (monthKey && monthKey !== 'all') {
+      // Get user IDs for shared account
+      const userIds = await getSharedUserIds(userId);
+      
+      // Fetch assets with their history for the specific month
+      const assets = await prisma.asset.findMany({
+        where: sharedWhere,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          valueHistory: {
+            where: { monthKey },
+            take: 1,
+          },
+        },
+      });
+      
+      // Map assets with historical value
+      const assetsWithHistory = assets.map(asset => ({
+        ...asset,
+        currentValue: asset.value,
+        // Use historical value if exists, otherwise current value
+        value: asset.valueHistory[0]?.value ?? asset.value,
+        valueHistory: undefined, // Remove from response
+      }));
+      
+      return NextResponse.json(assetsWithHistory);
+    }
+    
+    // Default: return current values
     const assets = await prisma.asset.findMany({
       where: sharedWhere,
       orderBy: { createdAt: 'desc' },
@@ -71,6 +106,9 @@ export async function POST(request: NextRequest) {
         value: body.value,
       },
     });
+    
+    // Save initial value to history for current month
+    await saveAssetHistory(asset.id, body.value);
     
     return NextResponse.json(asset);
   } catch (error) {

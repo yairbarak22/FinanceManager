@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccountId } from '@/lib/authHelpers';
+import { saveAssetHistoryIfChanged } from '@/lib/assetHistory';
 
 export async function PUT(
   request: NextRequest,
@@ -15,6 +16,15 @@ export async function PUT(
 
     // Use shared account to allow editing records from all members
     const sharedWhere = await withSharedAccountId(id, userId);
+
+    // Get current asset to check if value changed
+    const currentAsset = await prisma.asset.findFirst({
+      where: sharedWhere,
+    });
+    
+    if (!currentAsset) {
+      return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
+    }
 
     // Build update data object with validation
     // SECURITY: Validate each field before updating
@@ -67,6 +77,11 @@ export async function PUT(
     const asset = await prisma.asset.findFirst({
       where: sharedWhere,
     });
+
+    // Save history if value changed
+    if (body.value !== undefined && asset) {
+      await saveAssetHistoryIfChanged(id, body.value, currentAsset.value);
+    }
 
     return NextResponse.json(asset);
   } catch (error) {
