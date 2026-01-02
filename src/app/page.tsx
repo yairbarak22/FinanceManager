@@ -691,7 +691,7 @@ export default function Home() {
               ============================================ */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Assets */}
-            <Card ref={assetsRef} padding="sm" className="max-h-[500px]">
+            <Card ref={assetsRef} padding="sm" className="h-[500px] flex flex-col">
               <AssetsSection
                 assets={assets}
                 selectedMonth={selectedMonth}
@@ -713,7 +713,7 @@ export default function Home() {
             </Card>
 
             {/* Liabilities */}
-            <Card ref={liabilitiesRef} padding="sm" className="max-h-[500px]">
+            <Card ref={liabilitiesRef} padding="sm" className="h-[500px] flex flex-col">
               <LiabilitiesSection
                 liabilities={liabilities}
                 selectedMonth={selectedMonth}
@@ -738,7 +738,7 @@ export default function Home() {
           </Card>
 
           {/* Recurring Transactions */}
-          <Card ref={recurringRef} padding="sm" className="max-h-[500px] md:col-span-2 lg:col-span-1">
+          <Card ref={recurringRef} padding="sm" className="h-[500px] flex flex-col md:col-span-2 lg:col-span-1">
             <RecurringTransactions
               transactions={recurringTransactions}
               onAdd={() => {

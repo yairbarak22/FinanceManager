@@ -27,6 +27,7 @@ export default function ExpensesPieChart({ transactions, customExpenseCategories
     .map(([category, amount]) => {
       const categoryInfo = getCategoryInfo(category, 'expense', customExpenseCategories);
       return {
+        id: category, // Use original category key as unique identifier
         name: categoryInfo?.nameHe || category,
         value: amount,
         color: categoryInfo?.color || '#64748b',
@@ -92,16 +93,18 @@ export default function ExpensesPieChart({ transactions, customExpenseCategories
         </ResponsiveContainer>
       </div>
 
-      {/* Legend - Show all categories with scrollable area if many */}
-      <div className="grid grid-cols-2 gap-2 mt-4 max-h-48 overflow-y-auto">
+      {/* Legend - Show all categories with amounts */}
+      <div className="space-y-2 mt-4 max-h-48 overflow-y-auto">
         {data.map((item) => (
-          <div key={item.name} className="flex items-center gap-2">
+          <div key={item.id} className="flex items-center gap-3 p-2 bg-slate-50 rounded-lg">
             <div
               className="w-3 h-3 rounded-full flex-shrink-0"
               style={{ backgroundColor: item.color }}
             />
-            <SensitiveData as="span" className="text-xs text-slate-600 truncate flex-1">{item.name}</SensitiveData>
-            <SensitiveData as="span" className="text-xs text-slate-500 flex-shrink-0">{item.percentage}%</SensitiveData>
+            <SensitiveData as="span" className="text-sm text-slate-700 flex-1">{item.name}</SensitiveData>
+            <SensitiveData as="span" className="text-sm font-semibold text-slate-900 flex-shrink-0">
+              {formatCurrency(item.value)}
+            </SensitiveData>
           </div>
         ))}
       </div>
