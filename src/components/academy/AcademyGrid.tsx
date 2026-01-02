@@ -921,50 +921,50 @@ export default function AcademyGrid() {
         })}
       </div>
 
-      {/* Expanded Overlay - Rendered via Portal to document.body */}
+      {/* Expanded Modal - Rendered via Portal to document.body */}
       {typeof document !== 'undefined' && createPortal(
         <AnimatePresence>
           {selectedId && selectedItem && (
             <>
-              {/* Backdrop */}
+              {/* Backdrop with blur */}
               <motion.div
                 key="backdrop"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
+                className="fixed inset-0 bg-black/40 backdrop-blur-md z-[9998]"
                 onClick={() => setSelectedId(null)}
                 aria-hidden="true"
               />
 
-              {/* Expanded Card - Full Page */}
+              {/* Floating Modal */}
               <motion.div
                 key="expanded-card"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
                 transition={springTransition}
-                className="fixed inset-0 z-[9999] bg-white overflow-hidden flex flex-col"
+                className="fixed inset-4 sm:inset-6 md:inset-8 lg:inset-y-12 lg:inset-x-[10%] xl:inset-y-16 xl:inset-x-[15%] z-[9999] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)] md:max-h-[calc(100vh-4rem)]"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="expanded-title"
               >
                 {/* Header with gradient */}
-                <div className={`bg-gradient-to-br ${selectedItem.themeColor} p-6 md:p-8 flex-shrink-0`}>
-                  <div className="flex items-start justify-between max-w-4xl mx-auto">
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                        <selectedItem.icon className="w-7 h-7 md:w-8 md:h-8 text-white" />
+                <div className={`bg-gradient-to-br ${selectedItem.themeColor} p-4 sm:p-5 md:p-6 flex-shrink-0 rounded-t-3xl`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 md:gap-4 min-w-0">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                        <selectedItem.icon className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <h2 
                           id="expanded-title"
-                          className="text-xl md:text-2xl font-bold text-white"
+                          className="text-lg sm:text-xl md:text-2xl font-bold text-white truncate"
                         >
                           {selectedItem.title}
                         </h2>
-                        <p className="text-white/80 text-sm md:text-base mt-1">
+                        <p className="text-white/80 text-xs sm:text-sm md:text-base mt-0.5 md:mt-1 line-clamp-2">
                           {selectedItem.subtitle}
                         </p>
                       </div>
@@ -973,19 +973,17 @@ export default function AcademyGrid() {
                     {/* Close button */}
                     <button
                       onClick={() => setSelectedId(null)}
-                      className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors"
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors flex-shrink-0"
                       aria-label="סגור"
                     >
-                      <X className="w-5 h-5 text-white" />
+                      <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     </button>
                   </div>
                 </div>
 
                 {/* Scrollable content */}
-                <div className="flex-1 overflow-y-auto p-6 md:p-8">
-                  <div className="max-w-4xl mx-auto">
-                    {selectedItem.fullContent}
-                  </div>
+                <div className="flex-1 overflow-y-auto p-4 sm:p-5 md:p-6 lg:p-8">
+                  {selectedItem.fullContent}
                 </div>
               </motion.div>
             </>
