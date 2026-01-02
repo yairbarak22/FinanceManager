@@ -61,36 +61,118 @@ export async function PUT(request: Request) {
 
     const data = await request.json();
 
-    // Validate and sanitize input with enum validation
-    const validFields = {
-      militaryStatus: validateEnum(data.militaryStatus, VALID_MILITARY_STATUS),
-      maritalStatus: validateEnum(data.maritalStatus, VALID_MARITAL_STATUS),
-      employmentType: validateEnum(data.employmentType, VALID_EMPLOYMENT_TYPE),
-      hasChildren: Boolean(data.hasChildren),
-      childrenCount: Math.max(0, Math.min(10, Number(data.childrenCount) || 0)),
-      ageRange: validateEnum(data.ageRange, VALID_AGE_RANGE),
-      monthlyIncome: validateEnum(data.monthlyIncome, VALID_MONTHLY_INCOME),
-      riskTolerance: validateEnum(data.riskTolerance, VALID_RISK_TOLERANCE),
-      hasIndependentAccount: Boolean(data.hasIndependentAccount),
-    };
+    // Get existing profile to preserve fields not being updated
+    const existingProfile = await prisma.userProfile.findUnique({
+      where: { userId },
+    });
+
+    // Build update object - only include fields that have valid values
+    // If field is null/empty, preserve existing value
+    const updateFields: Record<string, unknown> = {};
+
+    // Validate and include enum fields only if they have valid values
+    // If field is null/empty, preserve existing value (don't update)
+    if (data.militaryStatus !== undefined) {
+      if (data.militaryStatus !== null && data.militaryStatus !== '') {
+        const value = validateEnum(data.militaryStatus, VALID_MILITARY_STATUS);
+        if (value) {
+          updateFields.militaryStatus = value;
+        } else if (existingProfile) {
+          // Invalid value - preserve existing
+          updateFields.militaryStatus = existingProfile.militaryStatus;
+        }
+      } else if (existingProfile) {
+        // null/empty - preserve existing value
+        updateFields.militaryStatus = existingProfile.militaryStatus;
+      }
+    }
+
+    if (data.maritalStatus !== undefined) {
+      if (data.maritalStatus !== null && data.maritalStatus !== '') {
+        const value = validateEnum(data.maritalStatus, VALID_MARITAL_STATUS);
+        if (value) {
+          updateFields.maritalStatus = value;
+        } else if (existingProfile) {
+          updateFields.maritalStatus = existingProfile.maritalStatus;
+        }
+      } else if (existingProfile) {
+        updateFields.maritalStatus = existingProfile.maritalStatus;
+      }
+    }
+
+    if (data.employmentType !== undefined) {
+      if (data.employmentType !== null && data.employmentType !== '') {
+        const value = validateEnum(data.employmentType, VALID_EMPLOYMENT_TYPE);
+        if (value) {
+          updateFields.employmentType = value;
+        } else if (existingProfile) {
+          updateFields.employmentType = existingProfile.employmentType;
+        }
+      } else if (existingProfile) {
+        updateFields.employmentType = existingProfile.employmentType;
+      }
+    }
+
+    if (data.ageRange !== undefined) {
+      if (data.ageRange !== null && data.ageRange !== '') {
+        const value = validateEnum(data.ageRange, VALID_AGE_RANGE);
+        if (value) {
+          updateFields.ageRange = value;
+        } else if (existingProfile) {
+          updateFields.ageRange = existingProfile.ageRange;
+        }
+      } else if (existingProfile) {
+        updateFields.ageRange = existingProfile.ageRange;
+      }
+    }
+
+    if (data.monthlyIncome !== undefined) {
+      if (data.monthlyIncome !== null && data.monthlyIncome !== '') {
+        const value = validateEnum(data.monthlyIncome, VALID_MONTHLY_INCOME);
+        if (value) {
+          updateFields.monthlyIncome = value;
+        } else if (existingProfile) {
+          updateFields.monthlyIncome = existingProfile.monthlyIncome;
+        }
+      } else if (existingProfile) {
+        updateFields.monthlyIncome = existingProfile.monthlyIncome;
+      }
+    }
+
+    if (data.riskTolerance !== undefined) {
+      if (data.riskTolerance !== null && data.riskTolerance !== '') {
+        const value = validateEnum(data.riskTolerance, VALID_RISK_TOLERANCE);
+        if (value) {
+          updateFields.riskTolerance = value;
+        } else if (existingProfile) {
+          updateFields.riskTolerance = existingProfile.riskTolerance;
+        }
+      } else if (existingProfile) {
+        updateFields.riskTolerance = existingProfile.riskTolerance;
+      }
+    }
+
+    // Always update boolean and number fields (they have defaults)
+    updateFields.hasChildren = Boolean(data.hasChildren);
+    updateFields.childrenCount = Math.max(0, Math.min(10, Number(data.childrenCount) || 0));
+    updateFields.hasIndependentAccount = Boolean(data.hasIndependentAccount);
 
     // Encrypt sensitive fields before storing
-    const encryptedFields = { ...validFields };
     for (const field of ENCRYPTED_PROFILE_FIELDS) {
-      if (field in encryptedFields && encryptedFields[field as keyof typeof encryptedFields]) {
-        const value = encryptedFields[field as keyof typeof encryptedFields];
+      if (field in updateFields && updateFields[field]) {
+        const value = updateFields[field];
         if (typeof value === 'string') {
-          (encryptedFields[field as keyof typeof encryptedFields] as string) = encrypt(value);
+          updateFields[field] = encrypt(value);
         }
       }
     }
 
     const profile = await prisma.userProfile.upsert({
       where: { userId },
-      update: encryptedFields,
+      update: updateFields,
       create: {
         userId,
-        ...encryptedFields,
+        ...updateFields,
       },
     });
 
