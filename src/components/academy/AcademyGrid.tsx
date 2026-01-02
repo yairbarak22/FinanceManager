@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Home, Shield, X, CheckCircle2, AlertCircle, PiggyBank, Umbrella, Flame, Heart, Target, Calculator } from 'lucide-react';
+import { TrendingUp, Home, Shield, X, CheckCircle2, AlertCircle, PiggyBank, Umbrella, Flame, Heart, Target, Calculator, Percent, Brain, CreditCard, TrendingDown, Compass } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 // ============================================
@@ -487,6 +487,259 @@ function InsuranceContent() {
   );
 }
 
+function ManagementFeesContent() {
+  return (
+    <div className="space-y-6" dir="rtl">
+      <p className="text-lg text-slate-700 leading-relaxed">
+        דמי ניהול הם האויב השקט של המשקיע. הם נראים קטנים - 1%, 1.5% - אבל לאורך זמן הם אוכלים 
+        חלק עצום מהכסף שלכם. זה ההפסד היחיד שמובטח לכם בהשקעות.
+      </p>
+
+      <div className="bg-red-50 rounded-2xl p-5 border border-red-100">
+        <h4 className="font-bold text-red-900 flex items-center gap-2 mb-4">
+          <Percent className="w-5 h-5 text-red-600" />
+          ההבדל בין 0.1% ל-1% דמי ניהול
+        </h4>
+        <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
+          <p className="text-sm text-slate-600 mb-3">השקעה של 500,000₪ במשך 30 שנה בתשואה של 7%:</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+              <p className="text-xs text-emerald-600 mb-1">דמי ניהול 0.1%</p>
+              <p className="text-2xl font-bold text-emerald-700">3,574,000₪</p>
+            </div>
+            <div className="text-center p-3 bg-red-50 rounded-xl border border-red-200">
+              <p className="text-xs text-red-600 mb-1">דמי ניהול 1%</p>
+              <p className="text-2xl font-bold text-red-700">2,650,000₪</p>
+            </div>
+          </div>
+          <p className="text-center mt-3 text-red-700 font-bold">
+            הפסד של כמעט מיליון ש״ח! 💸
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-slate-50 rounded-2xl p-5 space-y-3">
+        <h4 className="font-bold text-slate-900">איפה לבדוק ולהוריד דמי ניהול?</h4>
+        <ul className="space-y-2 text-slate-700">
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-1 flex-shrink-0" />
+            <span><strong>פנסיה:</strong> התקשר לקרן וביקש הנחה. רוב האנשים משלמים יותר מדי!</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-1 flex-shrink-0" />
+            <span><strong>קרן השתלמות:</strong> בדוק את דמי הניהול ועבור לקרן זולה יותר אם צריך</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-1 flex-shrink-0" />
+            <span><strong>קרנות נאמנות:</strong> העדף קרנות מחקות עם דמי ניהול נמוכים (0.03%-0.3%)</span>
+          </li>
+        </ul>
+      </div>
+
+      <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200">
+        <h4 className="font-bold text-amber-900 flex items-center gap-2 mb-2">
+          <AlertCircle className="w-5 h-5 text-amber-600" />
+          זכרו: דמי ניהול הם ההפסד היחיד שמובטח
+        </h4>
+        <p className="text-amber-800">
+          השוק יכול לעלות או לרדת, אבל דמי הניהול תמיד ייגבו. כל שקל שחוסכים בדמי ניהול 
+          הוא שקל שעובד בשבילכם במקום בשביל מנהל הקרן.
+        </p>
+      </div>
+
+      <blockquote className="border-r-4 border-red-300 pr-4 py-2 text-slate-600 italic">
+        ״בעולם ההשקעות, אתה מקבל את מה שאתה לא משלם עליו.״ — ג׳ון בוגל
+      </blockquote>
+    </div>
+  );
+}
+
+function InvestorBehaviorContent() {
+  return (
+    <div className="space-y-6" dir="rtl">
+      <p className="text-lg text-slate-700 leading-relaxed">
+        ההתנהגות שלכם כמשקיעים חשובה יותר מבחירת ההשקעות. רוב המשקיעים מפסידים כסף לא בגלל 
+        השקעות רעות, אלא בגלל החלטות רגשיות בזמנים הלא נכונים.
+      </p>
+
+      <div className="bg-teal-50 rounded-2xl p-5 border border-teal-100">
+        <h4 className="font-bold text-teal-900 flex items-center gap-2 mb-4">
+          <Brain className="w-5 h-5 text-teal-600" />
+          מחזור הרגשות של המשקיע
+        </h4>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-white rounded-xl p-3 text-center shadow-sm">
+            <p className="text-2xl mb-1">😊</p>
+            <p className="text-xs text-slate-600">אופטימיות</p>
+            <p className="text-xs text-emerald-600">השוק עולה</p>
+          </div>
+          <div className="bg-white rounded-xl p-3 text-center shadow-sm">
+            <p className="text-2xl mb-1">🤑</p>
+            <p className="text-xs text-slate-600">אופוריה</p>
+            <p className="text-xs text-amber-600">קונים בשיא!</p>
+          </div>
+          <div className="bg-white rounded-xl p-3 text-center shadow-sm">
+            <p className="text-2xl mb-1">😰</p>
+            <p className="text-xs text-slate-600">פאניקה</p>
+            <p className="text-xs text-red-600">השוק יורד</p>
+          </div>
+          <div className="bg-white rounded-xl p-3 text-center shadow-sm">
+            <p className="text-2xl mb-1">😱</p>
+            <p className="text-xs text-slate-600">ייאוש</p>
+            <p className="text-xs text-red-600">מוכרים בתחתית!</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-emerald-50 rounded-2xl p-5 border border-emerald-100">
+        <h4 className="font-bold text-emerald-900 mb-3">הכללים של משקיע נבון</h4>
+        <ul className="space-y-3 text-emerald-800">
+          <li className="flex items-start gap-2">
+            <span className="w-6 h-6 rounded-full bg-emerald-200 text-emerald-700 flex items-center justify-center text-sm font-bold flex-shrink-0">1</span>
+            <span><strong>תמשיך להשקיע בכל מצב:</strong> ירידות הן הזדמנות לקנות בזול</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="w-6 h-6 rounded-full bg-emerald-200 text-emerald-700 flex items-center justify-center text-sm font-bold flex-shrink-0">2</span>
+            <span><strong>אל תנסה לתזמן:</strong> זמן בשוק מנצח תזמון שוק - תמיד</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="w-6 h-6 rounded-full bg-emerald-200 text-emerald-700 flex items-center justify-center text-sm font-bold flex-shrink-0">3</span>
+            <span><strong>השקעה קבועה:</strong> סכום קבוע כל חודש, בלי לחשוב על מחירים</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="w-6 h-6 rounded-full bg-emerald-200 text-emerald-700 flex items-center justify-center text-sm font-bold flex-shrink-0">4</span>
+            <span><strong>אל תסתכל כל יום:</strong> בדוק את התיק פעם ברבעון - מקסימום</span>
+          </li>
+        </ul>
+      </div>
+
+      <div className="bg-slate-100 rounded-2xl p-5">
+        <h4 className="font-bold text-slate-900 mb-3">מה קרה למי שמכר בפאניקה?</h4>
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div className="bg-white rounded-xl p-3 shadow-sm">
+            <p className="text-sm text-slate-500">2008</p>
+            <p className="text-red-600 font-bold">-50%</p>
+            <p className="text-xs text-emerald-600">התאושש תוך 4 שנים</p>
+          </div>
+          <div className="bg-white rounded-xl p-3 shadow-sm">
+            <p className="text-sm text-slate-500">2020</p>
+            <p className="text-red-600 font-bold">-34%</p>
+            <p className="text-xs text-emerald-600">התאושש תוך 6 חודשים</p>
+          </div>
+          <div className="bg-white rounded-xl p-3 shadow-sm">
+            <p className="text-sm text-slate-500">2022</p>
+            <p className="text-red-600 font-bold">-25%</p>
+            <p className="text-xs text-emerald-600">התאושש תוך שנה</p>
+          </div>
+        </div>
+      </div>
+
+      <blockquote className="border-r-4 border-teal-300 pr-4 py-2 text-slate-600 italic">
+        ״שוק ההון הוא מכונה להעברת כסף מהחסרי סבלנות לבעלי סבלנות.״ — וורן באפט
+      </blockquote>
+    </div>
+  );
+}
+
+function DebtManagementContent() {
+  return (
+    <div className="space-y-6" dir="rtl">
+      <p className="text-lg text-slate-700 leading-relaxed">
+        לא כל החובות שווים. יש חובות שעוזרים לכם לבנות עושר, ויש חובות שהורסים אותו. 
+        להבין את ההבדל זה הצעד הראשון לחופש כלכלי.
+      </p>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="bg-emerald-50 rounded-2xl p-5 border border-emerald-100">
+          <h4 className="font-bold text-emerald-900 mb-3">✓ חוב ״טוב״</h4>
+          <ul className="space-y-2 text-emerald-800 text-sm">
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+              <span><strong>משכנתא:</strong> ריבית נמוכה, הנכס עולה בערך</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+              <span><strong>השכלה:</strong> מעלה את כושר ההשתכרות</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+              <span><strong>עסק עם תוכנית:</strong> ROI ברור וריאלי</span>
+            </li>
+          </ul>
+        </div>
+        <div className="bg-red-50 rounded-2xl p-5 border border-red-100">
+          <h4 className="font-bold text-red-900 mb-3">✗ חוב רע</h4>
+          <ul className="space-y-2 text-red-800 text-sm">
+            <li className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+              <span><strong>כרטיס אשראי:</strong> ריבית 15-25%(!)</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+              <span><strong>הלוואות צרכניות:</strong> לרכב, לחופשה, לריהוט</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" />
+              <span><strong>מינוס:</strong> משלמים ריבית על שימוש יומיומי</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
+        <h4 className="font-bold text-slate-900 flex items-center gap-2 mb-4">
+          <CreditCard className="w-5 h-5 text-slate-600" />
+          סדר עדיפויות לפירעון חובות
+        </h4>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 p-3 bg-red-100 rounded-xl">
+            <span className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center font-bold">1</span>
+            <div>
+              <p className="font-medium text-red-900">חוב כרטיס אשראי</p>
+              <p className="text-xs text-red-700">ריבית 15-25% - תמחק קודם!</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-3 bg-orange-100 rounded-xl">
+            <span className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold">2</span>
+            <div>
+              <p className="font-medium text-orange-900">הלוואות צרכניות</p>
+              <p className="text-xs text-orange-700">ריבית 5-12%</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 p-3 bg-slate-100 rounded-xl">
+            <span className="w-8 h-8 rounded-full bg-slate-500 text-white flex items-center justify-center font-bold">3</span>
+            <div>
+              <p className="font-medium text-slate-900">משכנתא</p>
+              <p className="text-xs text-slate-700">ריבית 3-5% - לא דחוף, יש הטבות מס</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200">
+        <h4 className="font-bold text-amber-900 flex items-center gap-2 mb-3">
+          <TrendingDown className="w-5 h-5 text-amber-600" />
+          מלכודת האשראי
+        </h4>
+        <p className="text-amber-800 text-sm mb-3">
+          חוב של 10,000₪ בכרטיס אשראי בריבית 20% שמשלמים עליו רק מינימום:
+        </p>
+        <div className="bg-white rounded-xl p-3 text-center">
+          <p className="text-sm text-slate-600">זמן לפירעון: <strong className="text-red-600">9 שנים</strong></p>
+          <p className="text-sm text-slate-600">סה״כ תשלום: <strong className="text-red-600">21,000₪</strong></p>
+          <p className="text-xs text-red-600 mt-2">שילמתם פי 2 על מה שקניתם!</p>
+        </div>
+      </div>
+
+      <div className="bg-slate-100 rounded-2xl p-5 text-center">
+        <p className="text-slate-700 font-medium">
+          💡 הכלל: אם אתה לא יכול לשלם במזומן - כנראה שאתה לא יכול להרשות את זה.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ============================================
 // Academy Items Data
 // ============================================
@@ -545,6 +798,33 @@ const academyItems: AcademyItem[] = [
     themeColor: 'from-rose-500 to-pink-600',
     themeColorLight: 'bg-rose-100',
     fullContent: <InsuranceContent />,
+  },
+  {
+    id: 'management-fees',
+    title: 'דמי ניהול - האויב השקט',
+    subtitle: 'איך עמלות קטנות אוכלות הון עצום.',
+    icon: Percent,
+    themeColor: 'from-red-500 to-rose-600',
+    themeColorLight: 'bg-red-100',
+    fullContent: <ManagementFeesContent />,
+  },
+  {
+    id: 'investor-behavior',
+    title: 'התנהגות משקיע נבון',
+    subtitle: 'איך להישאר רגוע כשהשוק משתגע.',
+    icon: Brain,
+    themeColor: 'from-teal-500 to-cyan-600',
+    themeColorLight: 'bg-teal-100',
+    fullContent: <InvestorBehaviorContent />,
+  },
+  {
+    id: 'debt-management',
+    title: 'חובות והלוואות',
+    subtitle: 'מתי לקחת הלוואה ומתי לברוח.',
+    icon: CreditCard,
+    themeColor: 'from-slate-600 to-gray-700',
+    themeColorLight: 'bg-slate-200',
+    fullContent: <DebtManagementContent />,
   },
 ];
 
