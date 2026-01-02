@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Home, Shield, X, CheckCircle2, AlertCircle, PiggyBank } from 'lucide-react';
+import { TrendingUp, Home, Shield, X, CheckCircle2, AlertCircle, PiggyBank, Umbrella, Flame, Heart, Target, Calculator } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 // ============================================
@@ -251,6 +251,242 @@ function PensionTaxesContent() {
   );
 }
 
+function EmergencyFundContent() {
+  return (
+    <div className="space-y-6" dir="rtl">
+      <p className="text-lg text-slate-700 leading-relaxed">
+        קרן חירום היא הבסיס לכל תכנון פיננסי נכון. לפני שמתחילים להשקיע, לפני שקונים דירה - 
+        קודם כל בונים כרית ביטחון נזילה שתגן עליכם במקרה של אירוע לא צפוי.
+      </p>
+
+      <div className="bg-blue-50 rounded-2xl p-5 border border-blue-100">
+        <h4 className="font-bold text-blue-900 flex items-center gap-2 mb-4">
+          <Umbrella className="w-5 h-5 text-blue-600" />
+          כמה כסף צריך בקרן חירום?
+        </h4>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="bg-white rounded-xl p-4 shadow-sm">
+            <p className="text-3xl font-bold text-blue-600 mb-2">3-6</p>
+            <p className="text-blue-800 font-medium">חודשי הוצאות</p>
+            <p className="text-sm text-blue-700 mt-2">
+              אם יש לך משרה יציבה, 3 חודשים מספיקים. פרילנסרים ועצמאים - לפחות 6 חודשים.
+            </p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm">
+            <p className="text-xl font-bold text-blue-600 mb-2">חישוב מהיר</p>
+            <p className="text-sm text-blue-700">
+              הוצאות חודשיות (שכירות, אוכל, חשבונות, הלוואות) × מספר החודשים = סכום היעד שלך
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-emerald-50 rounded-2xl p-5 space-y-3 border border-emerald-100">
+        <h4 className="font-bold text-emerald-900">איפה לשמור את הכסף?</h4>
+        <ul className="space-y-2 text-emerald-800">
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-1 flex-shrink-0" />
+            <span><strong>פק״מ (פיקדון קצר מועד):</strong> נזיל, בטוח, ריבית קטנה אבל יציבה</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-1 flex-shrink-0" />
+            <span><strong>עו״ש עם ריבית:</strong> חלק מהבנקים מציעים ריבית על עו״ש</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-1 flex-shrink-0" />
+            <span><strong>קרן כספית:</strong> סיכון אפסי, נזילות מלאה, תשואה צמודה לריבית בנק ישראל</span>
+          </li>
+        </ul>
+      </div>
+
+      <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200">
+        <h4 className="font-bold text-amber-900 flex items-center gap-2 mb-3">
+          <AlertCircle className="w-5 h-5 text-amber-600" />
+          מה זה לא קרן חירום
+        </h4>
+        <ul className="space-y-2 text-amber-800 text-sm">
+          <li className="flex items-start gap-2">
+            <span className="text-amber-600">✗</span>
+            <span>לא מושקע במניות או קרנות - צריך להיות נגיש תוך ימים</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-amber-600">✗</span>
+            <span>לא נוגעים בו לחופשות, קניות או הזדמנויות - זה רק לחירום אמיתי</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-amber-600">✗</span>
+            <span>לא קרן השתלמות או פנסיה - אלה נעולים ויש עליהם קנסות</span>
+          </li>
+        </ul>
+      </div>
+
+      <div className="bg-slate-100 rounded-2xl p-5 text-center">
+        <p className="text-slate-700 font-medium">
+          💡 הכלל: קודם קרן חירום, אחר כך השקעות. אל תדלגו על השלב הזה!
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function FIREContent() {
+  return (
+    <div className="space-y-6" dir="rtl">
+      <p className="text-lg text-slate-700 leading-relaxed">
+        FIRE (Financial Independence, Retire Early) היא תנועה שמטרתה להגיע לעצמאות כלכלית מוקדמת - 
+        הנקודה שבה ההכנסות הפסיביות שלכם מכסות את כל ההוצאות, ואתם יכולים לבחור אם לעבוד או לא.
+      </p>
+
+      <div className="bg-orange-50 rounded-2xl p-5 border border-orange-100">
+        <h4 className="font-bold text-orange-900 flex items-center gap-2 mb-4">
+          <Target className="w-5 h-5 text-orange-600" />
+          כלל ה-4% (או: כלל ה-25)
+        </h4>
+        <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
+          <p className="text-center">
+            <span className="text-4xl font-bold text-orange-600">25×</span>
+            <span className="text-lg text-slate-600 mr-2">ההוצאות השנתיות</span>
+          </p>
+          <p className="text-center text-sm text-slate-500 mt-2">= הסכום שצריך כדי לפרוש</p>
+        </div>
+        <p className="text-orange-800 text-sm">
+          אם ההוצאות השנתיות שלכם הן 120,000₪, תצטרכו 3,000,000₪ כדי להגיע לחירות כלכלית.
+          הרעיון: משיכה של 4% בשנה מאפשרת לתיק ההשקעות לשרוד לנצח (סטטיסטית).
+        </p>
+      </div>
+
+      <div className="bg-slate-50 rounded-2xl p-5 space-y-4">
+        <h4 className="font-bold text-slate-900">שיעור החיסכון - המפתח האמיתי</h4>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white rounded-xl p-3 text-center shadow-sm">
+            <p className="text-xl font-bold text-red-500">10%</p>
+            <p className="text-xs text-slate-600">51 שנה לפרישה</p>
+          </div>
+          <div className="bg-white rounded-xl p-3 text-center shadow-sm">
+            <p className="text-xl font-bold text-amber-500">30%</p>
+            <p className="text-xs text-slate-600">28 שנה לפרישה</p>
+          </div>
+          <div className="bg-white rounded-xl p-3 text-center shadow-sm border-2 border-emerald-300">
+            <p className="text-xl font-bold text-emerald-600">50%</p>
+            <p className="text-xs text-slate-600">17 שנה לפרישה</p>
+          </div>
+        </div>
+        <p className="text-sm text-slate-600">
+          שיעור החיסכון חשוב יותר מהמשכורת! מי שחוסך 50% מההכנסה יגיע לחירות כלכלית הרבה לפני מי שמרוויח פי 2 אבל חוסך רק 10%.
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100">
+          <h4 className="font-bold text-emerald-900 mb-2">Lean FIRE</h4>
+          <p className="text-sm text-emerald-800">
+            חיים צנועים עם הוצאות נמוכות. מטרה: 1.5-2 מיליון ₪. מתאים למי שמוכן לחיות בפשטות.
+          </p>
+        </div>
+        <div className="bg-purple-50 rounded-2xl p-4 border border-purple-100">
+          <h4 className="font-bold text-purple-900 mb-2">Fat FIRE</h4>
+          <p className="text-sm text-purple-800">
+            רמת חיים גבוהה גם בפרישה. מטרה: 5+ מיליון ₪. דורש הכנסה גבוהה או זמן ארוך יותר.
+          </p>
+        </div>
+      </div>
+
+      <blockquote className="border-r-4 border-orange-300 pr-4 py-2 text-slate-600 italic">
+        ״חירות כלכלית זה לא להיות עשיר - זה לא להיות תלוי בעבודה כדי לחיות.״
+      </blockquote>
+    </div>
+  );
+}
+
+function InsuranceContent() {
+  return (
+    <div className="space-y-6" dir="rtl">
+      <p className="text-lg text-slate-700 leading-relaxed">
+        ביטוח הוא כלי להגנה מפני אסונות כלכליים - לא דרך להתעשר. הכלל: מבטחים רק דברים שאי אפשר לשלם עליהם מכיס.
+      </p>
+
+      <div className="bg-rose-50 rounded-2xl p-5 border border-rose-100">
+        <h4 className="font-bold text-rose-900 flex items-center gap-2 mb-4">
+          <Heart className="w-5 h-5 text-rose-600" />
+          ביטוח חיים - ריסק בלבד!
+        </h4>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="bg-white rounded-xl p-4 shadow-sm border-2 border-emerald-300">
+            <p className="font-bold text-emerald-700 mb-2">✓ ביטוח ריסק</p>
+            <ul className="text-sm text-slate-700 space-y-1">
+              <li>• זול משמעותית</li>
+              <li>• כיסוי גבוה</li>
+              <li>• פשוט להבנה</li>
+              <li>• ההמלצה של הסולידית</li>
+            </ul>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border-2 border-red-200">
+            <p className="font-bold text-red-700 mb-2">✗ ביטוח מעורב</p>
+            <ul className="text-sm text-slate-700 space-y-1">
+              <li>• יקר מאוד</li>
+              <li>• עמלות גבוהות</li>
+              <li>• מסובך ולא שקוף</li>
+              <li>• תשואה נמוכה</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-blue-50 rounded-2xl p-5 border border-blue-100">
+        <h4 className="font-bold text-blue-900 mb-3">אובדן כושר עבודה - הביטוח הכי חשוב!</h4>
+        <p className="text-blue-800 mb-3">
+          מה קורה אם לא תוכל לעבוד בגלל מחלה או תאונה? זה הסיכון הגדול באמת.
+        </p>
+        <ul className="space-y-2 text-blue-800 text-sm">
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <span>כיסוי של 75% מההכנסה הוא סטנדרטי</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <span>בדוק אם יש לך כבר דרך הפנסיה (לרוב יש, אבל צריך להשלים)</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <span>עדיף לקנות בגיל צעיר - הפרמיה נקבעת לפי גיל ההצטרפות</span>
+          </li>
+        </ul>
+      </div>
+
+      <div className="bg-amber-50 rounded-2xl p-5 border border-amber-200">
+        <h4 className="font-bold text-amber-900 flex items-center gap-2 mb-3">
+          <AlertCircle className="w-5 h-5 text-amber-600" />
+          מה לא צריך לבטח
+        </h4>
+        <ul className="space-y-2 text-amber-800 text-sm">
+          <li className="flex items-start gap-2">
+            <span className="text-amber-600">✗</span>
+            <span>מכשירי חשמל זולים - עדיף לשים כסף בצד</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-amber-600">✗</span>
+            <span>אחריות מורחבת - רוב הפעמים לא שווה</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-amber-600">✗</span>
+            <span>ביטוח נסיעות לטיסות קצרות וזולות</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="text-amber-600">✗</span>
+            <span>ביטוח לחיות מחמד (אלא אם זה כלב יקר מאוד)</span>
+          </li>
+        </ul>
+      </div>
+
+      <div className="bg-slate-100 rounded-2xl p-5 text-center">
+        <p className="text-slate-700 font-medium">
+          💡 הכלל: תבטח מה שאתה לא יכול להרשות לעצמך להפסיד. את השאר - שמור בקרן חירום.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ============================================
 // Academy Items Data
 // ============================================
@@ -282,6 +518,33 @@ const academyItems: AcademyItem[] = [
     themeColor: 'from-purple-500 to-pink-600',
     themeColorLight: 'bg-purple-100',
     fullContent: <PensionTaxesContent />,
+  },
+  {
+    id: 'emergency-fund',
+    title: 'קרן חירום',
+    subtitle: 'למה כל אחד חייב כרית ביטחון נזילה.',
+    icon: Umbrella,
+    themeColor: 'from-blue-500 to-cyan-600',
+    themeColorLight: 'bg-blue-100',
+    fullContent: <EmergencyFundContent />,
+  },
+  {
+    id: 'fire',
+    title: 'חירות כלכלית - FIRE',
+    subtitle: 'הדרך לעצמאות פיננסית מוקדמת.',
+    icon: Flame,
+    themeColor: 'from-orange-500 to-red-500',
+    themeColorLight: 'bg-orange-100',
+    fullContent: <FIREContent />,
+  },
+  {
+    id: 'insurance',
+    title: 'ביטוחים חיוניים',
+    subtitle: 'הגנה על המשפחה בלי לשלם מיותר.',
+    icon: Heart,
+    themeColor: 'from-rose-500 to-pink-600',
+    themeColorLight: 'bg-rose-100',
+    fullContent: <InsuranceContent />,
   },
 ];
 
