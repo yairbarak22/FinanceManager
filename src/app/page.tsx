@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import HeaderBar, { NavSection } from '@/components/HeaderBar';
 import MonthFilter from '@/components/MonthFilter';
 import SummaryCards from '@/components/SummaryCards';
@@ -134,6 +135,9 @@ export default function Home() {
 
   // Analytics hook
   const analytics = useAnalytics();
+
+  // Router for navigation
+  const router = useRouter();
 
   // Toast notifications
   const toast = useToast();
@@ -601,6 +605,10 @@ export default function Home() {
       <HeaderBar
         activeSection={activeSection}
         onSectionChange={(section) => {
+          if (section === 'contact') {
+            router.push('/contact');
+            return;
+          }
           setActiveSection(section);
           window.scrollTo({ top: 0, behavior: 'smooth' });
           analytics.trackTabChange(section);
@@ -626,7 +634,7 @@ export default function Home() {
         )}
 
         {/* Dashboard View */}
-        {activeSection !== 'investments' && activeSection !== 'help' && (
+        {activeSection !== 'investments' && activeSection !== 'help' && activeSection !== 'contact' && (
           <>
 
         {/* All sections with consistent spacing */}

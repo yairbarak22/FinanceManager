@@ -17,7 +17,7 @@ import { useOnboarding } from '@/context/OnboardingContext';
 import MonthFilter from './MonthFilter';
 import { SensitiveData } from './common/SensitiveData';
 
-export type NavSection = 'dashboard' | 'transactions' | 'recurring' | 'assets' | 'liabilities' | 'investments' | 'help';
+export type NavSection = 'dashboard' | 'transactions' | 'recurring' | 'assets' | 'liabilities' | 'investments' | 'help' | 'contact';
 
 interface HeaderBarProps {
   activeSection: NavSection;
@@ -64,7 +64,8 @@ export default function HeaderBar({
   const navTabs: { id: NavSection; label: string }[] = [
     { id: 'dashboard', label: 'דשבורד' },
     { id: 'investments', label: 'תיק השקעות' },
-    { id: 'help', label: 'עזרה' },
+    { id: 'help', label: 'ידע פיננסי' },
+    { id: 'contact', label: 'צור קשר' },
   ];
 
   return (

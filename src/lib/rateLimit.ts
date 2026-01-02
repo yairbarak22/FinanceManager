@@ -38,6 +38,12 @@ export const RATE_LIMITS = {
 
   // AI/expensive operations - strict
   ai: { maxRequests: 20, windowSeconds: 60 } as RateLimitConfig,
+
+  // Contact form - strict limits to prevent spam/abuse
+  contact: { maxRequests: 5, windowSeconds: 60 } as RateLimitConfig,
+
+  // Contact form per user - additional limit
+  contactUser: { maxRequests: 10, windowSeconds: 300 } as RateLimitConfig,
 };
 
 // ============================================================================
