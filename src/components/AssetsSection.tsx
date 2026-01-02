@@ -36,9 +36,9 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
   }, [assets, totalAssets]);
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+    <div className="h-full flex flex-col">
+      {/* Header - Fixed */}
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
             <TrendingUp className="w-5 h-5 text-emerald-600" />
@@ -62,8 +62,8 @@ export default function AssetsSection({ assets, onAdd, onEdit, onDelete, onViewD
         </button>
       </div>
 
-      {/* Assets List */}
-      <div className="space-y-2">
+      {/* Assets List - Scrollable */}
+      <div className="space-y-2 overflow-y-auto flex-1 min-h-0">
         {assets.map((asset) => {
           const categoryInfo = getCategoryInfo(asset.category, 'asset');
           // Use icon from categoryInfo, or fallback to HelpCircle if not found

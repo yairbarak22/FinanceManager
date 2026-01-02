@@ -680,7 +680,7 @@ export default function Home() {
               ============================================ */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Assets */}
-            <Card ref={assetsRef} padding="sm" className="max-h-[500px] overflow-y-auto">
+            <Card ref={assetsRef} padding="sm" className="max-h-[500px]">
               <AssetsSection
                 assets={assets}
                 onAdd={() => {
@@ -700,7 +700,7 @@ export default function Home() {
             </Card>
 
             {/* Liabilities */}
-            <Card ref={liabilitiesRef} padding="sm" className="max-h-[500px] overflow-y-auto">
+            <Card ref={liabilitiesRef} padding="sm" className="max-h-[500px]">
               <LiabilitiesSection
                 liabilities={liabilities}
                 onAdd={() => {
@@ -724,7 +724,7 @@ export default function Home() {
           </Card>
 
           {/* Recurring Transactions */}
-          <div ref={recurringRef} className="max-h-[500px] overflow-y-auto md:col-span-2 lg:col-span-1">
+          <Card ref={recurringRef} padding="sm" className="max-h-[500px] md:col-span-2 lg:col-span-1">
             <RecurringTransactions
               transactions={recurringTransactions}
               onAdd={() => {
@@ -740,7 +740,7 @@ export default function Home() {
               customExpenseCategories={expenseCats.custom}
               customIncomeCategories={incomeCats.custom}
             />
-          </div>
+          </Card>
         </div>
 
         {/* ============================================

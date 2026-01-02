@@ -44,9 +44,9 @@ export default function LiabilitiesSection({
   }), [liabilities, totalLiabilities, monthlyPayments]);
 
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+    <div className="h-full flex flex-col">
+      {/* Header - Fixed */}
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-rose-100 rounded-xl flex items-center justify-center">
             <TrendingDown className="w-5 h-5 text-rose-600" />
@@ -69,8 +69,8 @@ export default function LiabilitiesSection({
         </button>
       </div>
 
-      {/* Monthly Payment Info */}
-      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 mb-4">
+      {/* Monthly Payment Info - Fixed */}
+      <div className="bg-slate-50 rounded-xl p-3 border border-slate-200 mb-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <span className="text-xs text-slate-600">תשלום חודשי כולל</span>
           <SensitiveData className="text-sm font-bold text-rose-600">
@@ -79,8 +79,8 @@ export default function LiabilitiesSection({
         </div>
       </div>
 
-      {/* Liabilities List */}
-      <div className="space-y-2">
+      {/* Liabilities List - Scrollable */}
+      <div className="space-y-2 overflow-y-auto flex-1 min-h-0">
         {liabilities.map((liability) => {
           const categoryInfo = getCategoryInfo(liability.type, 'liability');
           const Icon = liability.type === 'mortgage' ? Home : Banknote;

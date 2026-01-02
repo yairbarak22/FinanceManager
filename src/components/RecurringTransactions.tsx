@@ -6,7 +6,6 @@ import { RecurringTransaction } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { getCategoryInfo, CategoryInfo } from '@/lib/categories';
 import ConfirmDialog from './modals/ConfirmDialog';
-import Card from './ui/Card';
 import { SensitiveData } from './common/SensitiveData';
 
 interface RecurringTransactionsProps {
@@ -43,9 +42,9 @@ export default function RecurringTransactions({
     .reduce((sum, t) => sum + t.amount, 0);
 
   return (
-    <Card padding="sm" className="h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+    <div className="h-full flex flex-col">
+      {/* Header - Fixed */}
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
             <RefreshCw className="w-5 h-5 text-indigo-600" />
@@ -58,8 +57,8 @@ export default function RecurringTransactions({
         </button>
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      {/* Summary - Fixed */}
+      <div className="grid grid-cols-2 gap-3 mb-4 flex-shrink-0">
         <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
           <p className="text-xs text-slate-500">הכנסות</p>
           <SensitiveData as="p" className="text-base font-bold text-emerald-600">
@@ -74,8 +73,8 @@ export default function RecurringTransactions({
         </div>
       </div>
 
-      {/* Transactions List */}
-      <div className="space-y-2">
+      {/* Transactions List - Scrollable */}
+      <div className="space-y-2 overflow-y-auto flex-1 min-h-0">
         {transactions.map((transaction) => {
           const customCategories = transaction.type === 'income'
             ? customIncomeCategories
@@ -194,6 +193,6 @@ export default function RecurringTransactions({
         title="מחיקת עסקה קבועה"
         message={`האם אתה בטוח שברצונך למחוק את "${deleteConfirm.name}"?`}
       />
-    </Card>
+    </div>
   );
 }
