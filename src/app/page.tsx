@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import HeaderBar, { NavSection } from '@/components/HeaderBar';
 import MonthFilter from '@/components/MonthFilter';
 import SummaryCards from '@/components/SummaryCards';
@@ -24,6 +23,7 @@ import DocumentsModal from '@/components/modals/DocumentsModal';
 import AdvisorModal from '@/components/modals/AdvisorModal';
 import { SmartPortfolio } from '@/components/portfolio';
 import AcademySection from '@/components/academy/AcademySection';
+import { ContactSection } from '@/components/contact';
 import UserMenu from '@/components/UserMenu';
 import ProfileModal from '@/components/ProfileModal';
 import AccountSettings from '@/components/AccountSettings';
@@ -135,9 +135,6 @@ export default function Home() {
 
   // Analytics hook
   const analytics = useAnalytics();
-
-  // Router for navigation
-  const router = useRouter();
 
   // Toast notifications
   const toast = useToast();
@@ -605,10 +602,6 @@ export default function Home() {
       <HeaderBar
         activeSection={activeSection}
         onSectionChange={(section) => {
-          if (section === 'contact') {
-            router.push('/contact');
-            return;
-          }
           setActiveSection(section);
           window.scrollTo({ top: 0, behavior: 'smooth' });
           analytics.trackTabChange(section);
@@ -631,6 +624,11 @@ export default function Home() {
         {/* Help/Academy View */}
         {activeSection === 'help' && (
           <AcademySection />
+        )}
+
+        {/* Contact View */}
+        {activeSection === 'contact' && (
+          <ContactSection />
         )}
 
         {/* Dashboard View */}
