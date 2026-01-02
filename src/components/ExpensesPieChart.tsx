@@ -92,9 +92,9 @@ export default function ExpensesPieChart({ transactions, customExpenseCategories
         </ResponsiveContainer>
       </div>
 
-      {/* Legend */}
-      <div className="grid grid-cols-2 gap-2 mt-4">
-        {data.slice(0, 6).map((item) => (
+      {/* Legend - Show all categories with scrollable area if many */}
+      <div className="grid grid-cols-2 gap-2 mt-4 max-h-48 overflow-y-auto">
+        {data.map((item) => (
           <div key={item.name} className="flex items-center gap-2">
             <div
               className="w-3 h-3 rounded-full flex-shrink-0"
