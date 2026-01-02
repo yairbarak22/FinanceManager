@@ -162,28 +162,44 @@ export function getEffectiveMonthlyExpense(liability: Liability): number {
 }
 
 /**
- * Calculate remaining balance at current date
+ * Calculate remaining balance at a specific date (defaults to current date)
+ * @param liability - The liability to calculate balance for
+ * @param asOfDate - Optional date to calculate balance as of (defaults to now)
  */
-export function getRemainingBalance(liability: Liability): number {
+export function getRemainingBalance(liability: Liability, asOfDate?: Date): number {
   if (!liability.interestRate || !liability.loanTermMonths || !liability.startDate) {
     return liability.remainingAmount || liability.totalAmount;
   }
   
-  const paymentDetails = getCurrentMonthPayment(liability);
+  const startDate = new Date(liability.startDate);
+  const targetDate = asOfDate || new Date();
   
-  if (!paymentDetails || paymentDetails.currentMonth < 1) {
+  // Calculate how many months have passed from start date to target date
+  const monthsPassed = 
+    (targetDate.getFullYear() - startDate.getFullYear()) * 12 + 
+    (targetDate.getMonth() - startDate.getMonth());
+  
+  const currentMonth = monthsPassed + 1;
+  
+  // If loan hasn't started yet
+  if (currentMonth < 1) {
     return liability.totalAmount;
+  }
+  
+  // If loan is finished
+  if (currentMonth > liability.loanTermMonths) {
+    return 0;
   }
   
   const schedule = generateAmortizationSchedule(
     liability.totalAmount,
     liability.interestRate,
     liability.loanTermMonths,
-    new Date(liability.startDate),
+    startDate,
     liability.loanMethod || 'spitzer'
   );
   
-  const currentRow = schedule[paymentDetails.currentMonth - 1];
+  const currentRow = schedule[currentMonth - 1];
   return currentRow ? currentRow.balance : 0;
 }
 

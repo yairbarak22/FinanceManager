@@ -17,6 +17,7 @@ interface LiabilitiesSectionProps {
   onDelete: (id: string) => void;
   onViewAmortization: (liability: Liability) => void;
   onViewDocuments: (liability: Liability) => void;
+  selectedMonth?: string; // Format: 'YYYY-MM' or 'all'
 }
 
 export default function LiabilitiesSection({ 
@@ -25,14 +26,20 @@ export default function LiabilitiesSection({
   onEdit, 
   onDelete,
   onViewAmortization,
-  onViewDocuments 
+  onViewDocuments,
+  selectedMonth = 'all'
 }: LiabilitiesSectionProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; name: string }>({
     isOpen: false,
     id: '',
     name: '',
   });
-  const totalLiabilities = liabilities.reduce((sum, l) => sum + getRemainingBalance(l), 0);
+  
+  // Calculate remaining balance as of selected month (or current date if 'all')
+  const selectedMonthDate = selectedMonth === 'all' 
+    ? new Date() 
+    : new Date(selectedMonth + '-01');
+  const totalLiabilities = liabilities.reduce((sum, l) => sum + getRemainingBalance(l, selectedMonthDate), 0);
   const monthlyPayments = liabilities.reduce((sum, l) => sum + l.monthlyPayment, 0);
 
   // Dynamic context data for AI Help
@@ -129,9 +136,9 @@ export default function LiabilitiesSection({
 
               {/* Row 2: Value + Actions */}
               <div className="flex items-center justify-between mr-12">
-                {/* Value - Remaining Balance */}
+                {/* Value - Remaining Balance as of selected month */}
                 <SensitiveData as="p" className="text-sm font-bold text-red-600">
-                  {formatCurrency(getRemainingBalance(liability))}
+                  {formatCurrency(getRemainingBalance(liability, selectedMonthDate))}
                 </SensitiveData>
 
                 {/* Actions */}

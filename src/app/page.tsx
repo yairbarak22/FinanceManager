@@ -304,7 +304,11 @@ export default function Home() {
   const totalBalance = totalIncome - totalExpenses;
 
   const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
-  const totalLiabilities = liabilities.reduce((sum, l) => sum + getRemainingBalance(l), 0);
+  // Calculate remaining balance as of selected month (or current date if 'all')
+  const selectedMonthDate = selectedMonth === 'all' 
+    ? new Date() 
+    : new Date(selectedMonth + '-01');
+  const totalLiabilities = liabilities.reduce((sum, l) => sum + getRemainingBalance(l, selectedMonthDate), 0);
   const netWorth = totalAssets - totalLiabilities;
 
   // Calculate monthly summaries (including recurring transactions)
@@ -703,6 +707,7 @@ export default function Home() {
             <Card ref={liabilitiesRef} padding="sm" className="max-h-[500px]">
               <LiabilitiesSection
                 liabilities={liabilities}
+                selectedMonth={selectedMonth}
                 onAdd={() => {
                   setEditingLiability(null);
                   setIsLiabilityModalOpen(true);
