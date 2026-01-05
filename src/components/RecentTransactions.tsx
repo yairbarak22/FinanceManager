@@ -294,18 +294,20 @@ export default function RecentTransactions({
               {!isSelectMode && (
                 <div className="flex gap-1 flex-shrink-0">
                   <button
+                    type="button"
                     onClick={() => openEditDialog(transaction)}
                     className="p-1.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-600 transition-colors"
-                    title="ערוך"
+                    aria-label={`ערוך עסקה: ${transaction.description}`}
                   >
-                    <Edit3 className="w-3.5 h-3.5" />
+                    <Edit3 className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
                   <button
+                    type="button"
                     onClick={() => setDeleteConfirm({ isOpen: true, id: transaction.id, description: transaction.description })}
                     className="p-1.5 rounded hover:bg-red-100 text-slate-500 hover:text-red-500 transition-colors"
-                    title="מחק"
+                    aria-label={`מחק עסקה: ${transaction.description}`}
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
                   </button>
                 </div>
               )}
@@ -362,24 +364,30 @@ export default function RecentTransactions({
       {/* Category Edit Dialog - Using Portal for proper z-index */}
       {
         editingTransaction && createPortal(
-          <div 
+          <div
             className="fixed inset-0 bg-black/50 flex items-center justify-center p-4"
             style={{ zIndex: 9999 }}
             onClick={closeEditDialog}
+            role="presentation"
           >
-            <div 
-              className="bg-white rounded-2xl shadow-xl w-full max-w-md" 
+            <div
+              className="bg-white rounded-2xl shadow-xl w-full max-w-md"
               dir="rtl"
               onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="edit-category-title"
             >
               {/* Header */}
               <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="font-semibold text-slate-900">עריכת קטגוריה</h3>
+                <h3 id="edit-category-title" className="font-semibold text-slate-900">עריכת קטגוריה</h3>
                 <button
+                  type="button"
                   onClick={closeEditDialog}
                   className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
+                  aria-label="סגור"
                 >
-                  <X className="w-5 h-5 text-slate-500" />
+                  <X className="w-5 h-5 text-slate-500" aria-hidden="true" />
                 </button>
               </div>
 

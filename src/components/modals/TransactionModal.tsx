@@ -6,6 +6,7 @@ import { Transaction } from '@/lib/types';
 import { CategoryInfo } from '@/lib/categories';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -32,6 +33,11 @@ export default function TransactionModal({
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [showAddCategory, setShowAddCategory] = useState(false);
+
+  // Accessibility: Focus trap for modal
+  const { containerRef, handleKeyDown } = useFocusTrap<HTMLDivElement>(isOpen, {
+    onEscape: onClose,
+  });
 
   useEffect(() => {
     if (transaction) {
@@ -72,15 +78,32 @@ export default function TransactionModal({
 
   return (
     <>
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-content animate-scale-in" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal-overlay"
+        onClick={onClose}
+        role="presentation"
+      >
+        <div
+          ref={containerRef}
+          className="modal-content animate-scale-in"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={handleKeyDown}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="transaction-modal-title"
+        >
           {/* Header */}
           <div className="modal-header">
-            <h2 className="text-xl font-bold text-slate-900">
+            <h2 id="transaction-modal-title" className="text-xl font-bold text-slate-900">
               {transaction ? 'עריכת עסקה' : 'עסקה חדשה'}
             </h2>
-            <button onClick={onClose} className="btn-icon">
-              <X className="w-5 h-5" />
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-icon"
+              aria-label="סגור חלון"
+            >
+              <X className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
 
@@ -88,15 +111,16 @@ export default function TransactionModal({
           <form onSubmit={handleSubmit}>
             <div className="modal-body">
               {/* Type Toggle */}
-              <div>
-                <label className="label">סוג עסקה</label>
-                <div className="grid grid-cols-2 gap-2">
+              <fieldset>
+                <legend className="label">סוג עסקה</legend>
+                <div className="grid grid-cols-2 gap-2" role="group" aria-label="סוג עסקה">
                   <button
                     type="button"
                     onClick={() => {
                       setType('expense');
                       setCategory('');
                     }}
+                    aria-pressed={type === 'expense'}
                     className={`py-3 px-4 rounded-xl font-medium transition-all ${
                       type === 'expense'
                         ? 'bg-indigo-500 text-white'
@@ -111,6 +135,7 @@ export default function TransactionModal({
                       setType('income');
                       setCategory('');
                     }}
+                    aria-pressed={type === 'income'}
                     className={`py-3 px-4 rounded-xl font-medium transition-all ${
                       type === 'income'
                         ? 'bg-emerald-500 text-white'
@@ -120,12 +145,13 @@ export default function TransactionModal({
                     הכנסה
                   </button>
                 </div>
-              </div>
+              </fieldset>
 
               {/* Amount */}
               <div>
-                <label className="label">סכום (₪)</label>
+                <label htmlFor="tx-amount" className="label">סכום (₪)</label>
                 <input
+                  id="tx-amount"
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
@@ -134,12 +160,13 @@ export default function TransactionModal({
                   required
                   min="0"
                   step="0.01"
+                  aria-required="true"
                 />
               </div>
 
               {/* Category */}
               <div>
-                <label className="label">קטגוריה</label>
+                <label id="tx-category-label" className="label">קטגוריה</label>
                 <CategorySelect
                   value={category}
                   onChange={setCategory}
@@ -148,31 +175,36 @@ export default function TransactionModal({
                   placeholder="בחר קטגוריה"
                   onAddNew={() => setShowAddCategory(true)}
                   required
+                  aria-labelledby="tx-category-label"
                 />
               </div>
 
               {/* Description */}
               <div>
-                <label className="label">תיאור</label>
+                <label htmlFor="tx-description" className="label">תיאור</label>
                 <input
+                  id="tx-description"
                   type="text"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="תיאור העסקה"
                   className="input"
                   required
+                  aria-required="true"
                 />
               </div>
 
               {/* Date */}
               <div>
-                <label className="label">תאריך</label>
+                <label htmlFor="tx-date" className="label">תאריך</label>
                 <input
+                  id="tx-date"
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   className="input"
                   required
+                  aria-required="true"
                 />
               </div>
             </div>

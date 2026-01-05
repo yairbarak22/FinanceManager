@@ -30,12 +30,12 @@ export default function NetWorthChart({ data, currentNetWorth, transactionBalanc
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center" aria-hidden="true">
             <TrendingUp className="w-5 h-5 text-blue-600" />
           </div>
           <h2 className="text-lg font-semibold text-slate-900">התקדמות השווי הנקי</h2>
         </div>
-        
+
         {/* Change Badge */}
         <div className={`px-3 py-1.5 rounded-lg ${isPositive ? 'bg-green-100' : 'bg-red-100'}`}>
           <span className={`text-sm font-medium ${isPositive ? 'text-green-700' : 'text-red-700'}`}>
@@ -44,8 +44,40 @@ export default function NetWorthChart({ data, currentNetWorth, transactionBalanc
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="h-48 mb-4">
+      {/* Accessible Summary for Screen Readers */}
+      <div className="sr-only">
+        <h3>סיכום התקדמות השווי הנקי</h3>
+        <p>
+          השווי הנקי הנוכחי הוא {formatCurrency(currentNetWorth)}.
+          {change !== 0 && (
+            <>
+              {' '}השינוי מתחילת התקופה הוא {isPositive ? 'עלייה' : 'ירידה'} של {changePercent}%.
+            </>
+          )}
+        </p>
+        {chartData.length > 0 && (
+          <table>
+            <caption>נתוני שווי נקי לפי חודש</caption>
+            <thead>
+              <tr>
+                <th>חודש</th>
+                <th>שווי נקי</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chartData.map((item, index) => (
+                <tr key={index}>
+                  <td>{item.date}</td>
+                  <td>{formatCurrency(item.netWorth)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Chart - Hidden from screen readers as data is available above */}
+      <div className="h-48 mb-4" aria-hidden="true">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
             <defs>
@@ -55,14 +87,14 @@ export default function NetWorthChart({ data, currentNetWorth, transactionBalanc
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-            <XAxis 
-              dataKey="date" 
-              axisLine={false} 
+            <XAxis
+              dataKey="date"
+              axisLine={false}
               tickLine={false}
               tick={{ fontSize: 11, fill: '#9ca3af' }}
             />
-            <YAxis 
-              axisLine={false} 
+            <YAxis
+              axisLine={false}
               tickLine={false}
               tick={{ fontSize: 11, fill: '#9ca3af' }}
               tickFormatter={(value) => `₪${(value / 1000000).toFixed(1)}M`}

@@ -40,18 +40,23 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
 
   return (
     <div
+      role="alert"
+      aria-live={toast.type === 'error' ? 'assertive' : 'polite'}
+      aria-atomic="true"
       className={cn(
         'flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg animate-slide-up',
         colors[toast.type]
       )}
     >
-      {icons[toast.type]}
+      <span aria-hidden="true">{icons[toast.type]}</span>
       <p className="text-sm text-slate-700 flex-1">{toast.message}</p>
       <button
+        type="button"
         onClick={() => onRemove(toast.id)}
         className="p-1 rounded hover:bg-gray-200/50 transition-colors"
+        aria-label="סגור התראה"
       >
-        <X className="w-4 h-4 text-slate-400" />
+        <X className="w-4 h-4 text-slate-400" aria-hidden="true" />
       </button>
     </div>
   );

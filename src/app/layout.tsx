@@ -8,6 +8,7 @@ import OnboardingLayer from "@/components/onboarding/OnboardingLayer";
 import Analytics from "@/components/Analytics";
 import CookieConsent from "@/components/CookieConsent";
 import { AccessibilityStatement } from "@/components/AccessibilityStatement";
+import SkipToContent from "@/components/accessibility/SkipToContent";
 import "./globals.css";
 
 const heebo = Heebo({
@@ -24,8 +25,72 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "NETO - ניהול הון חכם",
-  description: "המקום שלך לצמוח כלכלית. ניהול הוצאות, השקעות ותכנון פיננסי חכם.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://neto.co.il'),
+  title: {
+    default: 'NETO - ניהול הון חכם',
+    template: '%s | NETO',
+  },
+  description: 'המקום שלך לצמוח כלכלית. ניהול הוצאות, השקעות ותכנון פיננסי חכם - בחינם.',
+  keywords: [
+    'ניהול הון',
+    'ניהול הוצאות',
+    'תכנון פיננסי',
+    'השקעות',
+    'תקציב אישי',
+    'ניהול כספים',
+    'מעקב הוצאות',
+    'חיסכון',
+    'תכנון פרישה',
+    'שווי נקי',
+  ],
+  authors: [{ name: 'NETO' }],
+  creator: 'NETO',
+  publisher: 'NETO',
+  formatDetection: {
+    telephone: false,
+    email: false,
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'he_IL',
+    siteName: 'NETO',
+    title: 'NETO - ניהול הון חכם',
+    description: 'המקום שלך לצמוח כלכלית. ניהול הוצאות, השקעות ותכנון פיננסי חכם.',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'NETO - ניהול הון חכם',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'NETO - ניהול הון חכם',
+    description: 'המקום שלך לצמוח כלכלית. ניהול הוצאות, השקעות ותכנון פיננסי חכם.',
+    images: ['/og-image.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  alternates: {
+    canonical: '/',
+  },
+  verification: {
+    // Add these when you have the verification codes
+    // google: 'your-google-verification-code',
+    // yandex: 'your-yandex-verification-code',
+  },
+  category: 'finance',
 };
 
 export default function RootLayout({
@@ -64,6 +129,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${heebo.variable} ${inter.variable} font-sans antialiased`}>
+        <SkipToContent />
         <Providers>
           <OnboardingProvider>
             <AIChatProvider>

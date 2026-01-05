@@ -39,7 +39,7 @@ export default function ExpensesPieChart({ transactions, customExpenseCategories
   if (data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-8">
-        <PieChartIcon className="w-12 h-12 text-slate-300 mb-3" />
+        <PieChartIcon className="w-12 h-12 text-slate-300 mb-3" aria-hidden="true" />
         <p className="text-slate-500 text-sm">אין הוצאות להצגה</p>
       </div>
     );
@@ -50,15 +50,40 @@ export default function ExpensesPieChart({ transactions, customExpenseCategories
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center" aria-hidden="true">
             <PieChartIcon className="w-5 h-5 text-indigo-600" />
           </div>
           <h3 className="font-semibold text-slate-900">התפלגות הוצאות</h3>
         </div>
       </div>
 
-      {/* Pie Chart */}
-      <div className="h-48">
+      {/* Accessible Summary for Screen Readers */}
+      <div className="sr-only">
+        <h4>סיכום התפלגות הוצאות</h4>
+        <p>סה"כ הוצאות: {formatCurrency(totalExpenses)}</p>
+        <table>
+          <caption>פירוט הוצאות לפי קטגוריה</caption>
+          <thead>
+            <tr>
+              <th>קטגוריה</th>
+              <th>סכום</th>
+              <th>אחוז</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((item) => (
+              <tr key={item.id}>
+                <td>{item.name}</td>
+                <td>{formatCurrency(item.value)}</td>
+                <td>{item.percentage}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pie Chart - Hidden from screen readers */}
+      <div className="h-48" aria-hidden="true">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie

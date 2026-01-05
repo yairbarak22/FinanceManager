@@ -5,6 +5,128 @@
    Deep Tech Design System
    ============================================ */
 
+/* ============================================
+   ACCESSIBILITY - WCAG 2.1 Level AA Compliance
+   ============================================ */
+
+/* Screen Reader Only - Visually hidden but accessible */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Make sr-only visible when focused (for skip links) */
+.sr-only.focus\:not-sr-only:focus,
+.focus\:not-sr-only:focus {
+  position: fixed;
+  width: auto;
+  height: auto;
+  padding: 0.75rem 1rem;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+}
+
+/* ============================================
+   HIGH CONTRAST MODE
+   WCAG 2.1 Level AAA Enhanced Contrast
+   ============================================ */
+body.high-contrast {
+  background: white !important;
+  color: black !important;
+}
+
+body.high-contrast .card,
+body.high-contrast [class*="bg-white"],
+body.high-contrast [class*="bg-slate-50"],
+body.high-contrast [class*="bg-gray-50"],
+body.high-contrast [class*="bg-slate-100"] {
+  background: white !important;
+  border: 2px solid black !important;
+}
+
+body.high-contrast [class*="text-slate-"],
+body.high-contrast [class*="text-gray-"] {
+  color: black !important;
+}
+
+body.high-contrast [class*="text-indigo-"],
+body.high-contrast [class*="text-blue-"] {
+  color: #0000cc !important;
+}
+
+body.high-contrast [class*="bg-indigo-"],
+body.high-contrast [class*="bg-blue-"] {
+  background: #0000cc !important;
+}
+
+body.high-contrast [class*="text-green-"],
+body.high-contrast [class*="text-emerald-"] {
+  color: #006600 !important;
+}
+
+body.high-contrast [class*="text-red-"],
+body.high-contrast [class*="text-rose-"] {
+  color: #cc0000 !important;
+}
+
+body.high-contrast a:not([class*="bg-"]),
+body.high-contrast button:not([class*="bg-"]) {
+  text-decoration: underline;
+}
+
+body.high-contrast input,
+body.high-contrast select,
+body.high-contrast textarea {
+  border: 2px solid black !important;
+  background: white !important;
+  color: black !important;
+}
+
+/* ============================================
+   HIGHLIGHT LINKS MODE
+   Makes all links visually distinct
+   ============================================ */
+body.highlight-links a:not(.btn-primary):not(.btn-secondary):not([class*="bg-indigo"]) {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+  text-decoration: underline !important;
+  padding: 2px 4px !important;
+  border-radius: 2px !important;
+}
+
+body.highlight-links a:not(.btn-primary):not(.btn-secondary):focus,
+body.highlight-links a:not(.btn-primary):not(.btn-secondary):hover {
+  background-color: #ff9900 !important;
+  outline: 3px solid #000000 !important;
+}
+
+body.highlight-links button:not([class*="bg-"]) {
+  border: 2px solid currentColor !important;
+}
+
+/* ============================================
+   PAUSE ANIMATIONS MODE
+   Stops all motion for vestibular disorders
+   ============================================ */
+body.pause-animations *,
+body.pause-animations *::before,
+body.pause-animations *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  transition-delay: 0ms !important;
+  scroll-behavior: auto !important;
+}
+
 :root {
   /* Main Colors - Deep Tech Palette */
   --background: 210 40% 98%;
@@ -56,6 +178,22 @@
     scroll-behavior: smooth;
   }
 
+  /* Respect user's reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
   body {
     background: linear-gradient(180deg, #F1F5F9 0%, #E2E8F0 100%);
     color: hsl(var(--foreground));
@@ -63,6 +201,30 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     min-height: 100vh;
+  }
+
+  /* Global Focus Styles - WCAG 2.4.7 Focus Visible */
+  /* High contrast focus ring for ALL interactive elements */
+  :focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
+
+  /* Remove default focus outline when focus-visible is not triggered */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Enhanced focus for buttons and links */
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px hsl(var(--primary) / 20%);
   }
 }
 
