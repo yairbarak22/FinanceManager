@@ -245,26 +245,10 @@ export const onboardingSteps: OnboardingStep[] = [
     autopilotTargetId: 'btn-global-add',
     fields: [
       {
-        key: 'demo-recommendations',
-        label: 'המלצות חכמות',
-        type: 'feature-demos',
-        helperText: 'קבל המלצות מותאמות אישית לחיסכון והשקעה על בסיס הנתונים שלך',
-        demoId: 'recommendations',
-        featureIcon: 'sparkles',
-      },
-      {
-        key: 'demo-ai',
-        label: 'עוזר AI',
-        type: 'feature-demos',
-        helperText: 'שאל כל שאלה פיננסית וקבל תשובה מותאמת למצבך האישי',
-        demoId: 'ai-assistant',
-        featureIcon: 'bot',
-      },
-      {
         key: 'demo-import',
-        label: 'ייבוא עסקאות',
+        label: 'ייבוא עסקאות מהבנק',
         type: 'feature-demos',
-        helperText: 'ייבא עסקאות מקובץ אקסל או CSV מהבנק שלך בקליק אחד',
+        helperText: 'במקום להזין עסקאות ידנית, תוכל לייבא את כל העסקאות שלך ישירות מקובץ אקסל או CSV שהורדת מאתר הבנק. המערכת תזהה אוטומטית את הקטגוריות ותסווג את ההוצאות וההכנסות עבורך.',
         demoId: 'import',
         featureIcon: 'upload',
       },

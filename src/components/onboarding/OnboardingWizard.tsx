@@ -498,13 +498,12 @@ export default function OnboardingWizard() {
                                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                                }`}
                   >
-                    <Wand2 className="w-5 h-5" />
                     <span>
-                      {currentStep.id === 'profile' && 'הראה לי איך לעדכן פרופיל'}
-                      {currentStep.id === 'assets' && 'הראה לי איך להוסיף נכס'}
-                      {currentStep.id === 'liabilities' && 'הראה לי איך להוסיף התחייבות'}
-                      {currentStep.id === 'income' && 'הראה לי איך להוסיף הכנסה'}
-                      {currentStep.id === 'expenses' && 'הראה לי איך להוסיף הוצאה'}
+                      {currentStep.id === 'profile' && 'לחץ כאן ו-AI יעדכן בשבילך'}
+                      {currentStep.id === 'assets' && 'לחץ כאן ו-AI יוסיף בשבילך'}
+                      {currentStep.id === 'liabilities' && 'לחץ כאן ו-AI יוסיף בשבילך'}
+                      {currentStep.id === 'income' && 'לחץ כאן ו-AI יוסיף בשבילך'}
+                      {currentStep.id === 'expenses' && 'לחץ כאן ו-AI יוסיף בשבילך'}
                     </span>
                     <Sparkles className="w-4 h-4 opacity-70" />
                   </motion.button>
@@ -568,7 +567,7 @@ export default function OnboardingWizard() {
                     onClick={isLastStep ? endTour : goToNextStep}
                     className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all"
                   >
-                    {isLastStep ? 'סיום' : 'דלג'}
+                    {isLastStep ? 'סיום' : 'אוסיף מאוחר יותר'}
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                 </div>
