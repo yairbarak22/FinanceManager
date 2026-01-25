@@ -62,12 +62,14 @@ export default function AssetsSection({
               {formatCurrency(totalAssets)}
             </SensitiveData>
           </div>
+{/* FEATURE DISABLED - AI Help Button
           <HelpTrigger
             id="btn-ai-help-assets"
             topicId="assets"
             contextData={assetsContextData}
             size="sm"
           />
+          */}
         </div>
         <button id="btn-add-asset" onClick={onAdd} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
           <Plus className="w-4 h-4" />

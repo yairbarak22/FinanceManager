@@ -64,11 +64,13 @@ export default function LiabilitiesSection({
               {formatCurrency(totalLiabilities)}
             </SensitiveData>
           </div>
+{/* FEATURE DISABLED - AI Help Button
           <HelpTrigger
             topicId="liabilities"
             contextData={liabilitiesContextData}
             size="sm"
           />
+          */}
         </div>
         <button id="btn-add-liability" onClick={onAdd} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
           <Plus className="w-4 h-4" />

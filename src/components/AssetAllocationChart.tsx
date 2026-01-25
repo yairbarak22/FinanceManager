@@ -87,7 +87,7 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
           </div>
         </div>
 
-        {/* Recommendations Button */}
+        {/* FEATURE DISABLED - Recommendations Button
         {onGetRecommendations && (
           <button
             id="btn-get-recommendations"
@@ -103,6 +103,7 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
             <Lightbulb className="w-4 h-4" />
           </button>
         )}
+        */}
       </div>
 
       {isEmpty ? (

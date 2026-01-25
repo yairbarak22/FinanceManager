@@ -259,11 +259,13 @@ export default function LiabilityModal({
                   <Calculator className="w-4 h-4" />
                   חשב
                 </button>
+{/* FEATURE DISABLED - AI Help Button
                 <HelpTrigger
                   topicId="loan_form"
                   contextData={loanContextData}
                   size="md"
                 />
+                */}
               </div>
 
               {/* Interest Rebate */}

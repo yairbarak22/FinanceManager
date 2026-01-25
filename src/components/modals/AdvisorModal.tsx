@@ -286,12 +286,14 @@ function RecommendationCard({ recommendation }: { recommendation: Recommendation
           <div className="flex items-start justify-between gap-2 mb-1">
             <div className="flex items-center gap-2">
               <h4 className="font-medium text-slate-900">{title}</h4>
+              {/* FEATURE DISABLED - AI Help Button
               <HelpTrigger
                 contextDescription={`המלצה פיננסית: ${title}`}
                 contextData={contextData}
                 topicId="recommendation"
                 size="sm"
               />
+              */}
             </div>
             <span className={`text-xs px-2 py-0.5 rounded-full border flex-shrink-0 ${PRIORITY_STYLES[priority]}`}>
               {PRIORITY_LABELS[priority]}
