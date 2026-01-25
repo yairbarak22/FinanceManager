@@ -250,6 +250,86 @@ export default function OnboardingWizard() {
   }, [currentStep, wizardData, startAutopilot, runAutopilotSequence]);
 
   /**
+   * Handle direct add - save data via API without simulation
+   */
+  const handleAddDirectly = useCallback(async () => {
+    const stepId = currentStep.id;
+    
+    try {
+      if (stepId === 'profile') {
+        await fetch('/api/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ageRange: wizardData.ageRange,
+            employmentType: wizardData.employmentType,
+            militaryStatus: wizardData.militaryStatus,
+          }),
+        });
+        setLastSavedProfileData({
+          ageRange: wizardData.ageRange || '',
+          employmentType: wizardData.employmentType || '',
+          militaryStatus: wizardData.militaryStatus || '',
+        });
+      } else if (stepId === 'assets') {
+        await fetch('/api/assets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
+          body: JSON.stringify({
+            name: wizardData.assetName,
+            category: wizardData.assetCategory,
+            value: parseFloat((wizardData.assetValue || '0').replace(/,/g, '')),
+          }),
+        });
+      } else if (stepId === 'liabilities') {
+        // Skip if user selected "none"
+        if (wizardData.liabilityType !== 'none') {
+          await fetch('/api/liabilities', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
+            body: JSON.stringify({
+              name: wizardData.liabilityType === 'mortgage' ? 'משכנתא' : 'הלוואה',
+              type: wizardData.liabilityType,
+              totalAmount: parseFloat((wizardData.liabilityAmount || '0').replace(/,/g, '')),
+              monthlyPayment: 0, // Will be calculated
+              interestRate: parseFloat(wizardData.liabilityInterest || '0'),
+              loanTermMonths: parseInt(wizardData.liabilityTerm || '0'),
+            }),
+          });
+        }
+      } else if (stepId === 'income') {
+        await fetch('/api/recurring', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
+          body: JSON.stringify({
+            type: 'income',
+            name: wizardData.incomeName,
+            category: wizardData.incomeCategory,
+            amount: parseFloat((wizardData.incomeAmount || '0').replace(/,/g, '')),
+          }),
+        });
+      } else if (stepId === 'expenses') {
+        await fetch('/api/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
+          body: JSON.stringify({
+            type: 'expense',
+            description: wizardData.expenseName,
+            category: wizardData.expenseCategory,
+            amount: parseFloat((wizardData.expenseAmount || '0').replace(/,/g, '')),
+            date: new Date().toISOString(),
+          }),
+        });
+      }
+      
+      console.log('[Onboarding] Direct add successful for step:', stepId);
+      goToNextStep();
+    } catch (error) {
+      console.error('[Onboarding] Direct add failed:', error);
+    }
+  }, [currentStep, wizardData, goToNextStep, setLastSavedProfileData]);
+
+  /**
    * Handle feature demo button click
    */
   const handleFeatureDemoClick = useCallback(async (demoId: string) => {
@@ -483,30 +563,44 @@ export default function OnboardingWizard() {
               </div>
 
               {/* Footer - Fixed at bottom */}
-              <div className="flex-shrink-0 px-8 pb-6 pt-4 border-t border-slate-100 space-y-4">
-                {/* "Show Me" Button - with step-specific text (hidden on features step) */}
+              <div className="flex-shrink-0 px-8 pb-6 pt-4 border-t border-slate-100 space-y-3">
+                {/* Two action buttons (hidden on features step) */}
                 {currentStep.id !== 'features' && (
-                  <motion.button
-                    onClick={handleShowMe}
-                    disabled={!areRequiredFieldsFilled()}
-                    whileHover={areRequiredFieldsFilled() ? { scale: 1.02 } : {}}
-                    whileTap={areRequiredFieldsFilled() ? { scale: 0.98 } : {}}
-                    className={`w-full py-4 px-6 font-semibold rounded-2xl
-                               flex items-center justify-center gap-2 transition-all duration-200
-                               ${areRequiredFieldsFilled()
-                                 ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 cursor-pointer'
-                                 : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                               }`}
-                  >
-                    <span>
-                      {currentStep.id === 'profile' && 'לחץ כאן ו-AI יעדכן בשבילך'}
-                      {currentStep.id === 'assets' && 'לחץ כאן ו-AI יוסיף בשבילך'}
-                      {currentStep.id === 'liabilities' && 'לחץ כאן ו-AI יוסיף בשבילך'}
-                      {currentStep.id === 'income' && 'לחץ כאן ו-AI יוסיף בשבילך'}
-                      {currentStep.id === 'expenses' && 'לחץ כאן ו-AI יוסיף בשבילך'}
-                    </span>
-                    <Sparkles className="w-4 h-4 opacity-70" />
-                  </motion.button>
+                  <div className="space-y-2">
+                    {/* Primary: Add directly */}
+                    <motion.button
+                      onClick={handleAddDirectly}
+                      disabled={!areRequiredFieldsFilled()}
+                      whileHover={areRequiredFieldsFilled() ? { scale: 1.02 } : {}}
+                      whileTap={areRequiredFieldsFilled() ? { scale: 0.98 } : {}}
+                      className={`w-full py-4 px-6 font-semibold rounded-2xl
+                                 flex items-center justify-center gap-2 transition-all duration-200
+                                 ${areRequiredFieldsFilled()
+                                   ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 cursor-pointer'
+                                   : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                 }`}
+                    >
+                      <Check className="w-5 h-5" />
+                      <span>לחץ כאן כדי להוסיף עכשיו</span>
+                    </motion.button>
+
+                    {/* Secondary: AI demo */}
+                    <motion.button
+                      onClick={handleShowMe}
+                      disabled={!areRequiredFieldsFilled()}
+                      whileHover={areRequiredFieldsFilled() ? { scale: 1.01 } : {}}
+                      whileTap={areRequiredFieldsFilled() ? { scale: 0.99 } : {}}
+                      className={`w-full py-3 px-6 font-medium rounded-2xl
+                                 flex items-center justify-center gap-2 transition-all duration-200 border
+                                 ${areRequiredFieldsFilled()
+                                   ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-indigo-300 cursor-pointer'
+                                   : 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
+                                 }`}
+                    >
+                      <Bot className="w-4 h-4" />
+                      <span>תן ל-AI להראות לך</span>
+                    </motion.button>
+                  </div>
                 )}
 
                 {/* Finish Button - only on features step */}

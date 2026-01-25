@@ -1,6 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { Bot } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
 import OnboardingWizard from './OnboardingWizard';
 import SmartGhostCursor from './SmartGhostCursor';
@@ -42,6 +43,26 @@ export default function OnboardingLayer() {
 
       {/* Magic Frame - glowing border during autopilot (above blur) */}
       <MagicFrame isVisible={isAutopilotRunning} />
+
+      {/* AI Demo Explanation Overlay - shows when autopilot is running */}
+      <AnimatePresence>
+        {isAutopilotRunning && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none"
+          >
+            <div className="bg-white px-6 py-3 rounded-2xl shadow-xl border border-indigo-100 flex items-center gap-3">
+              <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                <Bot className="w-4 h-4 text-indigo-600" />
+              </div>
+              <span className="font-medium text-slate-800">מצב הדגמה - צפה ב-AI מוסיף עבורך</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Wizard Modal */}
       <OnboardingWizard />
