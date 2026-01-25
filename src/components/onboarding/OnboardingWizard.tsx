@@ -256,77 +256,107 @@ export default function OnboardingWizard() {
     const stepId = currentStep.id;
     
     try {
+      let response: Response | null = null;
+      
       if (stepId === 'profile') {
-        await fetch('/api/profile', {
+        response = await fetch('/api/profile', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRF-Protection': '1',
+          },
           body: JSON.stringify({
-            ageRange: wizardData.ageRange,
-            employmentType: wizardData.employmentType,
-            militaryStatus: wizardData.militaryStatus,
+            ageRange: wizardData.ageRange || '26-35',
+            employmentType: wizardData.employmentType || 'employee',
+            militaryStatus: wizardData.militaryStatus || 'none',
+            hasChildren: false,
+            childrenCount: 0,
           }),
         });
-        setLastSavedProfileData({
-          ageRange: wizardData.ageRange || '',
-          employmentType: wizardData.employmentType || '',
-          militaryStatus: wizardData.militaryStatus || '',
-        });
+        
+        if (response.ok) {
+          setLastSavedProfileData({
+            ageRange: wizardData.ageRange || '26-35',
+            employmentType: wizardData.employmentType || 'employee',
+            militaryStatus: wizardData.militaryStatus || 'none',
+          });
+        } else {
+          console.error('[Onboarding] Profile update failed:', response.status);
+        }
       } else if (stepId === 'assets') {
-        await fetch('/api/assets', {
+        response = await fetch('/api/assets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
-            name: wizardData.assetName,
-            category: wizardData.assetCategory,
-            value: parseFloat((wizardData.assetValue || '0').replace(/,/g, '')),
+            name: wizardData.assetName || 'נכס חדש',
+            category: wizardData.assetCategory || 'savings',
+            value: parseFloat((wizardData.assetValue || '10000').replace(/,/g, '')),
           }),
         });
+        
+        if (!response.ok) {
+          console.error('[Onboarding] Asset add failed:', response.status);
+        }
       } else if (stepId === 'liabilities') {
         // Skip if user selected "none"
         if (wizardData.liabilityType !== 'none') {
-          await fetch('/api/liabilities', {
+          response = await fetch('/api/liabilities', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
             body: JSON.stringify({
               name: wizardData.liabilityType === 'mortgage' ? 'משכנתא' : 'הלוואה',
-              type: wizardData.liabilityType,
-              totalAmount: parseFloat((wizardData.liabilityAmount || '0').replace(/,/g, '')),
-              monthlyPayment: 0, // Will be calculated
-              interestRate: parseFloat(wizardData.liabilityInterest || '0'),
-              loanTermMonths: parseInt(wizardData.liabilityTerm || '0'),
+              type: wizardData.liabilityType || 'loan',
+              totalAmount: parseFloat((wizardData.liabilityAmount || '100000').replace(/,/g, '')),
+              monthlyPayment: 1000,
+              interestRate: parseFloat(wizardData.liabilityInterest || '5'),
+              loanTermMonths: parseInt(wizardData.liabilityTerm || '120'),
             }),
           });
+          
+          if (!response.ok) {
+            console.error('[Onboarding] Liability add failed:', response.status);
+          }
         }
       } else if (stepId === 'income') {
-        await fetch('/api/recurring', {
+        response = await fetch('/api/recurring', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
             type: 'income',
-            name: wizardData.incomeName,
-            category: wizardData.incomeCategory,
-            amount: parseFloat((wizardData.incomeAmount || '0').replace(/,/g, '')),
+            name: wizardData.incomeName || 'הכנסה חודשית',
+            category: wizardData.incomeCategory || 'salary',
+            amount: parseFloat((wizardData.incomeAmount || '10000').replace(/,/g, '')),
           }),
         });
+        
+        if (!response.ok) {
+          console.error('[Onboarding] Income add failed:', response.status);
+        }
       } else if (stepId === 'expenses') {
-        await fetch('/api/transactions', {
+        response = await fetch('/api/transactions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
             type: 'expense',
-            description: wizardData.expenseName,
-            category: wizardData.expenseCategory,
-            amount: parseFloat((wizardData.expenseAmount || '0').replace(/,/g, '')),
+            description: wizardData.expenseName || 'הוצאה',
+            category: wizardData.expenseCategory || 'other',
+            amount: parseFloat((wizardData.expenseAmount || '100').replace(/,/g, '')),
             date: new Date().toISOString(),
           }),
         });
+        
+        if (!response.ok) {
+          console.error('[Onboarding] Expense add failed:', response.status);
+        }
       }
       
-      console.log('[Onboarding] Direct add successful for step:', stepId);
-      goToNextStep();
+      console.log('[Onboarding] Direct add completed for step:', stepId);
     } catch (error) {
-      console.error('[Onboarding] Direct add failed:', error);
+      console.error('[Onboarding] Direct add error:', error);
     }
+    
+    // Always continue to next step
+    goToNextStep();
   }, [currentStep, wizardData, goToNextStep, setLastSavedProfileData]);
 
   /**
@@ -598,7 +628,7 @@ export default function OnboardingWizard() {
                                  }`}
                     >
                       <Bot className="w-4 h-4" />
-                      <span>תן ל-AI להראות לך</span>
+                      <span>תן ל-AI להדגים לך איך להוסיף</span>
                     </motion.button>
                   </div>
                 )}
