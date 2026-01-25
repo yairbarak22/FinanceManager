@@ -252,6 +252,19 @@ export default function Home() {
     fetchData();
   }, [fetchData]);
 
+  // Listen for onboarding data additions to refresh dashboard
+  useEffect(() => {
+    const handleOnboardingAdd = () => {
+      console.log('[Dashboard] Refreshing data after onboarding add');
+      fetchData();
+    };
+
+    window.addEventListener('onboarding-data-added', handleOnboardingAdd);
+    return () => {
+      window.removeEventListener('onboarding-data-added', handleOnboardingAdd);
+    };
+  }, [fetchData]);
+
   // Check if user needs onboarding (first-time user)
   // Only check when authenticated to avoid race conditions
   useEffect(() => {

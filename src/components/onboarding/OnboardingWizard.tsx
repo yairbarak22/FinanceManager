@@ -266,6 +266,8 @@ export default function OnboardingWizard() {
         setSuccessMessage(message);
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
+        // Dispatch event to trigger dashboard data refresh
+        window.dispatchEvent(new CustomEvent('onboarding-data-added'));
       };
 
       if (stepId === 'profile') {
