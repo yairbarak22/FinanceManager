@@ -420,32 +420,20 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     setCursorLabelState('');
     setIsAutopilotInModalState(false);
     
-    // Close any open modals by pressing Escape or clicking close button
-    const closeOpenModals = () => {
-      // Try to find and click modal close button
-      const closeBtn = document.querySelector('.modal-content .btn-icon') as HTMLElement;
-      if (closeBtn) {
-        closeBtn.click();
-        return;
-      }
-      
-      // Try clicking modal overlay to close
-      const overlay = document.querySelector('.modal-overlay') as HTMLElement;
-      if (overlay) {
-        overlay.click();
-        return;
-      }
-      
-      // Fallback: dispatch Escape key
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    };
+    // Force close any open modals immediately by removing them from DOM
+    const modalOverlays = document.querySelectorAll('.modal-overlay');
+    modalOverlays.forEach(overlay => {
+      (overlay as HTMLElement).style.display = 'none';
+    });
+    const modalContents = document.querySelectorAll('.modal-content');
+    modalContents.forEach(modal => {
+      (modal as HTMLElement).style.display = 'none';
+    });
     
-    closeOpenModals();
+    // Dispatch escape to trigger React state cleanup
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     
-    // Wait a bit for modal to close, then reopen wizard
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Move to next step and reopen wizard
+    // Move to next step and reopen wizard immediately
     const nextIndex = Math.min(currentStepIndex + 1, stepIds.length - 1);
     setCurrentStepIndexState(nextIndex);
     setIsWizardOpen(true);
