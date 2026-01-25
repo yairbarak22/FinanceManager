@@ -92,9 +92,19 @@ interface OnboardingActions {
   startAutopilot: (stepId: string, data: WizardData) => void;
   /** Skip autopilot, add directly via API, and continue to next step */
   skipAutopilotAndAdd: () => Promise<void>;
+  /** Show success notification */
+  showSuccess: (message: string) => void;
 }
 
-type OnboardingContextType = OnboardingState & OnboardingActions;
+/**
+ * Extended state including success notification
+ */
+interface OnboardingNotificationState {
+  showSuccessNotification: boolean;
+  successNotificationMessage: string;
+}
+
+type OnboardingContextType = OnboardingState & OnboardingActions & OnboardingNotificationState;
 
 const OnboardingContext = createContext<OnboardingContextType | null>(null);
 
@@ -126,6 +136,10 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [currentStepIndex, setCurrentStepIndexState] = useState(0);
   const [wizardData, setWizardDataState] = useState<WizardData>({});
+
+  // Success Notification State
+  const [showSuccessNotification, setShowSuccessNotification] = useState(false);
+  const [successNotificationMessage, setSuccessNotificationMessage] = useState('');
 
   // ============================================
   // Tour Actions
@@ -349,9 +363,11 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     
     console.log('[Onboarding] Skipping autopilot for step:', currentStepId);
     
+    let successMessage = '';
+    
     try {
       if (currentStepId === 'profile') {
-        await fetch('/api/profile', {
+        const res = await fetch('/api/profile', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
@@ -362,8 +378,9 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
             childrenCount: 0,
           }),
         });
+        if (res.ok) successMessage = 'הפרופיל עודכן בהצלחה!';
       } else if (currentStepId === 'assets') {
-        await fetch('/api/assets', {
+        const res = await fetch('/api/assets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
@@ -372,21 +389,27 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
             value: parseFloat((wizardData.assetValue || '10000').replace(/,/g, '')),
           }),
         });
-      } else if (currentStepId === 'liabilities' && wizardData.liabilityType !== 'none') {
-        await fetch('/api/liabilities', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
-          body: JSON.stringify({
-            name: wizardData.liabilityType === 'mortgage' ? 'משכנתא' : 'הלוואה',
-            type: wizardData.liabilityType || 'loan',
-            totalAmount: parseFloat((wizardData.liabilityAmount || '100000').replace(/,/g, '')),
-            monthlyPayment: 1000,
-            interestRate: parseFloat(wizardData.liabilityInterest || '5'),
-            loanTermMonths: parseInt(wizardData.liabilityTerm || '120'),
-          }),
-        });
+        if (res.ok) successMessage = 'הנכס נוסף בהצלחה!';
+      } else if (currentStepId === 'liabilities') {
+        if (wizardData.liabilityType !== 'none') {
+          const res = await fetch('/api/liabilities', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
+            body: JSON.stringify({
+              name: wizardData.liabilityType === 'mortgage' ? 'משכנתא' : 'הלוואה',
+              type: wizardData.liabilityType || 'loan',
+              totalAmount: parseFloat((wizardData.liabilityAmount || '100000').replace(/,/g, '')),
+              monthlyPayment: 1000,
+              interestRate: parseFloat(wizardData.liabilityInterest || '5'),
+              loanTermMonths: parseInt(wizardData.liabilityTerm || '120'),
+            }),
+          });
+          if (res.ok) successMessage = 'ההתחייבות נוספה בהצלחה!';
+        } else {
+          successMessage = 'דילגת על הוספת התחייבויות';
+        }
       } else if (currentStepId === 'income') {
-        await fetch('/api/recurring', {
+        const res = await fetch('/api/recurring', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
@@ -396,8 +419,9 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
             amount: parseFloat((wizardData.incomeAmount || '10000').replace(/,/g, '')),
           }),
         });
+        if (res.ok) successMessage = 'ההכנסה נוספה בהצלחה!';
       } else if (currentStepId === 'expenses') {
-        await fetch('/api/transactions', {
+        const res = await fetch('/api/transactions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
@@ -408,6 +432,14 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
             date: new Date().toISOString(),
           }),
         });
+        if (res.ok) successMessage = 'ההוצאה נוספה בהצלחה!';
+      }
+      
+      // Show success notification
+      if (successMessage) {
+        setSuccessNotificationMessage(successMessage);
+        setShowSuccessNotification(true);
+        setTimeout(() => setShowSuccessNotification(false), 2000);
       }
       
       console.log('[Onboarding] Skip add successful for step:', currentStepId);
@@ -439,6 +471,15 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     setIsWizardOpen(true);
   }, [currentStepIndex, wizardData]);
 
+  /**
+   * Show success notification
+   */
+  const showSuccess = useCallback((message: string) => {
+    setSuccessNotificationMessage(message);
+    setShowSuccessNotification(true);
+    setTimeout(() => setShowSuccessNotification(false), 2000);
+  }, []);
+
   const value: OnboardingContextType = {
     // Tour State
     isTourActive,
@@ -451,6 +492,9 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     isWizardOpen,
     currentStepIndex,
     wizardData,
+    // Notification State
+    showSuccessNotification,
+    successNotificationMessage,
     // Tour Actions
     startTour,
     endTour,
@@ -468,6 +512,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     setWizardData,
     startAutopilot,
     skipAutopilotAndAdd,
+    showSuccess,
   };
 
   return (

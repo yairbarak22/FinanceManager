@@ -146,6 +146,10 @@ export default function OnboardingWizard() {
   // Track last saved profile data to detect changes
   const [lastSavedProfileData, setLastSavedProfileData] = useState<Record<string, string> | null>(null);
 
+  // Success notification state
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+
   const currentStep = onboardingSteps[currentStepIndex];
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === onboardingSteps.length - 1;
@@ -258,6 +262,12 @@ export default function OnboardingWizard() {
     try {
       let response: Response | null = null;
       
+      const showSuccessNotification = (message: string) => {
+        setSuccessMessage(message);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+      };
+
       if (stepId === 'profile') {
         response = await fetch('/api/profile', {
           method: 'PUT',
@@ -280,6 +290,7 @@ export default function OnboardingWizard() {
             employmentType: wizardData.employmentType || 'employee',
             militaryStatus: wizardData.militaryStatus || 'none',
           });
+          showSuccessNotification('הפרופיל עודכן בהצלחה!');
         } else {
           console.error('[Onboarding] Profile update failed:', response.status);
         }
@@ -294,7 +305,9 @@ export default function OnboardingWizard() {
           }),
         });
         
-        if (!response.ok) {
+        if (response.ok) {
+          showSuccessNotification('הנכס נוסף בהצלחה!');
+        } else {
           console.error('[Onboarding] Asset add failed:', response.status);
         }
       } else if (stepId === 'liabilities') {
@@ -313,9 +326,13 @@ export default function OnboardingWizard() {
             }),
           });
           
-          if (!response.ok) {
+          if (response.ok) {
+            showSuccessNotification('ההתחייבות נוספה בהצלחה!');
+          } else {
             console.error('[Onboarding] Liability add failed:', response.status);
           }
+        } else {
+          showSuccessNotification('דילגת על הוספת התחייבויות');
         }
       } else if (stepId === 'income') {
         response = await fetch('/api/recurring', {
@@ -329,7 +346,9 @@ export default function OnboardingWizard() {
           }),
         });
         
-        if (!response.ok) {
+        if (response.ok) {
+          showSuccessNotification('ההכנסה נוספה בהצלחה!');
+        } else {
           console.error('[Onboarding] Income add failed:', response.status);
         }
       } else if (stepId === 'expenses') {
@@ -345,7 +364,9 @@ export default function OnboardingWizard() {
           }),
         });
         
-        if (!response.ok) {
+        if (response.ok) {
+          showSuccessNotification('ההוצאה נוספה בהצלחה!');
+        } else {
           console.error('[Onboarding] Expense add failed:', response.status);
         }
       }
@@ -355,7 +376,8 @@ export default function OnboardingWizard() {
       console.error('[Onboarding] Direct add error:', error);
     }
     
-    // Always continue to next step
+    // Wait for success notification to show, then continue
+    await new Promise(resolve => setTimeout(resolve, 1500));
     goToNextStep();
   }, [currentStep, wizardData, goToNextStep, setLastSavedProfileData]);
 
@@ -553,19 +575,40 @@ export default function OnboardingWizard() {
   if (!isWizardOpen) return null;
 
   return (
-    <AnimatePresence>
-      {isWizardOpen && (
-        <>
-          {/* Backdrop */}
+    <>
+      {/* Success Notification - shows above everything */}
+      <AnimatePresence>
+        {showSuccess && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm"
-            onClick={endTour}
-          />
+            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] pointer-events-none"
+          >
+            <div className="bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3">
+              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                <Check className="w-5 h-5" />
+              </div>
+              <span className="font-medium text-sm">{successMessage}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Modal */}
+      <AnimatePresence>
+        {isWizardOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm"
+              onClick={endTour}
+            />
+
+            {/* Modal */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -701,5 +744,6 @@ export default function OnboardingWizard() {
         </>
       )}
     </AnimatePresence>
+    </>
   );
 }

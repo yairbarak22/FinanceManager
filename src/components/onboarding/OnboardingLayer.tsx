@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, SkipForward } from 'lucide-react';
+import { Bot, SkipForward, Check } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { useAutopilot } from '@/hooks/useAutopilot';
 import OnboardingWizard from './OnboardingWizard';
@@ -19,7 +19,7 @@ import MagicFrame from './MagicFrame';
  * - Backdrop blur during autopilot to keep user focused
  */
 export default function OnboardingLayer() {
-  const { cursorTarget, cursorLabel, isCursorClicking, isTourActive, isWizardOpen, isAutopilotInModal, skipAutopilotAndAdd } = useOnboarding();
+  const { cursorTarget, cursorLabel, isCursorClicking, isTourActive, isWizardOpen, isAutopilotInModal, skipAutopilotAndAdd, showSuccessNotification, successNotificationMessage } = useOnboarding();
   const { abortAutopilot } = useAutopilot();
 
   // Show magic frame when autopilot is running (tour active but wizard closed)
@@ -30,6 +30,26 @@ export default function OnboardingLayer() {
 
   return (
     <>
+      {/* Success Notification - shows above everything */}
+      <AnimatePresence>
+        {showSuccessNotification && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+            className="fixed top-8 left-1/2 -translate-x-1/2 z-[10000] pointer-events-none"
+          >
+            <div className="bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3">
+              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                <Check className="w-5 h-5" />
+              </div>
+              <span className="font-medium text-sm">{successNotificationMessage}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Backdrop blur - only shows after autopilot opens a modal */}
       <AnimatePresence>
         {showBackdropBlur && (
