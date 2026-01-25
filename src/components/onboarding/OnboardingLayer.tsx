@@ -84,6 +84,7 @@ export default function OnboardingLayer() {
                 <div>
                   <p className="font-medium text-slate-800">מצב הדגמה</p>
                   <p className="text-sm text-slate-500">אל תיגע בכלום - צפה ב-AI מוסיף עבורך</p>
+                  <p className="text-xs text-slate-400 mt-1">כך תדע להוסיף בעצמך בפעם הבאה</p>
                 </div>
               </div>
               <button
