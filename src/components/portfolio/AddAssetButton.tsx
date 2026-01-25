@@ -13,6 +13,7 @@ interface AddAssetButtonProps {
     priceILS: number;
     provider: 'YAHOO' | 'EOD';
     currency: string;
+    priceDisplayUnit: 'ILS' | 'ILS_AGOROT' | 'USD';
   }) => void;
 }
 
