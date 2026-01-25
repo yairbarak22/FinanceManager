@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, TrendingUp, TrendingDown, Wallet, AlertCircle, X, Loader2 } from 'lucide-react';
+import { RefreshCw, TrendingUp, TrendingDown, Wallet, AlertCircle, X, Loader2, Banknote, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RiskGauge } from './RiskGauge';
 import { HoldingsTable } from './HoldingsTable';
@@ -9,6 +9,8 @@ import { DiversificationHeatmap } from './DiversificationHeatmap';
 import { AddAssetButton } from './AddAssetButton';
 import { apiFetch } from '@/lib/utils';
 import { SensitiveData } from '../common/SensitiveData';
+
+type PriceDisplayUnit = 'ILS' | 'ILS_AGOROT' | 'USD';
 
 interface HoldingData {
   id?: string;
@@ -21,6 +23,7 @@ interface HoldingData {
   sector: string;
   currency?: 'USD' | 'ILS';
   provider?: 'YAHOO' | 'EOD';
+  priceDisplayUnit?: PriceDisplayUnit;
   changePercent: number;
   weight: number;
   sparklineData: number[];
@@ -29,6 +32,8 @@ interface HoldingData {
 interface PortfolioData {
   equity: number;
   equityILS: number;
+  cashBalance?: number;
+  cashWeight?: number;
   beta: number;
   dailyChangePercent: number;
   dailyChangeILS: number;
@@ -43,6 +48,133 @@ interface SmartPortfolioProps {
 }
 
 /**
+ * Edit Cash Modal
+ */
+function EditCashModal({
+  currentCash,
+  onClose,
+  onSave,
+}: {
+  currentCash: number;
+  onClose: () => void;
+  onSave: (cashBalance: number) => Promise<void>;
+}) {
+  const [cashBalance, setCashBalance] = useState(currentCash.toString());
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSave = async () => {
+    const amount = parseFloat(cashBalance);
+    if (isNaN(amount) || amount < 0) {
+      setError('נא להזין סכום תקין');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await onSave(amount);
+      onClose();
+    } catch {
+      setError('שגיאה בשמירת השינויים');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <>
+      <motion.div
+        key="cash-backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
+      />
+      <motion.div
+        key="cash-modal"
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm z-50"
+      >
+        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden mx-4 p-5">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-slate-900">עריכת מזומן בתיק</h3>
+            <button
+              onClick={onClose}
+              className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-400" />
+            </button>
+          </div>
+
+          {/* Cash Icon */}
+          <div className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl mb-4">
+            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+              <Banknote className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div className="flex-1 text-right">
+              <p className="font-bold text-slate-900">מזומן</p>
+              <p className="text-sm text-slate-500">סכום מזומן בתיק ההשקעות</p>
+            </div>
+          </div>
+
+          {/* Cash Input */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
+              סכום בשקלים (₪)
+            </label>
+            <input
+              type="number"
+              value={cashBalance}
+              onChange={(e) => {
+                setCashBalance(e.target.value);
+                setError('');
+              }}
+              className={`w-full px-4 py-3 text-lg text-right rounded-xl border transition-colors outline-none ${
+                error
+                  ? 'border-rose-300 bg-rose-50 focus:border-rose-500'
+                  : 'border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
+              }`}
+              min="0"
+              step="0.01"
+              dir="ltr"
+              autoFocus
+            />
+            {error && (
+              <p className="mt-1 text-sm text-rose-500 text-right">{error}</p>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 px-4 py-3 text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors"
+            >
+              ביטול
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex-1 px-4 py-3 text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {isSaving ? (
+                <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+              ) : (
+                'שמור'
+              )}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </>
+  );
+}
+
+/**
  * Edit Holding Modal
  */
 function EditHoldingModal({
@@ -52,9 +184,12 @@ function EditHoldingModal({
 }: {
   holding: HoldingData;
   onClose: () => void;
-  onSave: (id: string, quantity: number) => Promise<void>;
+  onSave: (id: string, quantity: number, priceDisplayUnit: PriceDisplayUnit) => Promise<void>;
 }) {
   const [quantity, setQuantity] = useState(holding.quantity.toString());
+  const [priceDisplayUnit, setPriceDisplayUnit] = useState<PriceDisplayUnit>(
+    holding.priceDisplayUnit || 'ILS'
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -72,7 +207,7 @@ function EditHoldingModal({
 
     setIsSaving(true);
     try {
-      await onSave(holding.id, qty);
+      await onSave(holding.id, qty, priceDisplayUnit);
       onClose();
     } catch {
       setError('שגיאה בשמירת השינויים');
@@ -143,6 +278,48 @@ function EditHoldingModal({
             {error && (
               <p className="mt-1 text-sm text-rose-500 text-right">{error}</p>
             )}
+          </div>
+
+          {/* Price Display Unit Selector */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
+              יחידת תצוגת מחיר
+            </label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPriceDisplayUnit('ILS')}
+                className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-all ${
+                  priceDisplayUnit === 'ILS'
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                }`}
+              >
+                שקל (₪)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPriceDisplayUnit('ILS_AGOROT')}
+                className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-all ${
+                  priceDisplayUnit === 'ILS_AGOROT'
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                }`}
+              >
+                אגורות
+              </button>
+              <button
+                type="button"
+                onClick={() => setPriceDisplayUnit('USD')}
+                className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-all ${
+                  priceDisplayUnit === 'USD'
+                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                }`}
+              >
+                דולר ($)
+              </button>
+            </div>
           </div>
 
           {/* Actions */}
@@ -264,6 +441,7 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
   // Edit/Delete state
   const [editingHolding, setEditingHolding] = useState<HoldingData | null>(null);
   const [deletingHolding, setDeletingHolding] = useState<HoldingData | null>(null);
+  const [isEditingCash, setIsEditingCash] = useState(false);
 
   const fetchPortfolioData = useCallback(async () => {
     try {
@@ -302,6 +480,7 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
     priceILS: number;
     provider: 'YAHOO' | 'EOD';
     currency: string;
+    priceDisplayUnit: 'ILS' | 'ILS_AGOROT' | 'USD';
   }) => {
     try {
       // Use existing holdings API - currentValue represents quantity for portfolio analysis
@@ -316,6 +495,7 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
           type: 'stock',
           provider: assetData.provider,
           currency: assetData.currency,
+          priceDisplayUnit: assetData.priceDisplayUnit,
         }),
       });
 
@@ -332,11 +512,11 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
   };
 
   // Edit holding handler
-  const handleEditHolding = async (id: string, quantity: number) => {
+  const handleEditHolding = async (id: string, quantity: number, priceDisplayUnit: PriceDisplayUnit) => {
     const response = await apiFetch(`/api/holdings/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ currentValue: quantity }),
+      body: JSON.stringify({ currentValue: quantity, priceDisplayUnit }),
     });
 
     if (!response.ok) {
@@ -354,6 +534,21 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
 
     if (!response.ok) {
       throw new Error('Failed to delete holding');
+    }
+
+    await fetchPortfolioData();
+  };
+
+  // Update cash balance handler
+  const handleUpdateCash = async (cashBalance: number) => {
+    const response = await apiFetch('/api/portfolio/cash', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cashBalance }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update cash balance');
     }
 
     await fetchPortfolioData();
@@ -508,6 +703,41 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
         </div>
       </div>
 
+      {/* Cash Balance Section */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+              <Banknote className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-700">מזומן בתיק</p>
+              <SensitiveData as="p" className="text-xl font-semibold text-slate-900">
+                {(data.cashBalance ?? 0).toLocaleString('he-IL', {
+                  style: 'currency',
+                  currency: 'ILS',
+                  maximumFractionDigits: 0,
+                })}
+              </SensitiveData>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            {data.cashWeight !== undefined && data.cashWeight > 0 && (
+              <div className="text-right">
+                <p className="text-xs text-slate-400">אחוז מהתיק</p>
+                <p className="text-sm font-medium text-slate-600">{data.cashWeight.toFixed(1)}%</p>
+              </div>
+            )}
+            <button
+              onClick={() => setIsEditingCash(true)}
+              className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
+            >
+              <Pencil className="w-4 h-4 text-slate-600" />
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - Risk Gauge & Heatmap */}
@@ -535,6 +765,15 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
           holding={editingHolding}
           onClose={() => setEditingHolding(null)}
           onSave={handleEditHolding}
+        />
+      )}
+
+      {/* Edit Cash Modal */}
+      {isEditingCash && (
+        <EditCashModal
+          currentCash={data.cashBalance ?? 0}
+          onClose={() => setIsEditingCash(false)}
+          onSave={handleUpdateCash}
         />
       )}
 

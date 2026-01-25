@@ -84,6 +84,8 @@ interface QuoteData {
   provider: 'YAHOO' | 'EOD';
 }
 
+type PriceDisplayUnit = 'ILS' | 'ILS_AGOROT' | 'USD';
+
 interface AddAssetDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -95,6 +97,7 @@ interface AddAssetDialogProps {
     priceILS: number;
     provider: 'YAHOO' | 'EOD';
     currency: string;
+    priceDisplayUnit: PriceDisplayUnit;
   }) => void;
 }
 
@@ -110,6 +113,7 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
   const [quantity, setQuantity] = useState('');
   const [quantityError, setQuantityError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [priceDisplayUnit, setPriceDisplayUnit] = useState<PriceDisplayUnit>('ILS');
 
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -124,6 +128,7 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
       setQuoteData(null);
       setQuantity('');
       setQuantityError('');
+      setPriceDisplayUnit('ILS');
     }
   }, [isOpen]);
 
@@ -207,6 +212,7 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
         priceILS: quoteData?.priceILS ?? selectedStock.priceILS,
         provider: selectedStock.provider,
         currency: selectedStock.currency,
+        priceDisplayUnit,
       });
       onClose();
     } catch (error) {
@@ -223,6 +229,7 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
     setQuoteData(null);
     setQuantity('');
     setQuantityError('');
+    setPriceDisplayUnit('ILS');
   };
 
   // Format currency
@@ -459,6 +466,48 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                       {quantityError && (
                         <p className="mt-1 text-sm text-rose-500 text-right">{quantityError}</p>
                       )}
+                    </div>
+
+                    {/* Price Display Unit Selector */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
+                        יחידת תצוגת מחיר
+                      </label>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPriceDisplayUnit('ILS')}
+                          className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-all ${
+                            priceDisplayUnit === 'ILS'
+                              ? 'bg-indigo-600 text-white border-indigo-600'
+                              : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                          }`}
+                        >
+                          שקל (₪)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPriceDisplayUnit('ILS_AGOROT')}
+                          className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-all ${
+                            priceDisplayUnit === 'ILS_AGOROT'
+                              ? 'bg-indigo-600 text-white border-indigo-600'
+                              : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                          }`}
+                        >
+                          אגורות
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPriceDisplayUnit('USD')}
+                          className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-all ${
+                            priceDisplayUnit === 'USD'
+                              ? 'bg-indigo-600 text-white border-indigo-600'
+                              : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                          }`}
+                        >
+                          דולר ($)
+                        </button>
+                      </div>
                     </div>
 
                     {/* Live Price Helper */}

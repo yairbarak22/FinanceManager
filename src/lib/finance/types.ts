@@ -58,6 +58,8 @@ export interface BetaResult {
   isCalculated: boolean; // true if calculated, false if default
 }
 
+export type PriceDisplayUnit = 'ILS' | 'ILS_AGOROT' | 'USD';
+
 /**
  * Holding with provider info
  */
@@ -67,6 +69,7 @@ export interface HybridHolding {
   quantity: number;
   provider: Provider;
   currency: Currency;
+  priceDisplayUnit?: PriceDisplayUnit;
 }
 
 /**
@@ -85,6 +88,7 @@ export interface EnrichedHolding {
   sector: string;
   currency: Currency;
   provider: Provider;
+  priceDisplayUnit?: PriceDisplayUnit;
   changePercent: number;
   weight: number;
   sparklineData: number[];
@@ -96,6 +100,8 @@ export interface EnrichedHolding {
 export interface PortfolioAnalysis {
   equity: number;
   equityILS: number;
+  cashBalance?: number;
+  cashWeight?: number;
   beta: number;
   dailyChangePercent: number;
   dailyChangeILS: number;

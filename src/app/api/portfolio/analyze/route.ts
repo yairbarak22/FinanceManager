@@ -55,10 +55,14 @@ export async function POST(request: Request) {
         });
     }
 
-    if (holdings.length === 0) {
+    // Get cash balance from body or default to 0
+    const cashBalance = typeof body.cashBalance === 'number' ? body.cashBalance : 0;
+
+    if (holdings.length === 0 && cashBalance === 0) {
       return NextResponse.json({
         equity: 0,
         equityILS: 0,
+        cashBalance: 0,
         beta: 0,
         dailyChangePercent: 0,
         dailyChangeILS: 0,
@@ -69,9 +73,35 @@ export async function POST(request: Request) {
       });
     }
 
+    // If only cash and no holdings
+    if (holdings.length === 0) {
+      return NextResponse.json({
+        equity: cashBalance,
+        equityILS: cashBalance,
+        cashBalance,
+        beta: 0,
+        dailyChangePercent: 0,
+        dailyChangeILS: 0,
+        diversificationScore: 0,
+        sectorAllocation: [],
+        holdings: [],
+        riskLevel: 'conservative',
+      });
+    }
+
     const analysis = await analyzePortfolio(holdings);
 
-    return NextResponse.json(analysis);
+    // Add cash to equity
+    const totalEquityILS = analysis.equityILS + cashBalance;
+    const cashWeight = totalEquityILS > 0 ? (cashBalance / totalEquityILS) * 100 : 0;
+
+    return NextResponse.json({
+      ...analysis,
+      equity: analysis.equity + cashBalance,
+      equityILS: totalEquityILS,
+      cashBalance,
+      cashWeight,
+    });
   } catch (error) {
     console.error('Error analyzing portfolio (POST):', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -92,12 +122,22 @@ export async function GET() {
     if (error) return error;
 
     const sharedWhere = await withSharedAccount(userId);
-    const dbHoldings = await prisma.holding.findMany({
-      where: {
-        ...sharedWhere,
-        symbol: { not: null },
-      },
-    });
+    
+    // Fetch holdings and cash balance in parallel
+    const [dbHoldings, userProfile] = await Promise.all([
+      prisma.holding.findMany({
+        where: {
+          ...sharedWhere,
+          symbol: { not: null },
+        },
+      }),
+      prisma.userProfile.findUnique({
+        where: { userId },
+        select: { cashBalance: true },
+      }),
+    ]);
+
+    const cashBalance = userProfile?.cashBalance ?? 0;
 
     const holdings: HybridHolding[] = dbHoldings
       .filter(h => h.symbol && h.currentValue > 0)
@@ -109,13 +149,15 @@ export async function GET() {
           quantity: h.currentValue,
           provider: 'EOD' as const,
           currency: (h.currency as 'USD' | 'ILS') || (assetInfo.isIsraeli ? 'ILS' : 'USD'),
+          priceDisplayUnit: (h.priceDisplayUnit as 'ILS' | 'ILS_AGOROT' | 'USD') || 'ILS',
         };
       });
 
-    if (holdings.length === 0) {
+    if (holdings.length === 0 && cashBalance === 0) {
       return NextResponse.json({
         equity: 0,
         equityILS: 0,
+        cashBalance: 0,
         beta: 0,
         dailyChangePercent: 0,
         dailyChangeILS: 0,
@@ -126,9 +168,43 @@ export async function GET() {
       });
     }
 
+    // If only cash and no holdings
+    if (holdings.length === 0) {
+      return NextResponse.json({
+        equity: cashBalance,
+        equityILS: cashBalance,
+        cashBalance,
+        beta: 0,
+        dailyChangePercent: 0,
+        dailyChangeILS: 0,
+        diversificationScore: 0,
+        sectorAllocation: [],
+        holdings: [],
+        riskLevel: 'conservative',
+      });
+    }
+
     const analysis = await analyzePortfolio(holdings);
 
-    return NextResponse.json(analysis);
+    // Add cash to equity and include cashBalance in response
+    const totalEquityILS = analysis.equityILS + cashBalance;
+    
+    // Recalculate weights to include cash
+    const holdingsWithCashWeight = analysis.holdings.map(h => ({
+      ...h,
+      weight: totalEquityILS > 0 ? (h.valueILS / totalEquityILS) * 100 : 0,
+    }));
+    
+    const cashWeight = totalEquityILS > 0 ? (cashBalance / totalEquityILS) * 100 : 0;
+
+    return NextResponse.json({
+      ...analysis,
+      equity: analysis.equity + cashBalance, // Assuming cash is in ILS
+      equityILS: totalEquityILS,
+      cashBalance,
+      cashWeight,
+      holdings: holdingsWithCashWeight,
+    });
   } catch (error) {
     console.error('Error analyzing portfolio (GET):', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

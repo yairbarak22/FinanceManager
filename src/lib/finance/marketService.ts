@@ -103,6 +103,7 @@ async function enrichHolding(
       sector: enrichedQuote.sector,
       currency,
       provider: 'EOD',
+      priceDisplayUnit: holding.priceDisplayUnit || 'ILS',
       changePercent: enrichedQuote.changePercent,
       weight: 0, // Calculated later
       sparklineData,

@@ -66,6 +66,12 @@ export async function PUT(
       );
     }
 
+    // Validate priceDisplayUnit if provided
+    const validPriceUnits = ['ILS', 'ILS_AGOROT', 'USD'];
+    const priceDisplayUnit = data.priceDisplayUnit !== undefined
+      ? (validPriceUnits.includes(data.priceDisplayUnit) ? data.priceDisplayUnit : undefined)
+      : undefined;
+
     // Use shared account to allow editing records from all members
     const sharedWhere = await withSharedAccountId(id, userId);
     
@@ -77,6 +83,7 @@ export async function PUT(
         type: data.type,
         currentValue: data.currentValue,
         targetAllocation: data.targetAllocation,
+        ...(priceDisplayUnit !== undefined && { priceDisplayUnit }),
       },
     });
 

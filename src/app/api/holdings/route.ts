@@ -57,6 +57,12 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate priceDisplayUnit if provided
+    const validPriceUnits = ['ILS', 'ILS_AGOROT', 'USD'];
+    const priceDisplayUnit = validPriceUnits.includes(data.priceDisplayUnit) 
+      ? data.priceDisplayUnit 
+      : 'ILS';
+
     const holding = await prisma.holding.create({
       data: {
         userId,
@@ -65,6 +71,9 @@ export async function POST(request: Request) {
         type: data.type || 'etf',
         currentValue: data.currentValue,
         targetAllocation: data.targetAllocation,
+        provider: data.provider || 'EOD',
+        currency: data.currency || 'USD',
+        priceDisplayUnit,
       },
     });
 

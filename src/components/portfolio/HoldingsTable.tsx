@@ -5,6 +5,8 @@ import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, Minus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { SensitiveData } from '../common/SensitiveData';
 
+type PriceDisplayUnit = 'ILS' | 'ILS_AGOROT' | 'USD';
+
 interface Holding {
   id?: string;
   symbol: string;
@@ -16,9 +18,59 @@ interface Holding {
   sector: string;
   currency?: 'USD' | 'ILS';
   provider?: 'YAHOO' | 'EOD';
+  priceDisplayUnit?: PriceDisplayUnit;
   changePercent: number;
   weight: number;
   sparklineData: number[];
+}
+
+/**
+ * Format price based on display unit
+ */
+function formatPriceByUnit(
+  priceILS: number,
+  unit: PriceDisplayUnit = 'ILS',
+  exchangeRate: number = 3.65
+): string {
+  switch (unit) {
+    case 'ILS_AGOROT':
+      return `${(priceILS * 100).toLocaleString('he-IL', { maximumFractionDigits: 0 })} אג׳`;
+    case 'USD':
+      return `$${(priceILS / exchangeRate).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+    default: // ILS
+      return `₪${priceILS.toLocaleString('he-IL', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+  }
+}
+
+/**
+ * Format value based on display unit
+ */
+function formatValueByUnit(
+  valueILS: number,
+  unit: PriceDisplayUnit = 'ILS',
+  exchangeRate: number = 3.65
+): string {
+  switch (unit) {
+    case 'ILS_AGOROT':
+      return `${(valueILS * 100).toLocaleString('he-IL', { maximumFractionDigits: 0 })} אג׳`;
+    case 'USD':
+      return `$${(valueILS / exchangeRate).toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      })}`;
+    default: // ILS
+      return valueILS.toLocaleString('he-IL', {
+        style: 'currency',
+        currency: 'ILS',
+        maximumFractionDigits: 0,
+      });
+  }
 }
 
 interface HoldingsTableProps {
@@ -248,14 +300,10 @@ export function HoldingsTable({ holdings, className = '', onEdit, onDelete }: Ho
                 {/* Value */}
                 <td className="px-5 py-4 text-left">
                   <SensitiveData as="p" className="text-sm font-semibold text-slate-900">
-                    {holding.valueILS.toLocaleString('he-IL', {
-                      style: 'currency',
-                      currency: 'ILS',
-                      maximumFractionDigits: 0,
-                    })}
+                    {formatValueByUnit(holding.valueILS, holding.priceDisplayUnit)}
                   </SensitiveData>
                   <SensitiveData as="p" className="text-xs text-slate-400">
-                    {holding.quantity.toLocaleString()} יח'
+                    {holding.quantity.toLocaleString()} יח׳ × {formatPriceByUnit(holding.priceILS, holding.priceDisplayUnit)}
                   </SensitiveData>
                 </td>
 
