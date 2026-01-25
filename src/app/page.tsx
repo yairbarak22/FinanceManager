@@ -252,16 +252,27 @@ export default function Home() {
     fetchData();
   }, [fetchData]);
 
-  // Listen for onboarding data additions to refresh dashboard
+  // Listen for onboarding data additions to refresh dashboard (debounced)
   useEffect(() => {
+    let debounceTimer: NodeJS.Timeout | null = null;
+    
     const handleOnboardingAdd = () => {
-      console.log('[Dashboard] Refreshing data after onboarding add');
-      fetchData();
+      // Debounce to prevent multiple rapid refreshes
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      debounceTimer = setTimeout(() => {
+        console.log('[Dashboard] Refreshing data after onboarding add');
+        fetchData();
+      }, 2000); // Wait 2 seconds after last event before refreshing
     };
 
     window.addEventListener('onboarding-data-added', handleOnboardingAdd);
     return () => {
       window.removeEventListener('onboarding-data-added', handleOnboardingAdd);
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
     };
   }, [fetchData]);
 
