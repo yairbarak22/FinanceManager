@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bot, SkipForward } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
+import { useAutopilot } from '@/hooks/useAutopilot';
 import OnboardingWizard from './OnboardingWizard';
 import SmartGhostCursor from './SmartGhostCursor';
 import MagicFrame from './MagicFrame';
@@ -19,6 +20,7 @@ import MagicFrame from './MagicFrame';
  */
 export default function OnboardingLayer() {
   const { cursorTarget, cursorLabel, isCursorClicking, isTourActive, isWizardOpen, isAutopilotInModal, skipAutopilotAndAdd } = useOnboarding();
+  const { abortAutopilot } = useAutopilot();
 
   // Show magic frame when autopilot is running (tour active but wizard closed)
   const isAutopilotRunning = isTourActive && !isWizardOpen;
@@ -65,7 +67,10 @@ export default function OnboardingLayer() {
                 </div>
               </div>
               <button
-                onClick={skipAutopilotAndAdd}
+                onClick={() => {
+                  abortAutopilot(); // Stop the running autopilot first
+                  skipAutopilotAndAdd(); // Then add and move to next step
+                }}
                 className="w-full mt-2 px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl flex items-center justify-center gap-2 transition-colors"
               >
                 <SkipForward className="w-4 h-4" />

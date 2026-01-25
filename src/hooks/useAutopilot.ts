@@ -47,6 +47,10 @@ const TIMING = {
  * - Selects options from dropdowns
  * - Clicks save buttons
  */
+// Global refs shared across all hook instances
+const globalIsRunningRef = { current: false };
+const globalAbortedRef = { current: false };
+
 export function useAutopilot() {
   const {
     moveCursorTo,
@@ -58,10 +62,9 @@ export function useAutopilot() {
     setAutopilotInModal,
   } = useOnboarding();
 
-  // Track if autopilot is currently running
-  const isRunningRef = useRef(false);
-  // Track if autopilot was aborted
-  const abortedRef = useRef(false);
+  // Use global refs so all components share the same state
+  const isRunningRef = globalIsRunningRef;
+  const abortedRef = globalAbortedRef;
 
   // ============================================
   // Helper Functions
@@ -1330,6 +1333,7 @@ export function useAutopilot() {
 
   const abortAutopilot = useCallback(() => {
     abortedRef.current = true;
+    isRunningRef.current = false; // Reset running state so next autopilot can start
     clearCursor();
   }, [clearCursor]);
 
