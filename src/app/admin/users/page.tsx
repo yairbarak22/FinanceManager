@@ -10,7 +10,14 @@ import {
   User,
   CheckCircle2,
   XCircle,
-  ArrowLeft
+  ArrowLeft,
+  TrendingUp,
+  Wallet,
+  CreditCard,
+  Receipt,
+  Calendar,
+  UserPlus,
+  Activity
 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
 
@@ -29,10 +36,29 @@ interface UserData {
   };
 }
 
+interface AdminStats {
+  totals: {
+    assets: number;
+    liabilities: number;
+    transactions: number;
+    users: number;
+  };
+  today: {
+    assets: number;
+    liabilities: number;
+    transactions: number;
+    users: number;
+  };
+  activity: {
+    multipleLoginUsers: number;
+  };
+}
+
 export default function AdminUsersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [users, setUsers] = useState<UserData[]>([]);
+  const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAccessDenied, setIsAccessDenied] = useState(false);
@@ -46,8 +72,31 @@ export default function AdminUsersPage() {
       return;
     }
 
-    fetchUsers();
+    fetchData();
   }, [session, status]);
+
+  const fetchData = async () => {
+    await Promise.all([fetchUsers(), fetchStats()]);
+  };
+
+  const fetchStats = async () => {
+    try {
+      const res = await apiFetch('/api/admin/stats');
+
+      if (!res.ok) {
+        if (res.status === 403 || res.status === 401) {
+          setIsAccessDenied(true);
+        }
+        return;
+      }
+
+      const data = await res.json();
+      setStats(data);
+    } catch {
+      // Stats fetch failed silently - not critical
+      console.error('Failed to fetch admin stats');
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -130,7 +179,7 @@ export default function AdminUsersPage() {
           </div>
           
           <button
-            onClick={fetchUsers}
+            onClick={fetchData}
             disabled={loading}
             className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
@@ -139,42 +188,161 @@ export default function AdminUsersPage() {
           </button>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5 text-indigo-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{users.length}</p>
-                <p className="text-sm text-gray-500">משתמשים רשומים</p>
+        {/* System-wide Statistics */}
+        {stats && (
+          <>
+            {/* Total System Counts */}
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-indigo-500" />
+                סה״כ במערכת
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                      <Wallet className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900">{stats.totals.assets.toLocaleString()}</p>
+                      <p className="text-sm text-gray-500">נכסים</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                      <CreditCard className="w-5 h-5 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900">{stats.totals.liabilities.toLocaleString()}</p>
+                      <p className="text-sm text-gray-500">התחייבויות</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <Receipt className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900">{stats.totals.transactions.toLocaleString()}</p>
+                      <p className="text-sm text-gray-500">עסקאות</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                      <Activity className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-gray-900">{stats.activity.multipleLoginUsers.toLocaleString()}</p>
+                      <p className="text-sm text-gray-500">משתמשים חוזרים</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {users.filter(u => u.hasSeenOnboarding).length}
-                </p>
-                <p className="text-sm text-gray-500">סיימו onboarding</p>
+
+            {/* Daily Changes */}
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-indigo-500" />
+                שינויים היום
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl p-4 border border-indigo-100 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                      <UserPlus className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-indigo-700">+{stats.today.users}</p>
+                      <p className="text-sm text-gray-500">משתמשים חדשים</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-emerald-50 to-white rounded-xl p-4 border border-emerald-100 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
+                      <Wallet className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-emerald-700">+{stats.today.assets}</p>
+                      <p className="text-sm text-gray-500">נכסים חדשים</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-red-50 to-white rounded-xl p-4 border border-red-100 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                      <CreditCard className="w-5 h-5 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-red-700">+{stats.today.liabilities}</p>
+                      <p className="text-sm text-gray-500">התחייבויות חדשות</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl p-4 border border-purple-100 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <Receipt className="w-5 h-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-purple-700">+{stats.today.transactions}</p>
+                      <p className="text-sm text-gray-500">עסקאות חדשות</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <User className="w-5 h-5 text-blue-600" />
+          </>
+        )}
+
+        {/* User Stats */}
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <Users className="w-5 h-5 text-indigo-500" />
+            סטטיסטיקות משתמשים
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                  <Users className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+                  <p className="text-sm text-gray-500">משתמשים רשומים</p>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">
-                  {users.filter(u => u._count.transactions > 0).length}
-                </p>
-                <p className="text-sm text-gray-500">משתמשים פעילים</p>
+            </div>
+            <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {users.filter(u => u.hasSeenOnboarding).length}
+                  </p>
+                  <p className="text-sm text-gray-500">סיימו onboarding</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <User className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {users.filter(u => u._count.transactions > 0).length}
+                  </p>
+                  <p className="text-sm text-gray-500">משתמשים פעילים</p>
+                </div>
               </div>
             </div>
           </div>
