@@ -90,6 +90,8 @@ interface OnboardingActions {
   setWizardData: (data: WizardData) => void;
   /** Start autopilot animation for a step */
   startAutopilot: (stepId: string, data: WizardData) => void;
+  /** Skip autopilot, add directly via API, and continue to next step */
+  skipAutopilotAndAdd: () => Promise<void>;
 }
 
 type OnboardingContextType = OnboardingState & OnboardingActions;
@@ -338,6 +340,92 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     []
   );
 
+  /**
+   * Skip autopilot, add data via API, and continue to next step
+   */
+  const skipAutopilotAndAdd = useCallback(async () => {
+    const stepIds = ['profile', 'assets', 'liabilities', 'income', 'expenses', 'features'];
+    const currentStepId = stepIds[currentStepIndex] || 'profile';
+    
+    console.log('[Onboarding] Skipping autopilot for step:', currentStepId);
+    
+    try {
+      if (currentStepId === 'profile') {
+        await fetch('/api/profile', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
+          body: JSON.stringify({
+            ageRange: wizardData.ageRange || '26-35',
+            employmentType: wizardData.employmentType || 'employee',
+            militaryStatus: wizardData.militaryStatus || 'none',
+            hasChildren: false,
+            childrenCount: 0,
+          }),
+        });
+      } else if (currentStepId === 'assets') {
+        await fetch('/api/assets', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
+          body: JSON.stringify({
+            name: wizardData.assetName || 'נכס חדש',
+            category: wizardData.assetCategory || 'savings',
+            value: parseFloat((wizardData.assetValue || '10000').replace(/,/g, '')),
+          }),
+        });
+      } else if (currentStepId === 'liabilities' && wizardData.liabilityType !== 'none') {
+        await fetch('/api/liabilities', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
+          body: JSON.stringify({
+            name: wizardData.liabilityType === 'mortgage' ? 'משכנתא' : 'הלוואה',
+            type: wizardData.liabilityType || 'loan',
+            totalAmount: parseFloat((wizardData.liabilityAmount || '100000').replace(/,/g, '')),
+            monthlyPayment: 1000,
+            interestRate: parseFloat(wizardData.liabilityInterest || '5'),
+            loanTermMonths: parseInt(wizardData.liabilityTerm || '120'),
+          }),
+        });
+      } else if (currentStepId === 'income') {
+        await fetch('/api/recurring', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
+          body: JSON.stringify({
+            type: 'income',
+            name: wizardData.incomeName || 'הכנסה חודשית',
+            category: wizardData.incomeCategory || 'salary',
+            amount: parseFloat((wizardData.incomeAmount || '10000').replace(/,/g, '')),
+          }),
+        });
+      } else if (currentStepId === 'expenses') {
+        await fetch('/api/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
+          body: JSON.stringify({
+            type: 'expense',
+            description: wizardData.expenseName || 'הוצאה',
+            category: wizardData.expenseCategory || 'other',
+            amount: parseFloat((wizardData.expenseAmount || '100').replace(/,/g, '')),
+            date: new Date().toISOString(),
+          }),
+        });
+      }
+      
+      console.log('[Onboarding] Skip add successful for step:', currentStepId);
+    } catch (error) {
+      console.error('[Onboarding] Skip add error:', error);
+    }
+    
+    // Stop autopilot animation
+    setCursorTarget(null);
+    setCursorLabelState('');
+    setIsAutopilotInModalState(false);
+    
+    // Move to next step and reopen wizard
+    const nextIndex = Math.min(currentStepIndex + 1, stepIds.length - 1);
+    setCurrentStepIndexState(nextIndex);
+    setIsWizardOpen(true);
+  }, [currentStepIndex, wizardData]);
+
   const value: OnboardingContextType = {
     // Tour State
     isTourActive,
@@ -366,6 +454,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     setCurrentStepIndex,
     setWizardData,
     startAutopilot,
+    skipAutopilotAndAdd,
   };
 
   return (
