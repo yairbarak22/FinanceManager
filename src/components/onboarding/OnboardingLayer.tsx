@@ -7,6 +7,7 @@ import { useAutopilot } from '@/hooks/useAutopilot';
 import OnboardingWizard from './OnboardingWizard';
 import SmartGhostCursor from './SmartGhostCursor';
 import MagicFrame from './MagicFrame';
+import AddToHomeScreenModal from '../modals/AddToHomeScreenModal';
 
 /**
  * OnboardingLayer - Renders the onboarding UI components
@@ -19,7 +20,7 @@ import MagicFrame from './MagicFrame';
  * - Backdrop blur during autopilot to keep user focused
  */
 export default function OnboardingLayer() {
-  const { cursorTarget, cursorLabel, isCursorClicking, isTourActive, isWizardOpen, isAutopilotInModal, skipAutopilotAndAdd, showSuccessNotification, successNotificationMessage } = useOnboarding();
+  const { cursorTarget, cursorLabel, isCursorClicking, isTourActive, isWizardOpen, isAutopilotInModal, skipAutopilotAndAdd, showSuccessNotification, successNotificationMessage, isAddToHomeScreenModalOpen, closeAddToHomeScreenModal } = useOnboarding();
   const { abortAutopilot } = useAutopilot();
 
   // Show magic frame when autopilot is running (tour active but wizard closed)
@@ -115,6 +116,12 @@ export default function OnboardingLayer() {
           isVisible={true}
         />
       )}
+
+      {/* Add to Home Screen Modal - shows after onboarding completion */}
+      <AddToHomeScreenModal
+        isOpen={isAddToHomeScreenModalOpen}
+        onClose={closeAddToHomeScreenModal}
+      />
     </>
   );
 }

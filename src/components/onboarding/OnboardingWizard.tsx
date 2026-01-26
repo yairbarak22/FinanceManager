@@ -20,7 +20,6 @@ import {
   Upload,
   Play,
   Loader2,
-  Smartphone,
 } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { useAutopilot } from '@/hooks/useAutopilot';
@@ -663,29 +662,6 @@ export default function OnboardingWizard() {
 
         {/* Form Fields */}
         <div className="space-y-4">{visibleFields.map(renderField)}</div>
-
-        {/* Add to Home Screen Instructions - only on features step */}
-        {step.id === 'features' && (
-          <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 mt-4">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <Smartphone className="w-5 h-5 text-indigo-600" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-semibold text-slate-900 text-sm mb-1">
-                  הוסף למסך הבית לגישה מהירה
-                </h4>
-                <p className="text-xs text-slate-600 mb-3 leading-relaxed">
-                  כדי לחזור בקלות לאתר פעם נוספת ולנהל את הכסף שלך בצורה נוחה, הוסף את NETO למסך הבית:
-                </p>
-                <div className="space-y-1.5 text-xs text-slate-500">
-                  <p><span className="font-medium text-slate-700">באייפון:</span> לחץ על כפתור השיתוף (⬆️) בתחתית המסך ← &quot;הוסף למסך הבית&quot;</p>
-                  <p><span className="font-medium text-slate-700">באנדרואיד:</span> תפריט הדפדפן (⋮) ← &quot;הוסף למסך הבית&quot;</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </motion.div>
     );
   };

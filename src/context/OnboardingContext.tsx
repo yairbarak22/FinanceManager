@@ -53,6 +53,10 @@ interface OnboardingState {
   currentStepIndex: number;
   /** Data collected from wizard inputs */
   wizardData: WizardData;
+
+  // Add to Home Screen Modal State
+  /** Whether the add to home screen modal is open */
+  isAddToHomeScreenModalOpen: boolean;
 }
 
 /**
@@ -94,6 +98,12 @@ interface OnboardingActions {
   skipAutopilotAndAdd: () => Promise<void>;
   /** Show success notification */
   showSuccess: (message: string) => void;
+
+  // Add to Home Screen Modal Actions
+  /** Open the add to home screen modal */
+  openAddToHomeScreenModal: () => void;
+  /** Close the add to home screen modal */
+  closeAddToHomeScreenModal: () => void;
 }
 
 /**
@@ -140,6 +150,9 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
   // Success Notification State
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
   const [successNotificationMessage, setSuccessNotificationMessage] = useState('');
+
+  // Add to Home Screen Modal State
+  const [isAddToHomeScreenModalOpen, setIsAddToHomeScreenModalOpen] = useState(false);
 
   // ============================================
   // Tour Actions
@@ -213,6 +226,11 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     if (!success) {
       console.error('[Onboarding] Failed to mark onboarding as complete after all retries');
     }
+
+    // Open the "Add to Home Screen" modal after a short delay
+    setTimeout(() => {
+      setIsAddToHomeScreenModalOpen(true);
+    }, 500);
   }, []);
 
   /**
@@ -480,6 +498,24 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     setTimeout(() => setShowSuccessNotification(false), 2000);
   }, []);
 
+  // ============================================
+  // Add to Home Screen Modal Actions
+  // ============================================
+
+  /**
+   * Open the add to home screen modal
+   */
+  const openAddToHomeScreenModal = useCallback(() => {
+    setIsAddToHomeScreenModalOpen(true);
+  }, []);
+
+  /**
+   * Close the add to home screen modal
+   */
+  const closeAddToHomeScreenModal = useCallback(() => {
+    setIsAddToHomeScreenModalOpen(false);
+  }, []);
+
   const value: OnboardingContextType = {
     // Tour State
     isTourActive,
@@ -492,6 +528,8 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     isWizardOpen,
     currentStepIndex,
     wizardData,
+    // Add to Home Screen Modal State
+    isAddToHomeScreenModalOpen,
     // Notification State
     showSuccessNotification,
     successNotificationMessage,
@@ -513,6 +551,9 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     startAutopilot,
     skipAutopilotAndAdd,
     showSuccess,
+    // Add to Home Screen Modal Actions
+    openAddToHomeScreenModal,
+    closeAddToHomeScreenModal,
   };
 
   return (
