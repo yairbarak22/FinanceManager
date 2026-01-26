@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User,
@@ -46,13 +47,38 @@ interface StyledSelectProps {
 
 function StyledSelect({ value, onChange, options, placeholder = 'בחר...' }: StyledSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownStyle, setDropdownStyle] = useState({ top: 0, left: 0, width: 0 });
 
   const selectedOption = options.find((opt) => opt.value === value);
 
+  // Track if component is mounted (for Portal)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Calculate dropdown position when opened
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownStyle({
+        top: rect.bottom + 8,
+        left: rect.left,
+        width: rect.width,
+      });
+    }
+  }, [isOpen]);
+
+  // Close on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        buttonRef.current && !buttonRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
         setIsOpen(false);
       }
     }
@@ -61,9 +87,10 @@ function StyledSelect({ value, onChange, options, placeholder = 'בחר...' }: S
   }, []);
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative">
       {/* Trigger Button */}
       <button
+        ref={buttonRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`
@@ -85,41 +112,52 @@ function StyledSelect({ value, onChange, options, placeholder = 'בחר...' }: S
         />
       </button>
 
-      {/* Dropdown */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.96 }}
-            transition={{ duration: 0.15 }}
-            className="absolute z-50 mt-2 w-full bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden"
-          >
-            <div className="max-h-48 overflow-y-auto py-1">
-              {options.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => {
-                    onChange(option.value);
-                    setIsOpen(false);
-                  }}
-                  className={`
-                    w-full px-4 py-2.5 text-sm flex items-center justify-between gap-2
-                    hover:bg-indigo-50 transition-colors text-right
-                    ${value === option.value ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700'}
-                  `}
-                >
-                  <span className="flex-1">{option.label}</span>
-                  {value === option.value && (
-                    <Check className="w-4 h-4 text-indigo-500 flex-shrink-0" />
-                  )}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Dropdown - rendered via Portal to escape overflow clipping */}
+      {mounted && createPortal(
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              ref={dropdownRef}
+              initial={{ opacity: 0, y: -8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.96 }}
+              transition={{ duration: 0.15 }}
+              style={{
+                position: 'fixed',
+                top: dropdownStyle.top,
+                left: dropdownStyle.left,
+                width: dropdownStyle.width,
+              }}
+              className="z-[12000] bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden"
+              dir="rtl"
+            >
+              <div className="max-h-48 overflow-y-auto py-1">
+                {options.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(option.value);
+                      setIsOpen(false);
+                    }}
+                    className={`
+                      w-full px-4 py-2.5 text-sm flex items-center justify-between gap-2
+                      hover:bg-indigo-50 transition-colors text-right
+                      ${value === option.value ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700'}
+                    `}
+                  >
+                    <span className="flex-1">{option.label}</span>
+                    {value === option.value && (
+                      <Check className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
@@ -639,43 +677,23 @@ export default function OnboardingWizard() {
 
               {/* Footer - Fixed at bottom */}
               <div className="flex-shrink-0 px-8 pb-6 pt-4 border-t border-slate-100 space-y-3">
-                {/* Two action buttons (hidden on features step) */}
+                {/* Add button (hidden on features step) */}
                 {currentStep.id !== 'features' && (
-                  <div className="space-y-2">
-                    {/* Primary: Add directly */}
-                    <motion.button
-                      onClick={handleAddDirectly}
-                      disabled={!areRequiredFieldsFilled()}
-                      whileHover={areRequiredFieldsFilled() ? { scale: 1.02 } : {}}
-                      whileTap={areRequiredFieldsFilled() ? { scale: 0.98 } : {}}
-                      className={`w-full py-4 px-6 font-semibold rounded-2xl
-                                 flex items-center justify-center gap-2 transition-all duration-200
-                                 ${areRequiredFieldsFilled()
-                                   ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 cursor-pointer'
-                                   : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                                 }`}
-                    >
-                      <Check className="w-5 h-5" />
-                      <span>לחץ כאן כדי להוסיף עכשיו</span>
-                    </motion.button>
-
-                    {/* Secondary: AI demo */}
-                    <motion.button
-                      onClick={handleShowMe}
-                      disabled={!areRequiredFieldsFilled()}
-                      whileHover={areRequiredFieldsFilled() ? { scale: 1.01 } : {}}
-                      whileTap={areRequiredFieldsFilled() ? { scale: 0.99 } : {}}
-                      className={`w-full py-3 px-6 font-medium rounded-2xl
-                                 flex items-center justify-center gap-2 transition-all duration-200 border
-                                 ${areRequiredFieldsFilled()
-                                   ? 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-indigo-300 cursor-pointer'
-                                   : 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
-                                 }`}
-                    >
-                      <Bot className="w-4 h-4" />
-                      <span>תן ל-AI להדגים לך איך להוסיף</span>
-                    </motion.button>
-                  </div>
+                  <motion.button
+                    onClick={handleAddDirectly}
+                    disabled={!areRequiredFieldsFilled()}
+                    whileHover={areRequiredFieldsFilled() ? { scale: 1.02 } : {}}
+                    whileTap={areRequiredFieldsFilled() ? { scale: 0.98 } : {}}
+                    className={`w-full py-4 px-6 font-semibold rounded-2xl
+                               flex items-center justify-center gap-2 transition-all duration-200
+                               ${areRequiredFieldsFilled()
+                                 ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 cursor-pointer'
+                                 : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                               }`}
+                  >
+                    <Check className="w-5 h-5" />
+                    <span>לחץ כאן כדי להוסיף עכשיו</span>
+                  </motion.button>
                 )}
 
                 {/* Finish Button - only on features step */}
@@ -736,7 +754,7 @@ export default function OnboardingWizard() {
                     onClick={isLastStep ? endTour : goToNextStep}
                     className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all"
                   >
-                    {isLastStep ? 'סיום' : 'אוסיף מאוחר יותר'}
+                    {isLastStep ? 'סיום' : 'דלג'}
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                 </div>
