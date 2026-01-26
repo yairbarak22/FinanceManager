@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSession, signOut } from 'next-auth/react';
 import {
   PieChart,
@@ -12,6 +13,12 @@ import {
   ChevronLeft,
   ChevronDown,
   Sparkles,
+  Menu,
+  X,
+  Home,
+  TrendingUp,
+  BookOpen,
+  Mail,
 } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
 import MonthFilter from './MonthFilter';
@@ -46,9 +53,17 @@ export default function HeaderBar({
   const { data: session } = useSession();
   const { startTour } = useOnboarding();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close menu when clicking outside
+  // Track mounting for portal
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Close desktop user menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -58,6 +73,30 @@ export default function HeaderBar({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
+
+  // Nav icons for mobile menu
+  const navIcons: Record<NavSection, typeof Home> = {
+    dashboard: Home,
+    transactions: Home,
+    recurring: Home,
+    assets: Home,
+    liabilities: Home,
+    investments: TrendingUp,
+    help: BookOpen,
+    contact: Mail,
+  };
 
   const { name, email, image } = session?.user || {};
 
@@ -69,6 +108,7 @@ export default function HeaderBar({
   ];
 
   return (
+    <>
     <header className="sticky top-0 z-50 border-b border-white/20" style={{ background: 'rgba(255, 255, 255, 0.65)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
       {/* Decorative top gradient line - REMOVED */}
 
@@ -158,14 +198,14 @@ export default function HeaderBar({
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full" aria-hidden="true" />
             </button>
 
-            {/* User Menu */}
+            {/* Desktop User Menu */}
             {session?.user && (
-              <div className="relative" ref={userMenuRef}>
+              <div className="relative hidden md:block" ref={userMenuRef}>
                 <button
                   id="nav-profile-btn"
                   type="button"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 rounded-xl p-0.5 md:p-1 hover:bg-white/50 transition-all"
+                  className="flex items-center gap-2 rounded-xl p-1 hover:bg-white/50 transition-all"
                   aria-expanded={isUserMenuOpen}
                   aria-haspopup="menu"
                   aria-label={`תפריט משתמש${name ? `: ${name}` : ''}`}
@@ -174,10 +214,10 @@ export default function HeaderBar({
                     <img
                       src={image}
                       alt=""
-                      className="w-8 h-8 md:w-9 md:h-9 rounded-xl border-2 border-blue-200 shadow-lg"
+                      className="w-9 h-9 rounded-xl border-2 border-blue-200 shadow-lg"
                     />
                   ) : (
-                    <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-gradient-to-br from-[#2B4699] to-[#3556AB] flex items-center justify-center border-2 border-blue-200 shadow-lg">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#2B4699] to-[#3556AB] flex items-center justify-center border-2 border-blue-200 shadow-lg">
                       <User className="w-4 h-4 text-white" aria-hidden="true" />
                     </div>
                   )}
@@ -260,30 +300,175 @@ export default function HeaderBar({
                 )}
               </div>
             )}
+
+            {/* Mobile Hamburger Button */}
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="md:hidden p-2 rounded-xl hover:bg-white/50 transition-all"
+              aria-label="פתח תפריט"
+              aria-expanded={isMobileMenuOpen}
+            >
+              <Menu className="w-6 h-6 text-slate-700" />
+            </button>
           </div>
         </div>
-
-        {/* Mobile Navigation */}
-        <nav className="md:hidden flex items-center justify-start gap-2 pb-3 overflow-x-auto scrollbar-hide -mx-4 px-4" aria-label="ניווט ראשי - נייד">
-          {navTabs.map((tab) => {
-            const isActive = activeSection === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => onSectionChange(tab.id)}
-                aria-current={isActive ? 'page' : undefined}
-                className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${isActive
-                  ? 'bg-gradient-to-r from-[#2B4699] to-[#3556AB] text-white shadow-lg shadow-blue-500/25'
-                  : 'text-slate-600 hover:text-slate-900 bg-white/60 border border-blue-100/50'
-                  }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </nav>
       </div>
+
     </header>
+
+      {/* Mobile Slide-out Menu - rendered via portal to avoid z-index issues */}
+      {isMounted && isMobileMenuOpen && createPortal(
+        <>
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 bg-black/50 z-[9998] md:hidden transition-opacity"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Menu Panel */}
+          <div
+            ref={mobileMenuRef}
+            className="fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-white shadow-2xl z-[9999] md:hidden transform transition-transform duration-300 ease-out overflow-y-auto"
+            style={{ animation: 'slideInFromLeft 0.3s ease-out' }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="תפריט ניווט"
+            dir="rtl"
+          >
+            {/* Menu Header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-white">
+              <span className="text-lg font-bold text-slate-900">תפריט</span>
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 rounded-xl hover:bg-slate-100 transition-colors"
+                aria-label="סגור תפריט"
+              >
+                <X className="w-5 h-5 text-slate-600" />
+              </button>
+            </div>
+
+            {/* User Info */}
+            {session?.user && (
+              <div className="p-4 border-b border-slate-100 bg-blue-50">
+                <div className="flex items-center gap-3">
+                  {image ? (
+                    <img
+                      src={image}
+                      alt=""
+                      className="w-12 h-12 rounded-xl border-2 border-blue-200 shadow-lg"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2B4699] to-[#3556AB] flex items-center justify-center border-2 border-blue-200 shadow-lg">
+                      <User className="w-6 h-6 text-white" aria-hidden="true" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <SensitiveData as="p" className="text-sm font-semibold text-slate-900 truncate">
+                      {name || 'משתמש'}
+                    </SensitiveData>
+                    <SensitiveData as="p" className="text-xs text-slate-500 truncate">
+                      {email}
+                    </SensitiveData>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Navigation Links */}
+            <nav className="p-2 bg-white" aria-label="ניווט ראשי">
+              {navTabs.map((tab) => {
+                const isActive = activeSection === tab.id;
+                const IconComponent = navIcons[tab.id];
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => {
+                      onSectionChange(tab.id);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all mb-1 ${
+                      isActive
+                        ? 'bg-gradient-to-r from-[#2B4699] to-[#3556AB] text-white shadow-lg shadow-blue-500/25'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <IconComponent className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400'}`} aria-hidden="true" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* Divider */}
+            <div className="mx-4 my-2 border-t border-slate-100 bg-white" />
+
+            {/* User Actions */}
+            <div className="p-2 bg-white">
+              {onOpenProfile && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onOpenProfile();
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-100 transition-all"
+                >
+                  <UserCog className="w-5 h-5 text-indigo-500" aria-hidden="true" />
+                  פרטים אישיים
+                </button>
+              )}
+              {onOpenAccountSettings && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onOpenAccountSettings();
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-100 transition-all"
+                >
+                  <Users className="w-5 h-5 text-indigo-500" aria-hidden="true" />
+                  שיתוף חשבון
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  startTour();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-100 transition-all"
+              >
+                <Sparkles className="w-5 h-5 text-amber-500" aria-hidden="true" />
+                סיור במערכת
+              </button>
+            </div>
+
+            {/* Divider before logout */}
+            <div className="mx-4 my-2 border-t border-slate-100 bg-white" />
+
+            {/* Logout Button - subtle styling */}
+            <div className="p-2 pb-6 bg-white">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  signOut({ callbackUrl: '/login' });
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 transition-all"
+              >
+                <LogOut className="w-5 h-5 text-slate-400" aria-hidden="true" />
+                התנתק
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+    </>
   );
 }

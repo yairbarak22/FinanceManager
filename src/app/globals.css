@@ -479,6 +479,35 @@ body.pause-animations *::after {
   animation: scaleIn 0.2s ease-out;
 }
 
+/* Mobile Menu Slide Animation */
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutToLeft {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slideInFromLeft 0.3s ease-out;
+}
+
+.animate-slide-out-left {
+  animation: slideOutToLeft 0.3s ease-out;
+}
+
 /* Staggered animation delays */
 .delay-1 {
   animation-delay: 50ms;
