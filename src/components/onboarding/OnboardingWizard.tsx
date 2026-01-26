@@ -19,6 +19,7 @@ import {
   Bot,
   Upload,
   Play,
+  Loader2,
 } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { useAutopilot } from '@/hooks/useAutopilot';
@@ -188,6 +189,9 @@ export default function OnboardingWizard() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Loading state for save button
+  const [isSaving, setIsSaving] = useState(false);
+
   // Refs for scrolling
   const contentScrollRef = useRef<HTMLDivElement>(null);
   const fieldRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -351,6 +355,7 @@ export default function OnboardingWizard() {
    */
   const handleAddDirectly = useCallback(async () => {
     const stepId = currentStep.id;
+    setIsSaving(true);
     
     try {
       let response: Response | null = null;
@@ -469,6 +474,8 @@ export default function OnboardingWizard() {
       console.log('[Onboarding] Direct add completed for step:', stepId);
     } catch (error) {
       console.error('[Onboarding] Direct add error:', error);
+    } finally {
+      setIsSaving(false);
     }
     
     // Wait for success notification to show, then continue
@@ -728,18 +735,22 @@ export default function OnboardingWizard() {
                 {currentStep.id !== 'features' && (
                   <motion.button
                     onClick={handleAddDirectly}
-                    disabled={!areRequiredFieldsFilled()}
-                    whileHover={areRequiredFieldsFilled() ? { scale: 1.02 } : {}}
-                    whileTap={areRequiredFieldsFilled() ? { scale: 0.98 } : {}}
+                    disabled={!areRequiredFieldsFilled() || isSaving}
+                    whileHover={areRequiredFieldsFilled() && !isSaving ? { scale: 1.02 } : {}}
+                    whileTap={areRequiredFieldsFilled() && !isSaving ? { scale: 0.98 } : {}}
                     className={`w-full py-4 px-6 font-semibold rounded-2xl
                                flex items-center justify-center gap-2 transition-all duration-200
-                               ${areRequiredFieldsFilled()
+                               ${areRequiredFieldsFilled() && !isSaving
                                  ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 cursor-pointer'
                                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                                }`}
                   >
-                    <Check className="w-5 h-5" />
                     <span>לחץ כאן כדי להוסיף עכשיו</span>
+                    {isSaving ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Check className="w-5 h-5" />
+                    )}
                   </motion.button>
                 )}
 
