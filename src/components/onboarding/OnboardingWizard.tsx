@@ -188,15 +188,70 @@ export default function OnboardingWizard() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Refs for scrolling
+  const contentScrollRef = useRef<HTMLDivElement>(null);
+  const fieldRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
   const currentStep = onboardingSteps[currentStepIndex];
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === onboardingSteps.length - 1;
 
+  // Scroll to top when step changes and clear field refs
+  useEffect(() => {
+    if (contentScrollRef.current) {
+      contentScrollRef.current.scrollTop = 0;
+    }
+    // Clear field refs when step changes
+    fieldRefs.current.clear();
+  }, [currentStepIndex]);
+
+  /**
+   * Filter fields based on conditional logic (for liabilities step)
+   */
+  const getVisibleFields = useCallback((step: OnboardingStep): StepField[] => {
+    if (step.id !== 'liabilities') {
+      return step.fields;
+    }
+
+    // For liabilities, show detail fields only if user selected mortgage or loan
+    const hasLiability = wizardData.liabilityType === 'mortgage' || wizardData.liabilityType === 'loan';
+
+    return step.fields.filter((field) => {
+      // Always show the type selector
+      if (field.key === 'liabilityType') {
+        return true;
+      }
+      // Show amount, interest, and term only if user has a liability
+      return hasLiability;
+    });
+  }, [wizardData]);
+
   const handleFieldChange = useCallback(
     (key: string, value: string) => {
       setWizardData({ ...wizardData, [key]: value });
+      
+      // Auto-scroll to next field if current field was filled
+      if (value && value.trim() !== '') {
+        const visibleFields = getVisibleFields(currentStep);
+        const currentIndex = visibleFields.findIndex(f => f.key === key);
+        
+        // Find next visible field that is not a feature-demos type
+        if (currentIndex >= 0 && currentIndex < visibleFields.length - 1) {
+          const nextField = visibleFields.slice(currentIndex + 1).find(f => f.type !== 'feature-demos');
+          
+          if (nextField) {
+            const nextFieldElement = fieldRefs.current.get(nextField.key);
+            if (nextFieldElement && contentScrollRef.current) {
+              // Use setTimeout to ensure DOM has updated
+              setTimeout(() => {
+                nextFieldElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 100);
+            }
+          }
+        }
+      }
     },
-    [wizardData, setWizardData]
+    [wizardData, setWizardData, currentStep, getVisibleFields]
   );
 
   const goToNextStep = useCallback(() => {
@@ -481,7 +536,11 @@ export default function OnboardingWizard() {
 
     if (field.type === 'select') {
       return (
-        <div key={field.key} className="space-y-2">
+        <div 
+          key={field.key} 
+          ref={(el) => { if (el) fieldRefs.current.set(field.key, el); }}
+          className="space-y-2"
+        >
           <label className="block text-sm font-medium text-slate-700">
             {field.label}
             {field.required && <span className="text-rose-500 mr-1">*</span>}
@@ -498,7 +557,11 @@ export default function OnboardingWizard() {
 
     if (field.type === 'currency' || field.type === 'number') {
       return (
-        <div key={field.key} className="space-y-2">
+        <div 
+          key={field.key}
+          ref={(el) => { if (el) fieldRefs.current.set(field.key, el); }}
+          className="space-y-2"
+        >
           <label className="block text-sm font-medium text-slate-700">
             {field.label}
             {field.required && <span className="text-rose-500 mr-1">*</span>}
@@ -535,7 +598,11 @@ export default function OnboardingWizard() {
 
     // Default text input
     return (
-      <div key={field.key} className="space-y-2">
+      <div 
+        key={field.key}
+        ref={(el) => { if (el) fieldRefs.current.set(field.key, el); }}
+        className="space-y-2"
+      >
         <label className="block text-sm font-medium text-slate-700">
           {field.label}
           {field.required && <span className="text-rose-500 mr-1">*</span>}
@@ -558,26 +625,6 @@ export default function OnboardingWizard() {
     );
   };
 
-  /**
-   * Filter fields based on conditional logic (for liabilities step)
-   */
-  const getVisibleFields = (step: OnboardingStep): StepField[] => {
-    if (step.id !== 'liabilities') {
-      return step.fields;
-    }
-
-    // For liabilities, show detail fields only if user selected mortgage or loan
-    const hasLiability = wizardData.liabilityType === 'mortgage' || wizardData.liabilityType === 'loan';
-
-    return step.fields.filter((field) => {
-      // Always show the type selector
-      if (field.key === 'liabilityType') {
-        return true;
-      }
-      // Show amount, interest, and term only if user has a liability
-      return hasLiability;
-    });
-  };
 
   /**
    * Render step content
@@ -669,7 +716,7 @@ export default function OnboardingWizard() {
               </button>
 
               {/* Content - Scrollable */}
-              <div className="flex-1 overflow-y-auto p-8 pt-12">
+              <div ref={contentScrollRef} className="flex-1 overflow-y-auto p-8 pt-12">
                 <AnimatePresence mode="wait" initial={false}>
                   {renderStepContent(currentStep)}
                 </AnimatePresence>
