@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { put } from '@vercel/blob';
 import { v4 as uuidv4 } from 'uuid';
-import { requireAuth, withUserId } from '@/lib/authHelpers';
+import { requireAuth, withUserId, getSharedUserIds } from '@/lib/authHelpers';
 import { validateAndSanitizeFile } from '@/lib/fileValidator';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
@@ -20,20 +20,23 @@ const ALLOWED_TYPES = [
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_FILES_PER_ENTITY = 20;
 
-// Verify user owns the parent entity (asset or liability)
+// Verify user owns the parent entity (asset or liability) - supports shared accounts
 async function verifyEntityOwnership(
   entityType: string,
   entityId: string,
   userId: string
 ): Promise<boolean> {
+  // Get all user IDs from shared account (includes the current user + any shared members)
+  const sharedUserIds = await getSharedUserIds(userId);
+  
   if (entityType === 'asset') {
     const asset = await prisma.asset.findFirst({
-      where: { id: entityId, userId },
+      where: { id: entityId, userId: { in: sharedUserIds } },
     });
     return !!asset;
   } else if (entityType === 'liability') {
     const liability = await prisma.liability.findFirst({
-      where: { id: entityId, userId },
+      where: { id: entityId, userId: { in: sharedUserIds } },
     });
     return !!liability;
   }
