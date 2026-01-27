@@ -102,56 +102,68 @@ function extractEmailAddress(fromString: string): string {
 }
 
 async function getEmailContent(emailId: string) {
-  const resend = getResend();
-  if (!resend) {
-    throw new Error('Resend client not initialized');
-  }
-
-  console.log('[Webhook] Fetching email content via SDK for:', emailId);
+  console.log('[Webhook] Fetching email content for:', emailId);
   
-  try {
-    // Use correct Resend SDK method: resend.emails.receiving.get()
-    const result = await resend.emails.receiving.get(emailId);
-    
-    console.log('[Webhook] SDK raw response:', {
-      hasResult: !!result,
-      resultType: typeof result,
-      resultKeys: result ? Object.keys(result) : [],
-      resultString: JSON.stringify(result).substring(0, 1000),
-    });
-    
-    const { data: email, error } = result;
-    
-    if (error) {
-      console.error('[Webhook] SDK returned error:', {
-        message: error.message,
-        name: error.name,
-        error: JSON.stringify(error),
-      });
-      throw new Error(`Failed to fetch email: ${error.message}`);
+  // Try SDK first, then fallback to direct API
+  const resend = getResend();
+  
+  // Method 1: Try SDK
+  if (resend && resend.emails?.receiving?.get) {
+    try {
+      console.log('[Webhook] Trying SDK method...');
+      const result = await resend.emails.receiving.get(emailId);
+      
+      console.log('[Webhook] SDK response:', JSON.stringify(result).substring(0, 500));
+      
+      if (result?.data && !result?.error) {
+        console.log('[Webhook] SDK success! Content keys:', Object.keys(result.data));
+        return result.data;
+      }
+      
+      if (result?.error) {
+        console.log('[Webhook] SDK returned error, trying direct API:', result.error);
+      }
+    } catch (sdkErr: any) {
+      console.log('[Webhook] SDK failed, trying direct API:', sdkErr?.message);
     }
-
-    console.log('[Webhook] Email content fetched via SDK:', { 
-      hasEmail: !!email,
-      hasHtml: !!email?.html, 
-      hasText: !!email?.text,
-      hasBody: !!(email as any)?.body,
-      htmlLength: email?.html?.length || 0,
-      textLength: email?.text?.length || 0,
-      bodyLength: (email as any)?.body?.length || 0,
-      keys: email ? Object.keys(email) : [],
-      emailSample: email ? JSON.stringify(email).substring(0, 500) : 'null',
-    });
-    
-    return email;
-  } catch (err: any) {
-    console.error('[Webhook] Exception in getEmailContent:', {
-      message: err?.message,
-      name: err?.name,
-      stack: err?.stack,
-    });
-    throw err;
+  } else {
+    console.log('[Webhook] SDK receiving method not available, using direct API');
   }
+  
+  // Method 2: Direct API call (fallback)
+  console.log('[Webhook] Using direct API call...');
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error('RESEND_API_KEY not configured');
+  }
+  
+  const response = await fetch(`https://api.resend.com/emails/receiving/${emailId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  const responseText = await response.text();
+  console.log('[Webhook] Direct API response:', {
+    status: response.status,
+    statusText: response.statusText,
+    body: responseText.substring(0, 500),
+  });
+  
+  if (!response.ok) {
+    throw new Error(`API error ${response.status}: ${responseText}`);
+  }
+  
+  const data = JSON.parse(responseText);
+  console.log('[Webhook] Direct API parsed:', {
+    hasHtml: !!data?.html,
+    hasText: !!data?.text,
+    keys: data ? Object.keys(data) : [],
+  });
+  
+  return data;
 }
 
 async function downloadAttachmentFromUrl(downloadUrl: string): Promise<Buffer> {
@@ -166,30 +178,44 @@ async function downloadAttachmentFromUrl(downloadUrl: string): Promise<Buffer> {
 }
 
 async function getAttachments(emailId: string) {
+  console.log('[Webhook] Fetching attachments for:', emailId);
+  
   const resend = getResend();
-  if (!resend) {
-    throw new Error('Resend client not initialized');
+  
+  // Try SDK first
+  if (resend && resend.attachments?.receiving?.list) {
+    try {
+      const result = await resend.attachments.receiving.list({ emailId });
+      if (result?.data && !result?.error) {
+        console.log('[Webhook] Attachments from SDK:', result.data?.length || 0);
+        return result.data || [];
+      }
+    } catch (err: any) {
+      console.log('[Webhook] SDK attachments failed:', err?.message);
+    }
   }
-
-  console.log('[Webhook] Fetching attachments via SDK for:', emailId);
   
-  // Use correct Resend SDK method: resend.attachments.receiving.list()
-  const { data: attachments, error } = await resend.attachments.receiving.list({ emailId });
+  // Fallback to direct API
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return [];
   
-  if (error) {
-    console.error('[Webhook] Failed to get attachments:', {
-      message: error.message,
-      name: error.name,
+  try {
+    const response = await fetch(`https://api.resend.com/emails/receiving/${emailId}/attachments`, {
+      headers: { 'Authorization': `Bearer ${apiKey}` },
     });
+    
+    if (!response.ok) {
+      console.log('[Webhook] Attachments API error:', response.status);
+      return [];
+    }
+    
+    const data = await response.json();
+    console.log('[Webhook] Attachments from API:', data?.data?.length || 0);
+    return data?.data || [];
+  } catch (err: any) {
+    console.log('[Webhook] Attachments fetch failed:', err?.message);
     return [];
   }
-
-  console.log('[Webhook] Attachments fetched:', {
-    count: attachments?.length || 0,
-    filenames: attachments?.map(a => a.filename) || [],
-  });
-  
-  return attachments || [];
 }
 
 async function forwardEmail(event: EmailReceivedEvent) {
