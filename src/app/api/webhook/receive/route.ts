@@ -230,7 +230,15 @@ ${emailContent.text || emailContent.html?.replace(/<[^>]*>/g, '') || '(לא ני
 `;
 
   // Send forwarded email
-  console.log('[Webhook] Sending forward email...');
+  console.log('[Webhook] Sending forward email...', {
+    from: 'NETO <onboarding@resend.dev>',
+    to: forwardTo,
+    replyTo: senderEmail,
+    subject: `[myneto.co.il] ${subject}`,
+    htmlLength: htmlBody.length,
+    textLength: textBody.length,
+    attachmentsCount: forwardAttachments.length,
+  });
   
   const result = await resend.emails.send({
     from: 'NETO <onboarding@resend.dev>',
@@ -245,14 +253,32 @@ ${emailContent.text || emailContent.html?.replace(/<[^>]*>/g, '') || '(לא ני
     })),
   });
 
+  console.log('[Webhook] Resend API response:', {
+    hasData: !!result.data,
+    hasError: !!result.error,
+    dataId: result.data?.id,
+    errorMessage: result.error?.message,
+    errorName: result.error?.name,
+    fullResult: JSON.stringify(result, null, 2),
+  });
+
   if (result.error) {
-    console.error('[Webhook] Email send failed:', result.error);
-    throw new Error(`Email send failed: ${result.error.message}`);
+    console.error('[Webhook] Email send failed:', {
+      error: result.error,
+      message: result.error.message,
+      name: result.error.name,
+    });
+    throw new Error(`Email send failed: ${result.error.message || 'Unknown error'}`);
+  }
+
+  if (!result.data || !result.data.id) {
+    console.error('[Webhook] Email send returned no data:', result);
+    throw new Error('Email send returned no data');
   }
 
   console.log('[Webhook] Email forwarded successfully:', {
     emailId: email_id,
-    forwardedId: result.data?.id,
+    forwardedId: result.data.id,
   });
 
   return result;
@@ -260,35 +286,44 @@ ${emailContent.text || emailContent.html?.replace(/<[^>]*>/g, '') || '(לא ני
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+  console.log(`[Webhook ${requestId}] POST request received`);
 
   try {
     // Check required env vars
+    console.log(`[Webhook ${requestId}] Checking env vars...`);
     if (!process.env.RESEND_API_KEY) {
-      console.error('[Webhook] RESEND_API_KEY not configured');
+      console.error(`[Webhook ${requestId}] RESEND_API_KEY not configured`);
       return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
     }
 
     if (!process.env.EMAIL_FORWARD_TO) {
-      console.error('[Webhook] EMAIL_FORWARD_TO not configured');
+      console.error(`[Webhook ${requestId}] EMAIL_FORWARD_TO not configured`);
       return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
     }
 
+    console.log(`[Webhook ${requestId}] Env vars OK, EMAIL_FORWARD_TO=${process.env.EMAIL_FORWARD_TO}`);
+
     // Verify webhook signature
+    console.log(`[Webhook ${requestId}] Verifying signature...`);
     const verification = await verifyWebhookSignature(request);
 
     if (!verification.valid || !verification.payload) {
-      console.warn('[Webhook] Invalid webhook signature');
+      console.warn(`[Webhook ${requestId}] Invalid webhook signature - valid: ${verification.valid}, hasPayload: ${!!verification.payload}`);
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
+
+    console.log(`[Webhook ${requestId}] Signature verified successfully`);
 
     const event = verification.payload;
 
     if (event.type !== 'email.received') {
-      console.log('[Webhook] Ignoring event:', event.type);
+      console.log(`[Webhook ${requestId}] Ignoring event type: ${event.type}`);
       return NextResponse.json({ received: true });
     }
 
-    console.log('[Webhook] Received email:', {
+    console.log(`[Webhook ${requestId}] Processing email.received event:`, {
       emailId: event.data.email_id,
       from: event.data.from,
       to: event.data.to,
@@ -296,35 +331,39 @@ export async function POST(request: NextRequest) {
     });
 
     // Forward email and wait for result
+    console.log(`[Webhook ${requestId}] Starting forward process...`);
     try {
-      await forwardEmail(event);
-    } catch (forwardError) {
-      console.error('[Webhook] Forward failed:', forwardError);
+      const forwardResult = await forwardEmail(event);
+      console.log(`[Webhook ${requestId}] Forward completed successfully:`, {
+        forwardedId: forwardResult.data?.id,
+        error: forwardResult.error,
+      });
+    } catch (forwardError: any) {
+      console.error(`[Webhook ${requestId}] Forward failed with error:`, {
+        message: forwardError?.message,
+        stack: forwardError?.stack,
+        error: forwardError,
+      });
       // Still return 200 so Resend doesn't retry (we logged the error)
     }
 
     const duration = Date.now() - startTime;
-    console.log(`[Webhook] Completed in ${duration}ms`);
+    console.log(`[Webhook ${requestId}] Completed in ${duration}ms`);
 
-    return NextResponse.json({ received: true });
+    return NextResponse.json({ received: true, requestId });
 
-  } catch (error) {
-    console.error('[Webhook] Error:', error);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+  } catch (error: any) {
+    console.error(`[Webhook ${requestId}] Unhandled error:`, {
+      message: error?.message,
+      stack: error?.stack,
+      error,
+    });
+    return NextResponse.json({ error: 'Internal error', requestId }, { status: 500 });
   }
 }
 
 export async function GET() {
-  const hasApiKey = !!process.env.RESEND_API_KEY;
-  const hasWebhookSecret = !!process.env.RESEND_WEBHOOK_SECRET;
-  const hasForwardTo = !!process.env.EMAIL_FORWARD_TO;
-
   return NextResponse.json({
     status: 'ok',
-    config: {
-      apiKey: hasApiKey ? 'configured' : 'missing',
-      webhookSecret: hasWebhookSecret ? 'configured' : 'missing',
-      forwardTo: hasForwardTo ? 'configured' : 'missing',
-    },
   });
 }
