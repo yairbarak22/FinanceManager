@@ -147,9 +147,17 @@ async function getEmailContent(emailId: string) {
     console.log('[Webhook] Email content fetched via API:', { 
       hasHtml: !!emailContent.html, 
       hasText: !!emailContent.text,
+      hasData: !!emailContent.data,
       keys: Object.keys(emailContent),
-      sample: JSON.stringify(emailContent).substring(0, 200),
+      dataKeys: emailContent.data ? Object.keys(emailContent.data) : [],
+      sample: JSON.stringify(emailContent).substring(0, 500),
     });
+    
+    // Resend API returns { data: { html, text, ... } }
+    if (emailContent.data) {
+      return emailContent.data;
+    }
+    
     return emailContent;
   } catch (error: any) {
     console.error('[Webhook] Failed to get email content:', {
@@ -199,11 +207,36 @@ async function forwardEmail(event: EmailReceivedEvent) {
   });
 
   // Fetch full email content
-  let emailContent: { html?: string; text?: string } = {};
+  let emailContent: { html?: string; text?: string; data?: any } = {};
   try {
-    emailContent = await getEmailContent(email_id);
-  } catch (error) {
-    console.error('[Webhook] Failed to fetch email content:', error);
+    const fetchedContent = await getEmailContent(email_id);
+    console.log('[Webhook] Raw email content response:', {
+      type: typeof fetchedContent,
+      isArray: Array.isArray(fetchedContent),
+      keys: fetchedContent ? Object.keys(fetchedContent) : [],
+      hasData: !!(fetchedContent as any)?.data,
+      dataKeys: (fetchedContent as any)?.data ? Object.keys((fetchedContent as any).data) : [],
+    });
+    
+    // Resend API returns { data: { html, text, ... } }
+    if ((fetchedContent as any)?.data) {
+      emailContent = (fetchedContent as any).data;
+    } else {
+      emailContent = fetchedContent as any;
+    }
+    
+    console.log('[Webhook] Processed email content:', {
+      hasHtml: !!emailContent.html,
+      hasText: !!emailContent.text,
+      htmlLength: emailContent.html?.length || 0,
+      textLength: emailContent.text?.length || 0,
+    });
+  } catch (error: any) {
+    console.error('[Webhook] Failed to fetch email content:', {
+      message: error?.message,
+      stack: error?.stack,
+      error,
+    });
   }
 
   // Prepare attachments
