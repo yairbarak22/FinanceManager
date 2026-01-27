@@ -123,3 +123,31 @@ export function getRequestInfo(headers: Headers): {
   };
 }
 
+/**
+ * Clean up old audit logs based on retention policy
+ * Default retention: 90 days (GDPR data minimization)
+ * Returns the number of deleted records
+ */
+export async function cleanupOldAuditLogs(retentionDays = 90): Promise<number> {
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+
+    const result = await prisma.auditLog.deleteMany({
+      where: {
+        createdAt: { lt: cutoffDate },
+      },
+    });
+
+    if (result.count > 0) {
+      console.log(`Cleaned up ${result.count} audit logs older than ${retentionDays} days`);
+    }
+
+    return result.count;
+  } catch (error) {
+    // Don't throw - cleanup should never break the main flow
+    console.error('Failed to cleanup audit logs:', error);
+    return 0;
+  }
+}
+

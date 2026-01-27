@@ -339,7 +339,11 @@ export default function AdminUsersPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-gray-900">
-                    {users.filter(u => u._count.transactions > 0).length}
+                    {users.filter(u => 
+                      u._count.transactions > 0 || 
+                      u._count.assets > 0 || 
+                      u._count.liabilities > 0
+                    ).length}
                   </p>
                   <p className="text-sm text-gray-500">משתמשים פעילים</p>
                 </div>

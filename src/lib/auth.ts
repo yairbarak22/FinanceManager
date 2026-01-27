@@ -3,6 +3,7 @@ import { PrismaAdapter } from '@auth/prisma-adapter';
 import GoogleProvider from 'next-auth/providers/google';
 import { prisma } from './prisma';
 import { config } from './config';
+import { logAuditEvent, AuditAction } from './auditLog';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as NextAuthOptions['adapter'],
@@ -17,6 +18,18 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  events: {
+    async signIn({ user }) {
+      // Log LOGIN event for returning user tracking
+      if (user?.id) {
+        logAuditEvent({
+          userId: user.id,
+          action: AuditAction.LOGIN,
+          metadata: { provider: 'google' },
+        });
+      }
+    },
+  },
   callbacks: {
     async redirect({ url, baseUrl }) {
       // Prevent redirecting to deleted pages (terms, privacy)

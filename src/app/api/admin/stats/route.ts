@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminHelpers';
+import { cleanupOldAuditLogs } from '@/lib/auditLog';
 
 // GET - Fetch admin statistics (admin only)
 export async function GET() {
@@ -8,6 +9,9 @@ export async function GET() {
     // SECURITY: Triple validation - middleware, then this check
     const { error } = await requireAdmin();
     if (error) return error;
+
+    // Cleanup old audit logs (fire-and-forget, 90-day retention)
+    cleanupOldAuditLogs().catch(() => {});
 
     // Get today's date range (Israel timezone)
     const now = new Date();
