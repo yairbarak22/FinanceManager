@@ -107,77 +107,32 @@ async function getEmailContent(emailId: string) {
     throw new Error('Resend client not initialized');
   }
 
-  try {
-    // Use Resend SDK method if available, otherwise use direct API
-    // Check if resend.emails has getReceivedEmail method
-    if ('getReceivedEmail' in resend.emails && typeof (resend.emails as any).getReceivedEmail === 'function') {
-      console.log('[Webhook] Using Resend SDK getReceivedEmail method');
-      const emailContent = await (resend.emails as any).getReceivedEmail({ id: emailId });
-      console.log('[Webhook] Email content fetched via SDK:', { 
-        hasHtml: !!emailContent?.html, 
-        hasText: !!emailContent?.text,
-        keys: emailContent ? Object.keys(emailContent) : []
-      });
-      return emailContent;
-    }
-
-    // Fallback to direct API call
-    console.log('[Webhook] Using direct API call to fetch email content');
-    const response = await fetch(
-      `https://api.resend.com/emails/${emailId}/received`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[Webhook] Email content fetch failed:', {
-        status: response.status,
-        statusText: response.statusText,
-        errorText,
-      });
-      throw new Error(`Failed to fetch email: ${response.status} - ${errorText}`);
-    }
-
-    const emailContent = await response.json();
-    console.log('[Webhook] Email content fetched via API:', { 
-      hasHtml: !!emailContent.html, 
-      hasText: !!emailContent.text,
-      hasData: !!emailContent.data,
-      keys: Object.keys(emailContent),
-      dataKeys: emailContent.data ? Object.keys(emailContent.data) : [],
-      sample: JSON.stringify(emailContent).substring(0, 500),
-    });
-    
-    // Resend API returns { data: { html, text, ... } }
-    if (emailContent.data) {
-      return emailContent.data;
-    }
-    
-    return emailContent;
-  } catch (error: any) {
+  console.log('[Webhook] Fetching email content via SDK for:', emailId);
+  
+  // Use correct Resend SDK method: resend.emails.receiving.get()
+  const { data: email, error } = await resend.emails.receiving.get(emailId);
+  
+  if (error) {
     console.error('[Webhook] Failed to get email content:', {
-      message: error?.message,
-      stack: error?.stack,
-      error,
+      message: error.message,
+      name: error.name,
     });
-    throw error;
+    throw new Error(`Failed to fetch email: ${error.message}`);
   }
+
+  console.log('[Webhook] Email content fetched via SDK:', { 
+    hasHtml: !!email?.html, 
+    hasText: !!email?.text,
+    htmlLength: email?.html?.length || 0,
+    textLength: email?.text?.length || 0,
+    keys: email ? Object.keys(email) : [],
+  });
+  
+  return email;
 }
 
-async function downloadAttachment(emailId: string, attachmentId: string): Promise<Buffer> {
-  const response = await fetch(
-    `https://api.resend.com/emails/${emailId}/attachments/${attachmentId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      },
-    }
-  );
+async function downloadAttachmentFromUrl(downloadUrl: string): Promise<Buffer> {
+  const response = await fetch(downloadUrl);
 
   if (!response.ok) {
     throw new Error(`Failed to download attachment: ${response.status}`);
@@ -187,6 +142,33 @@ async function downloadAttachment(emailId: string, attachmentId: string): Promis
   return Buffer.from(arrayBuffer);
 }
 
+async function getAttachments(emailId: string) {
+  const resend = getResend();
+  if (!resend) {
+    throw new Error('Resend client not initialized');
+  }
+
+  console.log('[Webhook] Fetching attachments via SDK for:', emailId);
+  
+  // Use correct Resend SDK method: resend.attachments.receiving.list()
+  const { data: attachments, error } = await resend.attachments.receiving.list({ emailId });
+  
+  if (error) {
+    console.error('[Webhook] Failed to get attachments:', {
+      message: error.message,
+      name: error.name,
+    });
+    return [];
+  }
+
+  console.log('[Webhook] Attachments fetched:', {
+    count: attachments?.length || 0,
+    filenames: attachments?.map(a => a.filename) || [],
+  });
+  
+  return attachments || [];
+}
+
 async function forwardEmail(event: EmailReceivedEvent) {
   const resend = getResend();
   if (!resend) {
@@ -194,7 +176,7 @@ async function forwardEmail(event: EmailReceivedEvent) {
   }
 
   const forwardTo = getForwardToEmail();
-  const { email_id, from, to, subject, attachments } = event.data;
+  const { email_id, from, to, subject } = event.data;
   const senderEmail = extractEmailAddress(from);
 
   console.log('[Webhook] Starting email forward:', {
@@ -203,58 +185,40 @@ async function forwardEmail(event: EmailReceivedEvent) {
     to: to.join(', '),
     subject,
     forwardTo,
-    attachmentsCount: attachments?.length || 0,
   });
 
-  // Fetch full email content
-  let emailContent: { html?: string; text?: string; data?: any } = {};
+  // Fetch full email content using SDK
+  let emailContent: { html?: string; text?: string } = {};
   try {
-    const fetchedContent = await getEmailContent(email_id);
-    console.log('[Webhook] Raw email content response:', {
-      type: typeof fetchedContent,
-      isArray: Array.isArray(fetchedContent),
-      keys: fetchedContent ? Object.keys(fetchedContent) : [],
-      hasData: !!(fetchedContent as any)?.data,
-      dataKeys: (fetchedContent as any)?.data ? Object.keys((fetchedContent as any).data) : [],
-    });
-    
-    // Resend API returns { data: { html, text, ... } }
-    if ((fetchedContent as any)?.data) {
-      emailContent = (fetchedContent as any).data;
-    } else {
-      emailContent = fetchedContent as any;
-    }
-    
-    console.log('[Webhook] Processed email content:', {
-      hasHtml: !!emailContent.html,
-      hasText: !!emailContent.text,
-      htmlLength: emailContent.html?.length || 0,
-      textLength: emailContent.text?.length || 0,
-    });
+    emailContent = await getEmailContent(email_id) || {};
   } catch (error: any) {
-    console.error('[Webhook] Failed to fetch email content:', {
-      message: error?.message,
-      stack: error?.stack,
-      error,
-    });
+    console.error('[Webhook] Failed to fetch email content:', error?.message);
   }
 
-  // Prepare attachments
+  // Prepare attachments using SDK
   const forwardAttachments: Array<{ filename: string; content: Buffer }> = [];
 
-  if (attachments && attachments.length > 0) {
-    for (const attachment of attachments) {
+  try {
+    const attachmentsList = await getAttachments(email_id);
+    
+    for (const attachment of attachmentsList) {
       try {
-        const content = await downloadAttachment(email_id, attachment.id);
-        forwardAttachments.push({
-          filename: attachment.filename,
-          content,
-        });
-        console.log(`[Webhook] Downloaded attachment: ${attachment.filename}`);
+        if (attachment.download_url) {
+          const content = await downloadAttachmentFromUrl(attachment.download_url);
+          forwardAttachments.push({
+            filename: attachment.filename,
+            content,
+          });
+          console.log(`[Webhook] Downloaded attachment: ${attachment.filename}`);
+        } else {
+          console.warn(`[Webhook] Attachment ${attachment.filename} has no download_url`);
+        }
       } catch (error) {
         console.error(`[Webhook] Failed to download attachment ${attachment.filename}:`, error);
       }
     }
+  } catch (error) {
+    console.error('[Webhook] Failed to get attachments list:', error);
   }
 
   // Build HTML body
