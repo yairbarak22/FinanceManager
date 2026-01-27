@@ -12,6 +12,11 @@ function isAdmin(email: string | null | undefined): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Allow webhook endpoints without authentication (they verify signatures)
+  if (pathname === '/api/webhook/receive') {
+    return NextResponse.next();
+  }
+
   // Get the token
   const token = await getToken({
     req: request,
@@ -35,8 +40,9 @@ export async function middleware(request: NextRequest) {
   const isSafeMethod = ['GET', 'HEAD', 'OPTIONS'].includes(request.method);
   const isApiRoute = pathname.startsWith('/api/');
   const isAuthRoute = pathname.startsWith('/api/auth/');
+  const isWebhookRoute = pathname === '/api/webhook/receive';
 
-  if (!isSafeMethod && isApiRoute && !isAuthRoute) {
+  if (!isSafeMethod && isApiRoute && !isAuthRoute && !isWebhookRoute) {
     const csrfHeader = request.headers.get('X-CSRF-Protection');
     if (csrfHeader !== '1') {
       // Audit log: CSRF violation
@@ -107,10 +113,11 @@ export const config = {
      * - /login
      * - /invite/* (invite pages - handle their own auth)
      * - /api/auth (NextAuth.js authentication routes)
+     * - /api/webhook/receive (webhook endpoints - verify signatures themselves)
      * - /_next/static (static files)
      * - /_next/image (image optimization)
      * - /favicon.ico, /images (static assets)
      */
-    '/((?!login|invite|api/auth|_next/static|_next/image|favicon.ico|images).*)',
+    '/((?!login|invite|api/auth|api/webhook|_next/static|_next/image|favicon.ico|images).*)',
   ],
 };
