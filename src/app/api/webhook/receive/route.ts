@@ -102,31 +102,61 @@ function extractEmailAddress(fromString: string): string {
 }
 
 async function getEmailContent(emailId: string) {
+  const resend = getResend();
+  if (!resend) {
+    throw new Error('Resend client not initialized');
+  }
+
   try {
+    // Use Resend SDK method if available, otherwise use direct API
+    // Check if resend.emails has getReceivedEmail method
+    if ('getReceivedEmail' in resend.emails && typeof (resend.emails as any).getReceivedEmail === 'function') {
+      console.log('[Webhook] Using Resend SDK getReceivedEmail method');
+      const emailContent = await (resend.emails as any).getReceivedEmail({ id: emailId });
+      console.log('[Webhook] Email content fetched via SDK:', { 
+        hasHtml: !!emailContent?.html, 
+        hasText: !!emailContent?.text,
+        keys: emailContent ? Object.keys(emailContent) : []
+      });
+      return emailContent;
+    }
+
+    // Fallback to direct API call
+    console.log('[Webhook] Using direct API call to fetch email content');
     const response = await fetch(
       `https://api.resend.com/emails/${emailId}/received`,
       {
         headers: {
           Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
         },
       }
     );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[Webhook] Email content fetch failed:', response.status, errorText);
-      throw new Error(`Failed to fetch email: ${response.status}`);
+      console.error('[Webhook] Email content fetch failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorText,
+      });
+      throw new Error(`Failed to fetch email: ${response.status} - ${errorText}`);
     }
 
     const emailContent = await response.json();
-    console.log('[Webhook] Email content fetched:', { 
+    console.log('[Webhook] Email content fetched via API:', { 
       hasHtml: !!emailContent.html, 
       hasText: !!emailContent.text,
-      keys: Object.keys(emailContent)
+      keys: Object.keys(emailContent),
+      sample: JSON.stringify(emailContent).substring(0, 200),
     });
     return emailContent;
-  } catch (error) {
-    console.error('[Webhook] Failed to get email content:', error);
+  } catch (error: any) {
+    console.error('[Webhook] Failed to get email content:', {
+      message: error?.message,
+      stack: error?.stack,
+      error,
+    });
     throw error;
   }
 }
