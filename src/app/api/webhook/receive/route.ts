@@ -180,22 +180,6 @@ async function downloadAttachmentFromUrl(downloadUrl: string): Promise<Buffer> {
 async function getAttachments(emailId: string) {
   console.log('[Webhook] Fetching attachments for:', emailId);
   
-  const resend = getResend();
-  
-  // Try SDK first
-  if (resend && resend.attachments?.receiving?.list) {
-    try {
-      const result = await resend.attachments.receiving.list({ emailId });
-      if (result?.data && !result?.error) {
-        console.log('[Webhook] Attachments from SDK:', result.data?.length || 0);
-        return result.data || [];
-      }
-    } catch (err: any) {
-      console.log('[Webhook] SDK attachments failed:', err?.message);
-    }
-  }
-  
-  // Fallback to direct API
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return [];
   
