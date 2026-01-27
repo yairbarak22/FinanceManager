@@ -109,26 +109,49 @@ async function getEmailContent(emailId: string) {
 
   console.log('[Webhook] Fetching email content via SDK for:', emailId);
   
-  // Use correct Resend SDK method: resend.emails.receiving.get()
-  const { data: email, error } = await resend.emails.receiving.get(emailId);
-  
-  if (error) {
-    console.error('[Webhook] Failed to get email content:', {
-      message: error.message,
-      name: error.name,
+  try {
+    // Use correct Resend SDK method: resend.emails.receiving.get()
+    const result = await resend.emails.receiving.get(emailId);
+    
+    console.log('[Webhook] SDK raw response:', {
+      hasResult: !!result,
+      resultType: typeof result,
+      resultKeys: result ? Object.keys(result) : [],
+      resultString: JSON.stringify(result).substring(0, 1000),
     });
-    throw new Error(`Failed to fetch email: ${error.message}`);
-  }
+    
+    const { data: email, error } = result;
+    
+    if (error) {
+      console.error('[Webhook] SDK returned error:', {
+        message: error.message,
+        name: error.name,
+        error: JSON.stringify(error),
+      });
+      throw new Error(`Failed to fetch email: ${error.message}`);
+    }
 
-  console.log('[Webhook] Email content fetched via SDK:', { 
-    hasHtml: !!email?.html, 
-    hasText: !!email?.text,
-    htmlLength: email?.html?.length || 0,
-    textLength: email?.text?.length || 0,
-    keys: email ? Object.keys(email) : [],
-  });
-  
-  return email;
+    console.log('[Webhook] Email content fetched via SDK:', { 
+      hasEmail: !!email,
+      hasHtml: !!email?.html, 
+      hasText: !!email?.text,
+      hasBody: !!(email as any)?.body,
+      htmlLength: email?.html?.length || 0,
+      textLength: email?.text?.length || 0,
+      bodyLength: (email as any)?.body?.length || 0,
+      keys: email ? Object.keys(email) : [],
+      emailSample: email ? JSON.stringify(email).substring(0, 500) : 'null',
+    });
+    
+    return email;
+  } catch (err: any) {
+    console.error('[Webhook] Exception in getEmailContent:', {
+      message: err?.message,
+      name: err?.name,
+      stack: err?.stack,
+    });
+    throw err;
+  }
 }
 
 async function downloadAttachmentFromUrl(downloadUrl: string): Promise<Buffer> {
