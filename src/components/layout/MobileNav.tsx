@@ -9,13 +9,14 @@ interface NavItem {
   label: string;
   path: string;
   icon: typeof Home;
+  activeColor: string;
 }
 
 const navItems: NavItem[] = [
-  { id: 'dashboard', label: 'דשבורד', path: '/dashboard', icon: Home },
-  { id: 'investments', label: 'השקעות', path: '/investments', icon: TrendingUp },
-  { id: 'help', label: 'ידע', path: '/help', icon: BookOpen },
-  { id: 'contact', label: 'צור קשר', path: '/contact', icon: Mail },
+  { id: 'dashboard', label: 'דשבורד', path: '/dashboard', icon: Home, activeColor: 'text-blue-500' },
+  { id: 'investments', label: 'השקעות', path: '/investments', icon: TrendingUp, activeColor: 'text-emerald-500' },
+  { id: 'help', label: 'ידע', path: '/help', icon: BookOpen, activeColor: 'text-amber-500' },
+  { id: 'contact', label: 'צור קשר', path: '/contact', icon: Mail, activeColor: 'text-rose-400' },
 ];
 
 export default function MobileNav() {
@@ -28,7 +29,7 @@ export default function MobileNav() {
 
   return (
     <nav
-      className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-50 pb-safe"
+      className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 z-50"
       aria-label="ניווט ראשי"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
@@ -42,32 +43,32 @@ export default function MobileNav() {
               key={item.id}
               type="button"
               onClick={() => handleNavigate(item.path)}
-              className="relative flex flex-col items-center justify-center gap-1 py-2 px-3 min-w-[60px] transition-all duration-200 rounded-lg"
+              className="relative flex flex-col items-center justify-center gap-1 py-2 px-4 min-w-[64px] transition-all duration-150 rounded-xl"
               aria-current={isActive ? 'page' : undefined}
             >
               <motion.div
                 initial={false}
                 animate={{
-                  scale: isActive ? 1.1 : 1,
-                  y: isActive ? -2 : 0,
+                  scale: isActive ? 1.05 : 1,
+                  y: isActive ? -1 : 0,
                 }}
-                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                transition={{ type: 'spring', stiffness: 400, damping: 25 }}
               >
                 <Icon
-                  className={`w-5 h-5 transition-colors ${isActive ? 'text-[#2B4699]' : 'text-slate-400'}`}
-                  strokeWidth={isActive ? 2.5 : 2}
+                  className={`w-5 h-5 transition-colors duration-150 ${isActive ? item.activeColor : 'text-slate-400'}`}
+                  strokeWidth={isActive ? 2 : 1.75}
                   aria-hidden="true"
                 />
               </motion.div>
-              <span className={`text-[10px] transition-colors ${isActive ? 'text-[#2B4699] font-semibold' : 'text-slate-500 font-medium'}`}>
+              <span className={`text-[10px] transition-colors duration-150 ${isActive ? 'text-slate-700 font-medium' : 'text-slate-400 font-normal'}`}>
                 {item.label}
               </span>
               {isActive && (
                 <motion.span
                   layoutId="mobile-nav-indicator"
-                  className="absolute -bottom-0.5 h-0.5 w-8 bg-[#2B4699] rounded-full"
+                  className="absolute -bottom-0 h-[3px] w-6 bg-slate-200 rounded-full"
                   aria-hidden="true"
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                 />
               )}
             </button>
@@ -77,4 +78,3 @@ export default function MobileNav() {
     </nav>
   );
 }
-

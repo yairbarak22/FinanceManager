@@ -15,13 +15,43 @@ interface NavItem {
   label: string;
   path: string;
   icon: typeof Home;
+  iconBg: string;
+  iconColor: string;
 }
 
 const navItems: NavItem[] = [
-  { id: 'dashboard', label: 'דשבורד', path: '/dashboard', icon: Home },
-  { id: 'investments', label: 'תיק השקעות', path: '/investments', icon: TrendingUp },
-  { id: 'help', label: 'ידע פיננסי', path: '/help', icon: BookOpen },
-  { id: 'contact', label: 'צור קשר', path: '/contact', icon: Mail },
+  { 
+    id: 'dashboard', 
+    label: 'דשבורד', 
+    path: '/dashboard', 
+    icon: Home,
+    iconBg: 'bg-blue-50',
+    iconColor: 'text-blue-500',
+  },
+  { 
+    id: 'investments', 
+    label: 'תיק השקעות', 
+    path: '/investments', 
+    icon: TrendingUp,
+    iconBg: 'bg-emerald-50',
+    iconColor: 'text-emerald-500',
+  },
+  { 
+    id: 'help', 
+    label: 'ידע פיננסי', 
+    path: '/help', 
+    icon: BookOpen,
+    iconBg: 'bg-amber-50',
+    iconColor: 'text-amber-500',
+  },
+  { 
+    id: 'contact', 
+    label: 'צור קשר', 
+    path: '/contact', 
+    icon: Mail,
+    iconBg: 'bg-rose-50',
+    iconColor: 'text-rose-400',
+  },
 ];
 
 export default function Sidebar() {
@@ -35,23 +65,25 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="hidden lg:flex flex-col w-64 border-l border-slate-200 bg-white/80 backdrop-blur-sm"
+      className="hidden lg:flex flex-col w-64 bg-white border-l border-slate-100"
       aria-label="ניווט ראשי"
     >
       {/* Logo Section */}
-      <div className="p-6 border-b border-slate-200">
+      <div className="px-5 py-6">
         <button
           type="button"
           onClick={() => handleNavigate('/dashboard')}
-          className="flex items-center gap-2 group cursor-pointer hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2.5 group cursor-pointer"
           aria-label="חזרה לדשבורד הראשי"
         >
-          <PieChart
-            className="w-8 h-8 text-[#2B4699]"
-            strokeWidth={3}
-          />
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
+            <PieChart
+              className="w-5 h-5 text-white"
+              strokeWidth={2.5}
+            />
+          </div>
           <span
-            className="text-xl font-black text-[#1D1D1F]"
+            className="text-lg font-bold text-slate-800 tracking-tight"
             style={{ fontFamily: 'var(--font-heebo)' }}
           >
             NETO
@@ -60,60 +92,78 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation Items */}
-      <nav className="flex-1 p-4 space-y-2" role="navigation">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = pathname === item.path || (item.path === '/dashboard' && pathname === '/');
+      <nav className="flex-1 px-3 py-2" role="navigation">
+        <div className="space-y-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.path || (item.path === '/dashboard' && pathname === '/');
 
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => handleNavigate(item.path)}
-              className={`
-                w-full flex items-center gap-3 px-4 py-3 rounded-xl
-                transition-all duration-200
-                ${
-                  isActive
-                    ? 'bg-[#2B4699] text-white shadow-md'
-                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                }
-              `}
-              aria-current={isActive ? 'page' : undefined}
-            >
-              <Icon
-                className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-500'}`}
-                strokeWidth={2}
-                aria-hidden="true"
-              />
-              <span className="text-sm font-medium">{item.label}</span>
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleNavigate(item.path)}
+                className={`
+                  w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+                  transition-all duration-150 ease-out
+                  ${
+                    isActive
+                      ? 'bg-slate-100'
+                      : 'hover:bg-slate-50'
+                  }
+                `}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                {/* Icon with pastel background */}
+                <div className={`
+                  w-8 h-8 rounded-lg flex items-center justify-center
+                  transition-colors duration-150
+                  ${item.iconBg}
+                `}>
+                  <Icon
+                    className={`w-[18px] h-[18px] ${item.iconColor}`}
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  />
+                </div>
+                
+                {/* Label */}
+                <span className={`
+                  text-[13px] font-medium transition-colors duration-150
+                  ${isActive ? 'text-slate-900' : 'text-slate-600'}
+                `}>
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </nav>
 
       {/* User Info Footer */}
       {session?.user && (
-        <div className="p-4 border-t border-slate-200">
-          <div className="flex items-center gap-3">
+        <div className="px-3 py-4 border-t border-slate-100">
+          <div className="flex items-center gap-3 px-2">
             {session.user.image ? (
               <img
                 src={session.user.image}
                 alt=""
-                className="w-10 h-10 rounded-xl border-2 border-blue-200"
+                className="w-9 h-9 rounded-full ring-2 ring-slate-100"
               />
             ) : (
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#2B4699] to-[#3556AB] flex items-center justify-center border-2 border-blue-200">
-                <span className="text-white text-sm font-semibold">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                <span className="text-slate-600 text-sm font-medium">
                   {session.user.name?.[0] || 'U'}
                 </span>
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-900 truncate">
+              <p className="text-[13px] font-medium text-slate-700 truncate">
                 {session.user.name || 'משתמש'}
               </p>
-              <p className="text-xs text-slate-500 truncate">{session.user.email}</p>
+              <p className="text-[11px] text-slate-400 truncate">
+                {session.user.email}
+              </p>
             </div>
           </div>
         </div>
@@ -121,4 +171,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-

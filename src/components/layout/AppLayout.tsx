@@ -33,12 +33,12 @@ export default function AppLayout({
   showMonthFilter = true,
 }: AppLayoutProps) {
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
+    <div className="flex min-h-screen bg-slate-50/50">
       {/* Sidebar - Desktop only */}
       <Sidebar />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-h-screen lg:border-r-0">
+      <div className="flex-1 flex flex-col min-h-screen">
         {/* Header */}
         <MinimalHeader
           pageTitle={pageTitle}

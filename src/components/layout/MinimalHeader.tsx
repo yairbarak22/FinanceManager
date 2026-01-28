@@ -59,32 +59,32 @@ export default function MinimalHeader({
   const { name, email, image } = session?.user || {};
 
   return (
-    <header
-      className="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur-md"
-    >
-      <div className="px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <header className="sticky top-0 z-40 bg-white border-b border-slate-100">
+      <div className="px-4 lg:px-6">
+        <div className="flex items-center justify-between h-14">
           {/* Right: Page Title (Desktop) / Logo (Mobile) */}
           <div className="flex items-center gap-4">
             {/* Mobile Logo */}
-            <div className="lg:hidden flex items-center gap-2">
-              <PieChart className="w-7 h-7 text-[#2B4699]" strokeWidth={3} />
-              <span className="text-lg font-black text-[#1D1D1F]" style={{ fontFamily: 'var(--font-heebo)' }}>
+            <div className="lg:hidden flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                <PieChart className="w-4 h-4 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="text-base font-bold text-slate-800" style={{ fontFamily: 'var(--font-heebo)' }}>
                 NETO
               </span>
             </div>
             
             {/* Desktop Page Title */}
             <div className="hidden lg:block">
-              <h1 className="text-xl font-bold text-slate-900">{pageTitle}</h1>
+              <h1 className="text-base font-semibold text-slate-800">{pageTitle}</h1>
               {pageSubtitle && (
-                <p className="text-sm text-slate-500">{pageSubtitle}</p>
+                <p className="text-xs text-slate-400">{pageSubtitle}</p>
               )}
             </div>
           </div>
 
           {/* Left: Month Filter & User Menu */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Month Filter */}
             {showMonthFilter && (
               <>
@@ -115,11 +115,11 @@ export default function MinimalHeader({
             {/* Notification Bell */}
             <button
               type="button"
-              className="hidden md:flex relative p-2 text-slate-500 hover:text-[#2B4699] transition-colors rounded-lg hover:bg-slate-100"
+              className="hidden md:flex relative p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-lg hover:bg-slate-50"
               aria-label="התראות"
             >
-              <Bell className="w-5 h-5" strokeWidth={1.5} />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full" />
+              <Bell className="w-[18px] h-[18px]" strokeWidth={1.75} />
+              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-rose-400 rounded-full" />
             </button>
 
             {/* User Menu */}
@@ -128,7 +128,7 @@ export default function MinimalHeader({
                 <button
                   type="button"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 rounded-xl p-1.5 hover:bg-slate-100 transition-all"
+                  className="flex items-center gap-1.5 rounded-lg p-1.5 hover:bg-slate-50 transition-colors"
                   aria-expanded={isUserMenuOpen}
                   aria-haspopup="menu"
                 >
@@ -136,27 +136,27 @@ export default function MinimalHeader({
                     <img
                       src={image}
                       alt=""
-                      className="w-8 h-8 rounded-xl border-2 border-slate-200"
+                      className="w-7 h-7 rounded-full ring-2 ring-slate-100"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#2B4699] to-[#3556AB] flex items-center justify-center">
-                      <User className="w-4 h-4 text-white" />
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                      <User className="w-3.5 h-3.5 text-slate-500" />
                     </div>
                   )}
-                  <ChevronDown className="hidden md:block w-4 h-4 text-slate-400" />
+                  <ChevronDown className="hidden md:block w-3.5 h-3.5 text-slate-400" />
                 </button>
 
                 {/* Dropdown */}
                 {isUserMenuOpen && (
                   <div
-                    className="absolute left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50"
+                    className="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-100 py-1 z-50"
                     role="menu"
                   >
-                    <div className="px-4 py-3 border-b border-slate-100">
-                      <SensitiveData as="p" className="text-sm font-medium text-slate-900 truncate">
+                    <div className="px-3 py-2.5 border-b border-slate-100">
+                      <SensitiveData as="p" className="text-[13px] font-medium text-slate-700 truncate">
                         {name || 'משתמש'}
                       </SensitiveData>
-                      <SensitiveData as="p" className="text-xs text-slate-500 truncate">
+                      <SensitiveData as="p" className="text-[11px] text-slate-400 truncate">
                         {email}
                       </SensitiveData>
                     </div>
@@ -169,9 +169,9 @@ export default function MinimalHeader({
                             setIsUserMenuOpen(false);
                             onOpenProfile();
                           }}
-                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-50 transition-colors"
                         >
-                          <UserCog className="w-4 h-4" />
+                          <UserCog className="w-4 h-4 text-slate-400" />
                           <span>פרופיל משתמש</span>
                         </button>
                       )}
@@ -182,9 +182,9 @@ export default function MinimalHeader({
                             setIsUserMenuOpen(false);
                             onOpenAccountSettings();
                           }}
-                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-50 transition-colors"
                         >
-                          <Users className="w-4 h-4" />
+                          <Users className="w-4 h-4 text-slate-400" />
                           <span>חשבון משותף</span>
                         </button>
                       )}
@@ -194,9 +194,9 @@ export default function MinimalHeader({
                           setIsUserMenuOpen(false);
                           startTour();
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-50 transition-colors"
                       >
-                        <Sparkles className="w-4 h-4" />
+                        <Sparkles className="w-4 h-4 text-slate-400" />
                         <span>הצג סיור</span>
                       </button>
                     </div>
@@ -205,7 +205,7 @@ export default function MinimalHeader({
                       <button
                         type="button"
                         onClick={() => signOut({ callbackUrl: '/login' })}
-                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-rose-600 hover:bg-rose-50"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-rose-500 hover:bg-rose-50 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
                         <span>התנתקות</span>
@@ -221,4 +221,3 @@ export default function MinimalHeader({
     </header>
   );
 }
-
