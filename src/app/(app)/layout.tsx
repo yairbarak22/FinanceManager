@@ -4,6 +4,7 @@ import { ReactNode } from 'react';
 import { MonthProvider } from '@/context/MonthContext';
 import { ModalProvider } from '@/context/ModalContext';
 import { OnboardingProvider } from '@/context/OnboardingContext';
+import { SidebarProvider } from '@/context/SidebarContext';
 
 interface AppGroupLayoutProps {
   children: ReactNode;
@@ -11,13 +12,15 @@ interface AppGroupLayoutProps {
 
 export default function AppGroupLayout({ children }: AppGroupLayoutProps) {
   return (
-    <MonthProvider>
-      <ModalProvider>
-        <OnboardingProvider>
-          {children}
-        </OnboardingProvider>
-      </ModalProvider>
-    </MonthProvider>
+    <SidebarProvider>
+      <MonthProvider>
+        <ModalProvider>
+          <OnboardingProvider>
+            {children}
+          </OnboardingProvider>
+        </ModalProvider>
+      </MonthProvider>
+    </SidebarProvider>
   );
 }
 

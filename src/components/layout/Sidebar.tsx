@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSidebar } from '@/context/SidebarContext';
 
 interface SubNavItem {
   id: string;
@@ -33,30 +34,31 @@ interface NavItem {
   subItems?: SubNavItem[];
 }
 
+// All icons in blue shades
 const navItems: NavItem[] = [
   { 
     id: 'dashboard', 
     label: 'דשבורד', 
     path: '/dashboard', 
     icon: Home,
-    iconBg: 'bg-blue-50',
-    iconColor: 'text-blue-500',
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-600',
   },
   { 
     id: 'investments', 
     label: 'תיק השקעות', 
     path: '/investments', 
     icon: TrendingUp,
-    iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-500',
+    iconBg: 'bg-sky-100',
+    iconColor: 'text-sky-600',
   },
   { 
     id: 'help', 
     label: 'ידע פיננסי', 
     path: '/help', 
     icon: BookOpen,
-    iconBg: 'bg-amber-50',
-    iconColor: 'text-amber-500',
+    iconBg: 'bg-indigo-100',
+    iconColor: 'text-indigo-600',
     subItems: [
       { id: 'general', label: 'ידע כללי', path: '/help?tab=general', icon: GraduationCap },
       { id: 'calculators', label: 'מחשבונים', path: '/help?tab=calculators', icon: Calculator },
@@ -68,8 +70,8 @@ const navItems: NavItem[] = [
     label: 'צור קשר', 
     path: '/contact', 
     icon: Mail,
-    iconBg: 'bg-rose-50',
-    iconColor: 'text-rose-400',
+    iconBg: 'bg-cyan-100',
+    iconColor: 'text-cyan-600',
   },
 ];
 
@@ -77,6 +79,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
+  const { isCollapsed } = useSidebar();
   const [expandedMenu, setExpandedMenu] = useState<string | null>(
     pathname.startsWith('/help') ? 'help' : null
   );
@@ -86,6 +89,7 @@ export default function Sidebar() {
   };
 
   const toggleSubmenu = (itemId: string) => {
+    if (isCollapsed) return; // Don't toggle submenu when collapsed
     setExpandedMenu(expandedMenu === itemId ? null : itemId);
   };
 
@@ -98,41 +102,52 @@ export default function Sidebar() {
   };
 
   return (
-    <aside
-      className="hidden lg:flex flex-col w-72 bg-white border-l border-slate-100 sticky top-0 h-screen overflow-y-auto"
+    <motion.aside
+      initial={false}
+      animate={{ width: isCollapsed ? 80 : 288 }}
+      transition={{ duration: 0.2, ease: 'easeInOut' }}
+      className="hidden lg:flex flex-col bg-white border-l border-slate-100 sticky top-0 h-screen overflow-hidden"
       aria-label="ניווט ראשי"
     >
       {/* Logo Section */}
-      <div className="px-6 py-7">
+      <div className={`py-7 ${isCollapsed ? 'px-4' : 'px-6'}`}>
         <button
           type="button"
           onClick={() => handleNavigate('/dashboard')}
-          className="flex items-center gap-3 group cursor-pointer"
+          className={`flex items-center gap-3 group cursor-pointer ${isCollapsed ? 'justify-center' : ''}`}
           aria-label="חזרה לדשבורד הראשי"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm flex-shrink-0">
             <PieChart
               className="w-5 h-5 text-white"
               strokeWidth={2.5}
             />
           </div>
-          <span
-            className="text-xl font-bold text-slate-800 tracking-tight"
-            style={{ fontFamily: 'var(--font-heebo)' }}
-          >
-            NETO
-          </span>
+          <AnimatePresence>
+            {!isCollapsed && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.15 }}
+                className="text-xl font-bold text-slate-800 tracking-tight whitespace-nowrap overflow-hidden"
+                style={{ fontFamily: 'var(--font-heebo)' }}
+              >
+                NETO
+              </motion.span>
+            )}
+          </AnimatePresence>
         </button>
       </div>
 
       {/* Navigation Items */}
-      <nav className="flex-1 px-4 py-3" role="navigation">
+      <nav className={`flex-1 py-3 ${isCollapsed ? 'px-3' : 'px-4'}`} role="navigation">
         <div className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = isItemActive(item);
             const hasSubItems = item.subItems && item.subItems.length > 0;
-            const isExpanded = expandedMenu === item.id;
+            const isExpanded = expandedMenu === item.id && !isCollapsed;
 
             return (
               <div key={item.id}>
@@ -140,24 +155,26 @@ export default function Sidebar() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (hasSubItems) {
+                    if (hasSubItems && !isCollapsed) {
                       toggleSubmenu(item.id);
                     } else {
                       handleNavigate(item.path);
                     }
                   }}
+                  title={isCollapsed ? item.label : undefined}
                   className={`
-                    w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl
+                    w-full flex items-center gap-3 py-3 rounded-xl
                     transition-all duration-150 ease-out cursor-pointer
+                    ${isCollapsed ? 'px-3 justify-center' : 'px-4 justify-between'}
                     ${isActive ? 'bg-slate-100' : 'hover:bg-slate-50'}
                   `}
                   aria-current={isActive && !hasSubItems ? 'page' : undefined}
                   aria-expanded={hasSubItems ? isExpanded : undefined}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
                     {/* Icon with pastel background */}
                     <div className={`
-                      w-9 h-9 rounded-lg flex items-center justify-center
+                      w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0
                       transition-colors duration-150
                       ${item.iconBg}
                     `}>
@@ -169,16 +186,26 @@ export default function Sidebar() {
                     </div>
                     
                     {/* Label */}
-                    <span className={`
-                      text-sm font-medium transition-colors duration-150
-                      ${isActive ? 'text-slate-900' : 'text-slate-600'}
-                    `}>
-                      {item.label}
-                    </span>
+                    <AnimatePresence>
+                      {!isCollapsed && (
+                        <motion.span
+                          initial={{ opacity: 0, width: 0 }}
+                          animate={{ opacity: 1, width: 'auto' }}
+                          exit={{ opacity: 0, width: 0 }}
+                          transition={{ duration: 0.15 }}
+                          className={`
+                            text-sm font-medium transition-colors duration-150 whitespace-nowrap overflow-hidden
+                            ${isActive ? 'text-slate-900' : 'text-slate-600'}
+                          `}
+                        >
+                          {item.label}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
                   </div>
 
                   {/* Chevron for submenu */}
-                  {hasSubItems && (
+                  {hasSubItems && !isCollapsed && (
                     <motion.div
                       animate={{ rotate: isExpanded ? 180 : 0 }}
                       transition={{ duration: 0.2 }}
@@ -190,7 +217,7 @@ export default function Sidebar() {
 
                 {/* Submenu */}
                 <AnimatePresence>
-                  {hasSubItems && isExpanded && (
+                  {hasSubItems && isExpanded && !isCollapsed && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
@@ -212,7 +239,7 @@ export default function Sidebar() {
                                 w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg
                                 transition-all duration-150 cursor-pointer
                                 ${isSubActive 
-                                  ? 'bg-amber-50 text-amber-700' 
+                                  ? 'bg-indigo-50 text-indigo-700' 
                                   : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
                                 }
                               `}
@@ -234,32 +261,46 @@ export default function Sidebar() {
 
       {/* User Info Footer */}
       {session?.user && (
-        <div className="px-4 py-5 border-t border-slate-100">
-          <div className="flex items-center gap-3 px-2">
+        <div className={`py-5 border-t border-slate-100 ${isCollapsed ? 'px-3' : 'px-4'}`}>
+          <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : 'px-2'}`}>
             {session.user.image ? (
               <img
                 src={session.user.image}
                 alt=""
-                className="w-10 h-10 rounded-full ring-2 ring-slate-100"
+                className="w-10 h-10 rounded-full ring-2 ring-slate-100 flex-shrink-0"
+                title={isCollapsed ? session.user.name || 'משתמש' : undefined}
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+              <div 
+                className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center flex-shrink-0"
+                title={isCollapsed ? session.user.name || 'משתמש' : undefined}
+              >
                 <span className="text-slate-600 text-sm font-medium">
                   {session.user.name?.[0] || 'U'}
                 </span>
               </div>
             )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-700 truncate">
-                {session.user.name || 'משתמש'}
-              </p>
-              <p className="text-xs text-slate-400 truncate">
-                {session.user.email}
-              </p>
-            </div>
+            <AnimatePresence>
+              {!isCollapsed && (
+                <motion.div
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: 'auto' }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex-1 min-w-0 overflow-hidden"
+                >
+                  <p className="text-sm font-medium text-slate-700 truncate">
+                    {session.user.name || 'משתמש'}
+                  </p>
+                  <p className="text-xs text-slate-400 truncate">
+                    {session.user.email}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       )}
-    </aside>
+    </motion.aside>
   );
 }

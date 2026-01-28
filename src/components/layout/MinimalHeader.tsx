@@ -11,8 +11,11 @@ import {
   Sparkles,
   ChevronDown,
   PieChart,
+  PanelRightClose,
+  PanelRightOpen,
 } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
+import { useSidebar } from '@/context/SidebarContext';
 import MonthFilter from '@/components/MonthFilter';
 import { SensitiveData } from '@/components/common/SensitiveData';
 
@@ -43,6 +46,7 @@ export default function MinimalHeader({
 }: MinimalHeaderProps) {
   const { data: session } = useSession();
   const { startTour } = useOnboarding();
+  const { isCollapsed, toggleSidebar } = useSidebar();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -62,8 +66,8 @@ export default function MinimalHeader({
     <header className="sticky top-0 z-40 bg-white border-b border-slate-100">
       <div className="px-4 lg:px-6">
         <div className="flex items-center justify-between h-14">
-          {/* Right: Page Title (Desktop) / Logo (Mobile) */}
-          <div className="flex items-center gap-4">
+          {/* Right: Sidebar Toggle + Page Title (Desktop) / Logo (Mobile) */}
+          <div className="flex items-center gap-3">
             {/* Mobile Logo */}
             <div className="lg:hidden flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
@@ -74,12 +78,30 @@ export default function MinimalHeader({
               </span>
             </div>
             
-            {/* Desktop Page Title */}
-            <div className="hidden lg:block">
-              <h1 className="text-base font-semibold text-slate-800">{pageTitle}</h1>
-              {pageSubtitle && (
-                <p className="text-xs text-slate-400">{pageSubtitle}</p>
-              )}
+            {/* Desktop: Sidebar Toggle + Page Title */}
+            <div className="hidden lg:flex items-center gap-3">
+              {/* Sidebar Toggle Button */}
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+                aria-label={isCollapsed ? 'הרחב תפריט צד' : 'כווץ תפריט צד'}
+                title={isCollapsed ? 'הרחב תפריט צד' : 'כווץ תפריט צד'}
+              >
+                {isCollapsed ? (
+                  <PanelRightOpen className="w-5 h-5" strokeWidth={1.75} />
+                ) : (
+                  <PanelRightClose className="w-5 h-5" strokeWidth={1.75} />
+                )}
+              </button>
+              
+              {/* Page Title */}
+              <div>
+                <h1 className="text-base font-semibold text-slate-800">{pageTitle}</h1>
+                {pageSubtitle && (
+                  <p className="text-xs text-slate-400">{pageSubtitle}</p>
+                )}
+              </div>
             </div>
           </div>
 
