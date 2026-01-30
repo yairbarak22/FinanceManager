@@ -805,6 +805,7 @@ export default function DashboardPage() {
               <Card padding="sm" className="h-[500px] flex flex-col lg:col-span-1">
                 <ExpensesPieChart 
                   transactions={filteredTransactions} 
+                  recurringExpenses={recurringTransactions}
                   customExpenseCategories={expenseCats.custom} 
                 />
               </Card>

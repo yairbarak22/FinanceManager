@@ -4,12 +4,13 @@ import { useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { PieChart as PieChartIcon } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import { Transaction } from '@/lib/types';
+import { Transaction, RecurringTransaction } from '@/lib/types';
 import { getCategoryInfo, CategoryInfo } from '@/lib/categories';
 import { SensitiveData } from './common/SensitiveData';
 
 interface ExpensesPieChartProps {
   transactions: Transaction[];
+  recurringExpenses?: RecurringTransaction[];
   customExpenseCategories?: CategoryInfo[];
 }
 
@@ -26,18 +27,27 @@ const EXPENSE_COLORS: Record<string, string> = {
   other: '#BDBDCB',          // Light Grey
 };
 
-export default function ExpensesPieChart({ transactions, customExpenseCategories = [] }: ExpensesPieChartProps) {
+export default function ExpensesPieChart({ transactions, recurringExpenses = [], customExpenseCategories = [] }: ExpensesPieChartProps) {
   // Hover state for synchronized chart/legend interaction
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
 
   // Calculate expenses by category - memoized
+  // Includes both regular transactions and recurring expenses
   const { data, totalExpenses } = useMemo(() => {
+    // Start with regular transaction expenses
     const expensesByCategory = transactions
       .filter((t) => t.type === 'expense')
       .reduce((acc, t) => {
         acc[t.category] = (acc[t.category] || 0) + t.amount;
         return acc;
       }, {} as Record<string, number>);
+
+    // Add recurring expenses by their categories
+    recurringExpenses
+      .filter((r) => r.type === 'expense' && r.isActive)
+      .forEach((r) => {
+        expensesByCategory[r.category] = (expensesByCategory[r.category] || 0) + r.amount;
+      });
 
     const total = Object.values(expensesByCategory).reduce((a, b) => a + b, 0);
 
@@ -55,7 +65,7 @@ export default function ExpensesPieChart({ transactions, customExpenseCategories
       .sort((a, b) => b.value - a.value);
 
     return { data: chartData, totalExpenses: total };
-  }, [transactions, customExpenseCategories]);
+  }, [transactions, recurringExpenses, customExpenseCategories]);
 
   if (data.length === 0) {
     return (

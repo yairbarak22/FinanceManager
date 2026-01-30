@@ -3,23 +3,19 @@
  * 
  * תנאי: מילואים + תשלום ארנונה
  * עדיפות: בינונית
+ * 
+ * @deprecated Military status field has been removed - rule will never trigger
  */
 
 import { createRule } from '../ruleFactory';
-import { isReservist, paysArnona } from '../helpers';
 import { SERVICE_URLS } from '../constants';
 
 export default createRule({
   id: 'miluim-arnona-discount',
   name: 'הנחת ארנונה למילואימניקים',
   
-  condition: (ctx) => {
-    // Must be a reservist
-    if (!isReservist(ctx)) return false;
-    
-    // Must be paying arnona
-    return paysArnona(ctx);
-  },
+  // Always return false - military status removed
+  condition: () => false,
 
   getEligibilityReason: () => {
     return `סטטוס צבאי: מילואים פעיל. זוהה תשלום ארנונה בעסקאות. ההנחה ניתנת ע"י הרשות המקומית בתיאום עם צה"ל.`;

@@ -65,16 +65,6 @@ export const onboardingSteps: OnboardingStep[] = [
           { value: 'student', label: 'סטודנט' },
         ],
       },
-      {
-        key: 'militaryStatus',
-        label: 'סטטוס צבאי',
-        type: 'select',
-        options: [
-          { value: 'none', label: 'ללא' },
-          { value: 'reserve', label: 'מילואים' },
-          { value: 'career', label: 'קבע' },
-        ],
-      },
     ],
   },
   {

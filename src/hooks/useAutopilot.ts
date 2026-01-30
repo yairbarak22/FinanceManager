@@ -407,12 +407,6 @@ export function useAutopilot() {
         'student': 'סטודנט',
       };
 
-      const militaryLabels: Record<string, string> = {
-        'none': 'ללא שירות צבאי',
-        'reserve': 'מילואימניק/ית',
-        'career': 'קבע',
-      };
-
       // 4. Fill Age Range dropdown (index 0)
       if (data.ageRange) {
         await selectProfileDropdown(0, ageLabels[data.ageRange] || data.ageRange, 'טווח גיל');
@@ -423,12 +417,7 @@ export function useAutopilot() {
         await selectProfileDropdown(2, employmentLabels[data.employmentType] || data.employmentType, 'סוג תעסוקה');
       }
 
-      // 6. Fill Military Status dropdown (index 3)
-      if (data.militaryStatus) {
-        await selectProfileDropdown(3, militaryLabels[data.militaryStatus] || data.militaryStatus, 'סטטוס צבאי');
-      }
-
-      // 7. Click Save button - scroll it into view first
+      // 6. Click Save button - scroll it into view first
       await wait(TIMING.PAUSE_BEFORE_SAVE);
       const saveBtn = modal.querySelector('button[type="submit"]') as HTMLElement;
       if (saveBtn) {

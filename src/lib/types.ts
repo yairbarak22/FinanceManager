@@ -164,7 +164,6 @@ export interface DashboardData {
 export interface UserProfile {
   id: string;
   userId: string;
-  militaryStatus?: 'none' | 'reserve' | 'career';
   maritalStatus?: 'single' | 'married' | 'divorced' | 'widowed';
   employmentType?: 'employee' | 'self_employed' | 'both' | 'student';
   hasChildren: boolean;

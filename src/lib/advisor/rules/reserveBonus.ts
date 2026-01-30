@@ -3,19 +3,19 @@
  * 
  * תנאי: מילואימניק + עצמאי
  * עדיפות: גבוהה
+ * 
+ * @deprecated Military status field has been removed - rule will never trigger
  */
 
 import { createRule } from '../ruleFactory';
-import { isReservist, isSelfEmployed } from '../helpers';
-import { SERVICE_URLS, ESTIMATED_VALUES } from '../constants';
+import { SERVICE_URLS } from '../constants';
 
 export default createRule({
   id: 'reserve-self-employed-bonus',
   name: 'בונוס מילואימניק עצמאי',
   
-  condition: (ctx) => {
-    return isReservist(ctx) && isSelfEmployed(ctx);
-  },
+  // Always return false - military status removed
+  condition: () => false,
   
   recommendation: {
     title: 'פיצוי נוסף למילואימניקים עצמאיים',

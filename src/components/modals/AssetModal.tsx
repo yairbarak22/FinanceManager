@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { Asset } from '@/lib/types';
 import { CategoryInfo } from '@/lib/categories';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
+
+// Field order for auto-scroll
+const FIELD_ORDER = ['name', 'category', 'value'];
 
 interface AssetModalProps {
   isOpen: boolean;
@@ -29,6 +32,24 @@ export default function AssetModal({
   const [value, setValue] = useState('');
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Refs for auto-scroll to next field
+  const fieldRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const modalBodyRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to next field when current field is filled
+  const scrollToNextField = useCallback((currentField: string) => {
+    const currentIndex = FIELD_ORDER.indexOf(currentField);
+    if (currentIndex >= 0 && currentIndex < FIELD_ORDER.length - 1) {
+      const nextField = FIELD_ORDER[currentIndex + 1];
+      const nextFieldElement = fieldRefs.current.get(nextField);
+      if (nextFieldElement && modalBodyRef.current) {
+        setTimeout(() => {
+          nextFieldElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (asset) {
@@ -88,14 +109,15 @@ export default function AssetModal({
 
           {/* Form */}
           <form onSubmit={handleSubmit}>
-            <div className="modal-body">
+            <div className="modal-body" ref={modalBodyRef}>
               {/* Name */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('name', el); }}>
                 <label className="label">שם הנכס</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  onBlur={() => { if (name) scrollToNextField('name'); }}
                   placeholder="לדוגמה: דירה ברמת גן"
                   className="input"
                   required
@@ -103,11 +125,14 @@ export default function AssetModal({
               </div>
 
               {/* Category */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('category', el); }}>
                 <label className="label">סוג נכס</label>
                 <CategorySelect
                   value={category}
-                  onChange={setCategory}
+                  onChange={(val) => {
+                    setCategory(val);
+                    if (val) scrollToNextField('category');
+                  }}
                   defaultCategories={assetCategories.default}
                   customCategories={assetCategories.custom}
                   placeholder="בחר סוג נכס"
@@ -117,7 +142,7 @@ export default function AssetModal({
               </div>
 
               {/* Value */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('value', el); }}>
                 <label className="label">שווי (₪)</label>
                 <input
                   type="number"

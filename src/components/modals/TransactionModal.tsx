@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { Transaction } from '@/lib/types';
 import { CategoryInfo } from '@/lib/categories';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+
+// Field order for auto-scroll
+const FIELD_ORDER = ['type', 'amount', 'category', 'description', 'date'];
 
 interface TransactionModalProps {
   isOpen: boolean;
@@ -35,10 +38,28 @@ export default function TransactionModal({
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Refs for auto-scroll to next field
+  const fieldRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const modalBodyRef = useRef<HTMLDivElement>(null);
+
   // Accessibility: Focus trap for modal
   const { containerRef, handleKeyDown } = useFocusTrap<HTMLDivElement>(isOpen, {
     onEscape: onClose,
   });
+
+  // Auto-scroll to next field when current field is filled
+  const scrollToNextField = useCallback((currentField: string) => {
+    const currentIndex = FIELD_ORDER.indexOf(currentField);
+    if (currentIndex >= 0 && currentIndex < FIELD_ORDER.length - 1) {
+      const nextField = FIELD_ORDER[currentIndex + 1];
+      const nextFieldElement = fieldRefs.current.get(nextField);
+      if (nextFieldElement && modalBodyRef.current) {
+        setTimeout(() => {
+          nextFieldElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (transaction) {
@@ -125,54 +146,59 @@ export default function TransactionModal({
 
           {/* Form */}
           <form onSubmit={handleSubmit}>
-            <div className="modal-body">
+            <div className="modal-body" ref={modalBodyRef}>
               {/* Type Toggle */}
-              <fieldset>
-                <legend className="label">סוג עסקה</legend>
-                <div className="grid grid-cols-2 gap-2" role="group" aria-label="סוג עסקה">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setType('expense');
-                      setCategory('');
-                    }}
-                    aria-pressed={type === 'expense'}
-                    className="py-3 px-4 rounded-xl font-medium transition-all"
-                    style={{
-                      backgroundColor: type === 'expense' ? '#F18AB5' : '#F7F7F8',
-                      color: type === 'expense' ? '#FFFFFF' : '#7E7F90',
-                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-                    }}
-                  >
-                    הוצאה
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setType('income');
-                      setCategory('');
-                    }}
-                    aria-pressed={type === 'income'}
-                    className="py-3 px-4 rounded-xl font-medium transition-all"
-                    style={{
-                      backgroundColor: type === 'income' ? '#0DBACC' : '#F7F7F8',
-                      color: type === 'income' ? '#FFFFFF' : '#7E7F90',
-                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-                    }}
-                  >
-                    הכנסה
-                  </button>
-                </div>
-              </fieldset>
+              <div ref={(el) => { if (el) fieldRefs.current.set('type', el); }}>
+                <fieldset>
+                  <legend className="label">סוג עסקה</legend>
+                  <div className="grid grid-cols-2 gap-2" role="group" aria-label="סוג עסקה">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setType('expense');
+                        setCategory('');
+                        scrollToNextField('type');
+                      }}
+                      aria-pressed={type === 'expense'}
+                      className="py-3 px-4 rounded-xl font-medium transition-all"
+                      style={{
+                        backgroundColor: type === 'expense' ? '#F18AB5' : '#F7F7F8',
+                        color: type === 'expense' ? '#FFFFFF' : '#7E7F90',
+                        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                      }}
+                    >
+                      הוצאה
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setType('income');
+                        setCategory('');
+                        scrollToNextField('type');
+                      }}
+                      aria-pressed={type === 'income'}
+                      className="py-3 px-4 rounded-xl font-medium transition-all"
+                      style={{
+                        backgroundColor: type === 'income' ? '#0DBACC' : '#F7F7F8',
+                        color: type === 'income' ? '#FFFFFF' : '#7E7F90',
+                        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                      }}
+                    >
+                      הכנסה
+                    </button>
+                  </div>
+                </fieldset>
+              </div>
 
               {/* Amount */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('amount', el); }}>
                 <label htmlFor="tx-amount" className="label">סכום (₪)</label>
                 <input
                   id="tx-amount"
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
+                  onBlur={() => { if (amount) scrollToNextField('amount'); }}
                   placeholder="0"
                   className="input"
                   required
@@ -183,11 +209,14 @@ export default function TransactionModal({
               </div>
 
               {/* Category */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('category', el); }}>
                 <label id="tx-category-label" className="label">קטגוריה</label>
                 <CategorySelect
                   value={category}
-                  onChange={setCategory}
+                  onChange={(val) => {
+                    setCategory(val);
+                    if (val) scrollToNextField('category');
+                  }}
                   defaultCategories={type === 'income' ? incomeCategories.default : expenseCategories.default}
                   customCategories={type === 'income' ? incomeCategories.custom : expenseCategories.custom}
                   placeholder="בחר קטגוריה"
@@ -198,13 +227,14 @@ export default function TransactionModal({
               </div>
 
               {/* Description */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('description', el); }}>
                 <label htmlFor="tx-description" className="label">תיאור</label>
                 <input
                   id="tx-description"
                   type="text"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
+                  onBlur={() => { if (description) scrollToNextField('description'); }}
                   placeholder="תיאור העסקה"
                   className="input"
                   required
@@ -213,7 +243,7 @@ export default function TransactionModal({
               </div>
 
               {/* Date */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('date', el); }}>
                 <label htmlFor="tx-date" className="label">תאריך</label>
                 <input
                   id="tx-date"

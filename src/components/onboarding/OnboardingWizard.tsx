@@ -279,7 +279,7 @@ export default function OnboardingWizard() {
     // If never saved, any data is a change
     if (!lastSavedProfileData) return true;
 
-    const profileFields = ['ageRange', 'employmentType', 'militaryStatus'];
+    const profileFields = ['ageRange', 'employmentType'];
     for (const key of profileFields) {
       if (wizardData[key] !== lastSavedProfileData[key]) {
         return true;
@@ -345,7 +345,6 @@ export default function OnboardingWizard() {
       setLastSavedProfileData({
         ageRange: wizardData.ageRange || '',
         employmentType: wizardData.employmentType || '',
-        militaryStatus: wizardData.militaryStatus || '',
       });
     }
   }, [currentStep, wizardData, startAutopilot, runAutopilotSequence]);
@@ -378,7 +377,6 @@ export default function OnboardingWizard() {
           body: JSON.stringify({
             ageRange: wizardData.ageRange || '26-35',
             employmentType: wizardData.employmentType || 'employee',
-            militaryStatus: wizardData.militaryStatus || 'none',
             hasChildren: false,
             childrenCount: 0,
           }),
@@ -388,7 +386,6 @@ export default function OnboardingWizard() {
           setLastSavedProfileData({
             ageRange: wizardData.ageRange || '26-35',
             employmentType: wizardData.employmentType || 'employee',
-            militaryStatus: wizardData.militaryStatus || 'none',
           });
           showSuccessNotification('הפרופיל עודכן בהצלחה!');
         } else {

@@ -3,22 +3,20 @@
  *
  * תנאי: איש קבע + גיל 24-45
  * עדיפות: גבוהה
+ * 
+ * @deprecated Military status field has been removed - rule will never trigger
  */
 
 import { createRule } from '../ruleFactory';
-import { isCareer, isInAgeRange, getEstimatedAge } from '../helpers';
+import { getEstimatedAge } from '../helpers';
 import { AGE_RANGES } from '../constants';
 
 export default createRule({
   id: 'career-housing-association',
   name: 'עמותת מגורים לאנשי קבע',
 
-  condition: (ctx) => {
-    return (
-      isCareer(ctx) &&
-      isInAgeRange(ctx, AGE_RANGES.CAREER_HOUSING_MIN, AGE_RANGES.CAREER_HOUSING_MAX)
-    );
-  },
+  // Always return false - military status removed
+  condition: () => false,
 
   getEligibilityReason: (ctx) => {
     const age = getEstimatedAge(ctx);

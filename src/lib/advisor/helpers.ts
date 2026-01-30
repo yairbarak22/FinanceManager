@@ -25,16 +25,18 @@ export function hasProfile(ctx: FinancialContext): boolean {
 
 /**
  * Check if user is career military (קבע)
+ * @deprecated Military status field has been removed
  */
-export function isCareer(ctx: FinancialContext): boolean {
-  return ctx.user.profile?.militaryStatus === 'career';
+export function isCareer(_ctx: FinancialContext): boolean {
+  return false;
 }
 
 /**
  * Check if user is reservist (מילואימניק)
+ * @deprecated Military status field has been removed
  */
-export function isReservist(ctx: FinancialContext): boolean {
-  return ctx.user.profile?.militaryStatus === 'reserve';
+export function isReservist(_ctx: FinancialContext): boolean {
+  return false;
 }
 
 /**

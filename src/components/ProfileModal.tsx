@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Loader2, ChevronDown, Check } from 'lucide-react';
 import { cn, apiFetch } from '@/lib/utils';
 import { SensitiveData } from './common/SensitiveData';
 
+// Field order for auto-scroll
+const FIELD_ORDER = ['ageRange', 'maritalStatus', 'employmentType', 'hasChildren', 'monthlyIncome', 'riskTolerance'];
+
 interface UserProfile {
-  militaryStatus: string | null;
   maritalStatus: string | null;
   employmentType: string | null;
   hasChildren: boolean;
@@ -130,13 +132,6 @@ const EMPLOYMENT_OPTIONS: SelectOption[] = [
   { value: 'both', label: 'שכיר/ה + עצמאי/ת' },
 ];
 
-const MILITARY_OPTIONS: SelectOption[] = [
-  { value: '', label: 'בחר סטטוס צבאי' },
-  { value: 'none', label: 'ללא שירות צבאי' },
-  { value: 'reserve', label: 'מילואימניק/ית' },
-  { value: 'career', label: 'קבע' },
-];
-
 const INCOME_OPTIONS: SelectOption[] = [
   { value: '', label: 'בחר טווח הכנסה' },
   { value: '0-10000', label: 'עד ₪10,000' },
@@ -157,7 +152,6 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<UserProfile>({
-    militaryStatus: null,
     maritalStatus: null,
     employmentType: null,
     hasChildren: false,
@@ -166,6 +160,24 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     monthlyIncome: null,
     riskTolerance: null,
   });
+
+  // Refs for auto-scroll to next field
+  const fieldRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const modalBodyRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to next field when current field is filled
+  const scrollToNextField = useCallback((currentField: string) => {
+    const currentIndex = FIELD_ORDER.indexOf(currentField);
+    if (currentIndex >= 0 && currentIndex < FIELD_ORDER.length - 1) {
+      const nextField = FIELD_ORDER[currentIndex + 1];
+      const nextFieldElement = fieldRefs.current.get(nextField);
+      if (nextFieldElement && modalBodyRef.current) {
+        setTimeout(() => {
+          nextFieldElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -232,64 +244,65 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <div className="modal-body">
+            <div className="modal-body" ref={modalBodyRef}>
               {/* Age Range */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('ageRange', el); }}>
                 <label className="label">טווח גיל</label>
                 <StyledSelect
                   value={profile.ageRange}
-                  onChange={(v) => setProfile({ ...profile, ageRange: v })}
+                  onChange={(v) => {
+                    setProfile({ ...profile, ageRange: v });
+                    if (v) scrollToNextField('ageRange');
+                  }}
                   options={AGE_OPTIONS}
                   placeholder="בחר טווח גיל"
                 />
               </div>
 
               {/* Marital Status */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('maritalStatus', el); }}>
                 <label className="label">מצב משפחתי</label>
                 <StyledSelect
                   value={profile.maritalStatus}
-                  onChange={(v) => setProfile({ ...profile, maritalStatus: v })}
+                  onChange={(v) => {
+                    setProfile({ ...profile, maritalStatus: v });
+                    if (v) scrollToNextField('maritalStatus');
+                  }}
                   options={MARITAL_OPTIONS}
                   placeholder="בחר מצב משפחתי"
                 />
               </div>
 
               {/* Employment Type */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('employmentType', el); }}>
                 <label className="label">סוג תעסוקה</label>
                 <StyledSelect
                   value={profile.employmentType}
-                  onChange={(v) => setProfile({ ...profile, employmentType: v })}
+                  onChange={(v) => {
+                    setProfile({ ...profile, employmentType: v });
+                    if (v) scrollToNextField('employmentType');
+                  }}
                   options={EMPLOYMENT_OPTIONS}
                   placeholder="בחר סוג תעסוקה"
                 />
               </div>
 
-              {/* Military Status */}
-              <div>
-                <label className="label">סטטוס צבאי</label>
-                <StyledSelect
-                  value={profile.militaryStatus}
-                  onChange={(v) => setProfile({ ...profile, militaryStatus: v })}
-                  options={MILITARY_OPTIONS}
-                  placeholder="בחר סטטוס צבאי"
-                />
-              </div>
-
               {/* Children */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('hasChildren', el); }}>
                 <label className="label">ילדים</label>
                 <div className="flex items-center gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={profile.hasChildren}
-                      onChange={(e) => setProfile({ 
-                        ...profile, 
-                        hasChildren: e.target.checked,
-                        childrenCount: e.target.checked ? Math.max(1, profile.childrenCount) : 0
-                      })}
+                      onChange={(e) => {
+                        setProfile({ 
+                          ...profile, 
+                          hasChildren: e.target.checked,
+                          childrenCount: e.target.checked ? Math.max(1, profile.childrenCount) : 0
+                        });
+                        scrollToNextField('hasChildren');
+                      }}
                       className="w-5 h-5 rounded border-gray-300 text-indigo-500 focus:ring-indigo-500"
                     />
                     <span className="text-slate-700">יש לי ילדים</span>
@@ -315,18 +328,21 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
               </div>
 
               {/* Monthly Income */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('monthlyIncome', el); }}>
                 <label className="label">טווח הכנסה חודשית</label>
                 <StyledSelect
                   value={profile.monthlyIncome}
-                  onChange={(v) => setProfile({ ...profile, monthlyIncome: v })}
+                  onChange={(v) => {
+                    setProfile({ ...profile, monthlyIncome: v });
+                    if (v) scrollToNextField('monthlyIncome');
+                  }}
                   options={INCOME_OPTIONS}
                   placeholder="בחר טווח הכנסה"
                 />
               </div>
 
               {/* Risk Tolerance */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('riskTolerance', el); }}>
                 <label className="label">רמת סיבולת סיכון</label>
                 <StyledSelect
                   value={profile.riskTolerance}

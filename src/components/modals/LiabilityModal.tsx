@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Calculator, Loader2 } from 'lucide-react';
 import { Liability } from '@/lib/types';
 import { CategoryInfo } from '@/lib/categories';
@@ -8,6 +8,9 @@ import { calculateSpitzerPayment } from '@/lib/loanCalculations';
 import { cn } from '@/lib/utils';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
+
+// Field order for auto-scroll
+const FIELD_ORDER = ['name', 'type', 'loanMethod', 'totalAmount', 'interestRate', 'loanTermMonths', 'startDate', 'monthlyPayment', 'hasInterestRebate'];
 
 interface LiabilityModalProps {
   isOpen: boolean;
@@ -37,6 +40,24 @@ export default function LiabilityModal({
   const [hasInterestRebate, setHasInterestRebate] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Refs for auto-scroll to next field
+  const fieldRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const modalBodyRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to next field when current field is filled
+  const scrollToNextField = useCallback((currentField: string) => {
+    const currentIndex = FIELD_ORDER.indexOf(currentField);
+    if (currentIndex >= 0 && currentIndex < FIELD_ORDER.length - 1) {
+      const nextField = FIELD_ORDER[currentIndex + 1];
+      const nextFieldElement = fieldRefs.current.get(nextField);
+      if (nextFieldElement && modalBodyRef.current) {
+        setTimeout(() => {
+          nextFieldElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (liability) {
@@ -126,14 +147,15 @@ export default function LiabilityModal({
 
           {/* Form */}
           <form onSubmit={handleSubmit}>
-            <div className="modal-body space-y-4">
+            <div className="modal-body space-y-4" ref={modalBodyRef}>
               {/* Name */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('name', el); }}>
                 <label className="label">שם ההתחייבות</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  onBlur={() => { if (name) scrollToNextField('name'); }}
                   placeholder="לדוגמה: משכנתא לדירה"
                   className="input"
                   required
@@ -141,11 +163,14 @@ export default function LiabilityModal({
               </div>
 
               {/* Type */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('type', el); }}>
                 <label className="label">סוג התחייבות</label>
                 <CategorySelect
                   value={type}
-                  onChange={setType}
+                  onChange={(val) => {
+                    setType(val);
+                    if (val) scrollToNextField('type');
+                  }}
                   defaultCategories={liabilityTypes.default}
                   customCategories={liabilityTypes.custom}
                   placeholder="בחר סוג התחייבות"
@@ -155,12 +180,15 @@ export default function LiabilityModal({
               </div>
 
               {/* Loan Method */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('loanMethod', el); }}>
                 <label className="label">שיטת ההלוואה</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => setLoanMethod('spitzer')}
+                    onClick={() => {
+                      setLoanMethod('spitzer');
+                      scrollToNextField('loanMethod');
+                    }}
                     className="py-2.5 px-4 rounded-xl text-sm font-medium transition-all"
                     style={{
                       backgroundColor: loanMethod === 'spitzer' ? '#69ADFF' : '#F7F7F8',
@@ -172,7 +200,10 @@ export default function LiabilityModal({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setLoanMethod('equal_principal')}
+                    onClick={() => {
+                      setLoanMethod('equal_principal');
+                      scrollToNextField('loanMethod');
+                    }}
                     className="py-2.5 px-4 rounded-xl text-sm font-medium transition-all"
                     style={{
                       backgroundColor: loanMethod === 'equal_principal' ? '#69ADFF' : '#F7F7F8',
@@ -187,12 +218,13 @@ export default function LiabilityModal({
 
               {/* Total Amount + Interest Rate */}
               <div className="grid grid-cols-2 gap-3">
-                <div>
+                <div ref={(el) => { if (el) fieldRefs.current.set('totalAmount', el); }}>
                   <label className="label">סכום הלוואה (₪)</label>
                   <input
                     type="number"
                     value={totalAmount}
                     onChange={(e) => setTotalAmount(e.target.value)}
+                    onBlur={() => { if (totalAmount) scrollToNextField('totalAmount'); }}
                     placeholder="0"
                     className="input"
                     required
@@ -200,12 +232,13 @@ export default function LiabilityModal({
                     step="1"
                   />
                 </div>
-                <div>
+                <div ref={(el) => { if (el) fieldRefs.current.set('interestRate', el); }}>
                   <label className="label">ריבית שנתית (%)</label>
                   <input
                     type="number"
                     value={interestRate}
                     onChange={(e) => setInterestRate(e.target.value)}
+                    onBlur={() => { if (interestRate) scrollToNextField('interestRate'); }}
                     placeholder="0"
                     className="input"
                     min="0"
@@ -216,37 +249,42 @@ export default function LiabilityModal({
 
               {/* Term + Start Date */}
               <div className="grid grid-cols-2 gap-3">
-                <div>
+                <div ref={(el) => { if (el) fieldRefs.current.set('loanTermMonths', el); }}>
                   <label className="label">תקופה (חודשים)</label>
                   <input
                     type="number"
                     value={loanTermMonths}
                     onChange={(e) => setLoanTermMonths(e.target.value)}
+                    onBlur={() => { if (loanTermMonths) scrollToNextField('loanTermMonths'); }}
                     placeholder="0"
                     className="input"
                     min="1"
                     step="1"
                   />
                 </div>
-                <div>
+                <div ref={(el) => { if (el) fieldRefs.current.set('startDate', el); }}>
                   <label className="label">תאריך התחלה</label>
                   <input
                     type="date"
                     value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      if (e.target.value) scrollToNextField('startDate');
+                    }}
                     className="input"
                   />
                 </div>
               </div>
 
               {/* Calculate Payment Button */}
-              <div className="flex items-end gap-3">
+              <div ref={(el) => { if (el) fieldRefs.current.set('monthlyPayment', el); }} className="flex items-end gap-3">
                 <div className="flex-1">
                   <label className="label">תשלום חודשי (₪)</label>
                   <input
                     type="number"
                     value={monthlyPayment}
                     onChange={(e) => setMonthlyPayment(e.target.value)}
+                    onBlur={() => { if (monthlyPayment) scrollToNextField('monthlyPayment'); }}
                     placeholder="0"
                     className="input"
                     required
@@ -267,6 +305,7 @@ export default function LiabilityModal({
 
               {/* Interest Rebate */}
               <div 
+                ref={(el) => { if (el) fieldRefs.current.set('hasInterestRebate', el); }}
                 className="rounded-xl p-4"
                 style={{ 
                   backgroundColor: 'rgba(13, 186, 204, 0.08)',

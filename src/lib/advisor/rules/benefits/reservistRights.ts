@@ -3,6 +3,8 @@
  *
  * תנאי: מילואימניק
  * קטגוריה: benefit
+ * 
+ * @deprecated Military status field has been removed - rule will never trigger
  */
 
 import { createRule } from '../../ruleFactory';
@@ -12,10 +14,8 @@ export default createRule({
   id: 'reservist-rights',
   name: 'מיצוי זכויות מילואים',
 
-  condition: (ctx) => {
-    // Must be reservist
-    return ctx.metrics.isReservist;
-  },
+  // Always return false - military status removed
+  condition: () => false,
 
   recommendation: {
     title: 'מיצוי זכויות מילואים',
@@ -40,7 +40,7 @@ export default createRule({
     potentialValue: 8000, // Average annual value of reservist benefits
   },
 
-  getEligibilityReason: (ctx) => {
+  getEligibilityReason: () => {
     return 'סטטוס צבאי: מילואים - זכאי להטבות מגוונות';
   },
 });

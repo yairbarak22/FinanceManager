@@ -68,7 +68,6 @@ export async function getUserFinancialContext(userId: string): Promise<Financial
       id: userWithProfile.profile.id,
       userId: userWithProfile.profile.userId,
       // Decrypt encrypted profile fields
-      militaryStatus: decrypt(userWithProfile.profile.militaryStatus || '') as 'none' | 'reserve' | 'career' | undefined || undefined,
       maritalStatus: decrypt(userWithProfile.profile.maritalStatus || '') as 'single' | 'married' | 'divorced' | 'widowed' | undefined || undefined,
       employmentType: decrypt(userWithProfile.profile.employmentType || '') as 'employee' | 'self_employed' | 'both' | 'student' | undefined || undefined,
       hasChildren: userWithProfile.profile.hasChildren,
@@ -233,8 +232,8 @@ function calculateMetrics(
     )
   );
 
-  // Is reservist
-  const isReservist = user.profile?.militaryStatus === 'reserve';
+  // Is reservist - deprecated, always false now
+  const isReservist = false;
 
   // Debt to income ratio
   const debtToIncomeRatio = monthlyIncome > 0

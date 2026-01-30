@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Loader2 } from 'lucide-react';
 import { RecurringTransaction } from '@/lib/types';
 import { CategoryInfo } from '@/lib/categories';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
+
+// Field order for auto-scroll
+const FIELD_ORDER = ['type', 'name', 'amount', 'category', 'isActive'];
 
 interface RecurringModalProps {
   isOpen: boolean;
@@ -35,6 +38,24 @@ export default function RecurringModal({
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Refs for auto-scroll to next field
+  const fieldRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const modalBodyRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to next field when current field is filled
+  const scrollToNextField = useCallback((currentField: string) => {
+    const currentIndex = FIELD_ORDER.indexOf(currentField);
+    if (currentIndex >= 0 && currentIndex < FIELD_ORDER.length - 1) {
+      const nextField = FIELD_ORDER[currentIndex + 1];
+      const nextFieldElement = fieldRefs.current.get(nextField);
+      if (nextFieldElement && modalBodyRef.current) {
+        setTimeout(() => {
+          nextFieldElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    }
+  }, []);
 
   // Set mounted state for portal
   useEffect(() => {
@@ -120,9 +141,9 @@ export default function RecurringModal({
 
           {/* Form */}
           <form onSubmit={handleSubmit}>
-            <div className="modal-body">
+            <div className="modal-body" ref={modalBodyRef}>
               {/* Type Toggle */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('type', el); }}>
                 <label className="label">סוג עסקה</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -130,6 +151,7 @@ export default function RecurringModal({
                     onClick={() => {
                       setType('expense');
                       setCategory('');
+                      scrollToNextField('type');
                     }}
                     className="py-3 px-4 rounded-xl font-medium transition-all"
                     style={{
@@ -145,6 +167,7 @@ export default function RecurringModal({
                     onClick={() => {
                       setType('income');
                       setCategory('');
+                      scrollToNextField('type');
                     }}
                     className="py-3 px-4 rounded-xl font-medium transition-all"
                     style={{
@@ -159,12 +182,13 @@ export default function RecurringModal({
               </div>
 
               {/* Name */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('name', el); }}>
                 <label className="label">שם העסקה</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  onBlur={() => { if (name) scrollToNextField('name'); }}
                   placeholder="לדוגמה: משכורת יאיר"
                   className="input"
                   required
@@ -172,12 +196,13 @@ export default function RecurringModal({
               </div>
 
               {/* Amount */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('amount', el); }}>
                 <label className="label">סכום (₪)</label>
                 <input
                   type="number"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
+                  onBlur={() => { if (amount) scrollToNextField('amount'); }}
                   placeholder="0"
                   className="input"
                   required
@@ -187,11 +212,14 @@ export default function RecurringModal({
               </div>
 
               {/* Category */}
-              <div>
+              <div ref={(el) => { if (el) fieldRefs.current.set('category', el); }}>
                 <label className="label">קטגוריה</label>
                 <CategorySelect
                   value={category}
-                  onChange={setCategory}
+                  onChange={(val) => {
+                    setCategory(val);
+                    if (val) scrollToNextField('category');
+                  }}
                   defaultCategories={type === 'income' ? incomeCategories.default : expenseCategories.default}
                   customCategories={type === 'income' ? incomeCategories.custom : expenseCategories.custom}
                   placeholder="בחר קטגוריה"
@@ -201,7 +229,7 @@ export default function RecurringModal({
               </div>
 
               {/* Active Toggle */}
-              <div className="flex items-center justify-between">
+              <div ref={(el) => { if (el) fieldRefs.current.set('isActive', el); }} className="flex items-center justify-between">
                 <label className="label mb-0">פעיל</label>
                 <button
                   type="button"

@@ -3,18 +3,18 @@
  *
  * תנאי: מילואימניק + תזרים חיובי
  * עדיפות: גבוהה
+ * 
+ * @deprecated Military status field has been removed - rule will never trigger
  */
 
 import { createRule } from '../ruleFactory';
-import { isReservist, hasPositiveCashFlow } from '../helpers';
 
 export default createRule({
   id: 'ogen-reservist-loan',
   name: 'הלוואת עוגן למילואימניקים',
 
-  condition: (ctx) => {
-    return isReservist(ctx) && hasPositiveCashFlow(ctx);
-  },
+  // Always return false - military status removed
+  condition: () => false,
 
   getEligibilityReason: () => {
     return 'סטטוס צבאי: מילואים פעיל. תזרים חודשי חיובי.';

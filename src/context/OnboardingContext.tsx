@@ -391,7 +391,6 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
           body: JSON.stringify({
             ageRange: wizardData.ageRange || '26-35',
             employmentType: wizardData.employmentType || 'employee',
-            militaryStatus: wizardData.militaryStatus || 'none',
             hasChildren: false,
             childrenCount: 0,
           }),

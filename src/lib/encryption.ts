@@ -136,7 +136,6 @@ export function decryptFields<T extends Record<string, unknown>>(
 
 // Fields in UserProfile that should be encrypted
 export const ENCRYPTED_PROFILE_FIELDS = [
-  'militaryStatus',
   'maritalStatus',
   'employmentType',
   'ageRange',

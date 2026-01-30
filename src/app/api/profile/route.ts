@@ -4,7 +4,6 @@ import { requireAuth } from '@/lib/authHelpers';
 import { encrypt, decrypt, ENCRYPTED_PROFILE_FIELDS } from '@/lib/encryption';
 
 // Valid enum values for profile fields
-const VALID_MILITARY_STATUS = ['none', 'reserve', 'career'];
 const VALID_MARITAL_STATUS = ['single', 'married', 'divorced', 'widowed'];
 const VALID_EMPLOYMENT_TYPE = ['employee', 'self_employed', 'both'];
 const VALID_AGE_RANGE = ['18-25', '26-35', '36-45', '46-55', '56-65', '65+'];
@@ -72,21 +71,6 @@ export async function PUT(request: Request) {
 
     // Validate and include enum fields only if they have valid values
     // If field is null/empty, preserve existing value (don't update)
-    if (data.militaryStatus !== undefined) {
-      if (data.militaryStatus !== null && data.militaryStatus !== '') {
-        const value = validateEnum(data.militaryStatus, VALID_MILITARY_STATUS);
-        if (value) {
-          updateFields.militaryStatus = value;
-        } else if (existingProfile) {
-          // Invalid value - preserve existing
-          updateFields.militaryStatus = existingProfile.militaryStatus;
-        }
-      } else if (existingProfile) {
-        // null/empty - preserve existing value
-        updateFields.militaryStatus = existingProfile.militaryStatus;
-      }
-    }
-
     if (data.maritalStatus !== undefined) {
       if (data.maritalStatus !== null && data.maritalStatus !== '') {
         const value = validateEnum(data.maritalStatus, VALID_MARITAL_STATUS);

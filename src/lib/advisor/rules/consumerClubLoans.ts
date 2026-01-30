@@ -3,18 +3,18 @@
  *
  * תנאי: איש קבע
  * עדיפות: גבוהה
+ * 
+ * @deprecated Military status field has been removed - rule will never trigger
  */
 
 import { createRule } from '../ruleFactory';
-import { isCareer } from '../helpers';
 
 export default createRule({
   id: 'haver-club-loan',
   name: 'הלוואה ללא ריבית במועדון חבר',
 
-  condition: (ctx) => {
-    return isCareer(ctx);
-  },
+  // Always return false - military status removed
+  condition: () => false,
 
   getEligibilityReason: () => {
     return 'סטטוס צבאי: קבע';
