@@ -3,6 +3,14 @@ import { NextResponse } from 'next/server';
 import { requireAuth, withUserId } from '@/lib/authHelpers';
 
 export async function POST() {
+  // הגנה: רק בסביבת פיתוח
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      { error: 'Seed endpoint is disabled in production' },
+      { status: 403 }
+    );
+  }
+
   try {
     const { userId, error } = await requireAuth();
     if (error) return error;

@@ -95,6 +95,7 @@ model RecurringTransaction {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, isActive])
 }
 
 model Asset {
@@ -110,6 +111,8 @@ model Asset {
   valueHistory AssetValueHistory[]
 
   @@index([userId])
+  @@index([userId, category])
+  @@index([userId, updatedAt])
 }
 
 model AssetValueHistory {
@@ -142,6 +145,7 @@ model Liability {
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([userId, type])
 }
 
 model NetWorthHistory {
@@ -202,6 +206,7 @@ model Holding {
 
   @@index([userId])
   @@index([symbol])
+  @@index([userId, symbol])
 }
 
 model CustomCategory {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { PieChart as PieChartIcon } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
@@ -30,28 +30,32 @@ export default function ExpensesPieChart({ transactions, customExpenseCategories
   // Hover state for synchronized chart/legend interaction
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
 
-  // Calculate expenses by category
-  const expensesByCategory = transactions
-    .filter((t) => t.type === 'expense')
-    .reduce((acc, t) => {
-      acc[t.category] = (acc[t.category] || 0) + t.amount;
-      return acc;
-    }, {} as Record<string, number>);
+  // Calculate expenses by category - memoized
+  const { data, totalExpenses } = useMemo(() => {
+    const expensesByCategory = transactions
+      .filter((t) => t.type === 'expense')
+      .reduce((acc, t) => {
+        acc[t.category] = (acc[t.category] || 0) + t.amount;
+        return acc;
+      }, {} as Record<string, number>);
 
-  const totalExpenses = Object.values(expensesByCategory).reduce((a, b) => a + b, 0);
+    const total = Object.values(expensesByCategory).reduce((a, b) => a + b, 0);
 
-  const data = Object.entries(expensesByCategory)
-    .map(([category, amount]) => {
-      const categoryInfo = getCategoryInfo(category, 'expense', customExpenseCategories);
-      return {
-        id: category,
-        name: categoryInfo?.nameHe || category,
-        value: amount,
-        color: EXPENSE_COLORS[category] || categoryInfo?.color || '#BDBDCB',
-        percentage: ((amount / totalExpenses) * 100).toFixed(0),
-      };
-    })
-    .sort((a, b) => b.value - a.value);
+    const chartData = Object.entries(expensesByCategory)
+      .map(([category, amount]) => {
+        const categoryInfo = getCategoryInfo(category, 'expense', customExpenseCategories);
+        return {
+          id: category,
+          name: categoryInfo?.nameHe || category,
+          value: amount,
+          color: EXPENSE_COLORS[category] || categoryInfo?.color || '#BDBDCB',
+          percentage: ((amount / total) * 100).toFixed(0),
+        };
+      })
+      .sort((a, b) => b.value - a.value);
+
+    return { data: chartData, totalExpenses: total };
+  }, [transactions, customExpenseCategories]);
 
   if (data.length === 0) {
     return (

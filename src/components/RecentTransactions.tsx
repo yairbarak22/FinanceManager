@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, Edit3, ChevronDown, Check, Pencil, Loader2 } from 'lucide-react';
 import { Transaction } from '@/lib/types';
@@ -146,6 +146,23 @@ export default function RecentTransactions({
     }
   };
 
+  // Memoize category info calculations to prevent recalculation on every render
+  const categoryInfoMap = useMemo(() => {
+    const map = new Map<string, { info: ReturnType<typeof getCategoryInfo>; isIncome: boolean }>();
+    transactions.forEach((transaction) => {
+      const customCategories = transaction.type === 'income'
+        ? customIncomeCategories
+        : customExpenseCategories;
+      const info = getCategoryInfo(
+        transaction.category,
+        transaction.type as 'income' | 'expense',
+        customCategories
+      );
+      map.set(transaction.id, { info, isIncome: transaction.type === 'income' });
+    });
+    return map;
+  }, [transactions, customExpenseCategories, customIncomeCategories]);
+
   const toggleSelectMode = () => {
     setIsSelectMode(!isSelectMode);
     setSelectedIds(new Set());
@@ -269,16 +286,10 @@ export default function RecentTransactions({
       {/* Transactions List - Scrollable - Matching AssetsSection Style */}
       <div className="overflow-y-scroll flex-1 min-h-0 scrollbar-transactions scrollbar-edge-left scrollbar-fade-bottom">
         {transactions.map((transaction, index) => {
-          const customCategories = transaction.type === 'income'
-            ? customIncomeCategories
-            : customExpenseCategories;
-          const categoryInfo = getCategoryInfo(
-            transaction.category,
-            transaction.type as 'income' | 'expense',
-            customCategories
-          );
+          const cached = categoryInfoMap.get(transaction.id);
+          const categoryInfo = cached?.info;
           const Icon = categoryInfo?.icon;
-          const isIncome = transaction.type === 'income';
+          const isIncome = cached?.isIncome ?? transaction.type === 'income';
           const isSelected = selectedIds.has(transaction.id);
 
           // Icon colors based on transaction type
