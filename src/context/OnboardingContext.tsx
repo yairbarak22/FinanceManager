@@ -376,8 +376,8 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
    * Skip autopilot, add data via API, and continue to next step
    */
   const skipAutopilotAndAdd = useCallback(async () => {
-    const stepIds = ['profile', 'assets', 'liabilities', 'income', 'expenses', 'features'];
-    const currentStepId = stepIds[currentStepIndex] || 'profile';
+    const stepIds = ['welcome', 'profile', 'assets', 'liabilities', 'income', 'expenses', 'features'];
+    const currentStepId = stepIds[currentStepIndex] || 'welcome';
     
     console.log('[Onboarding] Skipping autopilot for step:', currentStepId);
     

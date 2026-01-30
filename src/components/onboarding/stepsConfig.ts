@@ -1,9 +1,12 @@
 /**
  * Onboarding Steps Configuration
- * הגדרת 5 השלבים של תהליך ה-Onboarding
+ * הגדרת השלבים של תהליך ה-Onboarding
  */
 
 export type FieldType = 'text' | 'number' | 'select' | 'currency' | 'feature-demos';
+
+/** Step type - regular form step or choice step */
+export type StepType = 'form' | 'choice';
 
 export interface StepField {
   key: string;
@@ -25,13 +28,24 @@ export interface OnboardingStep {
   description: string;
   fields: StepField[];
   autopilotTargetId: string;
-  icon: 'user' | 'wallet' | 'credit-card' | 'trending-up' | 'trending-down';
+  icon: 'user' | 'wallet' | 'credit-card' | 'trending-up' | 'trending-down' | 'sparkles';
+  /** Step type - defaults to 'form' */
+  stepType?: StepType;
 }
 
 /**
- * 5 Steps of the Onboarding Wizard
+ * Steps of the Onboarding Wizard
  */
 export const onboardingSteps: OnboardingStep[] = [
+  {
+    id: 'welcome',
+    title: 'ברוכים הבאים!',
+    description: 'בוא נתחיל להגדיר את המערכת שלך. תוכל להזין את הנתונים שלך בצורה מהירה ופשוטה (כ-3 דקות), או להתחיל מיד עם נתוני דמה שתוכל לערוך בהמשך.',
+    icon: 'sparkles',
+    autopilotTargetId: '',
+    stepType: 'choice',
+    fields: [],
+  },
   {
     id: 'profile',
     title: 'קצת עליך',

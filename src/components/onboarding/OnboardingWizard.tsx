@@ -34,6 +34,7 @@ const stepIcons = {
   'credit-card': CreditCard,
   'trending-up': TrendingUp,
   'trending-down': TrendingDown,
+  'sparkles': Sparkles,
 };
 
 /**
@@ -191,6 +192,9 @@ export default function OnboardingWizard() {
 
   // Loading state for save button
   const [isSaving, setIsSaving] = useState(false);
+
+  // Loading state for demo data
+  const [isLoadingDemoData, setIsLoadingDemoData] = useState(false);
 
   // Refs for scrolling
   const contentScrollRef = useRef<HTMLDivElement>(null);
@@ -493,6 +497,47 @@ export default function OnboardingWizard() {
   }, [closeWizard, runFeatureDemo]);
 
   /**
+   * Handle demo data button click - creates sample data for the user
+   */
+  const handleLoadDemoData = useCallback(async () => {
+    setIsLoadingDemoData(true);
+    
+    try {
+      const response = await fetch('/api/onboarding/demo-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Protection': '1',
+        },
+      });
+
+      if (response.ok) {
+        setSuccessMessage('נתוני הדמה נוספו בהצלחה!');
+        setShowSuccess(true);
+        
+        // Dispatch event to trigger dashboard data refresh
+        window.dispatchEvent(new CustomEvent('onboarding-data-added'));
+        
+        // Wait for notification to show, then close wizard
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        endTour();
+      } else {
+        console.error('[Onboarding] Failed to load demo data:', response.status);
+        setSuccessMessage('שגיאה בטעינת נתוני הדמה');
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+      }
+    } catch (error) {
+      console.error('[Onboarding] Error loading demo data:', error);
+      setSuccessMessage('שגיאה בטעינת נתוני הדמה');
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
+    } finally {
+      setIsLoadingDemoData(false);
+    }
+  }, [endTour]);
+
+  /**
    * Get icon component for feature demos
    */
   const getFeatureIcon = (iconName: string) => {
@@ -634,8 +679,76 @@ export default function OnboardingWizard() {
    * Render step content
    */
   const renderStepContent = (step: OnboardingStep) => {
-    const Icon = stepIcons[step.icon];
+    const Icon = stepIcons[step.icon as keyof typeof stepIcons];
     const visibleFields = getVisibleFields(step);
+
+    // Special rendering for welcome/choice step
+    if (step.stepType === 'choice') {
+      return (
+        <motion.div
+          key={step.id}
+          initial={{ opacity: 0, x: direction * 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: direction * -50 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          className="flex flex-col h-full"
+        >
+          {/* Step Header */}
+          <div className="text-center space-y-3">
+            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[#C1DDFF] to-[#69ADFF] rounded-3xl flex items-center justify-center shadow-lg">
+              <Icon className="w-10 h-10 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-[#303150]">{step.title}</h2>
+            <p className="text-[#7E7F90] text-sm max-w-sm mx-auto leading-relaxed">
+              {step.description}
+            </p>
+          </div>
+
+          {/* Spacer to push buttons to bottom */}
+          <div className="flex-1" />
+
+          {/* Choice Buttons - at bottom */}
+          <div className="space-y-3 pb-4">
+            {/* Manual Data Entry Button */}
+            <motion.button
+              onClick={goToNextStep}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              className="w-full py-3 px-4 bg-gradient-to-r from-[#69ADFF] to-[#74ACEF] text-white font-medium rounded-xl
+                         shadow-md shadow-[#69ADFF]/20 hover:shadow-lg hover:shadow-[#69ADFF]/25
+                         flex flex-col items-center gap-1.5 transition-all duration-200"
+            >
+              <div className="flex flex-row-reverse items-center gap-2">
+                <Wand2 className="w-4 h-4" />
+                <span className="text-sm">התחל להזין נתונים</span>
+              </div>
+              <span className="text-xs opacity-80">תהליך מהיר ופשוט (כ-3 דקות)</span>
+            </motion.button>
+
+            {/* Demo Data Button */}
+            <motion.button
+              onClick={handleLoadDemoData}
+              disabled={isLoadingDemoData}
+              whileHover={!isLoadingDemoData ? { scale: 1.01 } : {}}
+              whileTap={!isLoadingDemoData ? { scale: 0.99 } : {}}
+              className="w-full py-3 px-4 bg-white border border-[#E8E8ED] text-[#303150] font-medium rounded-xl
+                         hover:border-[#69ADFF] hover:bg-[#F7F7F8]
+                         flex flex-col items-center gap-1.5 transition-all duration-200"
+            >
+              <div className="flex flex-row-reverse items-center gap-2">
+                {isLoadingDemoData ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Play className="w-4 h-4" />
+                )}
+                <span className="text-sm">{isLoadingDemoData ? 'טוען נתוני דמה...' : 'התחל עכשיו עם נתוני דמה'}</span>
+              </div>
+              <span className="text-xs text-[#7E7F90]">ניתן לערוך בהמשך</span>
+            </motion.button>
+          </div>
+        </motion.div>
+      );
+    }
 
     return (
       <motion.div
@@ -720,15 +833,16 @@ export default function OnboardingWizard() {
               </button>
 
               {/* Content - Scrollable */}
-              <div ref={contentScrollRef} className="flex-1 overflow-y-auto p-8 pt-12">
+              <div ref={contentScrollRef} className={`flex-1 overflow-y-auto p-8 pt-12 ${currentStep.id === 'welcome' ? 'flex flex-col' : ''}`}>
                 <AnimatePresence mode="wait" initial={false}>
                   {renderStepContent(currentStep)}
                 </AnimatePresence>
               </div>
 
-              {/* Footer - Fixed at bottom */}
+              {/* Footer - Fixed at bottom (hidden on welcome/choice step) */}
+              {currentStep.id !== 'welcome' && (
               <div className="flex-shrink-0 px-8 pb-6 pt-4 border-t border-[#F7F7F8] space-y-3">
-                {/* Add button (hidden on features step) */}
+                {/* Add button (hidden on features step - welcome step has its own footer) */}
                 {currentStep.id !== 'features' && (
                   <motion.button
                     onClick={handleAddDirectly}
@@ -767,53 +881,56 @@ export default function OnboardingWizard() {
                   </motion.button>
                 )}
 
-                {/* Navigation */}
-                <div className="flex items-center justify-between">
-                  {/* Back Button */}
-                  <button
-                    onClick={goToPreviousStep}
-                    disabled={isFirstStep}
-                    className={`flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-xl transition-all
-                      ${
-                        isFirstStep
-                          ? 'text-[#BDBDCB] cursor-not-allowed'
-                          : 'text-[#7E7F90] hover:text-[#303150] hover:bg-[#F7F7F8]'
-                      }`}
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                    הקודם
-                  </button>
+                {/* Navigation - hidden on welcome step */}
+                {currentStep.id !== 'welcome' && (
+                  <div className="flex items-center justify-between">
+                    {/* Back Button */}
+                    <button
+                      onClick={goToPreviousStep}
+                      disabled={isFirstStep}
+                      className={`flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-xl transition-all
+                        ${
+                          isFirstStep
+                            ? 'text-[#BDBDCB] cursor-not-allowed'
+                            : 'text-[#7E7F90] hover:text-[#303150] hover:bg-[#F7F7F8]'
+                        }`}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                      הקודם
+                    </button>
 
-                  {/* Progress Dots */}
-                  <div className="flex items-center gap-2">
-                    {onboardingSteps.map((_, index) => (
-                      <motion.div
-                        key={index}
-                        initial={false}
-                        animate={{
-                          scale: index === currentStepIndex ? 1.2 : 1,
-                          backgroundColor:
-                            index === currentStepIndex
-                              ? '#69ADFF'
-                              : index < currentStepIndex
-                              ? '#0DBACC'
-                              : '#BDBDCB',
-                        }}
-                        className="w-2 h-2 rounded-full"
-                      />
-                    ))}
+                    {/* Progress Dots */}
+                    <div className="flex items-center gap-2">
+                      {onboardingSteps.map((_, index) => (
+                        <motion.div
+                          key={index}
+                          initial={false}
+                          animate={{
+                            scale: index === currentStepIndex ? 1.2 : 1,
+                            backgroundColor:
+                              index === currentStepIndex
+                                ? '#69ADFF'
+                                : index < currentStepIndex
+                                ? '#0DBACC'
+                                : '#BDBDCB',
+                          }}
+                          className="w-2 h-2 rounded-full"
+                        />
+                      ))}
+                    </div>
+
+                    {/* Next/Skip Button */}
+                    <button
+                      onClick={isLastStep ? endTour : goToNextStep}
+                      className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-[#7E7F90] hover:text-[#303150] hover:bg-[#F7F7F8] rounded-xl transition-all"
+                    >
+                      {isLastStep ? 'סיום' : 'דלג'}
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
                   </div>
-
-                  {/* Next/Skip Button */}
-                  <button
-                    onClick={isLastStep ? endTour : goToNextStep}
-                    className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-[#7E7F90] hover:text-[#303150] hover:bg-[#F7F7F8] rounded-xl transition-all"
-                  >
-                    {isLastStep ? 'סיום' : 'דלג'}
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                </div>
+                )}
               </div>
+              )}
             </div>
           </motion.div>
         </>
