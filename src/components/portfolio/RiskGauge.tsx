@@ -27,18 +27,18 @@ export function RiskGauge({ beta, className = '' }: RiskGaugeProps) {
 
     if (beta < 0.8) {
       level = 'שמרני';
-      color = 'text-emerald-600';
-      bg = 'bg-emerald-500';
+      color = 'text-[#0DBACC]';
+      bg = 'bg-[#0DBACC]';
       icon = <Shield className="w-5 h-5" />;
     } else if (beta <= 1.2) {
       level = 'מאוזן';
-      color = 'text-sky-600';
-      bg = 'bg-sky-500';
+      color = 'text-[#69ADFF]';
+      bg = 'bg-[#69ADFF]';
       icon = <TrendingUp className="w-5 h-5" />;
     } else {
       level = 'אגרסיבי';
-      color = 'text-rose-600';
-      bg = 'bg-rose-500';
+      color = 'text-[#F18AB5]';
+      bg = 'bg-[#F18AB5]';
       icon = <Flame className="w-5 h-5" />;
     }
 
@@ -46,7 +46,7 @@ export function RiskGauge({ beta, className = '' }: RiskGaugeProps) {
   }, [beta]);
 
   return (
-    <div className={`bg-white rounded-xl border border-slate-200 p-5 ${className}`}>
+    <div className={`bg-white rounded-3xl border border-[#E8E8ED] p-5 ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
@@ -55,13 +55,13 @@ export function RiskGauge({ beta, className = '' }: RiskGaugeProps) {
             <span className={riskColor}>{riskIcon}</span>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-slate-500">רמת סיכון</h3>
+            <h3 className="text-sm font-medium text-[#7E7F90]">רמת סיכון</h3>
             <p className={`text-lg font-semibold ${riskColor}`}>{riskLevel}</p>
           </div>
         </div>
         <div className="text-left">
-          <p className="text-xs text-slate-400">סיכון משוקלל</p>
-          <p className="text-2xl font-light text-slate-900">{beta.toFixed(2)}</p>
+          <p className="text-xs text-[#BDBDCB]">סיכון משוקלל</p>
+          <p className="text-2xl font-light text-[#303150]">{beta.toFixed(2)}</p>
         </div>
       </div>
 
@@ -70,11 +70,11 @@ export function RiskGauge({ beta, className = '' }: RiskGaugeProps) {
         {/* Background track with zones */}
         <div className="h-3 rounded-full overflow-hidden flex">
           {/* Aggressive zone: 1.2 - 2.0 (40%) */}
-          <div className="w-[40%] bg-rose-200" />
+          <div className="w-[40%] bg-[#FFC0DB]" />
            {/* Market zone: 0.8 - 1.2 (20%) */}
-          <div className="w-[20%] bg-sky-200" />
+          <div className="w-[20%] bg-[#C1DDFF]" />
           {/* Safe zone: 0 - 0.8 (40%) */}
-          <div className="w-[40%] bg-emerald-200" />
+          <div className="w-[40%] bg-[#B4F1F1]" />
          
           
         </div>
@@ -88,7 +88,7 @@ export function RiskGauge({ beta, className = '' }: RiskGaugeProps) {
         </div>
 
         {/* Scale labels */}
-        <div className="flex justify-between mt-2 text-xs text-slate-400 relative">
+        <div className="flex justify-between mt-2 text-xs text-[#BDBDCB] relative">
           <span>2.0</span>
           <span className="absolute left-[40%] -translate-x-1/2">0.8</span>
           <span className="absolute left-[60%] -translate-x-1/2">1.2</span>
@@ -99,22 +99,22 @@ export function RiskGauge({ beta, className = '' }: RiskGaugeProps) {
       {/* Zone labels */}
       <div className="flex justify-between mt-4 text-xs">
       <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-rose-400" />
-          <span className="text-slate-500">אגרסיבי</span>
+          <div className="w-2 h-2 rounded-full bg-[#F18AB5]" />
+          <span className="text-[#7E7F90]">אגרסיבי</span>
         </div>
         
         <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-sky-400" />
-          <span className="text-slate-500">שוק</span>
+          <div className="w-2 h-2 rounded-full bg-[#69ADFF]" />
+          <span className="text-[#7E7F90]">שוק</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-emerald-400" />
-          <span className="text-slate-500">שמרני</span>
+          <div className="w-2 h-2 rounded-full bg-[#0DBACC]" />
+          <span className="text-[#7E7F90]">שמרני</span>
         </div>
       </div>
 
       {/* Info text */}
-      <p className="mt-4 text-xs text-slate-400 text-center">
+      <p className="mt-4 text-xs text-[#BDBDCB] text-center">
         {beta < 0.8 && 'התיק שלך פחות תנודתי מהשוק - מתאים לפרופיל שמרני'}
         {beta >= 0.8 && beta <= 1.2 && 'התיק שלך נע בהתאם לשוק - פרופיל מאוזן'}
         {beta > 1.2 && 'התיק שלך תנודתי יותר מהשוק - מתאים לטווח ארוך'}

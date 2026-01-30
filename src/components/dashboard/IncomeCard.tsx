@@ -87,7 +87,7 @@ export default function IncomeCard({
               className={`w-4 h-4 ${percentageChange >= 0 ? '' : 'rotate-90'}`} 
               strokeWidth={1.5} 
             />
-            <span>{percentageChange >= 0 ? '+' : ''}{percentageChange.toFixed(1)}%</span>
+            <span dir="ltr">{percentageChange >= 0 ? '+' : ''}{percentageChange.toFixed(1)}%</span>
             <span style={{ color: '#7E7F90' }} className="mr-1">מהחודש הקודם</span>
           </div>
         )}

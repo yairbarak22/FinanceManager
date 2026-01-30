@@ -19,8 +19,10 @@ import {
   TrendingUp,
   BookOpen,
   Mail,
+  Accessibility,
 } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
+import { useAccessibility } from '@/context/AccessibilityContext';
 import MonthFilter from './MonthFilter';
 import { SensitiveData } from './common/SensitiveData';
 
@@ -52,6 +54,7 @@ export default function HeaderBar({
 }: HeaderBarProps) {
   const { data: session } = useSession();
   const { startTour } = useOnboarding();
+  const { openAccessibility } = useAccessibility();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -196,6 +199,17 @@ export default function HeaderBar({
               <Bell className="w-5 h-5" strokeWidth={1.5} aria-hidden="true" />
               {/* Notification dot */}
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-rose-500 rounded-full" aria-hidden="true" />
+            </button>
+
+            {/* Accessibility Button - hidden on mobile */}
+            <button
+              type="button"
+              onClick={openAccessibility}
+              className="hidden md:flex relative p-2 text-[#6e6e73] hover:text-[#0055FF] transition-colors"
+              aria-label="תפריט נגישות"
+              title="נגישות"
+            >
+              <Accessibility className="w-5 h-5" strokeWidth={1.5} aria-hidden="true" />
             </button>
 
             {/* Desktop User Menu */}

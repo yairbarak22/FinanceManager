@@ -124,7 +124,7 @@ export default function ConfirmDialog({
             <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center" aria-hidden="true">
               <AlertTriangle className="w-5 h-5 text-red-600" />
             </div>
-            <h2 id="confirm-dialog-title" className="text-lg font-semibold text-slate-900">{title}</h2>
+            <h2 id="confirm-dialog-title" className="text-lg font-semibold text-[#303150]">{title}</h2>
           </div>
           <button
             type="button"
@@ -133,13 +133,13 @@ export default function ConfirmDialog({
             aria-label="סגור"
             disabled={isLoading}
           >
-            <X className="w-5 h-5 text-slate-500" aria-hidden="true" />
+            <X className="w-5 h-5 text-[#7E7F90]" aria-hidden="true" />
           </button>
         </div>
 
         {/* Body */}
         <div className="modal-body">
-          <p id="confirm-dialog-description" className="text-slate-600">{message}</p>
+          <p id="confirm-dialog-description" className="text-[#7E7F90]">{message}</p>
         </div>
 
         {/* Footer */}

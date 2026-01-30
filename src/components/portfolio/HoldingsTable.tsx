@@ -85,11 +85,11 @@ interface HoldingsTableProps {
  */
 function Sparkline({ data, isPositive }: { data: number[]; isPositive: boolean }) {
   if (data.length < 2) {
-    return <div className="w-16 h-8 flex items-center justify-center text-slate-300">—</div>;
+    return <div className="w-16 h-8 flex items-center justify-center text-[#BDBDCB]">—</div>;
   }
 
   const chartData = data.map((value, index) => ({ value, index }));
-  const color = isPositive ? '#10b981' : '#f43f5e'; // emerald-500 / rose-500
+  const color = isPositive ? '#0DBACC' : '#F18AB5'; // Turquoise / Rose
 
   return (
     <div className="w-16 h-8">
@@ -114,24 +114,24 @@ function Sparkline({ data, isPositive }: { data: number[]; isPositive: boolean }
 function ChangeIndicator({ change }: { change: number }) {
   if (change > 0) {
     return (
-      <div className="flex items-center gap-1 text-emerald-600">
+      <div className="flex items-center gap-1 text-[#0DBACC]">
         <TrendingUp className="w-3.5 h-3.5" />
-        <span className="text-sm font-medium">+{change.toFixed(2)}%</span>
+        <span className="text-sm font-medium" dir="ltr">+{change.toFixed(2)}%</span>
       </div>
     );
   }
   if (change < 0) {
     return (
-      <div className="flex items-center gap-1 text-rose-500">
+      <div className="flex items-center gap-1 text-[#F18AB5]">
         <TrendingDown className="w-3.5 h-3.5" />
-        <span className="text-sm font-medium">{change.toFixed(2)}%</span>
+        <span className="text-sm font-medium" dir="ltr">{change.toFixed(2)}%</span>
       </div>
     );
   }
   return (
-    <div className="flex items-center gap-1 text-slate-400">
+    <div className="flex items-center gap-1 text-[#BDBDCB]">
       <Minus className="w-3.5 h-3.5" />
-      <span className="text-sm font-medium">0.00%</span>
+      <span className="text-sm font-medium" dir="ltr">0.00%</span>
     </div>
   );
 }
@@ -156,9 +156,9 @@ function HoldingActions({
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+        className="p-1.5 rounded-lg hover:bg-[#F7F7F8] transition-colors"
       >
-        <MoreHorizontal className="w-4 h-4 text-slate-400" />
+        <MoreHorizontal className="w-4 h-4 text-[#BDBDCB]" />
       </button>
 
       {isOpen && (
@@ -170,14 +170,14 @@ function HoldingActions({
           />
 
           {/* Dropdown */}
-          <div className="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-20 min-w-[120px]">
+          <div className="absolute left-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-[#E8E8ED] py-1 z-20 min-w-[120px]">
             {onEdit && (
               <button
                 onClick={() => {
                   onEdit(holding);
                   setIsOpen(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#303150] hover:bg-[#F7F7F8] transition-colors"
               >
                 <Pencil className="w-4 h-4" />
                 <span>עריכה</span>
@@ -189,7 +189,7 @@ function HoldingActions({
                   onDelete(holding);
                   setIsOpen(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#F18AB5] hover:bg-[#FFC0DB]/30 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
                 <span>מחיקה</span>
@@ -209,24 +209,24 @@ function HoldingActions({
 export function HoldingsTable({ holdings, className = '', onEdit, onDelete }: HoldingsTableProps) {
   if (holdings.length === 0) {
     return (
-      <div className={`bg-white rounded-xl border border-slate-200 p-8 text-center ${className}`}>
-        <p className="text-slate-400">אין אחזקות להצגה</p>
+      <div className={`bg-white rounded-3xl border border-[#E8E8ED] p-8 text-center ${className}`}>
+        <p className="text-[#BDBDCB]">אין אחזקות להצגה</p>
       </div>
     );
   }
 
   return (
-    <div className={`bg-white rounded-xl border border-slate-200 overflow-hidden ${className}`}>
+    <div className={`bg-white rounded-3xl border border-[#E8E8ED] overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="px-5 py-4 border-b border-slate-100">
-        <h3 className="text-base font-semibold text-slate-900">אחזקות</h3>
+      <div className="px-5 py-4 border-b border-[#F7F7F8]">
+        <h3 className="text-base font-semibold text-[#303150]">אחזקות</h3>
       </div>
 
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="text-xs text-slate-400 border-b border-slate-100">
+            <tr className="text-xs text-[#BDBDCB] border-b border-[#F7F7F8]">
               <th className="text-center font-medium px-5 py-3">נייר</th>
               <th className="text-center font-medium px-3 py-3">7 ימים</th>
               <th className="text-center font-medium px-3 py-3">שינוי</th>
@@ -240,17 +240,17 @@ export function HoldingsTable({ holdings, className = '', onEdit, onDelete }: Ho
             {holdings.map((holding, index) => (
               <tr
                 key={holding.id || holding.symbol}
-                className={`border-b border-slate-50 hover:bg-slate-50/50 transition-colors ${
+                className={`border-b border-[#F7F7F8] hover:bg-[#F7F7F8]/50 transition-colors ${
                   index === holdings.length - 1 ? 'border-b-0' : ''
                 }`}
               >
                 {/* Symbol & Name */}
                 <td className="px-5 py-4">
                   <div>
-                    <SensitiveData as="p" className="text-sm font-semibold text-slate-900">
+                    <SensitiveData as="p" className="text-sm font-semibold text-[#303150]">
                       {holding.symbol}
                     </SensitiveData>
-                    <SensitiveData as="p" className="text-xs text-slate-400 truncate max-w-[150px]">
+                    <SensitiveData as="p" className="text-xs text-[#BDBDCB] truncate max-w-[150px]">
                       {holding.name}
                     </SensitiveData>
                   </div>
@@ -274,10 +274,10 @@ export function HoldingsTable({ holdings, className = '', onEdit, onDelete }: Ho
                   <span
                     className={`text-sm font-medium ${
                       holding.beta < 0.8
-                        ? 'text-emerald-600'
+                        ? 'text-[#0DBACC]'
                         : holding.beta <= 1.2
-                        ? 'text-sky-600'
-                        : 'text-rose-500'
+                        ? 'text-[#69ADFF]'
+                        : 'text-[#F18AB5]'
                     }`}
                   >
                     {holding.beta.toFixed(2)}
@@ -287,22 +287,22 @@ export function HoldingsTable({ holdings, className = '', onEdit, onDelete }: Ho
                 {/* Weight */}
                 <td className="px-3 py-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="w-12 h-1.5 bg-[#F7F7F8] rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-indigo-500 rounded-full"
+                        className="h-full bg-[#69ADFF] rounded-full"
                         style={{ width: `${Math.min(holding.weight, 100)}%` }}
                       />
                     </div>
-                    <span className="text-sm text-slate-600">{holding.weight.toFixed(1)}%</span>
+                    <span className="text-sm text-[#7E7F90]">{holding.weight.toFixed(1)}%</span>
                   </div>
                 </td>
 
                 {/* Value */}
                 <td className="px-5 py-4 text-left">
-                  <SensitiveData as="p" className="text-sm font-semibold text-slate-900">
+                  <SensitiveData as="p" className="text-sm font-semibold text-[#303150]">
                     {formatValueByUnit(holding.valueILS, holding.priceDisplayUnit)}
                   </SensitiveData>
-                  <SensitiveData as="p" className="text-xs text-slate-400">
+                  <SensitiveData as="p" className="text-xs text-[#BDBDCB]">
                     {holding.quantity.toLocaleString()} יח׳ × {formatPriceByUnit(holding.priceILS, holding.priceDisplayUnit)}
                   </SensitiveData>
                 </td>

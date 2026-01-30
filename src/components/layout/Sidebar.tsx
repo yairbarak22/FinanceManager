@@ -9,9 +9,6 @@ import {
   Mail,
   PieChart,
   ChevronDown,
-  GraduationCap,
-  Calculator,
-  PlayCircle,
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -59,11 +56,6 @@ const navItems: NavItem[] = [
     icon: BookOpen,
     iconBg: 'bg-indigo-100',
     iconColor: 'text-indigo-600',
-    subItems: [
-      { id: 'general', label: 'ידע כללי', path: '/help?tab=general', icon: GraduationCap },
-      { id: 'calculators', label: 'מחשבונים', path: '/help?tab=calculators', icon: Calculator },
-      { id: 'videos', label: 'סרטוני הדרכה', path: '/help?tab=videos', icon: PlayCircle },
-    ],
   },
   { 
     id: 'contact', 

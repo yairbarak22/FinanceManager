@@ -13,8 +13,10 @@ import {
   PieChart,
   PanelRightClose,
   PanelRightOpen,
+  Accessibility,
 } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
+import { useAccessibility } from '@/context/AccessibilityContext';
 import { useSidebar } from '@/context/SidebarContext';
 import MonthFilter from '@/components/MonthFilter';
 import { SensitiveData } from '@/components/common/SensitiveData';
@@ -46,6 +48,7 @@ export default function MinimalHeader({
 }: MinimalHeaderProps) {
   const { data: session } = useSession();
   const { startTour } = useOnboarding();
+  const { openAccessibility } = useAccessibility();
   const { isCollapsed, toggleSidebar } = useSidebar();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -139,6 +142,17 @@ export default function MinimalHeader({
             >
               <Bell className="w-[18px] h-[18px]" strokeWidth={1.75} />
               <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-rose-400 rounded-full" />
+            </button>
+
+            {/* Accessibility Button */}
+            <button
+              type="button"
+              onClick={openAccessibility}
+              className="hidden md:flex relative p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-lg hover:bg-slate-50"
+              aria-label="תפריט נגישות"
+              title="נגישות"
+            >
+              <Accessibility className="w-[18px] h-[18px]" strokeWidth={1.75} />
             </button>
 
             {/* User Menu */}

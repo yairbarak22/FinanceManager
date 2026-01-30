@@ -409,17 +409,28 @@ export default function DashboardPage() {
     }
   };
 
-  const handleUpdateTransactionCategory = async (
+  const handleUpdateTransaction = async (
     transactionId: string,
     newCategory: string,
     merchantName: string,
-    saveBehavior: 'once' | 'always' | 'alwaysAsk'
+    saveBehavior: 'once' | 'always' | 'alwaysAsk',
+    newDescription?: string,
+    newAmount?: number
   ) => {
     try {
+      // Build update body with all changed fields
+      const updateBody: Record<string, unknown> = { category: newCategory };
+      if (newDescription !== undefined) {
+        updateBody.description = newDescription;
+      }
+      if (newAmount !== undefined) {
+        updateBody.amount = newAmount;
+      }
+
       const res = await apiFetch(`/api/transactions/${transactionId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category: newCategory }),
+        body: JSON.stringify(updateBody),
       });
 
       if (!res.ok) throw new Error('Failed to update transaction');
@@ -439,15 +450,16 @@ export default function DashboardPage() {
       await fetchData();
 
       if (saveBehavior === 'once') {
-        toast.success('הקטגוריה עודכנה');
+        toast.success('העסקה עודכנה');
       } else if (saveBehavior === 'always') {
-        toast.success('הקטגוריה עודכנה ותישמר לפעמים הבאות');
+        toast.success('העסקה עודכנה ותישמר לפעמים הבאות');
       } else {
-        toast.success('הקטגוריה עודכנה, תישאל שוב בפעם הבאה');
+        toast.success('העסקה עודכנה, תישאל שוב בפעם הבאה');
       }
     } catch (error) {
-      console.error('Error updating transaction category:', error);
-      toast.error('שגיאה בעדכון קטגוריה');
+      console.error('Error updating transaction:', error);
+      toast.error('שגיאה בעדכון עסקה');
+      throw error; // Re-throw to let the modal know about the error
     }
   };
 
@@ -479,6 +491,7 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error saving recurring transaction:', error);
       toast.error(error instanceof Error ? error.message : 'שגיאה בשמירת עסקה קבועה');
+      throw error; // Re-throw to let the modal know about the error
     }
   };
 
@@ -801,7 +814,7 @@ export default function DashboardPage() {
                   transactions={filteredTransactions}
                   onDelete={handleDeleteTransaction}
                   onDeleteMultiple={handleDeleteMultipleTransactions}
-                  onUpdateCategory={handleUpdateTransactionCategory}
+                  onUpdateTransaction={handleUpdateTransaction}
                   onNewTransaction={() => setIsTransactionModalOpen(true)}
                   onImport={() => setIsImportModalOpen(true)}
                   customExpenseCategories={expenseCats.custom}

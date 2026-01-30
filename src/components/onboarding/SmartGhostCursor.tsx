@@ -145,9 +145,9 @@ export default function SmartGhostCursor({
                   className="
                     px-3 py-2
                     bg-white/90 backdrop-blur-xl
-                    border border-slate-200
+                    border border-[#E8E8ED]
                     rounded-xl shadow-xl
-                    text-sm font-medium text-slate-800
+                    text-sm font-medium text-[#303150]
                     whitespace-nowrap
                   "
                   dir="rtl"

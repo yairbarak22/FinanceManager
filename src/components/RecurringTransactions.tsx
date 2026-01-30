@@ -195,9 +195,9 @@ export default function RecurringTransactions({
                     fontFamily: 'var(--font-nunito), system-ui, sans-serif',
                     color: isIncome ? '#0DBACC' : '#F18AB5'
                   }}
+                  dir="ltr"
                 >
-                  {isIncome ? '+' : '-'}
-                  {formatCurrency(transaction.amount)}
+                  {`${isIncome ? '+' : '-'}${formatCurrency(transaction.amount)}`}
                 </SensitiveData>
 
                 {/* Actions */}

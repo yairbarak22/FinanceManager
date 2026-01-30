@@ -19,30 +19,30 @@ export default function MagicFrame({ isVisible }: MagicFrameProps) {
     <div className="fixed inset-0 z-[9998] pointer-events-none overflow-hidden">
       {/* Main glowing border */}
       <motion.div
-        className="absolute inset-3 rounded-2xl"
+        className="absolute inset-3 rounded-3xl"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.5 }}
         style={{
-          border: '2px solid rgba(99, 102, 241, 0.6)',
+          border: '2px solid rgba(105, 173, 255, 0.6)',
           boxShadow: `
-            0 0 10px rgba(99, 102, 241, 0.4),
-            0 0 20px rgba(99, 102, 241, 0.3),
-            0 0 40px rgba(99, 102, 241, 0.2),
-            inset 0 0 10px rgba(99, 102, 241, 0.1)
+            0 0 10px rgba(105, 173, 255, 0.4),
+            0 0 20px rgba(105, 173, 255, 0.3),
+            0 0 40px rgba(105, 173, 255, 0.2),
+            inset 0 0 10px rgba(105, 173, 255, 0.1)
           `,
         }}
       />
 
       {/* Pulsing glow overlay */}
       <motion.div
-        className="absolute inset-3 rounded-2xl"
+        className="absolute inset-3 rounded-3xl"
         animate={{
           boxShadow: [
-            '0 0 15px rgba(99, 102, 241, 0.3), 0 0 30px rgba(99, 102, 241, 0.2), 0 0 60px rgba(99, 102, 241, 0.1)',
-            '0 0 20px rgba(99, 102, 241, 0.5), 0 0 40px rgba(99, 102, 241, 0.3), 0 0 80px rgba(99, 102, 241, 0.2)',
-            '0 0 15px rgba(99, 102, 241, 0.3), 0 0 30px rgba(99, 102, 241, 0.2), 0 0 60px rgba(99, 102, 241, 0.1)',
+            '0 0 15px rgba(105, 173, 255, 0.3), 0 0 30px rgba(105, 173, 255, 0.2), 0 0 60px rgba(105, 173, 255, 0.1)',
+            '0 0 20px rgba(105, 173, 255, 0.5), 0 0 40px rgba(105, 173, 255, 0.3), 0 0 80px rgba(105, 173, 255, 0.2)',
+            '0 0 15px rgba(105, 173, 255, 0.3), 0 0 30px rgba(105, 173, 255, 0.2), 0 0 60px rgba(105, 173, 255, 0.1)',
           ],
         }}
         transition={{
@@ -63,11 +63,11 @@ export default function MagicFrame({ isVisible }: MagicFrameProps) {
         <defs>
           {/* Gradient for the traveling light */}
           <linearGradient id="magicGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgba(99, 102, 241, 0)" />
-            <stop offset="40%" stopColor="rgba(129, 140, 248, 0.8)" />
-            <stop offset="50%" stopColor="rgba(165, 180, 252, 1)" />
-            <stop offset="60%" stopColor="rgba(129, 140, 248, 0.8)" />
-            <stop offset="100%" stopColor="rgba(99, 102, 241, 0)" />
+            <stop offset="0%" stopColor="rgba(105, 173, 255, 0)" />
+            <stop offset="40%" stopColor="rgba(116, 172, 239, 0.8)" />
+            <stop offset="50%" stopColor="rgba(193, 221, 255, 1)" />
+            <stop offset="60%" stopColor="rgba(116, 172, 239, 0.8)" />
+            <stop offset="100%" stopColor="rgba(105, 173, 255, 0)" />
           </linearGradient>
         </defs>
 
@@ -92,7 +92,7 @@ export default function MagicFrame({ isVisible }: MagicFrameProps) {
           }}
           style={{
             strokeDasharray: '0.15 0.85',
-            filter: 'drop-shadow(0 0 6px rgba(129, 140, 248, 0.8))',
+            filter: 'drop-shadow(0 0 6px rgba(116, 172, 239, 0.8))',
           }}
         />
       </svg>

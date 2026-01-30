@@ -41,7 +41,7 @@ export default function OnboardingLayer() {
             transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             className="fixed top-8 left-1/2 -translate-x-1/2 z-[10000] pointer-events-none"
           >
-            <div className="bg-emerald-500 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3">
+            <div className="bg-[#0DBACC] text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3">
               <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                 <Check className="w-5 h-5" />
               </div>
@@ -59,7 +59,7 @@ export default function OnboardingLayer() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-[9997] bg-slate-900/40 backdrop-blur-[2px] pointer-events-none"
+            className="fixed inset-0 z-[9997] bg-black/40 backdrop-blur-[2px] pointer-events-none"
           />
         )}
       </AnimatePresence>
@@ -77,15 +77,15 @@ export default function OnboardingLayer() {
             transition={{ duration: 0.3 }}
             className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999]"
           >
-            <div className="bg-white px-6 py-4 rounded-2xl shadow-xl border border-indigo-100">
+            <div className="bg-white px-6 py-4 rounded-3xl shadow-xl border border-[#F7F7F8]">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-4 h-4 text-indigo-600" />
+                <div className="w-8 h-8 bg-[#C1DDFF] rounded-full flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-4 h-4 text-[#69ADFF]" />
                 </div>
                 <div>
-                  <p className="font-medium text-slate-800">מצב הדגמה</p>
-                  <p className="text-sm text-slate-500">אל תיגע בכלום - צפה ב-AI מוסיף עבורך</p>
-                  <p className="text-xs text-slate-400 mt-1">כך תדע להוסיף בעצמך בפעם הבאה</p>
+                  <p className="font-medium text-[#303150]">מצב הדגמה</p>
+                  <p className="text-sm text-[#7E7F90]">אל תיגע בכלום - צפה ב-AI מוסיף עבורך</p>
+                  <p className="text-xs text-[#BDBDCB] mt-1">כך תדע להוסיף בעצמך בפעם הבאה</p>
                 </div>
               </div>
               <button
@@ -93,7 +93,7 @@ export default function OnboardingLayer() {
                   abortAutopilot(); // Stop the running autopilot first
                   skipAutopilotAndAdd(); // Then add and move to next step
                 }}
-                className="w-full mt-2 px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl flex items-center justify-center gap-2 transition-colors"
+                className="w-full mt-2 px-4 py-2 text-sm font-medium text-[#7E7F90] bg-[#F7F7F8] hover:bg-[#E8E8ED] rounded-xl flex items-center justify-center gap-2 transition-colors"
               >
                 <SkipForward className="w-4 h-4" />
                 דלג והוסף ישירות

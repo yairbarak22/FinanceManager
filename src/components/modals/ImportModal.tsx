@@ -361,8 +361,9 @@ function TransactionCard({
         <SensitiveData 
           className="font-bold text-lg whitespace-nowrap"
           style={{ color: transaction.type === 'income' ? '#0DBACC' : '#F18AB5' }}
+          dir="ltr"
         >
-          {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+          {`${transaction.type === 'income' ? '+' : '-'}${formatCurrency(transaction.amount)}`}
         </SensitiveData>
       </div>
       
@@ -637,7 +638,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
 
         {/* Progress Stepper (show when processing) */}
         {phase !== 'idle' && phase !== 'error' && (
-          <div className="px-6 py-4 border-b border-slate-100">
+          <div className="px-6 py-4 border-b border-[#F7F7F8]">
             <div className="flex items-center justify-between">
               <ProgressStep
                 step={1}
@@ -804,7 +805,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
               {categoriesLoading ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
-                  <p className="text-slate-700 font-medium">טוען קטגוריות...</p>
+                  <p className="text-[#303150] font-medium">טוען קטגוריות...</p>
                 </div>
               ) : (
                 <>
@@ -830,8 +831,9 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                               <SensitiveData 
                                 className="font-medium"
                                 style={{ color: t.type === 'income' ? '#0DBACC' : '#F18AB5' }}
+                                dir="ltr"
                               >
-                                {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                                {`${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}`}
                               </SensitiveData>
                             </td>
                             <td className="px-4 py-3" style={{ color: '#7E7F90' }}>

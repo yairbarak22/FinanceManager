@@ -125,6 +125,7 @@ function SummaryCard({
                 fontSize: '12px',
                 color: pillColor,
               }}
+              dir="ltr"
             >
               {percentageChange >= 0 ? '+' : ''}{percentageChange.toFixed(1)}%
             </span>

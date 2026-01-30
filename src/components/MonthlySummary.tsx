@@ -149,8 +149,9 @@ export default function MonthlySummary({
                     as="p"
                     className="text-sm font-bold"
                     style={{ color: isPositive ? '#0DBACC' : '#F18AB5' }}
+                    dir="ltr"
                   >
-                    {isPositive ? '+' : ''}{formatCurrency(summary.balance)}
+                    {`${isPositive ? '+' : ''}${formatCurrency(summary.balance)}`}
                   </SensitiveData>
                   {isExpanded ? (
                     <ChevronUp className="w-4 h-4" style={{ color: 'var(--text-secondary, #7E7F90)' }} />

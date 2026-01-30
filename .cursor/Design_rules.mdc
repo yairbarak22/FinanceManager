@@ -1,0 +1,214 @@
+---
+alwaysApply: true
+---
+Neto Global Design System Rules
+Core Mission: Every page must feel premium, ultra-minimalist, and functionally intuitive, following the Apple Design Philosophy.
+
+1. Visual Foundation (The Atmosphere)
+Canvas: Use a Light Gray background (#F5F5F7) for the main body. NEVER use bg-slate-50/50 or similar Tailwind opacity variants.
+
+Surfaces: All content containers must be Pure White (#FFFFFF) with a 24px "Squircle" (continuous) corner radius (rounded-3xl).
+
+Elevation: Avoid heavy shadows. Use a subtle 4% opacity drop shadow with a wide blur to create a soft "lift": box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08).
+
+Dividers: Use whitespace as the primary separator. If a line is necessary, it must be 1px solid #F7F7F8 (Ice Cream).
+
+2. Typography & Color Identity
+Primary Font: Nunito (Strictly). Use var(--font-nunito) or font-family: 'Nunito', system-ui, sans-serif.
+
+Text Hierarchy:
+
+Main Values/Titles: Blueberry (#303150), Bold (700). Use var(--text-primary) or #303150 directly.
+
+Subtext/Labels: Steel Gray (#7E7F90), Regular weight (400). Use var(--text-secondary) or #7E7F90 directly.
+
+Light Text: Light Grey (#BDBDCB). Use var(--text-light) or #BDBDCB directly.
+
+Functional Palette:
+
+Positive/Active: Turquoise (#0DBACC).
+
+Negative/Urgent: Cotton Candy Pink (#F18AB5).
+
+Flow/Neutral: Baby Blue (#74ACEF).
+
+Primary Action: Dodger Blue (#69ADFF).
+
+Typography Scale:
+- Hero (Major values like Net Worth): 2.5rem (40px), Bold (700), Blueberry (#303150)
+- Page Title: 1.5rem (24px), Bold (700), Blueberry (#303150)
+- Section Title: 1.5rem (24px), Bold (700), Blueberry (#303150)
+- Card Title: 1.125rem (18px), Semi-bold (600), Blueberry (#303150)
+- Body Text: 0.9375rem (15px), Regular (400), Blueberry (#303150)
+- Label: 0.8125rem (13px), Medium (500), Steel Gray (#7E7F90)
+- Small Text/Caption: 0.75rem (12px), Regular (400), Light Grey (#BDBDCB)
+
+3. Spacing & Layout
+Padding: Minimum 24px-32px (1.5rem-2rem) for content containers. Use p-6 (24px) or p-8 (32px) as standard.
+
+Gaps: Use gap-6 (24px) for sections, gap-4 (16px) for related items, gap-2 (8px) for tight spacing.
+
+Margins: Use mb-8 (32px) for section headers, mb-6 (24px) for card spacing, mb-4 (16px) for element spacing.
+
+Page Content Padding: Use p-4 lg:p-6 (16px mobile, 24px desktop) for main content area.
+
+4. Border Radius Guidelines
+Main Containers/Cards: Always use rounded-3xl (24px / 1.5rem). This is the "Squircle" standard.
+
+Buttons: Use rounded-xl (12px / 0.75rem) for all buttons.
+
+Inputs/Selects/Textareas: Use rounded-xl (12px / 0.75rem) for form elements.
+
+Icons/Small Elements: Use rounded-lg (8px / 0.5rem) for small interactive elements.
+
+NEVER use rounded-lg or rounded-2xl for main content containers - always rounded-3xl.
+
+5. Buttons
+Primary Button (.btn-primary):
+- Background: Dodger Blue (#69ADFF)
+- Hover: #5A9EE6
+- Text: White
+- Padding: px-5 py-2.5 (20px horizontal, 10px vertical)
+- Border Radius: rounded-xl (12px)
+- Font: Nunito, Medium weight
+- Shadow: shadow-sm on default, shadow-md on hover
+- Disabled: opacity 0.6, cursor not-allowed
+
+Secondary Button (.btn-secondary):
+- Background: White (#FFFFFF)
+- Border: 1px solid #F7F7F8 (Ice Cream)
+- Text: Blueberry (#303150)
+- Hover Background: #F7F7F8
+- Padding: px-5 py-2.5
+- Border Radius: rounded-xl (12px)
+- Font: Nunito, Medium weight
+
+Icon Button (.btn-icon):
+- Background: Transparent
+- Text: Steel Gray (#7E7F90)
+- Hover Background: #F7F7F8
+- Padding: p-2 (8px)
+- Border Radius: rounded-lg (8px)
+
+6. Forms & Inputs
+Input (.input):
+- Background: White (#FFFFFF)
+- Border: 1px solid #E8E8ED
+- Border Radius: rounded-xl (12px)
+- Padding: px-4 py-3 (16px horizontal, 12px vertical)
+- Text Color: Blueberry (#303150)
+- Placeholder Color: Light Grey (#BDBDCB)
+- Focus Border: Dodger Blue (#69ADFF)
+- Focus Ring: rgba(105, 173, 255, 0.2)
+- Font: Nunito
+
+Select (.select):
+- Same as Input, with appearance-none and cursor-pointer
+
+Label (.label):
+- Text Color: Steel Gray (#7E7F90)
+- Font: Nunito, Medium weight (500)
+- Font Size: 0.875rem (14px)
+- Margin Bottom: mb-1.5 (6px)
+
+Textarea: Same styling as Input, with resize-none for controlled sizing.
+
+7. Modals
+Modal Overlay (.modal-overlay):
+- Background: rgba(0, 0, 0, 0.5)
+- Backdrop Filter: blur(4px)
+- Position: Fixed, full screen
+- Z-index: 9999
+- Padding: 1rem (16px)
+
+Modal Content (.modal-content):
+- Background: White (#FFFFFF)
+- Border Radius: rounded-3xl (24px) - NOT rounded-2xl
+- Shadow: shadow-xl
+- Max Width: max-w-md (28rem) for standard modals
+- Max Height: max-h-[90vh] with overflow-y-auto
+
+Modal Header (.modal-header):
+- Padding: p-6 (24px)
+- Border Bottom: 1px solid #F7F7F8
+
+Modal Body (.modal-body):
+- Padding: p-6 (24px)
+- Gap: space-y-4 (16px vertical)
+
+Modal Footer (.modal-footer):
+- Padding: p-6 (24px)
+- Border Top: 1px solid #F7F7F8
+- Gap: gap-3 (12px horizontal)
+
+8. Loading States
+Spinner: Use Dodger Blue (#69ADFF) for primary loading indicators.
+
+Loading Text: Steel Gray (#7E7F90), Regular weight.
+
+Skeleton Loaders: Use Light Grey (#BDBDCB) with subtle animation.
+
+Loading Container: Center content vertically and horizontally, use appropriate spacing.
+
+9. Error States
+Error Text: Cotton Candy Pink (#F18AB5) for error messages.
+
+Error Background: Light pink background (rgba(241, 138, 181, 0.1)) for error containers.
+
+Error Border: 1px solid rgba(241, 138, 181, 0.3).
+
+Validation: Show errors immediately on blur, use subtle animations.
+
+10. Icons
+Size Guidelines:
+- Small Icons: w-4 h-4 (16px) for inline text icons
+- Standard Icons: w-5 h-5 (20px) for buttons and UI elements
+- Large Icons: w-6 h-6 (24px) for emphasis
+- Hero Icons: w-8 h-8 (32px) or larger for major visual elements
+
+Color Guidelines:
+- Default: Steel Gray (#7E7F90)
+- Primary Actions: Dodger Blue (#69ADFF)
+- Success: Turquoise (#0DBACC)
+- Error: Cotton Candy Pink (#F18AB5)
+- Hover: Match parent element hover state
+
+Stroke Width: Use strokeWidth={1.75} for standard icons, strokeWidth={2} or {2.5} for emphasis.
+
+11. Color Usage Guidelines
+NEVER use Tailwind slate/gray colors (text-slate-*, bg-slate-*, border-slate-*). Always use design system colors:
+
+Text Colors:
+- text-[#303150] or var(--text-primary) for primary text
+- text-[#7E7F90] or var(--text-secondary) for secondary text
+- text-[#BDBDCB] or var(--text-light) for light text
+
+Background Colors:
+- bg-[#F5F5F7] for main canvas (NOT bg-slate-50/50)
+- bg-[#FFFFFF] for content containers
+- bg-[#F7F7F8] for hover states and dividers (NOT bg-slate-100)
+
+Border Colors:
+- border-[#F7F7F8] for dividers
+- border-[#E8E8ED] for input borders
+- border-[#69ADFF] for focus states
+
+12. Interaction & UX Principles
+The "Ghost" Standard: All scrollbars must have a transparent track and a thin (4px), rounded thumb with 10% idle opacity, increasing to 60% on hover.
+
+Information Density: Prioritize legibility. If a page feels crowded, increase padding (minimum 24px-32px) and simplify the elements.
+
+Interactive Feedback: Use scale-up (1.05) and soft colored glows instead of traditional tooltips or pop-ups.
+
+RTL-First: All layouts must be built natively for Hebrew, ensuring proper alignment of currency symbols (₪) and text flow.
+
+13. Engineering Constraints for Cursor
+Fluid Units Only: Use rem, vw/vh, and %. Prohibit the use of fixed px for layout dimensions to ensure perfect responsiveness.
+
+Component Logic: Keep components modular and reusable.
+
+Edge Case Handling: Implement "Edge Fades" (gradient masks) and "Partial Peeks" for all scrollable content to signal that more data exists below the fold.
+
+CSS Variables: Prefer using CSS variables (var(--text-primary), var(--text-secondary)) when available in globals.css, otherwise use direct hex values (#303150, #7E7F90).
+
+Class Usage: Use utility classes from globals.css (.btn-primary, .input, .card) when available, otherwise implement styles directly following these guidelines.

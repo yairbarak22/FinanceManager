@@ -3,6 +3,7 @@ import { Heebo, Inter, Nunito } from "next/font/google";
 import Script from "next/script";
 import Providers from "@/components/Providers";
 import { OnboardingProvider } from "@/context/OnboardingContext";
+import { AccessibilityProvider } from "@/context/AccessibilityContext";
 import OnboardingLayer from "@/components/onboarding/OnboardingLayer";
 import Analytics from "@/components/Analytics";
 import CookieConsent from "@/components/CookieConsent";
@@ -137,13 +138,15 @@ export default function RootLayout({
       <body className={`${heebo.variable} ${inter.variable} ${nunito.variable} font-sans antialiased`}>
         <SkipToContent />
         <Providers>
-          <OnboardingProvider>
-            {children}
-            <OnboardingLayer />
-          </OnboardingProvider>
-          <Analytics />
-          <CookieConsent />
-          <AccessibilityStatement />
+          <AccessibilityProvider>
+            <OnboardingProvider>
+              {children}
+              <OnboardingLayer />
+            </OnboardingProvider>
+            <Analytics />
+            <CookieConsent />
+            <AccessibilityStatement />
+          </AccessibilityProvider>
         </Providers>
       </body>
     </html>

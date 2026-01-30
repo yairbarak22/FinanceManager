@@ -278,7 +278,7 @@ const CustomTooltip = ({ active, payload }: TooltipProps) => {
   const color = SECTOR_COLORS[data.name] || SECTOR_COLORS['Unknown'];
 
   return (
-    <div className="bg-slate-900/95 backdrop-blur-sm text-white px-4 py-3 rounded-xl shadow-xl border border-slate-700/50">
+    <div className="bg-[#303150]/95 backdrop-blur-sm text-white px-4 py-3 rounded-xl shadow-xl border border-[#7E7F90]/50">
       {/* Sector name with color indicator */}
       <div className="flex items-center gap-2 mb-2">
         <div
@@ -291,7 +291,7 @@ const CustomTooltip = ({ active, payload }: TooltipProps) => {
       {/* Stats */}
       <div className="space-y-1 text-sm">
         <div className="flex justify-between gap-6">
-          <span className="text-slate-400">שווי:</span>
+          <span className="text-[#BDBDCB]">שווי:</span>
           <SensitiveData as="span" className="font-medium text-white">
             {data.value.toLocaleString('he-IL', {
               style: 'currency',
@@ -301,7 +301,7 @@ const CustomTooltip = ({ active, payload }: TooltipProps) => {
           </SensitiveData>
         </div>
         <div className="flex justify-between gap-6">
-          <span className="text-slate-400">אחוז מהתיק:</span>
+          <span className="text-[#BDBDCB]">אחוז מהתיק:</span>
           <SensitiveData as="span" className="font-medium text-white">{data.percent.toFixed(1)}%</SensitiveData>
         </div>
       </div>
@@ -313,25 +313,25 @@ const CustomTooltip = ({ active, payload }: TooltipProps) => {
  * Score indicator - circular progress
  */
 function ScoreIndicator({ score }: { score: number }) {
-  let color = 'text-rose-500';
-  let bgColor = 'bg-rose-50';
-  let strokeColor = '#f43f5e';
+  let color = 'text-[#F18AB5]';
+  let bgColor = 'bg-[#FFC0DB]/30';
+  let strokeColor = '#F18AB5';
   let label = 'ריכוזיות גבוהה';
 
   if (score >= 70) {
-    color = 'text-emerald-600';
-    bgColor = 'bg-emerald-50';
-    strokeColor = '#10b981';
+    color = 'text-[#0DBACC]';
+    bgColor = 'bg-[#B4F1F1]/30';
+    strokeColor = '#0DBACC';
     label = 'פיזור מעולה';
   } else if (score >= 50) {
-    color = 'text-sky-600';
-    bgColor = 'bg-sky-50';
-    strokeColor = '#0ea5e9';
+    color = 'text-[#69ADFF]';
+    bgColor = 'bg-[#C1DDFF]/30';
+    strokeColor = '#69ADFF';
     label = 'פיזור טוב';
   } else if (score >= 30) {
-    color = 'text-amber-500';
-    bgColor = 'bg-amber-50';
-    strokeColor = '#f59e0b';
+    color = 'text-[#FFB84D]';
+    bgColor = 'bg-[#FFE5B4]/30';
+    strokeColor = '#FFB84D';
     label = 'פיזור בינוני';
   }
 
@@ -348,7 +348,7 @@ function ScoreIndicator({ score }: { score: number }) {
             cy="20"
             r="18"
             fill="none"
-            stroke="#e2e8f0"
+            stroke="#E8E8ED"
             strokeWidth="3"
           />
           {/* Progress circle */}
@@ -369,7 +369,7 @@ function ScoreIndicator({ score }: { score: number }) {
         </span>
       </div>
       <div className="text-right">
-        <p className="text-xs text-slate-400">ציון פיזור</p>
+        <p className="text-xs text-[#BDBDCB]">ציון פיזור</p>
         <p className={`text-sm font-semibold ${color}`}>{label}</p>
       </div>
     </div>
@@ -387,12 +387,12 @@ export function DiversificationHeatmap({
 }: DiversificationHeatmapProps) {
   if (sectorAllocation.length === 0) {
     return (
-      <div className={`bg-white rounded-2xl border border-slate-200 p-8 text-center ${className}`}>
-        <div className="w-12 h-12 bg-slate-100 rounded-xl mx-auto mb-3 flex items-center justify-center">
-          <PieChart className="w-6 h-6 text-slate-400" />
+      <div className={`bg-white rounded-3xl border border-[#E8E8ED] p-8 text-center ${className}`}>
+        <div className="w-12 h-12 bg-[#F7F7F8] rounded-xl mx-auto mb-3 flex items-center justify-center">
+          <PieChart className="w-6 h-6 text-[#BDBDCB]" />
         </div>
-        <p className="text-slate-500 font-medium">אין נתוני סקטורים להצגה</p>
-        <p className="text-slate-400 text-sm mt-1">הוסף נכסים לתיק כדי לראות את הפיזור</p>
+        <p className="text-[#7E7F90] font-medium">אין נתוני סקטורים להצגה</p>
+        <p className="text-[#BDBDCB] text-sm mt-1">הוסף נכסים לתיק כדי לראות את הפיזור</p>
       </div>
     );
   }
@@ -406,16 +406,16 @@ export function DiversificationHeatmap({
   }));
 
   return (
-    <div className={`bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm ${className}`}>
+    <div className={`bg-white rounded-3xl border border-[#E8E8ED] overflow-hidden shadow-sm ${className}`}>
       {/* Header */}
-      <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+      <div className="px-5 py-4 border-b border-[#F7F7F8] flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm">
+          <div className="w-10 h-10 bg-gradient-to-br from-[#69ADFF] to-[#9F7FE0] rounded-xl flex items-center justify-center shadow-sm">
             <PieChart className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-slate-900">פיזור סקטוריאלי</h3>
-            <p className="text-xs text-slate-400">{sectorAllocation.length} סקטורים</p>
+            <h3 className="text-base font-semibold text-[#303150]">פיזור סקטוריאלי</h3>
+            <p className="text-xs text-[#BDBDCB]">{sectorAllocation.length} סקטורים</p>
           </div>
         </div>
         <ScoreIndicator score={diversificationScore} />
@@ -447,10 +447,10 @@ export function DiversificationHeatmap({
                 className="w-3 h-3 rounded-full shadow-sm transition-transform group-hover:scale-110"
                 style={{ backgroundColor: SECTOR_COLORS[s.sector] || SECTOR_COLORS['Unknown'] }}
               />
-              <SensitiveData as="span" className="text-xs text-slate-600 font-medium">
+              <SensitiveData as="span" className="text-xs text-[#7E7F90] font-medium">
                 {SECTOR_NAMES[s.sector] || s.sector}
               </SensitiveData>
-              <SensitiveData as="span" className="text-xs text-slate-400">
+              <SensitiveData as="span" className="text-xs text-[#BDBDCB]">
                 {s.percent.toFixed(0)}%
               </SensitiveData>
             </div>

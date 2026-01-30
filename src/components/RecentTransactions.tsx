@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, Edit3, ChevronDown, Check, Pencil } from 'lucide-react';
+import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, Edit3, ChevronDown, Check, Pencil, Loader2 } from 'lucide-react';
 import { Transaction } from '@/lib/types';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { getCategoryInfo, expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
@@ -12,17 +12,18 @@ import { SensitiveData } from './common/SensitiveData';
 // Save behavior options
 type SaveBehavior = 'once' | 'always' | 'alwaysAsk';
 
-interface CategoryEditData {
-  transaction: Transaction;
-  newCategory: string;
-  saveBehavior: SaveBehavior;
-}
-
 interface RecentTransactionsProps {
   transactions: Transaction[];
   onDelete: (id: string) => void;
-  onDeleteMultiple?: (ids: string[]) => void;
-  onUpdateCategory?: (transactionId: string, newCategory: string, merchantName: string, saveBehavior: SaveBehavior) => void;
+  onDeleteMultiple?: (ids: string[]) => Promise<void> | void;
+  onUpdateTransaction?: (
+    transactionId: string,
+    newCategory: string,
+    merchantName: string,
+    saveBehavior: SaveBehavior,
+    newDescription?: string,
+    newAmount?: number
+  ) => Promise<void> | void;
   onNewTransaction: () => void;
   onImport: () => void;
   customExpenseCategories?: CategoryInfo[];
@@ -33,7 +34,7 @@ export default function RecentTransactions({
   transactions,
   onDelete,
   onDeleteMultiple,
-  onUpdateCategory,
+  onUpdateTransaction,
   onNewTransaction,
   onImport,
   customExpenseCategories = [],
@@ -48,18 +49,25 @@ export default function RecentTransactions({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [multiDeleteConfirm, setMultiDeleteConfirm] = useState(false);
 
-  // Category edit state
+  // Transaction edit state
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [editingDescription, setEditingDescription] = useState<string>('');
+  const [editingAmount, setEditingAmount] = useState<string>('');
   const [saveBehavior, setSaveBehavior] = useState<SaveBehavior>('once');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const categoryButtonRef = useRef<HTMLButtonElement>(null);
 
   // Close dropdown on click outside
   useEffect(() => {
     if (!isDropdownOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (dropdownRef.current && !dropdownRef.current.contains(target) && 
+          categoryButtonRef.current && !categoryButtonRef.current.contains(target)) {
         setIsDropdownOpen(false);
       }
     };
@@ -67,29 +75,66 @@ export default function RecentTransactions({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isDropdownOpen]);
 
+  // Update dropdown position when opened
+  const handleToggleDropdown = () => {
+    if (!isDropdownOpen && categoryButtonRef.current) {
+      const rect = categoryButtonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
+    }
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
   const openEditDialog = (transaction: Transaction) => {
     setEditingTransaction(transaction);
     setSelectedCategory(transaction.category);
+    setEditingDescription(transaction.description);
+    setEditingAmount(transaction.amount.toString());
     setSaveBehavior('once');
     setIsDropdownOpen(false);
+    setIsSaving(false);
   };
 
   const closeEditDialog = () => {
     setEditingTransaction(null);
     setSelectedCategory('');
+    setEditingDescription('');
+    setEditingAmount('');
     setSaveBehavior('once');
     setIsDropdownOpen(false);
+    setIsSaving(false);
   };
 
-  const handleSaveCategory = () => {
-    if (editingTransaction && selectedCategory && onUpdateCategory) {
-      onUpdateCategory(
+  const handleSaveTransaction = async () => {
+    if (!editingTransaction || !onUpdateTransaction) return;
+    
+    const hasChanges = 
+      selectedCategory !== editingTransaction.category ||
+      editingDescription !== editingTransaction.description ||
+      parseFloat(editingAmount) !== editingTransaction.amount;
+    
+    if (!hasChanges) {
+      closeEditDialog();
+      return;
+    }
+    
+    setIsSaving(true);
+    try {
+      await onUpdateTransaction(
         editingTransaction.id,
         selectedCategory,
-        editingTransaction.description,
-        saveBehavior
+        editingTransaction.description, // Original description for merchant mapping
+        saveBehavior,
+        editingDescription !== editingTransaction.description ? editingDescription : undefined,
+        parseFloat(editingAmount) !== editingTransaction.amount ? parseFloat(editingAmount) : undefined
       );
       closeEditDialog();
+    } catch (error) {
+      // Error is handled by parent, just reset saving state
+      setIsSaving(false);
     }
   };
 
@@ -124,9 +169,9 @@ export default function RecentTransactions({
     }
   };
 
-  const handleMultiDelete = () => {
+  const handleMultiDelete = async () => {
     if (onDeleteMultiple && selectedIds.size > 0) {
-      onDeleteMultiple(Array.from(selectedIds));
+      await onDeleteMultiple(Array.from(selectedIds));
       setSelectedIds(new Set());
       setIsSelectMode(false);
     }
@@ -270,13 +315,13 @@ export default function RecentTransactions({
                   <div
                     className={cn(
                       'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors',
-                      isSelected ? 'bg-indigo-100' : 'bg-slate-100'
+                      isSelected ? 'bg-[#C1DDFF]' : 'bg-[#F7F7F8]'
                     )}
                   >
                     {isSelected ? (
-                      <CheckSquare className="w-4 h-4 text-indigo-600" />
+                      <CheckSquare className="w-4 h-4 text-[#69ADFF]" />
                     ) : (
-                      <Square className="w-4 h-4 text-slate-500" />
+                      <Square className="w-4 h-4 text-[#7E7F90]" />
                     )}
                   </div>
                 ) : (
@@ -334,8 +379,9 @@ export default function RecentTransactions({
                     fontFamily: 'var(--font-nunito), system-ui, sans-serif',
                     color: amountColor
                   }}
+                  dir="ltr"
                 >
-                  {isIncome ? '+' : '-'}{formatCurrency(transaction.amount)}
+                  {`${isIncome ? '+' : '-'}${formatCurrency(transaction.amount)}`}
                 </SensitiveData>
 
                 {/* Action Buttons (only in normal mode) */}
@@ -344,7 +390,7 @@ export default function RecentTransactions({
                     <button
                       type="button"
                       onClick={() => openEditDialog(transaction)}
-                      className="p-1.5 rounded hover:bg-slate-100 transition-colors"
+                      className="p-1.5 rounded hover:bg-[#F7F7F8] transition-colors"
                       style={{ color: '#7E7F90' }}
                       aria-label={`ערוך עסקה: ${transaction.description}`}
                     >
@@ -412,63 +458,96 @@ export default function RecentTransactions({
         message={`האם אתה בטוח שברצונך למחוק ${selectedIds.size} עסקאות?`}
       />
 
-      {/* Category Edit Dialog - Using Portal for proper z-index */}
+      {/* Transaction Edit Dialog - Using Portal for proper z-index */}
       {
         editingTransaction && createPortal(
           <div
             className="fixed inset-0 bg-black/50 flex items-center justify-center p-4"
             style={{ zIndex: 9999 }}
-            onClick={closeEditDialog}
+            onClick={() => !isSaving && closeEditDialog()}
             role="presentation"
           >
             <div
-              className="bg-white rounded-2xl shadow-xl w-full max-w-md"
+              className="bg-white rounded-3xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
               dir="rtl"
               onClick={(e) => e.stopPropagation()}
               role="dialog"
               aria-modal="true"
-              aria-labelledby="edit-category-title"
+              aria-labelledby="edit-transaction-title"
             >
               {/* Header */}
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                <h3 id="edit-category-title" className="font-semibold text-slate-900">עריכת קטגוריה</h3>
+              <div className="p-4 border-b border-[#F7F7F8] flex items-center justify-between">
+                <h3 id="edit-transaction-title" className="font-semibold text-[#303150]">עריכת עסקה</h3>
                 <button
                   type="button"
                   onClick={closeEditDialog}
-                  className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="p-1.5 hover:bg-[#F7F7F8] rounded-lg transition-colors"
                   aria-label="סגור"
+                  disabled={isSaving}
                 >
-                  <X className="w-5 h-5 text-slate-500" aria-hidden="true" />
+                  <X className="w-5 h-5 text-[#7E7F90]" aria-hidden="true" />
                 </button>
               </div>
 
               {/* Content */}
               <div className="p-4 space-y-4">
-                {/* Transaction info */}
-                <div className="p-3 bg-slate-50 rounded-xl">
-                  <p className="text-sm text-slate-600">עסקה:</p>
-                  <SensitiveData as="p" className="font-medium text-slate-900">
-                    {editingTransaction.description}
-                  </SensitiveData>
-                  <SensitiveData as="p" className="text-sm text-slate-500">
-                    {formatCurrency(editingTransaction.amount)} • {formatDate(editingTransaction.date)}
-                  </SensitiveData>
+                {/* Transaction date info */}
+                <div className="p-3 bg-[#F7F7F8] rounded-xl">
+                  <p className="text-sm text-[#7E7F90]">תאריך העסקה:</p>
+                  <p className="font-medium text-[#303150]">
+                    {formatDate(editingTransaction.date)}
+                  </p>
+                </div>
+
+                {/* Description input */}
+                <div>
+                  <label className="block text-sm font-medium text-[#303150] mb-2">
+                    תיאור העסקה
+                  </label>
+                  <input
+                    type="text"
+                    value={editingDescription}
+                    onChange={(e) => setEditingDescription(e.target.value)}
+                    className="w-full px-3 py-2.5 border-2 border-[#E8E8ED] rounded-xl text-sm font-medium text-[#303150] focus:border-[#69ADFF] focus:ring-2 focus:ring-[#69ADFF] focus:ring-offset-1 focus:outline-none transition-all placeholder:text-[#BDBDCB]"
+                    placeholder="תיאור העסקה"
+                    disabled={isSaving}
+                  />
+                </div>
+
+                {/* Amount input */}
+                <div>
+                  <label className="block text-sm font-medium text-[#303150] mb-2">
+                    סכום (₪)
+                  </label>
+                  <input
+                    type="number"
+                    value={editingAmount}
+                    onChange={(e) => setEditingAmount(e.target.value)}
+                    className="w-full px-3 py-2.5 border-2 border-[#E8E8ED] rounded-xl text-sm font-medium text-[#303150] focus:border-[#69ADFF] focus:ring-2 focus:ring-[#69ADFF] focus:ring-offset-1 focus:outline-none transition-all placeholder:text-[#BDBDCB]"
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                    disabled={isSaving}
+                  />
                 </div>
 
                 {/* Category dropdown */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    קטגוריה חדשה
+                  <label className="block text-sm font-medium text-[#303150] mb-2">
+                    קטגוריה
                   </label>
-                  <div ref={dropdownRef} className="relative">
+                  <div className="relative">
                     <button
+                      ref={categoryButtonRef}
                       type="button"
-                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      onClick={handleToggleDropdown}
+                      disabled={isSaving}
                       className={cn(
                         'w-full px-3 py-2.5 border-2 rounded-xl text-sm font-medium transition-all',
                         'flex items-center justify-between gap-2',
-                        'focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 focus:outline-none',
-                        'border-violet-300 bg-white text-indigo-700 hover:border-violet-400'
+                        'focus:ring-2 focus:ring-[#69ADFF] focus:ring-offset-1 focus:outline-none',
+                        'border-[#E8E8ED] bg-white text-[#303150] hover:border-[#69ADFF]',
+                        isSaving && 'opacity-50 cursor-not-allowed'
                       )}
                     >
                       <span>
@@ -484,8 +563,20 @@ export default function RecentTransactions({
                       )} />
                     </button>
 
-                    {isDropdownOpen && (
-                      <div className="absolute z-50 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                    {/* Category dropdown rendered via portal to appear above modal */}
+                    {isDropdownOpen && dropdownPosition && createPortal(
+                      <div
+                        ref={dropdownRef}
+                        className="bg-white border border-[#E8E8ED] rounded-xl shadow-lg max-h-48 overflow-y-auto"
+                        style={{
+                          position: 'fixed',
+                          top: dropdownPosition.top,
+                          left: dropdownPosition.left,
+                          width: dropdownPosition.width,
+                          zIndex: 10001,
+                        }}
+                        dir="rtl"
+                      >
                         <div className="p-1">
                           {getCategoriesForType(editingTransaction.type).map((cat) => {
                             const isSelected = cat.id === selectedCategory;
@@ -501,102 +592,116 @@ export default function RecentTransactions({
                                   'w-full px-3 py-2 rounded-lg text-sm font-medium text-right',
                                   'flex items-center justify-between gap-2 transition-colors',
                                   isSelected
-                                    ? 'bg-indigo-100 text-indigo-700 border-2 border-violet-300'
-                                    : 'text-slate-700 hover:bg-slate-100 border-2 border-transparent'
+                                    ? 'bg-[#C1DDFF] text-[#303150] border-2 border-[#69ADFF]'
+                                    : 'text-[#303150] hover:bg-[#F7F7F8] border-2 border-transparent'
                                 )}
                               >
                                 <span>{cat.nameHe}</span>
-                                {isSelected && <Check className="w-4 h-4 text-indigo-600" />}
+                                {isSelected && <Check className="w-4 h-4 text-[#69ADFF]" />}
                               </button>
                             );
                           })}
                         </div>
-                      </div>
+                      </div>,
+                      document.body
                     )}
                   </div>
                 </div>
 
-                {/* Save behavior options */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    שמירה לפעמים הבאות
-                  </label>
-                  <div className="space-y-2">
-                    <label className={cn(
-                      'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
-                      saveBehavior === 'once'
-                        ? 'border-violet-300 bg-indigo-50'
-                        : 'border-slate-200 hover:border-slate-300'
-                    )}>
-                      <input
-                        type="radio"
-                        name="saveBehavior"
-                        value="once"
-                        checked={saveBehavior === 'once'}
-                        onChange={() => setSaveBehavior('once')}
-                        className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
-                      />
-                      <div>
-                        <p className="font-medium text-slate-900">רק הפעם</p>
-                        <p className="text-xs text-slate-500">העדכון יחול רק על עסקה זו</p>
-                      </div>
+                {/* Save behavior options - only show if category changed */}
+                {selectedCategory !== editingTransaction.category && (
+                  <div>
+                    <label className="block text-sm font-medium text-[#303150] mb-2">
+                      שמירת הקטגוריה לפעמים הבאות
                     </label>
+                    <div className="space-y-2">
+                      <label className={cn(
+                        'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
+                        saveBehavior === 'once'
+                          ? 'border-[#69ADFF] bg-[#C1DDFF]/30'
+                          : 'border-[#E8E8ED] hover:border-[#69ADFF]'
+                      )}>
+                        <input
+                          type="radio"
+                          name="saveBehavior"
+                          value="once"
+                          checked={saveBehavior === 'once'}
+                          onChange={() => setSaveBehavior('once')}
+                          className="w-4 h-4 text-[#69ADFF] focus:ring-[#69ADFF]"
+                          disabled={isSaving}
+                        />
+                        <div>
+                          <p className="font-medium text-[#303150]">רק הפעם</p>
+                          <p className="text-xs text-[#7E7F90]">העדכון יחול רק על עסקה זו</p>
+                        </div>
+                      </label>
 
-                    <label className={cn(
-                      'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
-                      saveBehavior === 'always'
-                        ? 'border-violet-300 bg-indigo-50'
-                        : 'border-slate-200 hover:border-slate-300'
-                    )}>
-                      <input
-                        type="radio"
-                        name="saveBehavior"
-                        value="always"
-                        checked={saveBehavior === 'always'}
-                        onChange={() => setSaveBehavior('always')}
-                        className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
-                      />
-                      <div>
-                        <p className="font-medium text-slate-900">זכור לפעמים הבאות</p>
-                        <p className="text-xs text-slate-500">עסקאות עתידיות מעסק זה יסווגו אוטומטית</p>
-                      </div>
-                    </label>
+                      <label className={cn(
+                        'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
+                        saveBehavior === 'always'
+                          ? 'border-[#69ADFF] bg-[#C1DDFF]/30'
+                          : 'border-[#E8E8ED] hover:border-[#69ADFF]'
+                      )}>
+                        <input
+                          type="radio"
+                          name="saveBehavior"
+                          value="always"
+                          checked={saveBehavior === 'always'}
+                          onChange={() => setSaveBehavior('always')}
+                          className="w-4 h-4 text-[#69ADFF] focus:ring-[#69ADFF]"
+                          disabled={isSaving}
+                        />
+                        <div>
+                          <p className="font-medium text-[#303150]">זכור לפעמים הבאות</p>
+                          <p className="text-xs text-[#7E7F90]">עסקאות עתידיות מעסק זה יסווגו אוטומטית</p>
+                        </div>
+                      </label>
 
-                    <label className={cn(
-                      'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
-                      saveBehavior === 'alwaysAsk'
-                        ? 'border-violet-300 bg-indigo-50'
-                        : 'border-slate-200 hover:border-slate-300'
-                    )}>
-                      <input
-                        type="radio"
-                        name="saveBehavior"
-                        value="alwaysAsk"
-                        checked={saveBehavior === 'alwaysAsk'}
-                        onChange={() => setSaveBehavior('alwaysAsk')}
-                        className="w-4 h-4 text-indigo-600 focus:ring-indigo-500"
-                      />
-                      <div>
-                        <p className="font-medium text-slate-900">תמיד תשאל אותי</p>
-                        <p className="text-xs text-slate-500">לעסקים גנריים כמו העברה בביט, PayBox וכו׳</p>
-                      </div>
-                    </label>
+                      <label className={cn(
+                        'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
+                        saveBehavior === 'alwaysAsk'
+                          ? 'border-[#69ADFF] bg-[#C1DDFF]/30'
+                          : 'border-[#E8E8ED] hover:border-[#69ADFF]'
+                      )}>
+                        <input
+                          type="radio"
+                          name="saveBehavior"
+                          value="alwaysAsk"
+                          checked={saveBehavior === 'alwaysAsk'}
+                          onChange={() => setSaveBehavior('alwaysAsk')}
+                          className="w-4 h-4 text-[#69ADFF] focus:ring-[#69ADFF]"
+                          disabled={isSaving}
+                        />
+                        <div>
+                          <p className="font-medium text-[#303150]">תמיד תשאל אותי</p>
+                          <p className="text-xs text-[#7E7F90]">לעסקים גנריים כמו העברה בביט, PayBox וכו׳</p>
+                        </div>
+                      </label>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Footer */}
-              <div className="p-4 border-t border-slate-100 flex gap-3">
+              <div className="p-4 border-t border-[#F7F7F8] flex gap-3">
                 <button
-                  onClick={handleSaveCategory}
-                  disabled={!selectedCategory || selectedCategory === editingTransaction.category}
-                  className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleSaveTransaction}
+                  disabled={isSaving || !editingDescription.trim() || !editingAmount || parseFloat(editingAmount) <= 0}
+                  className="flex-1 py-2.5 bg-[#69ADFF] text-white rounded-xl font-medium hover:bg-[#5A9EE6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  שמור
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      שומר...
+                    </>
+                  ) : (
+                    'שמור'
+                  )}
                 </button>
                 <button
                   onClick={closeEditDialog}
-                  className="flex-1 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors"
+                  disabled={isSaving}
+                  className="flex-1 py-2.5 bg-[#F7F7F8] text-[#303150] rounded-xl font-medium hover:bg-[#E8E8ED] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ביטול
                 </button>

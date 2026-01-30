@@ -175,6 +175,7 @@ export default function NetWorthHeroCard({
                   fontFamily: 'var(--font-nunito), system-ui, sans-serif',
                   color: percentageChange >= 0 ? '#0DBACC' : '#F18AB5'
                 }}
+                dir="ltr"
               >
                 {percentageChange >= 0 ? '+' : ''}{percentageChange.toFixed(1)}%
               </span>
