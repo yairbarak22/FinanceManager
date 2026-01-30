@@ -162,88 +162,20 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
         </div>
       </div>
 
-      {/* Separator line */}
-      <div className={`${isMobile ? 'mx-4' : isCollapsed ? 'mx-3' : 'mx-4'} border-t border-slate-100`} />
-
-      {/* Mobile: User Section with menu items */}
+      {/* Mobile: User name and email */}
       {isMobile && session?.user && (
-        <div className="px-4 py-4">
-          {/* User Info */}
-          <div className="flex items-center gap-3 px-2 mb-3">
-            {session.user.image ? (
-              <img
-                src={session.user.image}
-                alt=""
-                className="w-10 h-10 rounded-full ring-2 ring-slate-100 flex-shrink-0"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center flex-shrink-0">
-                <User className="w-5 h-5 text-slate-500" />
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <SensitiveData as="p" className="text-sm font-medium text-slate-700 truncate">
-                {session.user.name || 'משתמש'}
-              </SensitiveData>
-              <SensitiveData as="p" className="text-xs text-slate-400 truncate">
-                {session.user.email}
-              </SensitiveData>
-            </div>
-          </div>
-
-          {/* User Menu Items */}
-          <div className="space-y-1">
-            {onOpenProfile && (
-              <button
-                type="button"
-                onClick={() => {
-                  closeMobileSidebar();
-                  onOpenProfile();
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                <UserCog className="w-4 h-4 text-slate-400" />
-                <span className="text-sm font-medium">פרופיל משתמש</span>
-              </button>
-            )}
-            {onOpenAccountSettings && (
-              <button
-                type="button"
-                onClick={() => {
-                  closeMobileSidebar();
-                  onOpenAccountSettings();
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                <Users className="w-4 h-4 text-slate-400" />
-                <span className="text-sm font-medium">חשבון משותף</span>
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                closeMobileSidebar();
-                startTour();
-              }}
-              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors"
-            >
-              <Sparkles className="w-4 h-4 text-slate-400" />
-              <span className="text-sm font-medium">הצג סיור</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => signOut({ callbackUrl: '/login' })}
-              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-rose-500 hover:bg-rose-50 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="text-sm font-medium">התנתקות</span>
-            </button>
-          </div>
-
-          {/* Separator before navigation */}
-          <div className="mt-4 border-t border-slate-100" />
+        <div className="px-6 py-4">
+          <SensitiveData as="p" className="text-sm font-medium text-slate-700 truncate">
+            {session.user.name || 'משתמש'}
+          </SensitiveData>
+          <SensitiveData as="p" className="text-xs text-slate-400 truncate">
+            {session.user.email}
+          </SensitiveData>
         </div>
       )}
+
+      {/* Separator line */}
+      <div className={`${isMobile ? 'mx-4' : isCollapsed ? 'mx-3' : 'mx-4'} border-t border-slate-100`} />
 
       {/* Navigation Items */}
       <nav className={`flex-1 py-3 ${isMobile ? 'px-4' : isCollapsed ? 'px-3' : 'px-4'}`} role="navigation">
@@ -358,28 +290,81 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
         </div>
       </nav>
 
-      {/* User Info Footer */}
-      {session?.user && (
-        <div className={`py-5 border-t border-slate-100 ${isMobile ? 'px-4' : isCollapsed ? 'px-3' : 'px-4'}`}>
-          <div className={`flex items-center gap-3 ${!isMobile && isCollapsed ? 'justify-center' : 'px-2'}`}>
+      {/* Mobile: User Menu Actions */}
+      {isMobile && session?.user && (
+        <div className="px-4 py-4 border-t border-slate-100">
+          <div className="space-y-1">
+            {onOpenProfile && (
+              <button
+                type="button"
+                onClick={() => {
+                  closeMobileSidebar();
+                  onOpenProfile();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                <UserCog className="w-4 h-4 text-slate-400" />
+                <span className="text-sm font-medium">פרופיל משתמש</span>
+              </button>
+            )}
+            {onOpenAccountSettings && (
+              <button
+                type="button"
+                onClick={() => {
+                  closeMobileSidebar();
+                  onOpenAccountSettings();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                <Users className="w-4 h-4 text-slate-400" />
+                <span className="text-sm font-medium">חשבון משותף</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                closeMobileSidebar();
+                startTour();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              <Sparkles className="w-4 h-4 text-slate-400" />
+              <span className="text-sm font-medium">הצג סיור</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-rose-500 hover:bg-rose-50 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="text-sm font-medium">התנתקות</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop: User Info Footer */}
+      {!isMobile && session?.user && (
+        <div className={`py-5 border-t border-slate-100 ${isCollapsed ? 'px-3' : 'px-4'}`}>
+          <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : 'px-2'}`}>
             {session.user.image ? (
               <img
                 src={session.user.image}
                 alt=""
                 className="w-10 h-10 rounded-full ring-2 ring-slate-100 flex-shrink-0"
-                title={!isMobile && isCollapsed ? session.user.name || 'משתמש' : undefined}
+                title={isCollapsed ? session.user.name || 'משתמש' : undefined}
               />
             ) : (
               <div 
                 className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center flex-shrink-0"
-                title={!isMobile && isCollapsed ? session.user.name || 'משתמש' : undefined}
+                title={isCollapsed ? session.user.name || 'משתמש' : undefined}
               >
                 <span className="text-slate-600 text-sm font-medium">
                   {session.user.name?.[0] || 'U'}
                 </span>
               </div>
             )}
-            {(isMobile || !isCollapsed) && (
+            {!isCollapsed && (
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-slate-700 truncate">
                   {session.user.name || 'משתמש'}
