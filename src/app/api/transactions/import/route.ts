@@ -795,10 +795,17 @@ async function classifyMerchantsWithAI(
     // Parse the JSON response
     let jsonStr = response.text.trim();
 
-    // Check if response starts with JSON
+    // Step 1: Handle markdown code blocks FIRST
+    if (jsonStr.includes('```')) {
+      const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        jsonStr = codeBlockMatch[1].trim();
+      }
+    }
+
+    // Step 2: Extract JSON object if not starting with {
     if (!jsonStr.startsWith('{')) {
       console.warn('[AI Classification] Response does not start with {, attempting to extract JSON');
-      // Try to find JSON in the text
       const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         jsonStr = jsonMatch[0];
@@ -807,36 +814,65 @@ async function classifyMerchantsWithAI(
       }
     }
 
-    // Handle markdown code blocks
-    if (jsonStr.includes('```')) {
-      const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (codeBlockMatch) jsonStr = codeBlockMatch[1].trim();
-    }
-
-    // Remove JSON comments before parsing
+    // Step 3: Remove JSON comments
     jsonStr = jsonStr.replace(/\/\*[\s\S]*?\*\//g, ''); // Remove /* */ comments
     jsonStr = jsonStr.replace(/\/\/.*$/gm, ''); // Remove // comments
 
-    // Try to parse JSON with recovery
-    let parsed;
+    // Step 4: Fix common JSON issues
+    jsonStr = jsonStr.replace(/,\s*}/g, '}'); // Remove trailing commas before }
+    jsonStr = jsonStr.replace(/,\s*]/g, ']'); // Remove trailing commas before ]
+
+    // Step 5: Try to parse JSON with multiple recovery strategies
+    let parsed: Record<string, string | null> = {};
     try {
       parsed = JSON.parse(jsonStr);
     } catch (parseError) {
-      // Recovery: try to find JSON in the original response
-      console.warn('[AI Classification] JSON parse failed, attempting recovery');
-      const jsonMatch = response.text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        try {
-          const cleanedJson = jsonMatch[0]
-            .replace(/\/\*[\s\S]*?\*\//g, '')
-            .replace(/\/\/.*$/gm, '');
-          parsed = JSON.parse(cleanedJson);
-          console.log('[AI Classification] Recovered JSON from text');
-        } catch (recoveryError) {
-          console.error('[AI Classification] Recovery also failed');
-          throw parseError;
+      console.warn('[AI Classification] JSON parse failed, attempting recovery strategies');
+      
+      // Recovery Strategy 1: Try to fix unclosed JSON
+      let recovered = false;
+      
+      // Count braces to check if JSON is unclosed
+      const openBraces = (jsonStr.match(/\{/g) || []).length;
+      const closeBraces = (jsonStr.match(/\}/g) || []).length;
+      
+      if (openBraces > closeBraces) {
+        // Try to close the JSON properly
+        let fixedJson = jsonStr.trim();
+        // Remove incomplete last entry (might be cut off)
+        fixedJson = fixedJson.replace(/,\s*"[^"]*"?\s*:?\s*"?[^"]*"?\s*$/, '');
+        // Add missing closing braces
+        for (let i = 0; i < openBraces - closeBraces; i++) {
+          fixedJson += '}';
         }
-      } else {
+        try {
+          parsed = JSON.parse(fixedJson);
+          console.log('[AI Classification] Recovered by fixing unclosed JSON');
+          recovered = true;
+        } catch (e) {
+          // Continue to next strategy
+        }
+      }
+      
+      // Recovery Strategy 2: Extract valid key-value pairs with regex
+      if (!recovered) {
+        console.warn('[AI Classification] Attempting regex extraction of key-value pairs');
+        const kvPairs = jsonStr.matchAll(/"([^"]+)"\s*:\s*"([^"]+)"/g);
+        for (const match of kvPairs) {
+          const key = match[1];
+          const value = match[2];
+          if (value !== 'null') {
+            parsed[key] = value;
+          }
+        }
+        if (Object.keys(parsed).length > 0) {
+          console.log('[AI Classification] Recovered', Object.keys(parsed).length, 'pairs via regex');
+          recovered = true;
+        }
+      }
+      
+      if (!recovered) {
+        console.error('[AI Classification] All recovery strategies failed');
         throw parseError;
       }
     }
@@ -844,20 +880,36 @@ async function classifyMerchantsWithAI(
     // Map the results
     // IMPORTANT: AI returns keys with type suffix like "Merchant (הוצאה)"
     // so we need to construct the full key when looking up
+    // Category name normalization map (AI sometimes returns slightly different names)
+    const categoryNormalize: Record<string, string> = {
+      'subscription': 'subscriptions',
+      'entertainment_': 'entertainment',
+      'transport_': 'transport',
+      'bill': 'bills',
+      'saving': 'savings',
+      'gift': 'gifts',
+      'pet': 'pets',
+    };
+
     for (const merchant of merchants) {
       const type = transactionTypes.get(merchant) || 'expense';
       const fullKey = `${merchant} (${type === 'income' ? 'הכנסה' : 'הוצאה'})`;
-      const category = parsed[fullKey];
+      
+      // Try multiple key formats (AI sometimes omits the type suffix)
+      let category = parsed[fullKey] || parsed[merchant];
 
       if (category === null || category === 'null') {
         result.set(merchant, null);
       } else if (typeof category === 'string') {
+        // Normalize category name if needed
+        const normalizedCategory = categoryNormalize[category] || category;
+        
         // Validate category exists
         const validCategories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
-        if (validCategories.includes(category)) {
-          result.set(merchant, category);
+        if (validCategories.includes(normalizedCategory)) {
+          result.set(merchant, normalizedCategory);
         } else {
-          console.warn(`[AI Classification] Invalid category "${category}" for merchant "${merchant}"`);
+          console.warn(`[AI Classification] Invalid category "${category}" (normalized: "${normalizedCategory}") for merchant "${merchant}"`);
           result.set(merchant, null);
         }
       } else {
