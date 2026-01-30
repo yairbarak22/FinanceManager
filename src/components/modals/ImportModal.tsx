@@ -718,19 +718,42 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
           {/* Review mode */}
           {phase === 'review' && (
             <div className="space-y-4">
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              {/* AI disclaimer box */}
+              <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
                 <div className="flex items-start gap-3">
-                  <HelpCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <Brain className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-medium text-amber-800">
-                      נדרשת עזרתך ב-{needsReview.length} עסקאות
+                    <p className="font-medium text-indigo-800">
+                      הסיווג הושלם! 🎉
                     </p>
-                    <p className="text-sm text-amber-700 mt-1">
-                      ה-AI לא הצליח לזהות את הקטגוריה. בחר קטגוריה לכל עסקה.
+                    <p className="text-sm text-indigo-700 mt-1">
+                      ה-AI סיווג את רוב העסקאות, אך <span className="font-semibold">עלולות להיות טעויות</span>. 
+                      מומלץ לעבור על הסיווגים ולתקן במידת הצורך.
+                    </p>
+                    <p className="text-sm text-indigo-600 mt-2 flex items-center gap-1">
+                      <CheckCircle className="w-4 h-4" />
+                      <span className="font-medium">טיפ:</span> כל תיקון שתעשה נשמר במערכת ויסווג אוטומטית בפעמים הבאות!
                     </p>
                   </div>
                 </div>
               </div>
+
+              {/* Needs review warning */}
+              {needsReview.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <HelpCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-amber-800">
+                        נדרשת עזרתך ב-{needsReview.length} עסקאות
+                      </p>
+                      <p className="text-sm text-amber-700 mt-1">
+                        ה-AI לא הצליח לזהות את הקטגוריה. בחר קטגוריה לכל עסקה.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {stats && (
                 <div className="flex gap-3 text-sm flex-wrap">
