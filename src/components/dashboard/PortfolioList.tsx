@@ -180,9 +180,9 @@ export default function PortfolioList({
                 {/* Icon - 1.5px stroke */}
                 <div 
                   className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ background: iconStyles.background }}
+                  style={{ background: iconStyles.background, color: iconStyles.color }}
                 >
-                  <Icon className="w-5 h-5" style={{ color: iconStyles.color }} strokeWidth={1.5} />
+                  <Icon className="w-5 h-5" strokeWidth={1.5} />
                 </div>
                 
                 {/* Name */}
