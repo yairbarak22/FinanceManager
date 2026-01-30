@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccountId } from '@/lib/authHelpers';
 import { saveAssetHistoryIfChanged } from '@/lib/assetHistory';
 import { saveCurrentMonthNetWorth } from '@/lib/netWorthHistory';
+import { isPortfolioSyncAsset } from '@/lib/portfolioAssetSync';
 
 export async function PUT(
   request: NextRequest,
@@ -25,6 +26,14 @@ export async function PUT(
     
     if (!currentAsset) {
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
+    }
+
+    // Block editing portfolio sync asset
+    if (isPortfolioSyncAsset(currentAsset.name)) {
+      return NextResponse.json(
+        { error: 'נכס זה מסונכרן אוטומטית מתיק ההשקעות. לעריכה יש לעדכן את תיק ההשקעות' },
+        { status: 403 }
+      );
     }
 
     // Build update data object with validation
@@ -110,6 +119,18 @@ export async function DELETE(
     
     // Use shared account to allow deleting records from all members
     const sharedWhere = await withSharedAccountId(id, userId);
+    
+    // Check if this is a portfolio sync asset before deleting
+    const assetToDelete = await prisma.asset.findFirst({
+      where: sharedWhere,
+    });
+    
+    if (assetToDelete && isPortfolioSyncAsset(assetToDelete.name)) {
+      return NextResponse.json(
+        { error: 'נכס זה מסונכרן אוטומטית מתיק ההשקעות. לעריכה יש לעדכן את תיק ההשקעות' },
+        { status: 403 }
+      );
+    }
     
     const result = await prisma.asset.deleteMany({
       where: sharedWhere,

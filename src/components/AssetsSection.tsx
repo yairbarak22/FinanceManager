@@ -1,13 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, TrendingUp, HelpCircle, FolderOpen } from 'lucide-react';
+import { Plus, Pencil, Trash2, TrendingUp, HelpCircle, FolderOpen, Link } from 'lucide-react';
 import { Asset, AssetValueHistory } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
 import { getAssetValueForMonth, getTotalAssetsForMonth } from '@/lib/assetUtils';
 import ConfirmDialog from './modals/ConfirmDialog';
 import { SensitiveData } from './common/SensitiveData';
+
+// Portfolio sync asset name constant
+const PORTFOLIO_SYNC_ASSET_NAME = 'תיק מסחר עצמאי';
+
+function isPortfolioSyncAsset(assetName: string): boolean {
+  return assetName === PORTFOLIO_SYNC_ASSET_NAME;
+}
 
 interface AssetsSectionProps {
   assets: Asset[];
@@ -144,28 +151,46 @@ export default function AssetsSection({
 
                 {/* Actions */}
                 <div className="flex gap-1">
-                  <button
-                    onClick={() => onViewDocuments(asset)}
-                    className="p-1.5 rounded hover:bg-slate-100 transition-colors"
-                    style={{ color: '#7E7F90' }}
-                    title="מסמכים"
-                  >
-                    <FolderOpen className="w-3.5 h-3.5" strokeWidth={1.5} />
-                  </button>
-                  <button
-                    onClick={() => onEdit(asset)}
-                    className="p-1.5 rounded hover:bg-slate-100 transition-colors"
-                    style={{ color: '#7E7F90' }}
-                  >
-                    <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirm({ isOpen: true, id: asset.id, name: asset.name })}
-                    className="p-1.5 rounded hover:bg-red-50 transition-colors"
-                    style={{ color: '#7E7F90' }}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
-                  </button>
+                  {isPortfolioSyncAsset(asset.name) ? (
+                    /* Sync indicator for portfolio sync asset */
+                    <div 
+                      className="flex items-center gap-1 px-2 py-1 rounded-full text-xs"
+                      style={{ 
+                        background: 'rgba(13, 186, 204, 0.1)',
+                        color: '#0DBACC'
+                      }}
+                      title="מסונכרן מתיק השקעות"
+                    >
+                      <Link className="w-3 h-3" strokeWidth={1.5} />
+                      <span>מסונכרן</span>
+                    </div>
+                  ) : (
+                    /* Regular actions for non-sync assets */
+                    <>
+                      <button
+                        onClick={() => onViewDocuments(asset)}
+                        className="p-1.5 rounded hover:bg-slate-100 transition-colors"
+                        style={{ color: '#7E7F90' }}
+                        title="מסמכים"
+                      >
+                        <FolderOpen className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      </button>
+                      <button
+                        onClick={() => onEdit(asset)}
+                        className="p-1.5 rounded hover:bg-slate-100 transition-colors"
+                        style={{ color: '#7E7F90' }}
+                      >
+                        <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirm({ isOpen: true, id: asset.id, name: asset.name })}
+                        className="p-1.5 rounded hover:bg-red-50 transition-colors"
+                        style={{ color: '#7E7F90' }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

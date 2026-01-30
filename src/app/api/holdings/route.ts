@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
+import { syncPortfolioAsset } from '@/lib/portfolioAssetSync';
 
 // GET all holdings
 export async function GET() {
@@ -76,6 +77,13 @@ export async function POST(request: Request) {
         priceDisplayUnit,
       },
     });
+
+    // Sync portfolio asset after creating holding - AWAIT to ensure sync completes before response
+    try {
+      await syncPortfolioAsset(userId, true);
+    } catch (err) {
+      console.error('[Holdings] Error syncing portfolio asset:', err);
+    }
 
     return NextResponse.json(holding, { status: 201 });
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth, withSharedAccountId } from '@/lib/authHelpers';
+import { syncPortfolioAsset } from '@/lib/portfolioAssetSync';
 
 // GET single holding
 export async function GET(
@@ -98,6 +99,13 @@ export async function PUT(
       where: sharedWhere,
     });
 
+    // Sync portfolio asset after updating holding - AWAIT to ensure sync completes before response
+    try {
+      await syncPortfolioAsset(userId, true);
+    } catch (err) {
+      console.error('[Holdings] Error syncing portfolio asset:', err);
+    }
+
     return NextResponse.json(holding);
   } catch (error) {
     console.error('Error updating holding:', error);
@@ -131,6 +139,13 @@ export async function DELETE(
         { error: 'Holding not found' },
         { status: 404 }
       );
+    }
+
+    // Sync portfolio asset after deleting holding - AWAIT to ensure sync completes before response
+    try {
+      await syncPortfolioAsset(userId, true);
+    } catch (err) {
+      console.error('[Holdings] Error syncing portfolio asset:', err);
     }
 
     return NextResponse.json({ success: true });

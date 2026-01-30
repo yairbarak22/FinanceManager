@@ -4,6 +4,7 @@ import { requireAuth, withSharedAccount, getSharedUserIds } from '@/lib/authHelp
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { saveAssetHistory } from '@/lib/assetHistory';
 import { saveCurrentMonthNetWorth } from '@/lib/netWorthHistory';
+import { syncPortfolioAsset, PORTFOLIO_SYNC_ASSET_NAME } from '@/lib/portfolioAssetSync';
 
 export async function GET(request: NextRequest) {
   try {
@@ -53,10 +54,45 @@ export async function GET(request: NextRequest) {
     }
     
     // Default: return current values
-    const assets = await prisma.asset.findMany({
+    let assets = await prisma.asset.findMany({
       where: sharedWhere,
       orderBy: { createdAt: 'desc' },
     });
+    
+    // Check if user has holdings - sync portfolio asset if needed
+    const holdingsCount = await prisma.holding.count({
+      where: {
+        ...sharedWhere,
+        symbol: { not: null },
+        currentValue: { gt: 0 },
+      },
+    });
+    
+    if (holdingsCount > 0) {
+      const existingSyncAsset = assets.find(a => a.name === PORTFOLIO_SYNC_ASSET_NAME);
+      
+      // Sync if: no sync asset exists, OR sync asset is stale (more than 5 hours old)
+      const FIVE_HOURS_MS = 5 * 60 * 60 * 1000;
+      const ageMs = existingSyncAsset ? Date.now() - new Date(existingSyncAsset.updatedAt).getTime() : 0;
+      const isStale = existingSyncAsset && ageMs > FIVE_HOURS_MS;
+      
+      if (!existingSyncAsset || isStale) {
+        try {
+          const result = await syncPortfolioAsset(userId, true);
+          if (result) {
+            console.log(`[Assets] ${existingSyncAsset ? 'Updated' : 'Created'} portfolio sync asset for user ${userId}`);
+            // Re-fetch assets to include the updated sync asset
+            assets = await prisma.asset.findMany({
+              where: sharedWhere,
+              orderBy: { createdAt: 'desc' },
+            });
+          }
+        } catch (err) {
+          console.error('[Assets] Error syncing portfolio asset:', err);
+          // Continue with original assets if sync fails
+        }
+      }
+    }
     
     return NextResponse.json(assets);
   } catch (error) {
