@@ -19,12 +19,15 @@ export async function GET() {
     const needsBackfill = await needsInitialBackfill(userId);
     if (needsBackfill) {
       await initialBackfillNetWorthHistory(userId);
-    } else {
-      // Always ensure current month has updated record
-      // This fixes the issue when entering a new month - without this,
-      // the current month would have no record and show incorrect data
-      await saveCurrentMonthNetWorth(userId);
     }
+    
+    // ALWAYS ensure current month has latest values (even after backfill)
+    // This handles:
+    // 1. Race conditions with onboarding data
+    // 2. New month entries where no record exists yet
+    // 3. Any case where assets changed after backfill calculation started
+    // Note: saveCurrentMonthNetWorth uses upsert, so no duplicates will be created
+    await saveCurrentMonthNetWorth(userId);
 
     // Get all user IDs in the shared account
     const userIds = await getSharedUserIds(userId);
