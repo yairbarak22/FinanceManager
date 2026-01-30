@@ -70,29 +70,16 @@ export default function MinimalHeader({
     <header className="sticky top-0 z-40 bg-white border-b border-slate-100">
       <div className="px-4 lg:px-6">
         <div className="flex items-center justify-between h-14">
-          {/* Right: Sidebar Toggle + Page Title (Desktop) / Hamburger + Logo (Mobile) */}
+          {/* Right: Sidebar Toggle + Page Title (Desktop) / Logo (Mobile) */}
           <div className="flex items-center gap-3">
-            {/* Mobile: Hamburger + Logo */}
+            {/* Mobile: Logo only */}
             <div className="lg:hidden flex items-center gap-2">
-              {/* Hamburger Menu Button */}
-              <button
-                type="button"
-                onClick={openMobileSidebar}
-                className="p-2 -ml-2 rounded-lg text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition-all"
-                aria-label="פתח תפריט ניווט"
-              >
-                <Menu className="w-5 h-5" strokeWidth={2} />
-              </button>
-              
-              {/* Logo */}
-              <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                  <PieChart className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
-                </div>
-                <span className="text-sm font-bold text-slate-800" style={{ fontFamily: 'var(--font-heebo)' }}>
-                  NETO
-                </span>
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                <PieChart className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
               </div>
+              <span className="text-sm font-bold text-slate-800" style={{ fontFamily: 'var(--font-heebo)' }}>
+                NETO
+              </span>
             </div>
             
             {/* Desktop: Sidebar Toggle + Page Title */}
@@ -119,7 +106,7 @@ export default function MinimalHeader({
             </div>
           </div>
 
-          {/* Left: Month Filter & User Menu */}
+          {/* Left: Month Filter & User Menu & Hamburger (Mobile) */}
           <div className="flex items-center gap-2">
             {/* Month Filter */}
             {showMonthFilter && (
@@ -148,7 +135,7 @@ export default function MinimalHeader({
               </>
             )}
 
-            {/* Notification Bell */}
+            {/* Notification Bell - Desktop only */}
             <button
               type="button"
               className="hidden md:flex relative p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-lg hover:bg-slate-50"
@@ -158,11 +145,11 @@ export default function MinimalHeader({
               <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-rose-400 rounded-full" />
             </button>
 
-            {/* Accessibility Button */}
+            {/* Accessibility Button - All screens */}
             <button
               type="button"
               onClick={openAccessibility}
-              className="hidden md:flex relative p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-lg hover:bg-slate-50"
+              className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-lg hover:bg-slate-50"
               aria-label="תפריט נגישות"
               title="נגישות"
             >
@@ -262,6 +249,16 @@ export default function MinimalHeader({
                 )}
               </div>
             )}
+
+            {/* Hamburger Menu Button - Mobile only */}
+            <button
+              type="button"
+              onClick={openMobileSidebar}
+              className="lg:hidden p-2 rounded-lg text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition-all"
+              aria-label="פתח תפריט ניווט"
+            >
+              <Menu className="w-5 h-5" strokeWidth={2} />
+            </button>
           </div>
         </div>
       </div>
