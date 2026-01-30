@@ -1,17 +1,8 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { useOnboarding, WizardData } from '@/context/OnboardingContext';
 import { getStepById } from '@/components/onboarding/stepsConfig';
-
-/**
- * Element position relative to viewport
- */
-interface ElementPosition {
-  x: number;
-  y: number;
-  found: boolean;
-}
 
 /**
  * Autopilot sequence result
@@ -944,210 +935,6 @@ export function useAutopilot() {
   // ============================================
 
   /**
-   * RECOMMENDATIONS: Demonstrate the AI recommendations feature
-   */
-  const runRecommendationsDemo = useCallback(
-    async (): Promise<boolean> => {
-      // 1. Scroll to recommendations button in asset allocation chart
-      await scrollToElement('btn-get-recommendations');
-      setCursorLabel('המלצות מותאמות אישית');
-      if (!(await moveTo('btn-get-recommendations', 'לחץ לקבלת המלצות'))) {
-        setCursorLabel('💡 כפתור ההמלצות נמצא בכרטיס פילוח הנכסים');
-        await wait(2000);
-        return true;
-      }
-
-      const recBtn = document.getElementById('btn-get-recommendations');
-      if (!recBtn) return false;
-
-      await wait(TIMING.PAUSE_BEFORE_CLICK);
-      await simulateClick();
-      setCursorLabel('✨ פותח את מודל ההמלצות...');
-      recBtn.click();
-      await wait(TIMING.MODAL_OPEN_WAIT);
-
-      // Wait for AI chat modal to appear
-      const chatModal = await waitForElement('[class*="AIChatModal"], .ai-chat-modal, .modal-content');
-      if (chatModal) {
-        // Modal is now open - show backdrop blur
-        setAutopilotInModal(true);
-
-        // Move cursor to the recommendations area
-        const recArea = chatModal.querySelector('.prose, .markdown, [class*="message"]') as HTMLElement;
-        if (recArea) {
-          await moveToElement(recArea, 'קבל המלצות מפורטות על סמך הנתונים האישיים שלך');
-          await wait(3000);
-        } else {
-          setCursorLabel('💡 קבל המלצות מפורטות על סמך הנתונים האישיים שלך');
-          await wait(3000);
-        }
-
-        // Close the modal
-        const closeBtn = chatModal.querySelector('button[aria-label="Close"], button:has(.lucide-x), [class*="close"]') as HTMLElement;
-        if (closeBtn) {
-          closeBtn.click();
-        } else {
-          // Try clicking outside to close
-          document.body.click();
-        }
-        await wait(500);
-      }
-
-      await showSuccess('המלצות חכמות מבוססות על הנתונים שלך!');
-
-      // Re-open onboarding wizard to features step
-      await wait(600);
-      setCurrentStepIndex(5); // features is the 6th step (index 5)
-      openWizard();
-
-      return true;
-    },
-    [moveTo, moveToElement, scrollToElement, simulateClick, waitForElement, showSuccess, setCursorLabel, wait, openWizard, setCurrentStepIndex, setAutopilotInModal]
-  );
-
-  /**
-   * AI ASSISTANT: Demonstrate the AI chat feature
-   */
-  const runAIAssistantDemo = useCallback(
-    async (): Promise<boolean> => {
-      // 1. Scroll to and click AI help button next to assets
-      await scrollToElement('btn-ai-help-assets');
-      setCursorLabel('כפתור עזרה AI');
-      if (!(await moveTo('btn-ai-help-assets', 'לחץ לפתיחת העוזר'))) {
-        setCursorLabel('💡 כפתור עזרת ה-AI נמצא ליד כותרת הנכסים');
-        await wait(2000);
-        return true;
-      }
-
-      // Explain that this button appears everywhere
-      setCursorLabel('💡 כפתור זה מופיע בכל מקום במערכת - לחץ עליו לקבלת עזרה');
-      await wait(2500);
-
-      const aiBtn = document.getElementById('btn-ai-help-assets');
-      if (!aiBtn) return false;
-
-      await wait(TIMING.PAUSE_BEFORE_CLICK);
-      await simulateClick();
-      setCursorLabel('✨ פותח את עוזר ה-AI...');
-      aiBtn.click();
-      await wait(TIMING.MODAL_OPEN_WAIT + 300);
-
-      // Wait for AI chat modal - look for the modal with z-[10002]
-      const chatModal = await waitForElement('.animate-scale-in, [class*="z-[10002]"]');
-      if (chatModal) {
-        // Modal is now open - show backdrop blur
-        setAutopilotInModal(true);
-
-        setCursorLabel('💬 שואל שאלה על הנכסים...');
-        await wait(800);
-
-        // Find the chat input - it's an input with placeholder
-        const chatInput = chatModal.querySelector('input[placeholder="שאל שאלה..."]') as HTMLInputElement;
-        if (chatInput) {
-          const sampleQuestion = 'איך כדאי לפזר את הנכסים שלי?';
-
-          // Focus on the input first
-          await moveToElement(chatInput, 'מקליד שאלה...');
-          await simulateClick();
-          chatInput.focus();
-          await wait(300);
-
-          // Type the question using native value setter
-          const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-            window.HTMLInputElement.prototype,
-            'value'
-          )?.set;
-
-          if (nativeInputValueSetter) {
-            // Type character by character
-            let currentValue = '';
-            for (let i = 0; i < sampleQuestion.length; i++) {
-              if (shouldAbort()) return false;
-              currentValue += sampleQuestion[i];
-              nativeInputValueSetter.call(chatInput, currentValue);
-              chatInput.dispatchEvent(new Event('input', { bubbles: true }));
-              await wait(TIMING.TYPING_CHAR_DELAY);
-            }
-            chatInput.dispatchEvent(new Event('change', { bubbles: true }));
-          }
-
-          setCursorLabel('✓ ' + sampleQuestion);
-          await wait(600);
-
-          // Find and click the send button - it's the button[type="submit"] in the form
-          const sendBtn = chatModal.querySelector('form button[type="submit"]') as HTMLElement;
-          if (sendBtn) {
-            await moveToElement(sendBtn, 'שולח שאלה...');
-            await wait(TIMING.PAUSE_BEFORE_CLICK);
-            await simulateClick();
-            sendBtn.click();
-            await wait(500);
-          }
-
-          // Wait for response - look for the loading indicator to disappear and messages to appear
-          setCursorLabel('⏳ ממתין לתשובה...');
-          let responseReceived = false;
-          const startTime = Date.now();
-          const timeout = 20000; // 20 seconds max wait
-
-          while (!responseReceived && Date.now() - startTime < timeout) {
-            await wait(500);
-            // Check for AI response - look for messages with bg-slate-100 (assistant message)
-            const assistantMessages = chatModal.querySelectorAll('.bg-slate-100');
-            const loadingIndicator = chatModal.querySelector('.animate-bounce');
-
-            // We have a response when there's an assistant message and no loading indicator
-            if (assistantMessages.length > 0 && !loadingIndicator) {
-              // Also check if the typing animation is done (no animate-pulse cursor)
-              const typingCursor = chatModal.querySelector('.animate-pulse');
-              if (!typingCursor) {
-                responseReceived = true;
-              }
-            }
-          }
-
-          if (responseReceived) {
-            setCursorLabel('✅ קיבלנו תשובה!');
-            await wait(2500);
-          } else {
-            setCursorLabel('💡 התשובה בדרך...');
-            await wait(1500);
-          }
-        }
-
-        // Close the modal - find the close button in the header (it's the button with X icon)
-        const headerCloseBtn = chatModal.querySelector('.bg-gradient-to-r button') as HTMLElement;
-        if (headerCloseBtn) {
-          await moveToElement(headerCloseBtn, 'סוגר את החלון');
-          await wait(TIMING.PAUSE_BEFORE_CLICK);
-          await simulateClick();
-          headerCloseBtn.click();
-          await wait(500);
-        } else {
-          // Fallback - click the backdrop
-          const backdrop = document.querySelector('.bg-black\\/50');
-          if (backdrop) {
-            (backdrop as HTMLElement).click();
-          }
-          await wait(500);
-        }
-      }
-
-      await showSuccess('עוזר AI מותאם למצבך הפיננסי!');
-      await wait(800);
-
-      // Re-open onboarding wizard to features step
-      clearCursor();
-      await wait(400);
-      setCurrentStepIndex(5); // features is the 6th step (index 5)
-      openWizard();
-
-      return true;
-    },
-    [moveTo, moveToElement, scrollToElement, simulateClick, waitForElement, showSuccess, setCursorLabel, wait, shouldAbort, openWizard, setCurrentStepIndex, clearCursor, setAutopilotInModal]
-  );
-
-  /**
    * IMPORT: Demonstrate the import transactions feature
    */
   const runImportDemo = useCallback(
@@ -1224,12 +1011,6 @@ export function useAutopilot() {
 
         let success = false;
         switch (demoId) {
-          case 'recommendations':
-            success = await runRecommendationsDemo();
-            break;
-          case 'ai-assistant':
-            success = await runAIAssistantDemo();
-            break;
           case 'import':
             success = await runImportDemo();
             break;
@@ -1249,7 +1030,7 @@ export function useAutopilot() {
         isRunningRef.current = false;
       }
     },
-    [wait, clearCursor, runRecommendationsDemo, runAIAssistantDemo, runImportDemo]
+    [wait, clearCursor, runImportDemo]
   );
 
   // ============================================
