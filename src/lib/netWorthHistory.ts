@@ -7,25 +7,33 @@ import { Liability } from '@/lib/types';
 /**
  * Calculate total assets for a specific month
  * Uses AssetValueHistory to get historical values
+ * 
+ * IMPORTANT: For past months, ONLY count assets that have actual history records.
+ * For current month, use current asset values.
  */
 async function getTotalAssetsForMonthKey(
   userId: string,
   monthKey: string
 ): Promise<number> {
   const userIds = await getSharedUserIds(userId);
+  const currentMonth = getCurrentMonthKey();
+  const isCurrentMonth = monthKey === currentMonth;
   
-  // Get all assets for the user
-  const allAssets = await prisma.asset.findMany({
-    where: {
-      userId: { in: userIds },
-    },
-    select: {
-      id: true,
-      value: true,
-    },
-  });
-
-  // Get history records for this month
+  if (isCurrentMonth) {
+    // For current month, use current asset values
+    const allAssets = await prisma.asset.findMany({
+      where: {
+        userId: { in: userIds },
+      },
+      select: {
+        value: true,
+      },
+    });
+    return allAssets.reduce((sum, asset) => sum + asset.value, 0);
+  }
+  
+  // For past months, ONLY use assets that have history records for that month
+  // This prevents inflating past months with current asset values
   const historyRecords = await prisma.assetValueHistory.findMany({
     where: {
       asset: {
@@ -35,16 +43,7 @@ async function getTotalAssetsForMonthKey(
     },
   });
   
-  // Create a map of asset ID to historical value
-  const historyMap = new Map(historyRecords.map(r => [r.assetId, r.value]));
-  
-  // Calculate total: use historical value if exists, otherwise use current value
-  const total = allAssets.reduce((sum, asset) => {
-    const value = historyMap.get(asset.id) ?? asset.value;
-    return sum + value;
-  }, 0);
-  
-  return total;
+  return historyRecords.reduce((sum, record) => sum + record.value, 0);
 }
 
 /**
