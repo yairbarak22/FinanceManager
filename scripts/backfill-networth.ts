@@ -34,7 +34,8 @@ function getRemainingBalance(
   },
   asOfDate: Date
 ): number {
-  if (!liability.interestRate || !liability.loanTermMonths || !liability.startDate) {
+  // Note: interestRate can be 0 (zero-interest loan), so we check for undefined/null explicitly
+  if (typeof liability.interestRate !== 'number' || !liability.loanTermMonths || !liability.startDate) {
     return liability.remainingAmount ?? liability.totalAmount;
   }
 

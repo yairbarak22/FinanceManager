@@ -95,7 +95,8 @@ export function generateAmortizationSchedule(
 export function getCurrentMonthPayment(
   liability: Liability
 ): { payment: number; principal: number; interest: number; currentMonth: number } | null {
-  if (!liability.interestRate || !liability.loanTermMonths || !liability.startDate) {
+  // Note: interestRate can be 0 (zero-interest loan), so we check for undefined/null explicitly
+  if (typeof liability.interestRate !== 'number' || !liability.loanTermMonths || !liability.startDate) {
     // If no loan details, return the flat monthly payment
     return {
       payment: liability.monthlyPayment,
@@ -167,7 +168,8 @@ export function getEffectiveMonthlyExpense(liability: Liability): number {
  * @param asOfDate - Optional date to calculate balance as of (defaults to now)
  */
 export function getRemainingBalance(liability: Liability, asOfDate?: Date): number {
-  if (!liability.interestRate || !liability.loanTermMonths || !liability.startDate) {
+  // Note: interestRate can be 0 (zero-interest loan), so we check for undefined/null explicitly
+  if (typeof liability.interestRate !== 'number' || !liability.loanTermMonths || !liability.startDate) {
     return liability.remainingAmount || liability.totalAmount;
   }
   
