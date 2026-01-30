@@ -992,6 +992,7 @@ export async function POST(request: NextRequest) {
 
     // Step 2: Validate file signature (Magic Bytes) - Security Layer #1
     const validationError = validateExcelFile(buffer, file.size, file.type);
+    
     if (validationError) {
       console.error('[Excel Security] File validation failed:', validationError);
       return NextResponse.json(
@@ -1007,20 +1008,73 @@ export async function POST(request: NextRequest) {
     try {
       console.log('[Excel Import] Parsing workbook with security options...');
 
-      workbook = XLSX.read(buffer, {
-        type: 'buffer',
+      // Detect if file is HTML-based (common from Israeli banks)
+      const firstBytes = buffer.slice(0, 100).toString('utf8').trim();
+      const isHtmlBased = firstBytes.startsWith('<') || 
+                          firstBytes.toLowerCase().startsWith('<!doctype') ||
+                          firstBytes.toLowerCase().includes('<html') ||
+                          firstBytes.toLowerCase().includes('<table');
 
-        // 🔒 CRITICAL SECURITY OPTIONS (Defense against CVEs):
-        cellFormula: false,   // Prevent Formula Injection (CSV Injection / Excel 4.0 Macros)
-        cellHTML: false,      // Prevent XSS via HTML in cells
-        cellNF: false,        // Disable number formats (potential DoS vector)
-        cellStyles: false,    // Disable styles (reduces memory footprint)
-        sheetStubs: false,    // Don't create stubs for empty cells
-        bookVBA: false,       // Ignore VBA/Macros (malware vector)
+      if (isHtmlBased) {
+        console.log('[Excel Import] Detected HTML-based Excel file, parsing manually...');
+        
+        const htmlContent = buffer.toString('utf8');
+        
+        // Manual HTML table parsing for Israeli bank files
+        // Extract all <tr> rows and their <td>/<th> cells
+        const rows: string[][] = [];
+        
+        // Find all table rows
+        const rowMatches = htmlContent.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
+        for (const rowMatch of rowMatches) {
+          const rowHtml = rowMatch[1];
+          const cells: string[] = [];
+          
+          // Extract all cells (td and th)
+          const cellMatches = rowHtml.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi);
+          for (const cellMatch of cellMatches) {
+            // Clean the cell content - remove HTML tags and decode entities
+            let cellContent = cellMatch[1]
+              .replace(/<[^>]+>/g, '') // Remove HTML tags
+              .replace(/&nbsp;/gi, ' ')
+              .replace(/&quot;/gi, '"')
+              .replace(/&amp;/gi, '&')
+              .replace(/&lt;/gi, '<')
+              .replace(/&gt;/gi, '>')
+              .replace(/&#\d+;/g, '') // Remove numeric entities
+              .replace(/\s+/g, ' ') // Normalize whitespace
+              .trim();
+            cells.push(cellContent);
+          }
+          
+          if (cells.length > 0) {
+            rows.push(cells);
+          }
+        }
+        
+        console.log('[Excel Import] Manually parsed', rows.length, 'rows from HTML');
+        
+        // Create a workbook from the parsed rows
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, ws, 'Sheet1');
+      } else {
+        // Standard Excel file parsing
+        workbook = XLSX.read(buffer, {
+          type: 'buffer',
 
-        // Additional hardening:
-        WTF: false,           // Disable "What The Format" (legacy/unsafe formats)
-      });
+          // 🔒 CRITICAL SECURITY OPTIONS (Defense against CVEs):
+          cellFormula: false,   // Prevent Formula Injection (CSV Injection / Excel 4.0 Macros)
+          cellHTML: false,      // Prevent XSS via HTML in cells
+          cellNF: false,        // Disable number formats (potential DoS vector)
+          cellStyles: false,    // Disable styles (reduces memory footprint)
+          sheetStubs: false,    // Don't create stubs for empty cells
+          bookVBA: false,       // Ignore VBA/Macros (malware vector)
+
+          // Additional hardening:
+          WTF: false,           // Disable "What The Format" (legacy/unsafe formats)
+        });
+      }
 
       console.log('[Excel Import] Workbook parsed successfully ✓');
       console.log('[Excel Import] Sheets found:', workbook.SheetNames.length);
@@ -1081,6 +1135,7 @@ export async function POST(request: NextRequest) {
     // ============================================
     // PHASE 1: DETECT ALL TABLES (Multi-table support)
     // ============================================
+    
     const headerRows = findAllHeaderRows(rawData);
 
     if (headerRows.length === 0) {

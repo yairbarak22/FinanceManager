@@ -16,9 +16,11 @@ import JSZip from 'jszip';
 
 /**
  * Validate Excel file signature (Magic Bytes)
- * Supports both XLSX (ZIP archive) and XLS (OLE compound document)
- * - XLSX: PK\x03\x04 (50 4B 03 04)
- * - XLS:  D0 CF 11 E0 (OLE compound document)
+ * Supports multiple formats:
+ * - XLSX: PK\x03\x04 (50 4B 03 04) - ZIP archive
+ * - XLS:  D0 CF 11 E0 - OLE compound document
+ * - HTML-based Excel: Files starting with < or whitespace+< (Israeli banks export these)
+ * - XML-based Excel: <?xml or similar
  */
 export function validateExcelSignature(buffer: Buffer): boolean {
   if (!buffer || buffer.length < 4) {
@@ -28,8 +30,28 @@ export function validateExcelSignature(buffer: Buffer): boolean {
   const magicBytes = buffer.slice(0, 4).toString('hex');
 
   // XLSX/ZIP signature: 50 4B 03 04 (PK\x03\x04)
+  if (magicBytes === '504b0304') return true;
+  
   // XLS (legacy OLE) signature: D0 CF 11 E0
-  return magicBytes === '504b0304' || magicBytes === 'd0cf11e0';
+  if (magicBytes === 'd0cf11e0') return true;
+
+  // HTML-based "Excel" files (common from Israeli banks)
+  // These start with <html, <table, or have whitespace before < 
+  // Find first non-whitespace character in first 100 bytes
+  const firstBytes = buffer.slice(0, 100).toString('utf8');
+  const trimmed = firstBytes.trim();
+  
+  // Check if it starts with HTML/XML markers
+  if (trimmed.startsWith('<') || 
+      trimmed.startsWith('<?xml') || 
+      trimmed.toLowerCase().startsWith('<html') ||
+      trimmed.toLowerCase().startsWith('<!doctype') ||
+      trimmed.toLowerCase().startsWith('<table')) {
+    console.log('[FileValidator] Detected HTML/XML based Excel file');
+    return true;
+  }
+
+  return false;
 }
 
 /**
@@ -62,18 +84,25 @@ export function validateExcelFile(
 ): string | null {
   // 1. Size validation
   if (!validateFileSize(size)) {
+    console.log('[FileValidator] Size validation FAILED:', size);
     return 'גודל הקובץ חורג מהמותר (מקסימום 10MB)';
   }
+  console.log('[FileValidator] Size validation PASSED');
 
   // 2. MIME type validation
   if (!validateExcelMimeType(mimeType)) {
+    console.log('[FileValidator] MIME validation FAILED:', mimeType);
     return 'סוג הקובץ אינו נתמך. נא להעלות קובץ Excel בלבד';
   }
+  console.log('[FileValidator] MIME validation PASSED');
 
   // 3. Magic bytes validation (critical security check)
   if (!validateExcelSignature(buffer)) {
+    const magicBytes = buffer.slice(0, 4).toString('hex');
+    console.log('[FileValidator] Magic bytes validation FAILED:', magicBytes);
     return 'הקובץ אינו תקין. ודא שזהו קובץ Excel אמיתי';
   }
+  console.log('[FileValidator] Magic bytes validation PASSED');
 
   return null; // Valid
 }
