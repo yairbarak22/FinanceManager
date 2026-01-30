@@ -21,7 +21,6 @@ export default function HelpPage() {
   return (
     <AppLayout
       pageTitle="ידע פיננסי"
-      pageSubtitle="למד ושפר את ההשכלה הפיננסית שלך"
       selectedMonth={selectedMonth}
       onMonthChange={setSelectedMonth}
       allMonths={allMonths}

@@ -93,7 +93,7 @@ function StyledSelect({ value, onChange, options, placeholder }: StyledSelectPro
               >
                 <span className="flex-1 text-right">{option.label}</span>
                 {value === option.value && (
-                  <Check className="w-4 h-4 text-indigo-500" />
+                  <Check className="w-4 h-4" style={{ color: '#69ADFF' }} />
                 )}
               </button>
             ))}
@@ -214,7 +214,12 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       <div className="modal-content animate-scale-in" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="modal-header">
-          <h2 className="text-xl font-bold text-slate-900">פרטים אישיים</h2>
+          <h2 
+            className="text-xl font-bold"
+            style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+          >
+            פרטים אישיים
+          </h2>
           <button onClick={onClose} className="btn-icon">
             <X className="w-5 h-5" />
           </button>
@@ -223,7 +228,7 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         {/* Form */}
         {loading ? (
           <div className="p-12 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+            <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#69ADFF' }} />
           </div>
         ) : (
           <form onSubmit={handleSubmit}>

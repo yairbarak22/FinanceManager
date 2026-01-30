@@ -83,6 +83,31 @@ export function sanitizeForDisplay(text: string): string {
     .trim();
 }
 
+/**
+ * Escape HTML special characters to prevent XSS/HTML injection
+ * Use this when inserting user data into HTML templates (e.g., emails)
+ */
+export function escapeHtml(text: string | number | null | undefined): string {
+  if (text === null || text === undefined) return '';
+  const str = String(text);
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+/**
+ * Validate email format
+ * Returns true if the email is valid
+ */
+export function isValidEmail(email: string): boolean {
+  if (!email || typeof email !== 'string') return false;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email.trim()) && email.length <= 254;
+}
+
 // ============================================================================
 // SPAM DETECTION
 // ============================================================================

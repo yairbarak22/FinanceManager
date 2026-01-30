@@ -7,7 +7,8 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "backfill:networth": "npx tsx scripts/backfill-networth.ts"
   },
   "dependencies": {
     "@ai-sdk/groq": "^3.0.0",

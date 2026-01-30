@@ -3,7 +3,6 @@
 import { ReactNode } from 'react';
 import { MonthProvider } from '@/context/MonthContext';
 import { ModalProvider } from '@/context/ModalContext';
-import { OnboardingProvider } from '@/context/OnboardingContext';
 import { SidebarProvider } from '@/context/SidebarContext';
 
 interface AppGroupLayoutProps {
@@ -15,9 +14,7 @@ export default function AppGroupLayout({ children }: AppGroupLayoutProps) {
     <SidebarProvider>
       <MonthProvider>
         <ModalProvider>
-          <OnboardingProvider>
-            {children}
-          </OnboardingProvider>
+          {children}
         </ModalProvider>
       </MonthProvider>
     </SidebarProvider>

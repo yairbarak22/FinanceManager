@@ -2,14 +2,18 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { AppLayout } from '@/components/layout';
-import SummaryCards from '@/components/SummaryCards';
-import RecurringTransactions from '@/components/RecurringTransactions';
-import NetWorthSection from '@/components/NetWorthSection';
+import { 
+  SectionHeader, 
+  NetWorthHeroCard, 
+  MonthlySummaryCards,
+  PortfolioList
+} from '@/components/dashboard';
+import AssetAllocationChart from '@/components/AssetAllocationChart';
 import AssetsSection from '@/components/AssetsSection';
 import LiabilitiesSection from '@/components/LiabilitiesSection';
-import AssetAllocationChart from '@/components/AssetAllocationChart';
-import MonthlySummary from '@/components/MonthlySummary';
+import RecurringTransactions from '@/components/RecurringTransactions';
 import MonthlyTrendsCharts from '@/components/MonthlyTrendsCharts';
+import MonthlySummary from '@/components/MonthlySummary';
 import ExpensesPieChart from '@/components/ExpensesPieChart';
 import RecentTransactions from '@/components/RecentTransactions';
 import TransactionModal from '@/components/modals/TransactionModal';
@@ -19,7 +23,6 @@ import LiabilityModal from '@/components/modals/LiabilityModal';
 import AmortizationModal from '@/components/modals/AmortizationModal';
 import ImportModal from '@/components/modals/ImportModal';
 import DocumentsModal from '@/components/modals/DocumentsModal';
-import AdvisorModal from '@/components/modals/AdvisorModal';
 import ProfileModal from '@/components/ProfileModal';
 import AccountSettings from '@/components/AccountSettings';
 import {
@@ -42,13 +45,13 @@ import { useMonth } from '@/context/MonthContext';
 import { useModal } from '@/context/ModalContext';
 import { useSession } from 'next-auth/react';
 import ToastContainer from '@/components/ui/Toast';
+import Card from '@/components/ui/Card';
 import {
   expenseCategories as defaultExpenseCategories,
   incomeCategories as defaultIncomeCategories,
   assetCategories as defaultAssetCategories,
   liabilityTypes as defaultLiabilityTypes,
 } from '@/lib/categories';
-import Card from '@/components/ui/Card';
 
 export default function DashboardPage() {
   // Use shared month context
@@ -62,7 +65,7 @@ export default function DashboardPage() {
   } = useMonth();
   
   // Use shared modal context
-  const { openModal, isModalOpen, closeModal, modalState } = useModal();
+  const { openModal, isModalOpen, closeModal } = useModal();
 
   // Data state
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -78,7 +81,6 @@ export default function DashboardPage() {
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [isLiabilityModalOpen, setIsLiabilityModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [isAdvisorModalOpen, setIsAdvisorModalOpen] = useState(false);
 
   // Edit state
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
@@ -144,26 +146,26 @@ export default function DashboardPage() {
   // Fetch all data
   const fetchData = useCallback(async () => {
     try {
-      const [txRes, recRes, assetsRes, liabRes, historyRes, detailedHistoryRes] = await Promise.all([
-        apiFetch('/api/transactions'),
-        apiFetch('/api/recurring'),
-        apiFetch('/api/assets'),
-        apiFetch('/api/liabilities'),
-        apiFetch('/api/assets/history'),
-        apiFetch('/api/assets/history?detailed=true'),
+      const [txRes, recRes, assetsRes, liabRes, detailedHistoryRes, netWorthHistoryRes] = await Promise.all([
+        apiFetch('/api/transactions', { cache: 'no-store' }),
+        apiFetch('/api/recurring', { cache: 'no-store' }),
+        apiFetch('/api/assets', { cache: 'no-store' }),
+        apiFetch('/api/liabilities', { cache: 'no-store' }),
+        apiFetch('/api/assets/history?detailed=true', { cache: 'no-store' }),
+        apiFetch('/api/networth/history', { cache: 'no-store' }),
       ]);
 
-      if (!txRes.ok || !recRes.ok || !assetsRes.ok || !liabRes.ok || !historyRes.ok || !detailedHistoryRes.ok) {
+      if (!txRes.ok || !recRes.ok || !assetsRes.ok || !liabRes.ok || !detailedHistoryRes.ok || !netWorthHistoryRes.ok) {
         throw new Error('Failed to fetch data from one or more endpoints');
       }
 
-      const [txData, recData, assetsData, liabData, historyData, detailedHistoryData] = await Promise.all([
+      const [txData, recData, assetsData, liabData, detailedHistoryData, netWorthHistoryData] = await Promise.all([
         txRes.json(),
         recRes.json(),
         assetsRes.json(),
         liabRes.json(),
-        historyRes.json(),
         detailedHistoryRes.json(),
+        netWorthHistoryRes.json(),
       ]);
 
       setTransactions(txData);
@@ -179,25 +181,19 @@ export default function DashboardPage() {
       });
       setMonthsWithData(dataMonths);
 
-      // Calculate current liabilities total
-      const totalLiabilities = liabData.reduce((sum: number, l: Liability) => sum + l.totalAmount, 0);
+      // Use net worth history from database
+      const netWorthData: NetWorthHistory[] = netWorthHistoryData.map((item: { id: string; date: string; netWorth: number; assets: number; liabilities: number }) => ({
+        id: item.id,
+        date: item.date,
+        netWorth: item.netWorth,
+        assets: item.assets,
+        liabilities: item.liabilities,
+      }));
 
-      // Build net worth history
-      const netWorthData: NetWorthHistory[] = historyData.map((item: { monthKey: string; totalAssets: number }, index: number) => {
-        const [year, month] = item.monthKey.split('-');
-        const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-
-        return {
-          id: String(index + 1),
-          date: date.toISOString(),
-          netWorth: item.totalAssets - totalLiabilities,
-          assets: item.totalAssets,
-          liabilities: totalLiabilities,
-        };
-      });
-
+      // If no history exists, calculate current values as fallback
       if (netWorthData.length === 0) {
         const totalAssets = assetsData.reduce((sum: number, a: Asset) => sum + a.value, 0);
+        const totalLiabilities = liabData.reduce((sum: number, l: Liability) => sum + getRemainingBalance(l, new Date()), 0);
         netWorthData.push({
           id: '1',
           date: new Date().toISOString(),
@@ -328,6 +324,36 @@ export default function DashboardPage() {
       savingsRate: calculateSavingsRate(income, expenses),
     };
   });
+
+  // Monthly cashflow
+  const monthlyCashflow = totalIncome - totalExpenses;
+
+  // Calculate previous month values for comparison
+  const previousMonthData = useMemo(() => {
+    if (selectedMonth === 'all') {
+      return { income: undefined, expenses: undefined, cashflow: undefined };
+    }
+    
+    // Find the previous month
+    const [year, month] = selectedMonth.split('-').map(Number);
+    const prevDate = new Date(year, month - 2, 1); // month - 1 (0-indexed) - 1 (previous)
+    const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+    
+    // Find the previous month in monthlySummaries
+    const prevMonthSummary = monthlySummaries.find(
+      (s) => `${s.year}-${String(s.month).padStart(2, '0')}` === prevMonthKey
+    );
+    
+    if (!prevMonthSummary) {
+      return { income: undefined, expenses: undefined, cashflow: undefined };
+    }
+    
+    return {
+      income: prevMonthSummary.income,
+      expenses: prevMonthSummary.expenses,
+      cashflow: prevMonthSummary.balance,
+    };
+  }, [selectedMonth, monthlySummaries]);
 
   // Transaction handlers
   const handleAddTransaction = async (data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -569,21 +595,9 @@ export default function DashboardPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-500">טוען נתונים...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <AppLayout
       pageTitle="דשבורד"
-      pageSubtitle="סקירה כללית של המצב הפיננסי שלך"
       selectedMonth={selectedMonth}
       onMonthChange={setSelectedMonth}
       allMonths={allMonths}
@@ -593,141 +607,213 @@ export default function DashboardPage() {
       onOpenAccountSettings={() => openModal('accountSettings')}
       showMonthFilter={true}
     >
-      {/* All sections with consistent spacing */}
-      <div className="flex flex-col gap-6">
-
-        {/* SECTION 1: Summary Cards */}
-        <SummaryCards
-          totalBalance={totalBalance}
-          totalIncome={totalIncome}
-          totalExpenses={totalExpenses}
-        />
-
-        {/* SECTION 2: Net Worth + Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <NetWorthSection
-              netWorth={netWorth}
-              totalAssets={totalAssets}
-              totalLiabilities={totalLiabilities}
-              monthlyLiabilityPayments={monthlyLiabilityPayments}
-              fixedIncome={fixedIncome}
-              fixedExpenses={fixedExpenses}
+      {/* Loading State */}
+      {isLoading ? (
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="text-center">
+            <div 
+              className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4"
+              style={{ borderColor: '#69ADFF', borderTopColor: 'transparent' }}
             />
-          </div>
-
-          <div className="lg:col-span-2">
-            <AssetAllocationChart
-              assets={assets}
-              onGetRecommendations={() => setIsAdvisorModalOpen(true)}
-            />
+            <p style={{ color: 'var(--text-secondary, #7E7F90)' }}>טוען נתונים...</p>
           </div>
         </div>
+      ) : (
+        /* Main Dashboard Content - Fincheck Style */
+        <div className="space-y-12 pb-12">
 
-        {/* SECTION 3: Assets, Liabilities, Recurring */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card ref={assetsRef} padding="sm" className="h-[500px] flex flex-col">
-            <AssetsSection
-              assets={assets}
-              selectedMonth={selectedMonth}
-              assetHistory={assetHistory}
-              onAdd={() => {
-                setEditingAsset(null);
-                setIsAssetModalOpen(true);
-              }}
-              onEdit={(asset) => {
-                setEditingAsset(asset);
-                setIsAssetModalOpen(true);
-              }}
-              onDelete={handleDeleteAsset}
-              onViewDocuments={(asset) => {
-                setDocumentsEntity({ type: 'asset', id: asset.id, name: asset.name });
-                setIsDocumentsModalOpen(true);
-              }}
+          {/* ============================================
+              SECTION 1: Financial Snapshot (המצב הפיננסי)
+              ============================================ */}
+          <section>
+            <SectionHeader
+              title="המצב הפיננסי"
+              subtitle="השווי הנקי שלך וחלוקת הנכסים"
             />
-          </Card>
+            
+            {/* 12-column grid: 8 cols for hero, 4 cols for chart */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Net Worth Hero Card - 8 columns */}
+              <div className="lg:col-span-8">
+                <NetWorthHeroCard
+                  netWorth={netWorth}
+                  totalAssets={totalAssets}
+                  totalLiabilities={totalLiabilities}
+                  totalIncome={totalIncome}
+                  totalExpenses={totalExpenses}
+                  fixedIncome={fixedIncome}
+                  fixedExpenses={fixedExpenses}
+                  monthlyLiabilityPayments={monthlyLiabilityPayments}
+                  netWorthHistory={netWorthHistory}
+                  className="h-full"
+                />
+              </div>
+              
+              {/* Asset Allocation Chart - 4 columns */}
+              <div className="lg:col-span-4">
+                <AssetAllocationChart assets={assets} />
+              </div>
+            </div>
+          </section>
 
-          <Card ref={liabilitiesRef} padding="sm" className="h-[500px] flex flex-col">
-            <LiabilitiesSection
-              liabilities={liabilities}
-              selectedMonth={selectedMonth}
-              onAdd={() => {
-                setEditingLiability(null);
-                setIsLiabilityModalOpen(true);
-              }}
-              onEdit={(liability) => {
-                setEditingLiability(liability);
-                setIsLiabilityModalOpen(true);
-              }}
-              onDelete={handleDeleteLiability}
-              onViewAmortization={(liability) => {
-                setViewingLiability(liability);
-                setIsAmortizationModalOpen(true);
-              }}
-              onViewDocuments={(liability) => {
-                setDocumentsEntity({ type: 'liability', id: liability.id, name: liability.name });
-                setIsDocumentsModalOpen(true);
-              }}
+          {/* ============================================
+              SECTION 2: Monthly Cashflow (תזרים חודשי)
+              ============================================ */}
+          <section>
+            <SectionHeader
+              title="תזרים חודשי"
+              subtitle="הכנסות מול הוצאות החודש"
             />
-          </Card>
-
-          <Card ref={recurringRef} padding="sm" className="h-[500px] flex flex-col md:col-span-2 lg:col-span-1">
-            <RecurringTransactions
-              transactions={recurringTransactions}
-              onAdd={() => {
-                setEditingRecurring(null);
-                setIsRecurringModalOpen(true);
-              }}
-              onEdit={(tx) => {
-                setEditingRecurring(tx);
-                setIsRecurringModalOpen(true);
-              }}
-              onDelete={handleDeleteRecurring}
-              onToggle={handleToggleRecurring}
-              customExpenseCategories={expenseCats.custom}
-              customIncomeCategories={incomeCats.custom}
-            />
-          </Card>
-        </div>
-
-        {/* SECTION 4: Monthly Trends + Monthly Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="min-h-[350px] md:min-h-[420px]">
-            <MonthlyTrendsCharts data={monthlySummaries} />
-          </div>
-
-          <div className="min-h-[350px] md:min-h-[420px]">
-            <MonthlySummary
-              summaries={monthlySummaries}
+            
+            {/* 3 cards in a row: Income, Expenses, Cashflow */}
+            <MonthlySummaryCards
               totalIncome={totalIncome}
               totalExpenses={totalExpenses}
-              totalBalance={totalBalance}
+              monthlyCashflow={monthlyCashflow}
+              previousMonthIncome={previousMonthData.income}
+              previousMonthExpenses={previousMonthData.expenses}
+              previousMonthCashflow={previousMonthData.cashflow}
             />
-          </div>
-        </div>
+          </section>
 
-        {/* SECTION 5: Expenses Pie + Transactions */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card padding="sm" className="h-[500px] flex flex-col lg:col-span-1">
-            <ExpensesPieChart transactions={filteredTransactions} customExpenseCategories={expenseCats.custom} />
-          </Card>
-
-          <Card ref={transactionsRef} padding="sm" className="h-[500px] flex flex-col lg:col-span-2">
-            <RecentTransactions
-              transactions={filteredTransactions}
-              onDelete={handleDeleteTransaction}
-              onDeleteMultiple={handleDeleteMultipleTransactions}
-              onUpdateCategory={handleUpdateTransactionCategory}
-              onNewTransaction={() => setIsTransactionModalOpen(true)}
-              onImport={() => setIsImportModalOpen(true)}
-              customExpenseCategories={expenseCats.custom}
-              customIncomeCategories={incomeCats.custom}
+          {/* ============================================
+              SECTION 3: Portfolio Details (פירוט תיק)
+              ============================================ */}
+          <section>
+            <SectionHeader
+              title="פירוט תיק"
+              subtitle="פירוט מלא של נכסים, התחייבויות ותשלומים קבועים"
             />
-          </Card>
-        </div>
-      </div>
+            
+            {/* 12-column grid: 4 cols each */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Assets List */}
+              <Card ref={assetsRef} padding="sm" className="h-[500px] flex flex-col">
+                <AssetsSection
+                  assets={assets}
+                  selectedMonth={selectedMonth}
+                  assetHistory={assetHistory}
+                  onAdd={() => {
+                    setEditingAsset(null);
+                    setIsAssetModalOpen(true);
+                  }}
+                  onEdit={(asset) => {
+                    setEditingAsset(asset);
+                    setIsAssetModalOpen(true);
+                  }}
+                  onDelete={handleDeleteAsset}
+                  onViewDocuments={(asset) => {
+                    setDocumentsEntity({ type: 'asset', id: asset.id, name: asset.name });
+                    setIsDocumentsModalOpen(true);
+                  }}
+                />
+              </Card>
 
-      {/* MODALS */}
+              {/* Liabilities List */}
+              <Card ref={liabilitiesRef} padding="sm" className="h-[500px] flex flex-col">
+                <LiabilitiesSection
+                  liabilities={liabilities}
+                  selectedMonth={selectedMonth}
+                  onAdd={() => {
+                    setEditingLiability(null);
+                    setIsLiabilityModalOpen(true);
+                  }}
+                  onEdit={(liability) => {
+                    setEditingLiability(liability);
+                    setIsLiabilityModalOpen(true);
+                  }}
+                  onDelete={handleDeleteLiability}
+                  onViewAmortization={(liability) => {
+                    setViewingLiability(liability);
+                    setIsAmortizationModalOpen(true);
+                  }}
+                  onViewDocuments={(liability) => {
+                    setDocumentsEntity({ type: 'liability', id: liability.id, name: liability.name });
+                    setIsDocumentsModalOpen(true);
+                  }}
+                />
+              </Card>
+
+              {/* Recurring Transactions */}
+              <Card ref={recurringRef} padding="sm" className="h-[500px] flex flex-col md:col-span-2 lg:col-span-1">
+                <RecurringTransactions
+                  transactions={recurringTransactions}
+                  onAdd={() => {
+                    setEditingRecurring(null);
+                    setIsRecurringModalOpen(true);
+                  }}
+                  onEdit={(tx) => {
+                    setEditingRecurring(tx);
+                    setIsRecurringModalOpen(true);
+                  }}
+                  onDelete={handleDeleteRecurring}
+                  onToggle={handleToggleRecurring}
+                  customExpenseCategories={expenseCats.custom}
+                  customIncomeCategories={incomeCats.custom}
+                />
+              </Card>
+            </div>
+          </section>
+
+          {/* ============================================
+              SECTION 4: Monthly Trends (מגמות חודשיות)
+              ============================================ */}
+          <section>
+            <SectionHeader
+              title="מגמות חודשיות"
+              subtitle="ניתוח הכנסות והוצאות לאורך זמן"
+            />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="min-h-[350px] md:min-h-[420px]">
+                <MonthlyTrendsCharts data={monthlySummaries} />
+              </div>
+              <div className="min-h-[350px] md:min-h-[420px]">
+                <MonthlySummary
+                  summaries={monthlySummaries}
+                  totalIncome={totalIncome}
+                  totalExpenses={totalExpenses}
+                  totalBalance={totalBalance}
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* ============================================
+              SECTION 5: Activity (פעילות)
+              ============================================ */}
+          <section>
+            <SectionHeader
+              title="פעילות"
+              subtitle="פילוח הוצאות ועסקאות אחרונות"
+            />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card padding="sm" className="h-[500px] flex flex-col lg:col-span-1">
+                <ExpensesPieChart 
+                  transactions={filteredTransactions} 
+                  customExpenseCategories={expenseCats.custom} 
+                />
+              </Card>
+
+              <Card ref={transactionsRef} padding="sm" className="h-[500px] flex flex-col lg:col-span-2">
+                <RecentTransactions
+                  transactions={filteredTransactions}
+                  onDelete={handleDeleteTransaction}
+                  onDeleteMultiple={handleDeleteMultipleTransactions}
+                  onUpdateCategory={handleUpdateTransactionCategory}
+                  onNewTransaction={() => setIsTransactionModalOpen(true)}
+                  onImport={() => setIsImportModalOpen(true)}
+                  customExpenseCategories={expenseCats.custom}
+                  customIncomeCategories={incomeCats.custom}
+                />
+              </Card>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {/* MODALS - Always rendered regardless of loading state */}
       <TransactionModal
         isOpen={isTransactionModalOpen}
         onClose={() => setIsTransactionModalOpen(false)}
@@ -812,13 +898,7 @@ export default function DashboardPage() {
         onClose={closeModal}
       />
 
-      <AdvisorModal
-        isOpen={isAdvisorModalOpen}
-        onClose={() => setIsAdvisorModalOpen(false)}
-      />
-
       <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
     </AppLayout>
   );
 }
-

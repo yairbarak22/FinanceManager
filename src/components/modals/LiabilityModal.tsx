@@ -1,19 +1,18 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { X, Calculator } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Calculator, Loader2 } from 'lucide-react';
 import { Liability } from '@/lib/types';
 import { CategoryInfo } from '@/lib/categories';
 import { calculateSpitzerPayment } from '@/lib/loanCalculations';
 import { cn } from '@/lib/utils';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
-import HelpTrigger from '@/components/ai/HelpTrigger';
 
 interface LiabilityModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (liability: Omit<Liability, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onSave: (liability: Omit<Liability, 'id' | 'createdAt' | 'updatedAt'>) => void | Promise<void>;
   liability?: Liability | null;
   liabilityTypes: { default: CategoryInfo[]; custom: CategoryInfo[] };
   onAddCategory: (name: string) => Promise<CategoryInfo>;
@@ -37,6 +36,7 @@ export default function LiabilityModal({
   const [loanMethod, setLoanMethod] = useState<'spitzer' | 'equal_principal'>('spitzer');
   const [hasInterestRebate, setHasInterestRebate] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (liability) {
@@ -74,20 +74,27 @@ export default function LiabilityModal({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      name,
-      type: type as 'loan' | 'mortgage',
-      totalAmount: parseFloat(totalAmount),
-      monthlyPayment: parseFloat(monthlyPayment),
-      interestRate: parseFloat(interestRate) || 0,
-      loanTermMonths: parseInt(loanTermMonths) || 0,
-      startDate: startDate,
-      loanMethod,
-      hasInterestRebate,
-    });
-    onClose();
+    setIsLoading(true);
+    try {
+      await onSave({
+        name,
+        type: type as 'loan' | 'mortgage',
+        totalAmount: parseFloat(totalAmount),
+        monthlyPayment: parseFloat(monthlyPayment),
+        interestRate: parseFloat(interestRate) || 0,
+        loanTermMonths: parseInt(loanTermMonths) || 0,
+        startDate: startDate,
+        loanMethod,
+        hasInterestRebate,
+      });
+      onClose();
+    } catch (error) {
+      // Error handling is done in the parent component
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAddCategory = async (categoryName: string) => {
@@ -95,27 +102,24 @@ export default function LiabilityModal({
     setType(newCategory.id);
   };
 
-  // Dynamic context data for AI Help
-  const loanContextData = useMemo(() => ({
-    סכום_הלוואה: parseFloat(totalAmount) || 0,
-    ריבית_שנתית: parseFloat(interestRate) || 0,
-    תקופה_בחודשים: parseInt(loanTermMonths) || 0,
-    שיטת_הלוואה: loanMethod === 'spitzer' ? 'שפיצר' : 'קרן שווה',
-    תשלום_חודשי_נוכחי: parseFloat(monthlyPayment) || 0,
-  }), [totalAmount, interestRate, loanTermMonths, loanMethod, monthlyPayment]);
-
   if (!isOpen) return null;
 
   return (
     <>
-      <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-overlay" onClick={() => !isLoading && onClose()}>
         <div className="modal-content max-w-lg animate-scale-in" onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="modal-header">
-            <h2 className="text-xl font-bold text-slate-900">
+            <h2 
+              className="text-xl font-bold"
+              style={{ 
+                color: '#303150', 
+                fontFamily: 'var(--font-nunito), system-ui, sans-serif' 
+              }}
+            >
               {liability ? 'עריכת התחייבות' : 'התחייבות חדשה'}
             </h2>
-            <button onClick={onClose} className="btn-icon">
+            <button onClick={onClose} className="btn-icon" disabled={isLoading}>
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -157,24 +161,24 @@ export default function LiabilityModal({
                   <button
                     type="button"
                     onClick={() => setLoanMethod('spitzer')}
-                    className={cn(
-                      "py-2.5 px-4 rounded-xl text-sm font-medium transition-all",
-                      loanMethod === 'spitzer'
-                        ? 'bg-indigo-500 text-white'
-                        : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
-                    )}
+                    className="py-2.5 px-4 rounded-xl text-sm font-medium transition-all"
+                    style={{
+                      backgroundColor: loanMethod === 'spitzer' ? '#69ADFF' : '#F7F7F8',
+                      color: loanMethod === 'spitzer' ? '#FFFFFF' : '#7E7F90',
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    }}
                   >
                     שפיצר
                   </button>
                   <button
                     type="button"
                     onClick={() => setLoanMethod('equal_principal')}
-                    className={cn(
-                      "py-2.5 px-4 rounded-xl text-sm font-medium transition-all",
-                      loanMethod === 'equal_principal'
-                        ? 'bg-indigo-500 text-white'
-                        : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
-                    )}
+                    className="py-2.5 px-4 rounded-xl text-sm font-medium transition-all"
+                    style={{
+                      backgroundColor: loanMethod === 'equal_principal' ? '#69ADFF' : '#F7F7F8',
+                      color: loanMethod === 'equal_principal' ? '#FFFFFF' : '#7E7F90',
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    }}
                   >
                     קרן שווה
                   </button>
@@ -259,21 +263,34 @@ export default function LiabilityModal({
                   <Calculator className="w-4 h-4" />
                   חשב
                 </button>
-{/* FEATURE DISABLED - AI Help Button
-                <HelpTrigger
-                  topicId="loan_form"
-                  contextData={loanContextData}
-                  size="md"
-                />
-                */}
               </div>
 
               {/* Interest Rebate */}
-              <div className="bg-green-50 rounded-xl p-4 border border-green-100">
+              <div 
+                className="rounded-xl p-4"
+                style={{ 
+                  backgroundColor: 'rgba(13, 186, 204, 0.08)',
+                  border: '1px solid rgba(13, 186, 204, 0.15)',
+                }}
+              >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-slate-900">זיכוי על הריבית</p>
-                    <p className="text-sm text-slate-500 mt-0.5">
+                    <p 
+                      className="font-medium"
+                      style={{ 
+                        color: '#303150',
+                        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                      }}
+                    >
+                      זיכוי על הריבית
+                    </p>
+                    <p 
+                      className="text-sm mt-0.5"
+                      style={{ 
+                        color: '#7E7F90',
+                        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                      }}
+                    >
                       אם פעיל, רק הקרן נחשבת כהוצאה (לדוגמה: משכנתא עם החזר מס)
                     </p>
                   </div>
@@ -298,11 +315,15 @@ export default function LiabilityModal({
 
             {/* Footer */}
             <div className="modal-footer">
-              <button type="button" onClick={onClose} className="btn-secondary flex-1">
+              <button type="button" onClick={onClose} className="btn-secondary flex-1" disabled={isLoading}>
                 ביטול
               </button>
-              <button type="submit" className="btn-primary flex-1">
-                {liability ? 'עדכן' : 'הוסף'}
+              <button type="submit" className="btn-primary flex-1" disabled={isLoading}>
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                ) : (
+                  liability ? 'עדכן' : 'הוסף'
+                )}
               </button>
             </div>
           </form>

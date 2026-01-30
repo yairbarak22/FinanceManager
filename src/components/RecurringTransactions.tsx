@@ -46,36 +46,88 @@ export default function RecurringTransactions({
       {/* Header - Fixed */}
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-            <RefreshCw className="w-5 h-5 text-indigo-600" />
+          <div 
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ background: 'rgba(105, 173, 255, 0.1)' }}
+          >
+            <RefreshCw className="w-5 h-5" style={{ color: '#69ADFF' }} strokeWidth={1.5} />
           </div>
-          <h3 className="font-semibold text-slate-900">עסקאות קבועות</h3>
+          <h3 
+            className="font-semibold"
+            style={{ 
+              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+              color: '#303150'
+            }}
+          >
+            עסקאות קבועות
+          </h3>
         </div>
-        <button id="btn-add-recurring" onClick={onAdd} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1">
-          <Plus className="w-4 h-4" />
+        <button 
+          id="btn-add-recurring" 
+          onClick={onAdd} 
+          className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
+          style={{ color: '#69ADFF' }}
+        >
+          <Plus className="w-4 h-4" strokeWidth={1.5} />
           הוסף
         </button>
       </div>
 
       {/* Summary - Fixed */}
       <div className="grid grid-cols-2 gap-3 mb-4 flex-shrink-0">
-        <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
-          <p className="text-xs text-slate-500">הכנסות</p>
-          <SensitiveData as="p" className="text-base font-bold text-emerald-600">
+        <div 
+          className="bg-white rounded-xl p-3"
+          style={{ 
+            border: '1px solid #F7F7F8',
+            boxShadow: '0 2px 8px rgba(13, 186, 204, 0.08)'
+          }}
+        >
+          <p 
+            className="text-xs"
+            style={{ color: '#7E7F90' }}
+          >
+            הכנסות
+          </p>
+          <SensitiveData 
+            as="p" 
+            className="text-base font-semibold"
+            style={{ 
+              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+              color: '#0DBACC'
+            }}
+          >
             {formatCurrency(fixedIncome)}
           </SensitiveData>
         </div>
-        <div className="bg-rose-50 rounded-xl p-3 border border-rose-100">
-          <p className="text-xs text-slate-500">הוצאות</p>
-          <SensitiveData as="p" className="text-base font-bold text-rose-600">
+        <div 
+          className="bg-white rounded-xl p-3"
+          style={{ 
+            border: '1px solid #F7F7F8',
+            boxShadow: '0 2px 8px rgba(241, 138, 181, 0.08)'
+          }}
+        >
+          <p 
+            className="text-xs"
+            style={{ color: '#7E7F90' }}
+          >
+            הוצאות
+          </p>
+          <SensitiveData 
+            as="p" 
+            className="text-base font-semibold"
+            style={{ 
+              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+              color: '#F18AB5'
+            }}
+          >
             {formatCurrency(fixedExpenses)}
           </SensitiveData>
         </div>
       </div>
 
       {/* Transactions List - Scrollable */}
-      <div className="space-y-2 overflow-y-auto flex-1 min-h-0">
-        {transactions.map((transaction) => {
+      <div className="overflow-y-scroll flex-1 min-h-0 scrollbar-transactions scrollbar-edge-left scrollbar-fade-bottom">
+        {transactions.map((transaction, index) => {
           const customCategories = transaction.type === 'income'
             ? customIncomeCategories
             : customExpenseCategories;
@@ -84,95 +136,85 @@ export default function RecurringTransactions({
             transaction.type as 'income' | 'expense',
             customCategories
           );
+          const isIncome = transaction.type === 'income';
+          const iconColor = isIncome ? '#0DBACC' : '#F18AB5';
+          const iconBg = isIncome ? 'rgba(13, 186, 204, 0.1)' : 'rgba(241, 138, 181, 0.1)';
 
           return (
             <div
               key={transaction.id}
               className={cn(
-                'flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-3 rounded-lg transition-all',
-                transaction.isActive ? 'bg-slate-50' : 'bg-slate-50/50 opacity-60'
+                'p-3 bg-white',
+                index < transactions.length - 1 && 'border-b'
               )}
+              style={{ borderColor: '#F7F7F8' }}
             >
-              {/* Top row: Icon + Details + Amount (mobile) */}
-              <div className="flex items-center gap-3 flex-1 min-w-0">
+              {/* Row 1: Icon + Name + Category */}
+              <div className="flex items-start gap-3 mb-2">
                 {/* Icon */}
                 <div
-                  className={cn(
-                    'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
-                    categoryInfo?.bgColor || 'bg-slate-100'
-                  )}
+                  className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{ background: iconBg }}
                 >
-                  {transaction.type === 'income' ? (
-                    <TrendingUp className={cn('w-4 h-4', categoryInfo?.textColor || 'text-slate-600')} />
+                  {isIncome ? (
+                    <TrendingUp className="w-4 h-4" style={{ color: iconColor }} strokeWidth={1.5} />
                   ) : (
-                    <TrendingDown className={cn('w-4 h-4', categoryInfo?.textColor || 'text-slate-600')} />
+                    <TrendingDown className="w-4 h-4" style={{ color: iconColor }} strokeWidth={1.5} />
                   )}
                 </div>
 
-                {/* Details */}
-                <div className="flex-1 min-w-0">
-                  <SensitiveData as="p" className="font-medium text-slate-900 text-sm truncate">
+                {/* Details - full width, allow wrapping */}
+                <div className="flex-1">
+                  <SensitiveData 
+                    as="p" 
+                    className="font-medium text-sm leading-tight"
+                    style={{ 
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                      color: '#303150'
+                    }}
+                  >
                     {transaction.name}
                   </SensitiveData>
-                  <SensitiveData as="p" className="text-xs text-slate-500 truncate">{categoryInfo?.nameHe}</SensitiveData>
+                  <SensitiveData 
+                    as="p" 
+                    className="text-xs mt-0.5"
+                    style={{ color: '#7E7F90' }}
+                  >
+                    {categoryInfo?.nameHe}
+                  </SensitiveData>
                 </div>
-
-                {/* Amount - visible on mobile */}
-                <SensitiveData
-                  as="p"
-                  className={cn(
-                    'text-sm font-bold flex-shrink-0 sm:hidden',
-                    transaction.type === 'income' ? 'text-green-600' : 'text-rose-600'
-                  )}
-                >
-                  {transaction.type === 'income' ? '+' : '-'}
-                  {formatCurrency(transaction.amount)}
-                </SensitiveData>
               </div>
 
-              {/* Bottom row (mobile) / Continue (desktop): Amount + Toggle + Actions */}
-              <div className="flex items-center gap-2 justify-end mr-12 sm:mr-0">
-                {/* Amount - visible on desktop */}
+              {/* Row 2: Value + Actions */}
+              <div className="flex items-center justify-between mr-12">
+                {/* Amount */}
                 <SensitiveData
                   as="p"
-                  className={cn(
-                    'hidden sm:block text-sm font-bold flex-shrink-0',
-                    transaction.type === 'income' ? 'text-green-600' : 'text-rose-600'
-                  )}
+                  className="text-sm font-semibold"
+                  style={{ 
+                    fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    color: isIncome ? '#0DBACC' : '#F18AB5'
+                  }}
                 >
-                  {transaction.type === 'income' ? '+' : '-'}
+                  {isIncome ? '+' : '-'}
                   {formatCurrency(transaction.amount)}
                 </SensitiveData>
 
-                {/* Toggle */}
-                <button
-                  onClick={() => onToggle(transaction.id, !transaction.isActive)}
-                  className={cn(
-                    'toggle flex-shrink-0',
-                    transaction.isActive ? 'toggle-checked' : 'toggle-unchecked'
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'toggle-thumb',
-                      transaction.isActive ? 'toggle-thumb-checked' : 'toggle-thumb-unchecked'
-                    )}
-                  />
-                </button>
-
-                {/* Actions - Always visible like Assets */}
-                <div className="flex gap-1 flex-shrink-0">
+                {/* Actions */}
+                <div className="flex gap-1">
                   <button
                     onClick={() => onEdit(transaction)}
-                    className="p-1.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-600"
+                    className="p-1.5 rounded hover:bg-slate-100 transition-colors"
+                    style={{ color: '#7E7F90' }}
                   >
-                    <Pencil className="w-3.5 h-3.5" />
+                    <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
                   </button>
                   <button
                     onClick={() => setDeleteConfirm({ isOpen: true, id: transaction.id, name: transaction.name })}
-                    className="p-1.5 rounded hover:bg-red-100 text-slate-500 hover:text-red-500"
+                    className="p-1.5 rounded hover:bg-red-50 transition-colors"
+                    style={{ color: '#7E7F90' }}
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
                   </button>
                 </div>
               </div>
@@ -181,7 +223,12 @@ export default function RecurringTransactions({
         })}
 
         {transactions.length === 0 && (
-          <p className="text-center text-slate-500 text-sm py-4">אין עסקאות קבועות</p>
+          <p 
+            className="text-center text-sm py-4"
+            style={{ color: '#7E7F90' }}
+          >
+            אין עסקאות קבועות
+          </p>
         )}
       </div>
 

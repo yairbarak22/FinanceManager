@@ -69,7 +69,13 @@ export default function AddCategoryModal({
       >
         {/* Header */}
         <div className="modal-header py-4">
-          <h2 className="text-lg font-bold text-slate-900">
+          <h2 
+            className="text-lg font-bold"
+            style={{ 
+              color: '#303150', 
+              fontFamily: 'var(--font-nunito), system-ui, sans-serif' 
+            }}
+          >
             הוסף קטגוריית {typeLabels[categoryType]}
           </h2>
           <button onClick={handleClose} className="btn-icon">
@@ -105,8 +111,17 @@ export default function AddCategoryModal({
             )}
 
             {/* Info */}
-            <div className="bg-gray-50 rounded-xl p-3">
-              <p className="text-sm text-slate-500">
+            <div 
+              className="rounded-xl p-3"
+              style={{ backgroundColor: '#F7F7F8' }}
+            >
+              <p 
+                className="text-sm"
+                style={{ 
+                  color: '#7E7F90', 
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif' 
+                }}
+              >
                 הקטגוריה תישמר ותהיה זמינה בכל הרשימות מסוג {typeLabels[categoryType]}.
               </p>
             </div>

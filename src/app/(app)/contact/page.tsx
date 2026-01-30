@@ -21,7 +21,6 @@ export default function ContactPage() {
   return (
     <AppLayout
       pageTitle="צור קשר"
-      pageSubtitle="נשמח לשמוע ממך"
       selectedMonth={selectedMonth}
       onMonthChange={setSelectedMonth}
       allMonths={allMonths}

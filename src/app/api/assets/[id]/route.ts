@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccountId } from '@/lib/authHelpers';
 import { saveAssetHistoryIfChanged } from '@/lib/assetHistory';
+import { saveCurrentMonthNetWorth } from '@/lib/netWorthHistory';
 
 export async function PUT(
   request: NextRequest,
@@ -81,6 +82,13 @@ export async function PUT(
     // Save history if value changed
     if (body.value !== undefined && asset) {
       await saveAssetHistoryIfChanged(id, body.value, currentAsset.value);
+      // Update net worth history for current month
+      try {
+        await saveCurrentMonthNetWorth(userId);
+      } catch (netWorthError) {
+        console.error('Error saving net worth history:', netWorthError);
+        // Don't fail the asset update if net worth save fails
+      }
     }
 
     return NextResponse.json(asset);
@@ -110,6 +118,9 @@ export async function DELETE(
     if (result.count === 0) {
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
     }
+    
+    // Update net worth history for current month
+    await saveCurrentMonthNetWorth(userId);
     
     return NextResponse.json({ success: true });
   } catch (error) {

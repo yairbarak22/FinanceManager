@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, Edit3, ChevronDown, Check } from 'lucide-react';
+import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, Edit3, ChevronDown, Check, Pencil } from 'lucide-react';
 import { Transaction } from '@/lib/types';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { getCategoryInfo, expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
@@ -135,15 +135,31 @@ export default function RecentTransactions({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header - Fixed */}
+      {/* Header - Fixed - Matching AssetsSection Style */}
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-            <Receipt className="w-5 h-5 text-indigo-600" />
+          <div 
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ background: 'rgba(241, 138, 181, 0.1)' }}
+          >
+            <Receipt className="w-5 h-5" style={{ color: '#F18AB5' }} strokeWidth={1.5} />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-900">הוצאות שוטפות</h3>
-            <p className="text-xs text-slate-500">{transactions.length} עסקאות</p>
+            <h3 
+              className="font-semibold"
+              style={{ 
+                fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                color: '#303150'
+              }}
+            >
+              הוצאות שוטפות
+            </h3>
+            <p 
+              className="text-xs font-medium"
+              style={{ color: '#F18AB5' }}
+            >
+              {transactions.length} עסקאות
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -151,20 +167,22 @@ export default function RecentTransactions({
             <>
               <button
                 onClick={selectAll}
-                className="text-sm text-slate-600 hover:text-slate-700 font-medium flex items-center gap-1"
+                className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
+                style={{ color: '#7E7F90' }}
               >
                 {selectedIds.size === transactions.length ? (
-                  <CheckSquare className="w-4 h-4" />
+                  <CheckSquare className="w-4 h-4" strokeWidth={1.5} />
                 ) : (
-                  <Square className="w-4 h-4" />
+                  <Square className="w-4 h-4" strokeWidth={1.5} />
                 )}
                 {selectedIds.size === transactions.length ? 'בטל הכל' : 'בחר הכל'}
               </button>
               <button
                 onClick={toggleSelectMode}
-                className="text-sm text-slate-500 hover:text-slate-700 font-medium flex items-center gap-1"
+                className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
+                style={{ color: '#7E7F90' }}
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" strokeWidth={1.5} />
                 ביטול
               </button>
             </>
@@ -173,26 +191,29 @@ export default function RecentTransactions({
               {transactions.length > 0 && onDeleteMultiple && (
                 <button
                   onClick={toggleSelectMode}
-                  className="text-sm text-slate-500 hover:text-slate-600 font-medium flex items-center gap-1"
+                  className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
+                  style={{ color: '#7E7F90' }}
                 >
-                  <CheckSquare className="w-4 h-4" />
+                  <CheckSquare className="w-4 h-4" strokeWidth={1.5} />
                   בחירה
                 </button>
               )}
               <button
                 id="btn-import-transactions"
                 onClick={onImport}
-                className="text-sm text-slate-600 hover:text-slate-700 font-medium flex items-center gap-1"
+                className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
+                style={{ color: '#7E7F90' }}
               >
-                <Upload className="w-4 h-4" />
+                <Upload className="w-4 h-4" strokeWidth={1.5} />
                 ייבוא
               </button>
               <button
                 id="btn-global-add"
                 onClick={onNewTransaction}
-                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+                className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
+                style={{ color: '#69ADFF' }}
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4" strokeWidth={1.5} />
                 הוסף
               </button>
             </>
@@ -200,9 +221,9 @@ export default function RecentTransactions({
         </div>
       </div>
 
-      {/* Transactions List - Scrollable */}
-      <div className="space-y-2 overflow-y-auto flex-1 min-h-0">
-        {transactions.map((transaction) => {
+      {/* Transactions List - Scrollable - Matching AssetsSection Style */}
+      <div className="overflow-y-scroll flex-1 min-h-0 scrollbar-transactions scrollbar-edge-left scrollbar-fade-bottom">
+        {transactions.map((transaction, index) => {
           const customCategories = transaction.type === 'income'
             ? customIncomeCategories
             : customExpenseCategories;
@@ -214,6 +235,11 @@ export default function RecentTransactions({
           const Icon = categoryInfo?.icon;
           const isIncome = transaction.type === 'income';
           const isSelected = selectedIds.has(transaction.id);
+
+          // Icon colors based on transaction type
+          const iconBgColor = isIncome ? 'rgba(13, 186, 204, 0.1)' : 'rgba(241, 138, 181, 0.1)';
+          const iconColor = isIncome ? '#0DBACC' : '#F18AB5';
+          const amountColor = isIncome ? '#0DBACC' : '#F18AB5';
 
           return (
             <div
@@ -230,100 +256,125 @@ export default function RecentTransactions({
               aria-pressed={isSelectMode ? isSelected : undefined}
               aria-label={isSelectMode ? `${isSelected ? 'בטל בחירה' : 'בחר'} עסקה: ${transaction.description}` : undefined}
               className={cn(
-                'flex items-center gap-3 p-3 rounded-xl transition-colors group',
-                isSelectMode ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500' : '',
-                isSelected ? 'bg-indigo-50 ring-2 ring-indigo-300' : 'bg-slate-50 hover:bg-slate-100'
+                'p-3',
+                isSelectMode && 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                isSelected ? 'bg-indigo-50' : 'bg-white',
+                index < transactions.length - 1 && 'border-b'
               )}
+              style={{ borderColor: '#F7F7F8' }}
             >
-              {/* Checkbox (Select Mode) or Category Icon */}
-              {isSelectMode ? (
-                <div
-                  className={cn(
-                    'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors',
-                    isSelected ? 'bg-indigo-100' : 'bg-slate-100'
-                  )}
-                >
-                  {isSelected ? (
-                    <CheckSquare className="w-5 h-5 text-indigo-600" />
-                  ) : (
-                    <Square className="w-5 h-5 text-slate-500" />
-                  )}
-                </div>
-              ) : (
-                <div
-                  className={cn(
-                    'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0',
-                    categoryInfo?.bgColor || 'bg-slate-100'
-                  )}
-                >
-                  {Icon && (
-                    <Icon
-                      className={cn('w-5 h-5', categoryInfo?.textColor || 'text-slate-600')}
-                    />
-                  )}
-                </div>
-              )}
+              {/* Row 1: Icon + Category + Date */}
+              <div className="flex items-start gap-3 mb-2">
+                {/* Checkbox (Select Mode) or Category Icon */}
+                {isSelectMode ? (
+                  <div
+                    className={cn(
+                      'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors',
+                      isSelected ? 'bg-indigo-100' : 'bg-slate-100'
+                    )}
+                  >
+                    {isSelected ? (
+                      <CheckSquare className="w-4 h-4 text-indigo-600" />
+                    ) : (
+                      <Square className="w-4 h-4 text-slate-500" />
+                    )}
+                  </div>
+                ) : (
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: iconBgColor }}
+                  >
+                    {Icon && (
+                      <Icon
+                        className="w-4 h-4"
+                        style={{ color: iconColor }}
+                        strokeWidth={1.5}
+                      />
+                    )}
+                  </div>
+                )}
 
-              {/* Transaction Details */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <SensitiveData as="p" className="font-medium text-slate-900 text-sm truncate">
+                {/* Details - full width, allow wrapping */}
+                <div className="flex-1 pr-3">
+                  <SensitiveData 
+                    as="p" 
+                    className="font-medium text-sm leading-tight"
+                    style={{ 
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                      color: '#303150'
+                    }}
+                  >
                     {categoryInfo?.nameHe || transaction.category}
                   </SensitiveData>
-                  <span className="text-xs text-slate-500">
-                    {formatDate(transaction.date)}
-                  </span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span 
+                      className="text-xs"
+                      style={{ color: '#7E7F90' }}
+                    >
+                      {formatDate(transaction.date)}
+                    </span>
+                  </div>
+                  <SensitiveData 
+                    as="p" 
+                    className="text-xs mt-0.5"
+                    style={{ color: '#7E7F90' }}
+                  >
+                    {transaction.description}
+                  </SensitiveData>
                 </div>
-                <SensitiveData as="p" className="text-xs text-slate-500 truncate">
-                  {transaction.description}
-                </SensitiveData>
               </div>
 
-              {/* Amount */}
-              <SensitiveData
-                as="p"
-                className={cn(
-                  'text-sm font-bold flex-shrink-0',
-                  isIncome ? 'text-green-600' : 'text-rose-600'
-                )}
-              >
-                {isIncome ? '+' : '-'}{formatCurrency(transaction.amount)}
-              </SensitiveData>
+              {/* Row 2: Amount + Actions */}
+              <div className="flex items-center justify-between mr-12 pl-3">
+                {/* Amount */}
+                <SensitiveData
+                  as="p"
+                  className="text-sm font-semibold"
+                  style={{ 
+                    fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    color: amountColor
+                  }}
+                >
+                  {isIncome ? '+' : '-'}{formatCurrency(transaction.amount)}
+                </SensitiveData>
 
-              {/* Action Buttons (only in normal mode) - Always visible */}
-              {!isSelectMode && (
-                <div className="flex gap-1 flex-shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => openEditDialog(transaction)}
-                    className="p-1.5 rounded hover:bg-slate-200 text-slate-500 hover:text-slate-600 transition-colors"
-                    aria-label={`ערוך עסקה: ${transaction.description}`}
-                  >
-                    <Edit3 className="w-3.5 h-3.5" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDeleteConfirm({ isOpen: true, id: transaction.id, description: transaction.description })}
-                    className="p-1.5 rounded hover:bg-red-100 text-slate-500 hover:text-red-500 transition-colors"
-                    aria-label={`מחק עסקה: ${transaction.description}`}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
-                  </button>
-                </div>
-              )}
+                {/* Action Buttons (only in normal mode) */}
+                {!isSelectMode && (
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => openEditDialog(transaction)}
+                      className="p-1.5 rounded hover:bg-slate-100 transition-colors"
+                      style={{ color: '#7E7F90' }}
+                      aria-label={`ערוך עסקה: ${transaction.description}`}
+                    >
+                      <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteConfirm({ isOpen: true, id: transaction.id, description: transaction.description })}
+                      className="p-1.5 rounded hover:bg-red-50 transition-colors"
+                      style={{ color: '#7E7F90' }}
+                      aria-label={`מחק עסקה: ${transaction.description}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} aria-hidden="true" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           );
         })}
+        
+        {transactions.length === 0 && (
+          <p 
+            className="text-center text-sm py-4"
+            style={{ color: '#7E7F90' }}
+          >
+            אין עסקאות להצגה
+          </p>
+        )}
       </div>
-
-      {
-        transactions.length === 0 && (
-          <div className="text-center py-12">
-            <Receipt className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <p className="text-slate-500">אין עסקאות להצגה</p>
-          </div>
-        )
-      }
 
       {/* Floating Action Bar (Select Mode) */}
       {

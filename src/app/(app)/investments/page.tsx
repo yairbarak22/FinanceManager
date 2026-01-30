@@ -21,7 +21,6 @@ export default function InvestmentsPage() {
   return (
     <AppLayout
       pageTitle="תיק השקעות"
-      pageSubtitle="מעקב אחר התיק שלך"
       selectedMonth={selectedMonth}
       onMonthChange={setSelectedMonth}
       allMonths={allMonths}

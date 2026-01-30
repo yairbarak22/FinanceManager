@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
+import { saveCurrentMonthNetWorth } from '@/lib/netWorthHistory';
 
 export async function GET() {
   try {
@@ -89,6 +90,9 @@ export async function POST(request: NextRequest) {
         hasInterestRebate: body.hasInterestRebate || false,
       },
     });
+    
+    // Update net worth history for current month
+    await saveCurrentMonthNetWorth(userId);
     
     return NextResponse.json(liability);
   } catch (error) {

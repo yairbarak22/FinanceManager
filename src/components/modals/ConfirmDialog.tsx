@@ -1,13 +1,13 @@
 'use client';
 
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useEffect, useState, useRef, useCallback } from 'react';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   title: string;
   message: string;
 }
@@ -20,6 +20,7 @@ export default function ConfirmDialog({
   message,
 }: ConfirmDialogProps) {
   const [mounted, setMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
@@ -48,7 +49,7 @@ export default function ConfirmDialog({
 
   // Handle keyboard events (Escape to close, Tab trapping)
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    if (e.key === 'Escape' && !isLoading) {
       onClose();
       return;
     }
@@ -75,13 +76,20 @@ export default function ConfirmDialog({
         }
       }
     }
-  }, [onClose]);
+  }, [onClose, isLoading]);
 
   if (!isOpen || !mounted) return null;
 
-  const handleConfirm = () => {
-    onConfirm();
-    onClose();
+  const handleConfirm = async () => {
+    setIsLoading(true);
+    try {
+      await onConfirm();
+      onClose();
+    } catch (error) {
+      // Error handling is done in the parent component
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const dialogContent = (
@@ -97,7 +105,7 @@ export default function ConfirmDialog({
         height: '100vh',
         zIndex: 9999
       }}
-      onClick={onClose}
+      onClick={() => !isLoading && onClose()}
       role="presentation"
     >
       <div
@@ -123,6 +131,7 @@ export default function ConfirmDialog({
             onClick={onClose}
             className="btn-icon"
             aria-label="סגור"
+            disabled={isLoading}
           >
             <X className="w-5 h-5 text-slate-500" aria-hidden="true" />
           </button>
@@ -140,15 +149,21 @@ export default function ConfirmDialog({
             type="button"
             onClick={onClose}
             className="btn-secondary flex-1"
+            disabled={isLoading}
           >
             ביטול
           </button>
           <button
             type="button"
             onClick={handleConfirm}
-            className="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-medium transition-all duration-200"
+            className="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading}
           >
-            מחק
+            {isLoading ? (
+              <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+            ) : (
+              'מחק'
+            )}
           </button>
         </div>
       </div>

@@ -173,16 +173,24 @@ export default function DocumentsModal({
         {/* Header */}
         <div className="modal-header">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-              <FolderOpen className="w-5 h-5 text-indigo-600" />
+            <div 
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: 'rgba(105, 173, 255, 0.15)' }}
+            >
+              <FolderOpen className="w-5 h-5" style={{ color: '#69ADFF' }} />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">מסמכים</h3>
-              <p className="text-sm text-slate-500">{entityName}</p>
+              <h3 
+                className="text-lg font-semibold"
+                style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+              >
+                מסמכים
+              </h3>
+              <p className="text-sm" style={{ color: '#7E7F90' }}>{entityName}</p>
             </div>
           </div>
           <button onClick={onClose} className="btn-icon">
-            <X className="w-5 h-5 text-slate-500" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -190,7 +198,13 @@ export default function DocumentsModal({
         <div className="modal-body">
           {/* Error */}
           {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 text-red-600 rounded-xl text-sm">
+            <div 
+              className="flex items-center gap-2 p-3 rounded-xl text-sm"
+              style={{
+                backgroundColor: 'rgba(241, 138, 181, 0.1)',
+                color: '#F18AB5',
+              }}
+            >
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{error}</span>
             </div>
@@ -198,11 +212,11 @@ export default function DocumentsModal({
 
           {/* Upload Area */}
           <div
-            className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer ${
-              isDragging
-                ? 'border-indigo-400 bg-indigo-50'
-                : 'border-gray-200 hover:border-gray-300'
-            }`}
+            className="border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer"
+            style={{
+              borderColor: isDragging ? '#69ADFF' : '#E8E8ED',
+              backgroundColor: isDragging ? 'rgba(105, 173, 255, 0.08)' : 'transparent',
+            }}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
@@ -218,13 +232,13 @@ export default function DocumentsModal({
             />
             {isUploading ? (
               <div className="flex flex-col items-center gap-2">
-                <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
-                <p className="text-sm text-slate-600">מעלה קבצים...</p>
+                <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#69ADFF' }} />
+                <p className="text-sm" style={{ color: '#303150' }}>מעלה קבצים...</p>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <Upload className="w-8 h-8 text-slate-400" />
-                <p className="text-sm text-slate-600">
+                <Upload className="w-8 h-8" style={{ color: '#BDBDCB' }} />
+                <p className="text-sm" style={{ color: '#303150' }}>
                   גרור קבצים לכאן או לחץ לבחירה
                 </p>
                 <p className="text-xs text-slate-400">

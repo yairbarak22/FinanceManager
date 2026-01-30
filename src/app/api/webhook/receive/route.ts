@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { isValidEmail, escapeHtml } from '@/lib/contactValidation';
 
 // Lazy initialization of Resend client
 let resendClient: Resend | null = null;
@@ -84,7 +85,14 @@ async function verifyWebhookSignature(
 
 function extractEmailAddress(fromString: string): string {
   const match = fromString.match(/<([^>]+)>/);
-  return match ? match[1] : fromString;
+  const email = match ? match[1] : fromString.trim();
+  
+  // SECURITY: Validate email format to prevent injection attacks
+  if (!isValidEmail(email)) {
+    throw new Error(`Invalid email format: ${email}`);
+  }
+  
+  return email;
 }
 
 async function getEmailContent(emailId: string) {
@@ -162,7 +170,7 @@ async function forwardEmail(event: EmailReceivedEvent) {
       if (attachment.download_url) {
         try {
           const content = await downloadAttachmentFromUrl(attachment.download_url);
-          forwardAttachments.push({ filename: attachment.filename, content });
+          forwardAttachments.push({ filename: escapeHtml(attachment.filename), content });
         } catch {
           // Skip failed attachments
         }
@@ -171,6 +179,13 @@ async function forwardEmail(event: EmailReceivedEvent) {
   } catch {
     // Continue without attachments
   }
+
+  // SECURITY: Escape all user-provided data for HTML template
+  const safeFrom = escapeHtml(from);
+  const safeSubject = escapeHtml(subject);
+  const safeTo = to.map(t => escapeHtml(t)).join(', ');
+  const safeDate = escapeHtml(new Date(event.created_at).toLocaleString('he-IL'));
+  const safeAttachmentNames = forwardAttachments.map(a => a.filename).join(', ');
 
   // Build HTML body
   const htmlBody = `
@@ -181,11 +196,11 @@ async function forwardEmail(event: EmailReceivedEvent) {
   <div style="background: #f5f5f5; padding: 16px; border-radius: 8px; margin-bottom: 16px; border-right: 4px solid #3b82f6;">
     <h3 style="margin: 0 0 8px 0; color: #1e40af;">📧 הודעה מועברת</h3>
     <table style="font-size: 14px; color: #374151;">
-      <tr><td style="padding: 4px 8px 4px 0; font-weight: bold;">מאת:</td><td>${from}</td></tr>
-      <tr><td style="padding: 4px 8px 4px 0; font-weight: bold;">תאריך:</td><td>${new Date(event.created_at).toLocaleString('he-IL')}</td></tr>
-      <tr><td style="padding: 4px 8px 4px 0; font-weight: bold;">נושא:</td><td>${subject}</td></tr>
-      <tr><td style="padding: 4px 8px 4px 0; font-weight: bold;">נשלח אל:</td><td>${to.join(', ')}</td></tr>
-      ${forwardAttachments.length > 0 ? `<tr><td style="padding: 4px 8px 4px 0; font-weight: bold;">קבצים מצורפים:</td><td>${forwardAttachments.map(a => a.filename).join(', ')}</td></tr>` : ''}
+      <tr><td style="padding: 4px 8px 4px 0; font-weight: bold;">מאת:</td><td>${safeFrom}</td></tr>
+      <tr><td style="padding: 4px 8px 4px 0; font-weight: bold;">תאריך:</td><td>${safeDate}</td></tr>
+      <tr><td style="padding: 4px 8px 4px 0; font-weight: bold;">נושא:</td><td>${safeSubject}</td></tr>
+      <tr><td style="padding: 4px 8px 4px 0; font-weight: bold;">נשלח אל:</td><td>${safeTo}</td></tr>
+      ${forwardAttachments.length > 0 ? `<tr><td style="padding: 4px 8px 4px 0; font-weight: bold;">קבצים מצורפים:</td><td>${safeAttachmentNames}</td></tr>` : ''}
     </table>
   </div>
   <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 16px 0;">
