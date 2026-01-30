@@ -10,11 +10,18 @@ import {
   PieChart,
   ChevronDown,
   X,
+  User,
+  UserCog,
+  Users,
+  Sparkles,
+  LogOut,
 } from 'lucide-react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebar } from '@/context/SidebarContext';
+import { useOnboarding } from '@/context/OnboardingContext';
 import { createPortal } from 'react-dom';
+import { SensitiveData } from '@/components/common/SensitiveData';
 
 interface SubNavItem {
   id: string;
@@ -31,6 +38,11 @@ interface NavItem {
   iconBg: string;
   iconColor: string;
   subItems?: SubNavItem[];
+}
+
+interface SidebarProps {
+  onOpenProfile?: () => void;
+  onOpenAccountSettings?: () => void;
 }
 
 // All icons in blue shades
@@ -69,11 +81,12 @@ const navItems: NavItem[] = [
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: SidebarProps = {}) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
   const { isCollapsed, isMobileOpen, closeMobileSidebar } = useSidebar();
+  const { startTour } = useOnboarding();
   const [expandedMenu, setExpandedMenu] = useState<string | null>(
     pathname.startsWith('/help') ? 'help' : null
   );
@@ -148,6 +161,89 @@ export default function Sidebar() {
           )}
         </div>
       </div>
+
+      {/* Separator line */}
+      <div className={`${isMobile ? 'mx-4' : isCollapsed ? 'mx-3' : 'mx-4'} border-t border-slate-100`} />
+
+      {/* Mobile: User Section with menu items */}
+      {isMobile && session?.user && (
+        <div className="px-4 py-4">
+          {/* User Info */}
+          <div className="flex items-center gap-3 px-2 mb-3">
+            {session.user.image ? (
+              <img
+                src={session.user.image}
+                alt=""
+                className="w-10 h-10 rounded-full ring-2 ring-slate-100 flex-shrink-0"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center flex-shrink-0">
+                <User className="w-5 h-5 text-slate-500" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <SensitiveData as="p" className="text-sm font-medium text-slate-700 truncate">
+                {session.user.name || 'משתמש'}
+              </SensitiveData>
+              <SensitiveData as="p" className="text-xs text-slate-400 truncate">
+                {session.user.email}
+              </SensitiveData>
+            </div>
+          </div>
+
+          {/* User Menu Items */}
+          <div className="space-y-1">
+            {onOpenProfile && (
+              <button
+                type="button"
+                onClick={() => {
+                  closeMobileSidebar();
+                  onOpenProfile();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                <UserCog className="w-4 h-4 text-slate-400" />
+                <span className="text-sm font-medium">פרופיל משתמש</span>
+              </button>
+            )}
+            {onOpenAccountSettings && (
+              <button
+                type="button"
+                onClick={() => {
+                  closeMobileSidebar();
+                  onOpenAccountSettings();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                <Users className="w-4 h-4 text-slate-400" />
+                <span className="text-sm font-medium">חשבון משותף</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                closeMobileSidebar();
+                startTour();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              <Sparkles className="w-4 h-4 text-slate-400" />
+              <span className="text-sm font-medium">הצג סיור</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-rose-500 hover:bg-rose-50 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="text-sm font-medium">התנתקות</span>
+            </button>
+          </div>
+
+          {/* Separator before navigation */}
+          <div className="mt-4 border-t border-slate-100" />
+        </div>
+      )}
 
       {/* Navigation Items */}
       <nav className={`flex-1 py-3 ${isMobile ? 'px-4' : isCollapsed ? 'px-3' : 'px-4'}`} role="navigation">

@@ -156,9 +156,9 @@ export default function MinimalHeader({
               <Accessibility className="w-[18px] h-[18px]" strokeWidth={1.75} />
             </button>
 
-            {/* User Menu */}
+            {/* User Menu - Desktop only (mobile uses hamburger menu) */}
             {session?.user && (
-              <div className="relative" ref={userMenuRef}>
+              <div className="hidden lg:block relative" ref={userMenuRef}>
                 <button
                   type="button"
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
@@ -177,7 +177,7 @@ export default function MinimalHeader({
                       <User className="w-3.5 h-3.5 text-slate-500" />
                     </div>
                   )}
-                  <ChevronDown className="hidden md:block w-3.5 h-3.5 text-slate-400" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                 </button>
 
                 {/* Dropdown */}
