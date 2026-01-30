@@ -15,8 +15,8 @@ export default function AcademySection() {
     <div className="flex flex-col gap-6">
       {/* Page Title */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">מרכז הידע הפיננסי</h1>
-        <p className="text-slate-600">עקרונות פשוטים שיעזרו לך לקבל החלטות חכמות יותר</p>
+        <h1 className="text-2xl font-bold text-[#303150] mb-2">מרכז הידע הפיננסי</h1>
+        <p className="text-[#7E7F90]">עקרונות פשוטים שיעזרו לך לקבל החלטות חכמות יותר</p>
       </div>
 
       {/* Topics Grid */}
@@ -30,7 +30,7 @@ export default function AcademySection() {
       </Card>
 
       {/* Disclaimer */}
-      <p className="text-xs text-slate-400 text-center px-4">
+      <p className="text-xs text-[#BDBDCB] text-center px-4">
         המידע הוא לצורכי לימוד בלבד ואינו מהווה ייעוץ פיננסי. מומלץ להתייעץ עם מומחה לפני קבלת החלטות.
       </p>
     </div>

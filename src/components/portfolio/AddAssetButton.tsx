@@ -24,7 +24,7 @@ export function AddAssetButton({ onAddAsset }: AddAssetButtonProps) {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="rounded-full bg-slate-900 text-white px-4 py-2 flex items-center gap-2 hover:bg-slate-800 transition-all active:scale-95 shadow-lg"
+        className="rounded-xl bg-[#303150] text-white px-4 py-2 flex items-center gap-2 hover:bg-[#303150]/90 transition-all active:scale-95 shadow-lg"
       >
         <Plus className="w-4 h-4" />
         <span className="font-medium">הוסף נכס</span>

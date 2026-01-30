@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { Transaction } from '@/lib/types';
 import { CategoryInfo } from '@/lib/categories';
 import CategorySelect from '@/components/ui/CategorySelect';
@@ -11,7 +11,7 @@ import { useFocusTrap } from '@/hooks/useFocusTrap';
 interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onSave: (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => void | Promise<void>;
   transaction?: Transaction | null;
   expenseCategories: { default: CategoryInfo[]; custom: CategoryInfo[] };
   incomeCategories: { default: CategoryInfo[]; custom: CategoryInfo[] };
@@ -33,6 +33,7 @@ export default function TransactionModal({
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Accessibility: Focus trap for modal
   const { containerRef, handleKeyDown } = useFocusTrap<HTMLDivElement>(isOpen, {
@@ -57,16 +58,23 @@ export default function TransactionModal({
 
   const currentCategories = type === 'income' ? incomeCategories : expenseCategories;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      type,
-      amount: parseFloat(amount),
-      category,
-      description,
-      date,
-    });
-    onClose();
+    setIsLoading(true);
+    try {
+      await onSave({
+        type,
+        amount: parseFloat(amount),
+        category,
+        description,
+        date,
+      });
+      onClose();
+    } catch (error) {
+      // Error handling is done in the parent component
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAddCategory = async (name: string) => {
@@ -80,7 +88,7 @@ export default function TransactionModal({
     <>
       <div
         className="modal-overlay"
-        onClick={onClose}
+        onClick={() => !isLoading && onClose()}
         role="presentation"
       >
         <div
@@ -94,7 +102,14 @@ export default function TransactionModal({
         >
           {/* Header */}
           <div className="modal-header">
-            <h2 id="transaction-modal-title" className="text-xl font-bold text-slate-900">
+            <h2 
+              id="transaction-modal-title" 
+              className="text-xl font-bold"
+              style={{ 
+                color: '#303150', 
+                fontFamily: 'var(--font-nunito), system-ui, sans-serif' 
+              }}
+            >
               {transaction ? 'עריכת עסקה' : 'עסקה חדשה'}
             </h2>
             <button
@@ -102,6 +117,7 @@ export default function TransactionModal({
               onClick={onClose}
               className="btn-icon"
               aria-label="סגור חלון"
+              disabled={isLoading}
             >
               <X className="w-5 h-5" aria-hidden="true" />
             </button>
@@ -121,11 +137,12 @@ export default function TransactionModal({
                       setCategory('');
                     }}
                     aria-pressed={type === 'expense'}
-                    className={`py-3 px-4 rounded-xl font-medium transition-all ${
-                      type === 'expense'
-                        ? 'bg-indigo-500 text-white'
-                        : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
-                    }`}
+                    className="py-3 px-4 rounded-xl font-medium transition-all"
+                    style={{
+                      backgroundColor: type === 'expense' ? '#F18AB5' : '#F7F7F8',
+                      color: type === 'expense' ? '#FFFFFF' : '#7E7F90',
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    }}
                   >
                     הוצאה
                   </button>
@@ -136,11 +153,12 @@ export default function TransactionModal({
                       setCategory('');
                     }}
                     aria-pressed={type === 'income'}
-                    className={`py-3 px-4 rounded-xl font-medium transition-all ${
-                      type === 'income'
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
-                    }`}
+                    className="py-3 px-4 rounded-xl font-medium transition-all"
+                    style={{
+                      backgroundColor: type === 'income' ? '#0DBACC' : '#F7F7F8',
+                      color: type === 'income' ? '#FFFFFF' : '#7E7F90',
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    }}
                   >
                     הכנסה
                   </button>
@@ -211,11 +229,15 @@ export default function TransactionModal({
 
             {/* Footer */}
             <div className="modal-footer">
-              <button type="button" onClick={onClose} className="btn-secondary flex-1">
+              <button type="button" onClick={onClose} className="btn-secondary flex-1" disabled={isLoading}>
                 ביטול
               </button>
-              <button type="submit" className="btn-primary flex-1">
-                {transaction ? 'עדכן' : 'הוסף'}
+              <button type="submit" className="btn-primary flex-1" disabled={isLoading}>
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                ) : (
+                  transaction ? 'עדכן' : 'הוסף'
+                )}
               </button>
             </div>
           </form>

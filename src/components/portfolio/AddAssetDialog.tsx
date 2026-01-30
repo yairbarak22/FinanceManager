@@ -250,7 +250,7 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
           />
 
           {/* Modal */}
@@ -261,7 +261,7 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg z-50"
           >
-            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden mx-4">
+            <div className="bg-white rounded-3xl shadow-2xl overflow-hidden mx-4">
               {/* Search Step */}
               <AnimatePresence mode="wait">
                 {step === 'search' && (
@@ -273,31 +273,31 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                   >
                     <Command className="w-full" shouldFilter={false}>
                       {/* Search Input */}
-                      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100">
-                        <Search className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                      <div className="flex items-center gap-3 px-4 py-3 border-b border-[#F7F7F8]">
+                        <Search className="w-5 h-5 text-[#BDBDCB] flex-shrink-0" />
                         <Command.Input
                           value={searchQuery}
                           onValueChange={setSearchQuery}
                           placeholder="חפש מניה או ETF..."
-                          className="flex-1 text-base bg-transparent outline-none placeholder:text-slate-400 text-right"
+                          className="flex-1 text-base bg-transparent outline-none placeholder:text-[#BDBDCB] text-right"
                           dir="rtl"
                           autoFocus
                         />
                         {isSearching && (
-                          <Loader2 className="w-4 h-4 text-slate-400 animate-spin" />
+                          <Loader2 className="w-4 h-4 text-[#BDBDCB] animate-spin" />
                         )}
                         <button
                           onClick={onClose}
-                          className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
+                          className="p-1 rounded-lg hover:bg-[#F7F7F8] transition-colors"
                         >
-                          <X className="w-5 h-5 text-slate-400" />
+                          <X className="w-5 h-5 text-[#BDBDCB]" />
                         </button>
                       </div>
 
                       {/* Results */}
                       <Command.List className="max-h-80 overflow-y-auto p-2">
                         {searchQuery.length > 0 && searchResults.length === 0 && !isSearching && (
-                          <Command.Empty className="py-8 text-center text-slate-400">
+                          <Command.Empty className="py-8 text-center text-[#BDBDCB]">
                             לא נמצאו תוצאות
                           </Command.Empty>
                         )}
@@ -307,14 +307,14 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                             key={result.symbol}
                             value={result.symbol}
                             onSelect={() => handleSelectStock(result)}
-                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors data-[selected=true]:bg-slate-100"
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-[#F7F7F8] transition-colors data-[selected=true]:bg-[#F7F7F8]"
                           >
                             {/* Logo / Flag Badge */}
                             {(() => {
                               const countryInfo = getCountryInfo(result.symbol);
                               return (
                                 <>
-                                  <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+                                  <div className="w-10 h-10 rounded-xl bg-[#F7F7F8] flex items-center justify-center overflow-hidden flex-shrink-0 relative">
                                     {result.logo ? (
                                       <img
                                         src={result.logo}
@@ -332,16 +332,16 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                                   {/* Info */}
                                   <div className="flex-1 min-w-0 text-right">
                                     <div className="flex items-center gap-2">
-                                      <span className="font-semibold text-slate-900">{result.symbol}</span>
+                                      <span className="font-semibold text-[#303150]">{result.symbol}</span>
                                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                                         countryInfo.isIsraeli
-                                          ? 'bg-blue-100 text-blue-700'
-                                          : 'bg-slate-100 text-slate-500'
+                                          ? 'bg-[#C1DDFF] text-[#69ADFF]'
+                                          : 'bg-[#F7F7F8] text-[#7E7F90]'
                                       }`}>
                                         {countryInfo.label}
                                       </span>
                                     </div>
-                                    <p className="text-sm text-slate-500 truncate">{result.name}</p>
+                                    <p className="text-sm text-[#7E7F90] truncate">{result.name}</p>
                                   </div>
                                 </>
                               );
@@ -350,10 +350,10 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                             {/* Price */}
                             {result.priceILS > 0 && (
                               <div className="text-left flex-shrink-0">
-                                <p className="font-medium text-slate-900">
+                                <p className="font-medium text-[#303150]">
                                   ₪{result.priceILS.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </p>
-                                <p className={`text-xs ${result.changePercent >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                                <p className={`text-xs ${result.changePercent >= 0 ? 'text-[#0DBACC]' : 'text-[#F18AB5]'}`} dir="ltr">
                                   {result.changePercent >= 0 ? '+' : ''}{result.changePercent.toFixed(2)}%
                                 </p>
                               </div>
@@ -363,7 +363,7 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                       </Command.List>
 
                       {/* Helper */}
-                      <div className="px-4 py-3 border-t border-slate-100 text-xs text-slate-400 text-center">
+                      <div className="px-4 py-3 border-t border-[#F7F7F8] text-xs text-[#BDBDCB] text-center">
                         חפש מניות אמריקאיות (AAPL) או ישראליות (מספר ני"ע)
                       </div>
                     </Command>
@@ -383,15 +383,15 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                     <div className="flex items-center justify-between mb-4">
                       <button
                         onClick={handleBack}
-                        className="text-sm text-indigo-600 hover:text-indigo-700 transition-colors"
+                        className="text-sm text-[#69ADFF] hover:text-[#69ADFF]/90 transition-colors"
                       >
                         ← חזרה לחיפוש
                       </button>
                       <button
                         onClick={onClose}
-                        className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
+                        className="p-1 rounded-lg hover:bg-[#F7F7F8] transition-colors"
                       >
-                        <X className="w-5 h-5 text-slate-400" />
+                        <X className="w-5 h-5 text-[#BDBDCB]" />
                       </button>
                     </div>
 
@@ -399,29 +399,29 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                     {(() => {
                       const countryInfo = getCountryInfo(selectedStock.symbol);
                       return (
-                        <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl mb-4">
-                          <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center">
+                        <div className="flex items-center gap-3 p-3 bg-[#F7F7F8] rounded-xl mb-4">
+                          <div className="w-12 h-12 rounded-xl bg-white border border-[#E8E8ED] flex items-center justify-center">
                             <span className="text-2xl">{countryInfo.flag}</span>
                           </div>
                           <div className="flex-1 text-right">
                             <div className="flex items-center gap-2">
-                              <p className="font-bold text-slate-900">{selectedStock.symbol}</p>
+                              <p className="font-bold text-[#303150]">{selectedStock.symbol}</p>
                               <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                                 countryInfo.isIsraeli
-                                  ? 'bg-blue-100 text-blue-700'
-                                  : 'bg-slate-100 text-slate-500'
+                                  ? 'bg-[#C1DDFF] text-[#69ADFF]'
+                                  : 'bg-[#F7F7F8] text-[#7E7F90]'
                               }`}>
                                 {countryInfo.label}
                               </span>
                             </div>
-                            <p className="text-sm text-slate-500 truncate">{selectedStock.name}</p>
+                            <p className="text-sm text-[#7E7F90] truncate">{selectedStock.name}</p>
                           </div>
                           {quoteData && (
                             <div className="text-left">
-                              <p className="font-semibold text-slate-900">
+                              <p className="font-semibold text-[#303150]">
                                 ₪{quoteData.priceILS.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </p>
-                              <p className={`text-xs ${quoteData.changePercent >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                              <p className={`text-xs ${quoteData.changePercent >= 0 ? 'text-[#0DBACC]' : 'text-[#F18AB5]'}`} dir="ltr">
                                 {quoteData.changePercent >= 0 ? '+' : ''}{quoteData.changePercent.toFixed(2)}%
                               </p>
                             </div>
@@ -432,9 +432,9 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
 
                     {/* Beta Warning */}
                     {quoteData && quoteData.beta > 1.2 && (
-                      <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg mb-4 text-right">
-                        <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                        <span className="text-sm text-amber-700">
+                      <div className="flex items-center gap-2 px-3 py-2 bg-[#FFE5B4]/30 border border-[#FFB84D]/50 rounded-xl mb-4 text-right">
+                        <AlertTriangle className="w-4 h-4 text-[#FFB84D] flex-shrink-0" />
+                        <span className="text-sm text-[#303150]">
                           נכס תנודתי גבוה (Beta: {quoteData.beta.toFixed(2)})
                         </span>
                       </div>
@@ -442,7 +442,7 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
 
                     {/* Quantity Input */}
                     <div className="mb-4">
-                      <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
+                      <label className="block text-sm font-medium text-[#303150] mb-2 text-right">
                         כמות יחידות
                       </label>
                       <input
@@ -457,7 +457,7 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                         className={`w-full px-4 py-3 text-lg text-right rounded-xl border transition-colors outline-none ${
                           quantityError
                             ? 'border-rose-300 bg-rose-50 focus:border-rose-500'
-                            : 'border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
+                            : 'border-[#E8E8ED] focus:border-[#69ADFF] focus:ring-2 focus:ring-[#69ADFF]/20'
                         }`}
                         min="0"
                         step="0.01"
@@ -470,17 +470,17 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
 
                     {/* Price Display Unit Selector */}
                     <div className="mb-4">
-                      <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
+                      <label className="block text-sm font-medium text-[#303150] mb-2 text-right">
                         יחידת תצוגת מחיר
                       </label>
                       <div className="flex gap-2">
                         <button
                           type="button"
                           onClick={() => setPriceDisplayUnit('ILS')}
-                          className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-all ${
+                          className={`flex-1 px-3 py-2 text-sm rounded-xl border transition-all ${
                             priceDisplayUnit === 'ILS'
-                              ? 'bg-indigo-600 text-white border-indigo-600'
-                              : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                              ? 'bg-[#69ADFF] text-white border-[#69ADFF]'
+                              : 'bg-white text-[#303150] border-[#E8E8ED] hover:border-[#69ADFF]'
                           }`}
                         >
                           שקל (₪)
@@ -488,10 +488,10 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                         <button
                           type="button"
                           onClick={() => setPriceDisplayUnit('ILS_AGOROT')}
-                          className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-all ${
+                          className={`flex-1 px-3 py-2 text-sm rounded-xl border transition-all ${
                             priceDisplayUnit === 'ILS_AGOROT'
-                              ? 'bg-indigo-600 text-white border-indigo-600'
-                              : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                              ? 'bg-[#69ADFF] text-white border-[#69ADFF]'
+                              : 'bg-white text-[#303150] border-[#E8E8ED] hover:border-[#69ADFF]'
                           }`}
                         >
                           אגורות
@@ -499,10 +499,10 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                         <button
                           type="button"
                           onClick={() => setPriceDisplayUnit('USD')}
-                          className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-all ${
+                          className={`flex-1 px-3 py-2 text-sm rounded-xl border transition-all ${
                             priceDisplayUnit === 'USD'
-                              ? 'bg-indigo-600 text-white border-indigo-600'
-                              : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                              ? 'bg-[#69ADFF] text-white border-[#69ADFF]'
+                              : 'bg-white text-[#303150] border-[#E8E8ED] hover:border-[#69ADFF]'
                           }`}
                         >
                           דולר ($)
@@ -512,10 +512,10 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
 
                     {/* Live Price Helper */}
                     {quoteData && (
-                      <p className="text-sm text-slate-500 mb-4 text-right">
+                      <p className="text-sm text-[#7E7F90] mb-4 text-right">
                         מחיר אחרון: ₪{quoteData.priceILS.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         {quantity && parseFloat(quantity) > 0 && (
-                          <span className="text-slate-400">
+                          <span className="text-[#BDBDCB]">
                             {' '}• שווי משוער: ₪{(quoteData.priceILS * parseFloat(quantity)).toLocaleString('he-IL', { maximumFractionDigits: 0 })}
                           </span>
                         )}
@@ -526,14 +526,14 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                     <div className="flex gap-3">
                       <button
                         onClick={onClose}
-                        className="flex-1 px-4 py-3 text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors"
+                        className="flex-1 px-4 py-3 text-[#7E7F90] bg-[#F7F7F8] rounded-xl hover:bg-[#E8E8ED] transition-colors"
                       >
                         ביטול
                       </button>
                       <button
                         onClick={handleSave}
                         disabled={isSaving || !quantity}
-                        className="flex-1 px-4 py-3 text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 px-4 py-3 text-white bg-[#303150] rounded-xl hover:bg-[#303150]/90 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isSaving ? (
                           <Loader2 className="w-5 h-5 animate-spin mx-auto" />

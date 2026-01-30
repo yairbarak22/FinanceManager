@@ -55,10 +55,22 @@ export default function AmortizationModal({
         {/* Header */}
         <div className="modal-header">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">
+            <h2 
+              className="text-xl font-bold"
+              style={{ 
+                color: '#303150', 
+                fontFamily: 'var(--font-nunito), system-ui, sans-serif' 
+              }}
+            >
               לוח סילוקין - {liability.name}
             </h2>
-            <p className="text-sm text-slate-500 mt-1">
+            <p 
+              className="text-sm mt-1"
+              style={{ 
+                color: '#7E7F90', 
+                fontFamily: 'var(--font-nunito), system-ui, sans-serif' 
+              }}
+            >
               {liability.loanMethod === 'spitzer' ? 'שיטת שפיצר' : 'קרן שווה'}
               {liability.hasInterestRebate && ' • זיכוי ריבית פעיל'}
             </p>
@@ -71,42 +83,66 @@ export default function AmortizationModal({
         <div className="modal-body">
           {/* Loan Summary */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
+            <div 
+              className="rounded-xl p-3"
+              style={{ 
+                backgroundColor: 'rgba(105, 173, 255, 0.1)',
+                border: '1px solid rgba(105, 173, 255, 0.2)',
+              }}
+            >
               <div className="flex items-center gap-2 mb-1">
-                <Banknote className="w-4 h-4 text-blue-600" />
-                <span className="text-xs text-slate-500">סכום הלוואה</span>
+                <Banknote className="w-4 h-4" style={{ color: '#69ADFF' }} />
+                <span className="text-xs" style={{ color: '#7E7F90' }}>סכום הלוואה</span>
               </div>
-              <SensitiveData as="p" className="text-lg font-bold text-blue-600">
+              <SensitiveData as="p" className="text-lg font-bold" style={{ color: '#69ADFF' }}>
                 {formatCurrency(liability.totalAmount)}
               </SensitiveData>
             </div>
             
-            <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
+            <div 
+              className="rounded-xl p-3"
+              style={{ 
+                backgroundColor: 'rgba(159, 127, 224, 0.1)',
+                border: '1px solid rgba(159, 127, 224, 0.2)',
+              }}
+            >
               <div className="flex items-center gap-2 mb-1">
-                <Percent className="w-4 h-4 text-purple-600" />
-                <span className="text-xs text-slate-500">ריבית שנתית</span>
+                <Percent className="w-4 h-4" style={{ color: '#9F7FE0' }} />
+                <span className="text-xs" style={{ color: '#7E7F90' }}>ריבית שנתית</span>
               </div>
-              <p className="text-lg font-bold text-purple-600">
+              <p className="text-lg font-bold" style={{ color: '#9F7FE0' }}>
                 {liability.interestRate}%
               </p>
             </div>
             
-            <div className="bg-orange-50 rounded-xl p-3 border border-orange-100">
+            <div 
+              className="rounded-xl p-3"
+              style={{ 
+                backgroundColor: 'rgba(241, 138, 181, 0.1)',
+                border: '1px solid rgba(241, 138, 181, 0.2)',
+              }}
+            >
               <div className="flex items-center gap-2 mb-1">
-                <Calendar className="w-4 h-4 text-orange-600" />
-                <span className="text-xs text-slate-500">תקופה</span>
+                <Calendar className="w-4 h-4" style={{ color: '#F18AB5' }} />
+                <span className="text-xs" style={{ color: '#7E7F90' }}>תקופה</span>
               </div>
-              <p className="text-lg font-bold text-orange-600">
+              <p className="text-lg font-bold" style={{ color: '#F18AB5' }}>
                 {liability.loanTermMonths} חודשים
               </p>
             </div>
             
-            <div className="bg-indigo-50 rounded-xl p-3 border border-indigo-100">
+            <div 
+              className="rounded-xl p-3"
+              style={{ 
+                backgroundColor: 'rgba(13, 186, 204, 0.1)',
+                border: '1px solid rgba(13, 186, 204, 0.2)',
+              }}
+            >
               <div className="flex items-center gap-2 mb-1">
-                <TrendingDown className="w-4 h-4 text-indigo-600" />
-                <span className="text-xs text-slate-500">סה"כ ריבית</span>
+                <TrendingDown className="w-4 h-4" style={{ color: '#0DBACC' }} />
+                <span className="text-xs" style={{ color: '#7E7F90' }}>סה"כ ריבית</span>
               </div>
-              <SensitiveData as="p" className="text-lg font-bold text-indigo-600">
+              <SensitiveData as="p" className="text-lg font-bold" style={{ color: '#0DBACC' }}>
                 {formatCurrency(totalInterest)}
               </SensitiveData>
             </div>
@@ -114,31 +150,48 @@ export default function AmortizationModal({
 
           {/* Current Month Highlight */}
           {currentPayment && currentMonth > 0 && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200 mb-6">
-              <h3 className="text-sm font-semibold text-slate-700 mb-3">החודש הנוכחי (חודש {currentMonth})</h3>
+            <div 
+              className="rounded-xl p-4 mb-6"
+              style={{
+                background: 'linear-gradient(135deg, rgba(13, 186, 204, 0.08) 0%, rgba(116, 172, 239, 0.08) 100%)',
+                border: '1px solid rgba(13, 186, 204, 0.15)',
+              }}
+            >
+              <h3 
+                className="text-sm font-semibold mb-3"
+                style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+              >
+                החודש הנוכחי (חודש {currentMonth})
+              </h3>
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center">
-                  <p className="text-xs text-slate-500">תשלום</p>
-                  <SensitiveData as="p" className="text-lg font-bold text-slate-900">
+                  <p className="text-xs" style={{ color: '#7E7F90' }}>תשלום</p>
+                  <SensitiveData as="p" className="text-lg font-bold" style={{ color: '#303150' }}>
                     {formatCurrency(currentPayment.payment)}
                   </SensitiveData>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-slate-500">קרן</p>
-                  <SensitiveData as="p" className="text-lg font-bold text-green-600">
+                  <p className="text-xs" style={{ color: '#7E7F90' }}>קרן</p>
+                  <SensitiveData as="p" className="text-lg font-bold" style={{ color: '#0DBACC' }}>
                     {formatCurrency(currentPayment.principal)}
                   </SensitiveData>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-slate-500">ריבית</p>
-                  <SensitiveData as="p" className="text-lg font-bold text-indigo-600">
+                  <p className="text-xs" style={{ color: '#7E7F90' }}>ריבית</p>
+                  <SensitiveData as="p" className="text-lg font-bold" style={{ color: '#F18AB5' }}>
                     {formatCurrency(currentPayment.interest)}
                   </SensitiveData>
                 </div>
               </div>
               {liability.hasInterestRebate && (
                 <div className="mt-3 text-center">
-                  <SensitiveData className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                  <SensitiveData 
+                    className="text-xs px-2 py-1 rounded-full"
+                    style={{
+                      backgroundColor: 'rgba(13, 186, 204, 0.15)',
+                      color: '#0DBACC',
+                    }}
+                  >
                     החיוב בפועל (עם זיכוי): {formatCurrency(currentPayment.principal)}
                   </SensitiveData>
                 </div>
@@ -148,16 +201,16 @@ export default function AmortizationModal({
 
           {/* Amortization Table */}
           {hasLoanDetails ? (
-            <div className="max-h-[400px] overflow-y-auto rounded-xl border border-gray-200">
+            <div className="max-h-[400px] overflow-y-auto rounded-xl" style={{ border: '1px solid #F7F7F8' }}>
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 sticky top-0">
+                <thead className="sticky top-0" style={{ backgroundColor: '#F7F7F8' }}>
                   <tr>
-                    <th className="text-right p-3 font-medium text-slate-600">חודש</th>
-                    <th className="text-right p-3 font-medium text-slate-600">תאריך</th>
-                    <th className="text-right p-3 font-medium text-slate-600">תשלום</th>
-                    <th className="text-right p-3 font-medium text-slate-600">קרן</th>
-                    <th className="text-right p-3 font-medium text-slate-600">ריבית</th>
-                    <th className="text-right p-3 font-medium text-slate-600">יתרה</th>
+                    <th className="text-right p-3 font-medium" style={{ color: '#7E7F90' }}>חודש</th>
+                    <th className="text-right p-3 font-medium" style={{ color: '#7E7F90' }}>תאריך</th>
+                    <th className="text-right p-3 font-medium" style={{ color: '#7E7F90' }}>תשלום</th>
+                    <th className="text-right p-3 font-medium" style={{ color: '#7E7F90' }}>קרן</th>
+                    <th className="text-right p-3 font-medium" style={{ color: '#7E7F90' }}>ריבית</th>
+                    <th className="text-right p-3 font-medium" style={{ color: '#7E7F90' }}>יתרה</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -165,36 +218,45 @@ export default function AmortizationModal({
                     <tr 
                       key={row.month}
                       className={cn(
-                        "border-t border-gray-100 transition-colors",
+                        "transition-colors",
                         row.month === currentMonth 
-                          ? "bg-green-50 font-medium" 
+                          ? "font-medium" 
                           : row.month < currentMonth 
-                            ? "bg-slate-50 text-slate-400"
-                            : "hover:bg-slate-50"
+                            ? ""
+                            : "hover:bg-[#F7F7F8]"
                       )}
+                      style={{
+                        borderTop: '1px solid #F7F7F8',
+                        backgroundColor: row.month === currentMonth 
+                          ? 'rgba(13, 186, 204, 0.08)' 
+                          : row.month < currentMonth 
+                            ? '#F7F7F8'
+                            : 'transparent',
+                        color: row.month < currentMonth ? '#BDBDCB' : '#303150',
+                      }}
                     >
                       <td className="p-3">{row.month}</td>
                       <td className="p-3">{formatDate(row.date)}</td>
                       <SensitiveData as="td" className="p-3">{formatCurrency(row.payment)}</SensitiveData>
-                      <SensitiveData as="td" className="p-3 text-green-600">{formatCurrency(row.principal)}</SensitiveData>
-                      <SensitiveData as="td" className="p-3 text-indigo-600">{formatCurrency(row.interest)}</SensitiveData>
+                      <SensitiveData as="td" className="p-3" style={{ color: row.month < currentMonth ? '#BDBDCB' : '#0DBACC' }}>{formatCurrency(row.principal)}</SensitiveData>
+                      <SensitiveData as="td" className="p-3" style={{ color: row.month < currentMonth ? '#BDBDCB' : '#F18AB5' }}>{formatCurrency(row.interest)}</SensitiveData>
                       <SensitiveData as="td" className="p-3 font-medium">{formatCurrency(row.balance)}</SensitiveData>
                     </tr>
                   ))}
                 </tbody>
-                <tfoot className="bg-slate-100 font-medium sticky bottom-0">
-                  <tr className="border-t-2 border-gray-300">
-                    <td className="p-3" colSpan={2}>סה"כ</td>
-                    <SensitiveData as="td" className="p-3">{formatCurrency(totalPayments)}</SensitiveData>
-                    <SensitiveData as="td" className="p-3 text-green-600">{formatCurrency(totalPrincipal)}</SensitiveData>
-                    <SensitiveData as="td" className="p-3 text-indigo-600">{formatCurrency(totalInterest)}</SensitiveData>
-                    <td className="p-3">-</td>
+                <tfoot className="font-medium sticky bottom-0" style={{ backgroundColor: '#F7F7F8' }}>
+                  <tr style={{ borderTop: '2px solid #E8E8ED' }}>
+                    <td className="p-3" colSpan={2} style={{ color: '#303150' }}>סה"כ</td>
+                    <SensitiveData as="td" className="p-3" style={{ color: '#303150' }}>{formatCurrency(totalPayments)}</SensitiveData>
+                    <SensitiveData as="td" className="p-3" style={{ color: '#0DBACC' }}>{formatCurrency(totalPrincipal)}</SensitiveData>
+                    <SensitiveData as="td" className="p-3" style={{ color: '#F18AB5' }}>{formatCurrency(totalInterest)}</SensitiveData>
+                    <td className="p-3" style={{ color: '#7E7F90' }}>-</td>
                   </tr>
                 </tfoot>
               </table>
             </div>
           ) : (
-            <div className="text-center py-8 text-slate-500">
+            <div className="text-center py-8" style={{ color: '#7E7F90' }}>
               <p>לא הוגדרו פרטי הלוואה מלאים</p>
               <p className="text-sm mt-1">ערוך את ההתחייבות והוסף ריבית ותקופה כדי לראות את לוח הסילוקין</p>
             </div>

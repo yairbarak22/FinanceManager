@@ -91,8 +91,8 @@ export default function NetWorthSection({
             </div>
             <span className="text-sm font-medium text-slate-700">תזרים חודשי</span>
           </div>
-          <SensitiveData className={cn("font-bold", isPositiveCashFlow ? "text-emerald-600" : "text-rose-600")}>
-            {isPositiveCashFlow ? '+' : ''}{formatCurrency(monthlyCashFlow)}
+          <SensitiveData className={cn("font-bold", isPositiveCashFlow ? "text-emerald-600" : "text-rose-600")} dir="ltr">
+            {`${isPositiveCashFlow ? '+' : ''}${formatCurrency(monthlyCashFlow)}`}
           </SensitiveData>
         </div>
       </div>

@@ -1,33 +1,35 @@
 'use client';
 
-import { useMemo } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { PieChartIcon, Lightbulb } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { PieChartIcon } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Asset } from '@/lib/types';
 import { assetCategories, getCategoryInfo } from '@/lib/categories';
-import Card from './ui/Card';
 import { SensitiveData } from './common/SensitiveData';
+
 interface AssetAllocationChartProps {
   assets: Asset[];
-  onGetRecommendations?: () => void;
 }
 
-// Premium Blue-to-Purple spectrum palette for hierarchical visual depth
+// Fincheck style color palette - pastel gradients
 const CATEGORY_COLORS: Record<string, string> = {
-  real_estate: '#1E3269',    // Deep Brand Indigo (heaviest/most important)
-  stocks: '#2B4699',          // Primary Blue (brand standard)
-  crypto: '#4F5ECE',          // Transition Violet
-  pension_fund: '#7166D8',    // Rich Purple
-  education_fund: '#938AEA',  // Soft Amethyst
-  savings_account: '#B5B0ED', // Lavender Mist (lightest)
-  investments: '#2B4699',     // Primary Blue
-  vehicle: '#4F5ECE',         // Transition Violet
-  cash: '#7166D8',            // Rich Purple
-  other: '#938AEA',           // Soft Amethyst
+  real_estate: '#0DBACC',    // Turquoise
+  stocks: '#69ADFF',          // Dodger Blue
+  crypto: '#9F7FE0',          // Lavender
+  pension_fund: '#F18AB5',    // Cotton Candy
+  education_fund: '#74ACEF',  // Baby Blue
+  savings_account: '#B4F1F1', // Light Turquoise
+  investments: '#69ADFF',     // Dodger Blue
+  vehicle: '#F18AB5',         // Cotton Candy
+  cash: '#0DBACC',            // Turquoise
+  other: '#BDBDCB',           // Light Grey
 };
 
-export default function AssetAllocationChart({ assets, onGetRecommendations }: AssetAllocationChartProps) {
+export default function AssetAllocationChart({ assets }: AssetAllocationChartProps) {
+  // Hover state for synchronized chart/legend interaction
+  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+
   // Calculate totals by category
   const { chartData, totalAssets } = useMemo(() => {
     const categoryTotals: Record<string, number> = {};
@@ -47,8 +49,8 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
           id: categoryId,
           name: categoryInfo?.nameHe || categoryId,
           value,
-          percentage: total > 0 ? ((value / total) * 100).toFixed(1) : '0',
-          color: CATEGORY_COLORS[categoryId] || '#94a3b8',
+          percentage: total > 0 ? ((value / total) * 100).toFixed(0) : '0',
+          color: CATEGORY_COLORS[categoryId] || '#BDBDCB',
         };
       })
       .sort((a, b) => b.value - a.value); // Sort by value descending
@@ -58,109 +60,193 @@ export default function AssetAllocationChart({ assets, onGetRecommendations }: A
 
   const isEmpty = chartData.length === 0;
 
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white px-4 py-3 shadow-[0_4px_20px_rgba(0,0,0,0.15)] rounded-xl border border-slate-100">
-          <SensitiveData as="p" className="font-semibold text-slate-900">{data.name}</SensitiveData>
-          <SensitiveData as="p" className="text-sm text-slate-600 mt-1">{formatCurrency(data.value)}</SensitiveData>
-          <SensitiveData as="p" className="text-xs text-slate-500">{data.percentage}% מסך הנכסים</SensitiveData>
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
-    <Card className="h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-            <PieChartIcon className="w-5 h-5 text-indigo-600" />
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">פילוח נכסים</h2>
-            <p className="text-xs text-slate-500">סה"כ: {formatCurrency(totalAssets)}</p>
-          </div>
-        </div>
-
-        {/* FEATURE DISABLED - Recommendations Button
-        {onGetRecommendations && (
-          <button
-            id="btn-get-recommendations"
-            onClick={onGetRecommendations}
-            className="flex items-center gap-2 px-4 py-2 text-white rounded-xl transition-all duration-300 text-sm font-medium cursor-pointer hover:scale-105 hover:shadow-xl"
-            style={{
-              background: 'linear-gradient(90deg, #2B4699 0%, #7C3AED 100%)',
-              boxShadow: '0 4px 12px rgba(43, 70, 153, 0.25)'
-            }}
-          >
-            
-            קבל המלצות
-            <Lightbulb className="w-4 h-4" />
-          </button>
-        )}
-        */}
-      </div>
-
+    <div 
+      className="bg-white rounded-[20px] p-6 h-full flex flex-col"
+      style={{ boxShadow: '0 4px 24px rgba(13, 186, 204, 0.1)' }}
+    >
       {isEmpty ? (
-        <div className="flex flex-col items-center justify-center h-48 text-slate-400">
-          <PieChartIcon className="w-12 h-12 mb-2 opacity-50" />
-          <p className="text-sm">אין נכסים להצגה</p>
-          <p className="text-xs">הוסף נכסים כדי לראות את הפילוח</p>
+        <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <div 
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+            style={{ background: 'rgba(105, 173, 255, 0.1)' }}
+          >
+            <PieChartIcon className="w-8 h-8" style={{ color: '#69ADFF' }} strokeWidth={1.5} />
+          </div>
+          <p 
+            className="text-sm mb-1"
+            style={{ color: '#7E7F90' }}
+          >
+            אין נכסים להצגה
+          </p>
+          <p 
+            className="text-xs"
+            style={{ color: '#BDBDCB' }}
+          >
+            הוסף נכסים כדי לראות את הפילוח
+          </p>
         </div>
       ) : (
-        <>
-          {/* Chart */}
-          <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={50}
-                  outerRadius={85}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
-                  {chartData.map((entry) => (
-                    <Cell
-                      key={entry.id}
-                      fill={entry.color}
-                      stroke="white"
-                      strokeWidth={2}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
+        <div className="flex-1 flex flex-col">
+          {/* Hybrid Layout: Header/Summary on Left, Chart on Right */}
+          <div className="flex items-start gap-4 mb-6">
+            {/* Left Side: Title & Summary */}
+            <div className="flex-1">
+              <h3 
+                className="text-sm font-medium mb-2"
+                style={{ 
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                  color: '#7E7F90'
+                }}
+              >
+                פילוח נכסים
+              </h3>
+              <SensitiveData 
+                as="p" 
+                className="text-3xl font-bold mb-1"
+                style={{ 
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                  color: '#1D1D35'
+                }}
+              >
+                {formatCurrency(totalAssets)}
+              </SensitiveData>
+              <p 
+                className="text-xs"
+                style={{ color: '#7E7F90' }}
+              >
+                שווי כולל
+              </p>
+            </div>
+
+            {/* Right Side: Donut Chart */}
+            <div className="relative w-32 h-32 flex-shrink-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={55}
+                    paddingAngle={2}
+                    dataKey="value"
+                    strokeWidth={0}
+                  >
+                    {chartData.map((entry) => (
+                      <Cell
+                        key={entry.id}
+                        fill={entry.color}
+                        style={{
+                          filter: hoveredItemId === entry.id 
+                            ? `drop-shadow(0 0 8px ${entry.color}33)` 
+                            : 'none',
+                          transform: hoveredItemId === entry.id 
+                            ? 'scale(1.07)' 
+                            : 'scale(1)',
+                          transformOrigin: 'center',
+                          transition: 'all 250ms ease-out',
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={() => setHoveredItemId(entry.id)}
+                        onMouseLeave={() => setHoveredItemId(null)}
+                      />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              
+              {/* Center - subtle icon */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <PieChartIcon className="w-5 h-5" style={{ color: '#BDBDCB' }} strokeWidth={1.5} />
+              </div>
+            </div>
           </div>
 
-          {/* Legend - Brand styled */}
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {chartData.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors border border-slate-100"
-              >
+          {/* Legend - Right-aligned text, left-aligned percentages, with scrolling */}
+          <div 
+            className="flex-1 flex flex-col mt-5 px-2 overflow-y-auto max-h-[250px]"
+            onMouseLeave={() => setHoveredItemId(null)}
+          >
+            {chartData.map((item) => {
+              const isHovered = hoveredItemId === item.id;
+              const hasHover = hoveredItemId !== null;
+              
+              return (
                 <div
-                  className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-white shadow-sm"
-                  style={{ backgroundColor: item.color }}
-                />
-                <div className="flex-1 min-w-0">
-                  <SensitiveData as="p" className="text-xs font-medium text-slate-700 truncate">{item.name}</SensitiveData>
-                  <SensitiveData as="p" className="text-xs text-slate-500">{item.percentage}%</SensitiveData>
+                  key={item.id}
+                  className="flex items-center justify-between py-2 cursor-pointer"
+                  style={{
+                    opacity: hasHover && !isHovered ? 0.4 : 1,
+                    transition: 'all 250ms ease-out',
+                  }}
+                  onMouseEnter={() => setHoveredItemId(item.id)}
+                  onMouseLeave={() => setHoveredItemId(null)}
+                >
+                  {/* Left Side: Colored Dot + Name */}
+                  <div className="flex items-center gap-2 pr-4">
+                    <div
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <SensitiveData 
+                      as="span"
+                      className="text-right"
+                      style={{ 
+                        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                        color: isHovered ? '#303150' : '#7E7F90',
+                        fontWeight: isHovered ? 700 : 400,
+                        fontSize: isHovered ? '16px' : '14px',
+                        transition: 'all 250ms ease-out',
+                      }}
+                    >
+                      {item.name}
+                    </SensitiveData>
+                  </div>
+                  
+                  {/* Right Side: Amount (slides in) + Percentage */}
+                  <div className="flex items-center gap-2 pl-4">
+                    {/* Amount - slides in from left, pushes percentage right */}
+                    <SensitiveData 
+                      as="span"
+                      style={{ 
+                        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                        color: '#303150',
+                        fontWeight: 600,
+                        fontSize: '14px',
+                        opacity: isHovered ? 1 : 0,
+                        maxWidth: isHovered ? '120px' : '0px',
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                        transform: isHovered ? 'translateX(0)' : 'translateX(-12px)',
+                        transition: 'all 250ms ease-out',
+                      }}
+                    >
+                      {formatCurrency(item.value)}
+                    </SensitiveData>
+                    
+                    {/* Percentage */}
+                    <SensitiveData 
+                      as="span"
+                      className="text-left"
+                      style={{ 
+                        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                        color: isHovered ? '#303150' : '#7E7F90',
+                        fontWeight: isHovered ? 700 : 400,
+                        fontSize: isHovered ? '16px' : '14px',
+                        minWidth: '40px',
+                        transition: 'all 250ms ease-out',
+                      }}
+                    >
+                      {item.percentage}%
+                    </SensitiveData>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        </>
+        </div>
       )}
-    </Card>
+    </div>
   );
 }

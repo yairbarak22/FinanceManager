@@ -89,7 +89,7 @@ function EditCashModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
       />
       <motion.div
         key="cash-modal"
@@ -98,32 +98,32 @@ function EditCashModal({
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm z-50"
       >
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden mx-4 p-5">
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden mx-4 p-5">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-slate-900">עריכת מזומן בתיק</h3>
+            <h3 className="text-lg font-semibold text-[#303150]">עריכת מזומן בתיק</h3>
             <button
               onClick={onClose}
-              className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
+              className="p-1 rounded-lg hover:bg-[#F7F7F8] transition-colors"
             >
-              <X className="w-5 h-5 text-slate-400" />
+              <X className="w-5 h-5 text-[#BDBDCB]" />
             </button>
           </div>
 
           {/* Cash Icon */}
-          <div className="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl mb-4">
-            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-              <Banknote className="w-5 h-5 text-emerald-600" />
+          <div className="flex items-center gap-3 p-3 bg-[#B4F1F1]/30 rounded-xl mb-4">
+            <div className="w-10 h-10 bg-[#B4F1F1] rounded-full flex items-center justify-center">
+              <Banknote className="w-5 h-5 text-[#0DBACC]" />
             </div>
             <div className="flex-1 text-right">
-              <p className="font-bold text-slate-900">מזומן</p>
-              <p className="text-sm text-slate-500">סכום מזומן בתיק ההשקעות</p>
+              <p className="font-bold text-[#303150]">מזומן</p>
+              <p className="text-sm text-[#7E7F90]">סכום מזומן בתיק ההשקעות</p>
             </div>
           </div>
 
           {/* Cash Input */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
+            <label className="block text-sm font-medium text-[#303150] mb-2 text-right">
               סכום בשקלים (₪)
             </label>
             <input
@@ -136,7 +136,7 @@ function EditCashModal({
               className={`w-full px-4 py-3 text-lg text-right rounded-xl border transition-colors outline-none ${
                 error
                   ? 'border-rose-300 bg-rose-50 focus:border-rose-500'
-                  : 'border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
+                  : 'border-[#E8E8ED] focus:border-[#69ADFF] focus:ring-2 focus:ring-[#69ADFF]/20'
               }`}
               min="0"
               step="0.01"
@@ -152,14 +152,14 @@ function EditCashModal({
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-3 text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors"
+              className="flex-1 px-4 py-3 text-[#7E7F90] bg-[#F7F7F8] rounded-xl hover:bg-[#E8E8ED] transition-colors"
             >
               ביטול
             </button>
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex-1 px-4 py-3 text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all active:scale-95 disabled:opacity-50"
+              className="flex-1 px-4 py-3 text-white bg-[#0DBACC] rounded-xl hover:bg-[#0DBACC]/90 transition-all active:scale-95 disabled:opacity-50"
             >
               {isSaving ? (
                 <Loader2 className="w-5 h-5 animate-spin mx-auto" />
@@ -224,7 +224,7 @@ function EditHoldingModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
       />
       <motion.div
         key="edit-modal"
@@ -233,29 +233,29 @@ function EditHoldingModal({
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm z-50"
       >
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden mx-4 p-5">
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden mx-4 p-5">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-slate-900">עריכת אחזקה</h3>
+            <h3 className="text-lg font-semibold text-[#303150]">עריכת אחזקה</h3>
             <button
               onClick={onClose}
-              className="p-1 rounded-lg hover:bg-slate-100 transition-colors"
+              className="p-1 rounded-lg hover:bg-[#F7F7F8] transition-colors"
             >
-              <X className="w-5 h-5 text-slate-400" />
+              <X className="w-5 h-5 text-[#BDBDCB]" />
             </button>
           </div>
 
           {/* Stock Info */}
-          <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl mb-4">
+          <div className="flex items-center gap-3 p-3 bg-[#F7F7F8] rounded-xl mb-4">
             <div className="flex-1 text-right">
-              <p className="font-bold text-slate-900">{holding.symbol}</p>
-              <p className="text-sm text-slate-500 truncate">{holding.name}</p>
+              <p className="font-bold text-[#303150]">{holding.symbol}</p>
+              <p className="text-sm text-[#7E7F90] truncate">{holding.name}</p>
             </div>
           </div>
 
           {/* Quantity Input */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
+            <label className="block text-sm font-medium text-[#303150] mb-2 text-right">
               כמות יחידות
             </label>
             <input
@@ -268,7 +268,7 @@ function EditHoldingModal({
               className={`w-full px-4 py-3 text-lg text-right rounded-xl border transition-colors outline-none ${
                 error
                   ? 'border-rose-300 bg-rose-50 focus:border-rose-500'
-                  : 'border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20'
+                  : 'border-[#E8E8ED] focus:border-[#69ADFF] focus:ring-2 focus:ring-[#69ADFF]/20'
               }`}
               min="0"
               step="0.01"
@@ -282,17 +282,17 @@ function EditHoldingModal({
 
           {/* Price Display Unit Selector */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-700 mb-2 text-right">
+            <label className="block text-sm font-medium text-[#303150] mb-2 text-right">
               יחידת תצוגת מחיר
             </label>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setPriceDisplayUnit('ILS')}
-                className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-all ${
+                className={`flex-1 px-3 py-2 text-sm rounded-xl border transition-all ${
                   priceDisplayUnit === 'ILS'
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                    ? 'bg-[#69ADFF] text-white border-[#69ADFF]'
+                    : 'bg-white text-[#303150] border-[#E8E8ED] hover:border-[#69ADFF]'
                 }`}
               >
                 שקל (₪)
@@ -300,10 +300,10 @@ function EditHoldingModal({
               <button
                 type="button"
                 onClick={() => setPriceDisplayUnit('ILS_AGOROT')}
-                className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-all ${
+                className={`flex-1 px-3 py-2 text-sm rounded-xl border transition-all ${
                   priceDisplayUnit === 'ILS_AGOROT'
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                    ? 'bg-[#69ADFF] text-white border-[#69ADFF]'
+                    : 'bg-white text-[#303150] border-[#E8E8ED] hover:border-[#69ADFF]'
                 }`}
               >
                 אגורות
@@ -311,10 +311,10 @@ function EditHoldingModal({
               <button
                 type="button"
                 onClick={() => setPriceDisplayUnit('USD')}
-                className={`flex-1 px-3 py-2 text-sm rounded-lg border transition-all ${
+                className={`flex-1 px-3 py-2 text-sm rounded-xl border transition-all ${
                   priceDisplayUnit === 'USD'
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                    ? 'bg-[#69ADFF] text-white border-[#69ADFF]'
+                    : 'bg-white text-[#303150] border-[#E8E8ED] hover:border-[#69ADFF]'
                 }`}
               >
                 דולר ($)
@@ -326,14 +326,14 @@ function EditHoldingModal({
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-3 text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors"
+              className="flex-1 px-4 py-3 text-[#7E7F90] bg-[#F7F7F8] rounded-xl hover:bg-[#E8E8ED] transition-colors"
             >
               ביטול
             </button>
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex-1 px-4 py-3 text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50"
+              className="flex-1 px-4 py-3 text-white bg-[#303150] rounded-xl hover:bg-[#303150]/90 transition-all active:scale-95 disabled:opacity-50"
             >
               {isSaving ? (
                 <Loader2 className="w-5 h-5 animate-spin mx-auto" />
@@ -384,7 +384,7 @@ function DeleteConfirmModal({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
       />
       <motion.div
         key="delete-modal"
@@ -393,27 +393,27 @@ function DeleteConfirmModal({
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm z-50"
       >
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden mx-4 p-5 text-center">
-          <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-6 h-6 text-rose-600" />
+        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden mx-4 p-5 text-center">
+          <div className="w-12 h-12 bg-[#FFC0DB] rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-6 h-6 text-[#F18AB5]" />
           </div>
 
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">מחיקת אחזקה</h3>
-          <p className="text-slate-500 mb-4">
-            האם למחוק את <span className="font-semibold text-slate-700">{holding.symbol}</span> מהתיק?
+          <h3 className="text-lg font-semibold text-[#303150] mb-2">מחיקת אחזקה</h3>
+          <p className="text-[#7E7F90] mb-4">
+            האם למחוק את <span className="font-semibold text-[#303150]">{holding.symbol}</span> מהתיק?
           </p>
 
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-3 text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors"
+              className="flex-1 px-4 py-3 text-[#7E7F90] bg-[#F7F7F8] rounded-xl hover:bg-[#E8E8ED] transition-colors"
             >
               ביטול
             </button>
             <button
               onClick={handleDelete}
               disabled={isDeleting}
-              className="flex-1 px-4 py-3 text-white bg-rose-600 rounded-xl hover:bg-rose-700 transition-all active:scale-95 disabled:opacity-50"
+              className="flex-1 px-4 py-3 text-white bg-[#F18AB5] rounded-xl hover:bg-[#F18AB5]/90 transition-all active:scale-95 disabled:opacity-50"
             >
               {isDeleting ? (
                 <Loader2 className="w-5 h-5 animate-spin mx-auto" />
@@ -561,10 +561,10 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
   // Loading state
   if (loading && !data) {
     return (
-      <div className={`bg-slate-50 min-h-[400px] flex items-center justify-center ${className}`}>
+      <div className={`bg-[#F7F7F8] min-h-[400px] flex items-center justify-center ${className}`}>
         <div className="flex flex-col items-center gap-3">
-          <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
-          <p className="text-slate-500">טוען נתוני שוק...</p>
+          <RefreshCw className="w-8 h-8 text-[#69ADFF] animate-spin" />
+          <p className="text-[#7E7F90]">טוען נתוני שוק...</p>
         </div>
       </div>
     );
@@ -573,13 +573,13 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
   // Error state
   if (error && !data) {
     return (
-      <div className={`bg-slate-50 min-h-[400px] flex items-center justify-center ${className}`}>
+      <div className={`bg-[#F7F7F8] min-h-[400px] flex items-center justify-center ${className}`}>
         <div className="flex flex-col items-center gap-3 text-center">
-          <AlertCircle className="w-8 h-8 text-rose-500" />
-          <p className="text-slate-600">{error}</p>
+          <AlertCircle className="w-8 h-8 text-[#F18AB5]" />
+          <p className="text-[#7E7F90]">{error}</p>
           <button
             onClick={fetchPortfolioData}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            className="px-4 py-2 bg-[#69ADFF] text-white rounded-xl hover:bg-[#69ADFF]/90 transition-colors"
           >
             נסה שוב
           </button>
@@ -591,11 +591,11 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
   // Empty state
   if (!data || data.holdings.length === 0) {
     return (
-      <div className={`bg-slate-50 min-h-[400px] flex items-center justify-center ${className}`}>
+      <div className={`bg-[#F7F7F8] min-h-[400px] flex items-center justify-center ${className}`}>
         <div className="flex flex-col items-center gap-4 text-center max-w-md">
-          <Wallet className="w-12 h-12 text-slate-300" />
-          <h3 className="text-lg font-semibold text-slate-700">אין אחזקות בתיק</h3>
-          <p className="text-slate-500 text-sm">
+          <Wallet className="w-12 h-12 text-[#BDBDCB]" />
+          <h3 className="text-lg font-semibold text-[#303150]">אין אחזקות בתיק</h3>
+          <p className="text-[#7E7F90] text-sm">
             הוסף אחזקות עם סימבול מניה (למשל AAPL, MSFT) כדי לראות ניתוח התיק
           </p>
           <AddAssetButton onAddAsset={handleAddAsset} />
@@ -605,27 +605,27 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
   }
 
   return (
-    <div className={`bg-slate-50 p-4 md:p-6 space-y-6 ${className}`}>
+    <div className={`bg-[#F7F7F8] p-4 md:p-6 space-y-6 ${className}`}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">תיק חכם</h2>
-          <p className="text-sm text-slate-500">
+          <h2 className="text-xl font-bold text-[#303150]">תיק חכם</h2>
+          <p className="text-sm text-[#7E7F90]">
             ניתוח מבוסס CAPM ופיזור סיכונים
           </p>
         </div>
         <div className="flex items-center gap-3">
           {lastUpdated && (
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-[#BDBDCB]">
               עודכן {lastUpdated.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
           <button
             onClick={fetchPortfolioData}
             disabled={loading}
-            className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors disabled:opacity-50"
+            className="p-2 rounded-xl border border-[#E8E8ED] bg-white hover:bg-[#F7F7F8] transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 text-[#7E7F90] ${loading ? 'animate-spin' : ''}`} />
           </button>
           <AddAssetButton onAddAsset={handleAddAsset} />
         </div>
@@ -634,9 +634,9 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* Total Value */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <p className="text-xs text-slate-400 mb-1">שווי התיק</p>
-          <SensitiveData as="p" className="text-2xl font-light text-slate-900">
+        <div className="bg-white rounded-3xl border border-[#E8E8ED] p-4">
+          <p className="text-xs text-[#BDBDCB] mb-1">שווי התיק</p>
+          <SensitiveData as="p" className="text-2xl font-light text-[#303150]">
             {data.equityILS.toLocaleString('he-IL', {
               style: 'currency',
               currency: 'ILS',
@@ -646,41 +646,42 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
         </div>
 
         {/* Daily Change */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <p className="text-xs text-slate-400 mb-1">שינוי יומי</p>
+        <div className="bg-white rounded-3xl border border-[#E8E8ED] p-4">
+          <p className="text-xs text-[#BDBDCB] mb-1">שינוי יומי</p>
           <div className="flex items-center gap-2">
             {data.dailyChangePercent >= 0 ? (
-              <TrendingUp className="w-5 h-5 text-emerald-600" />
+              <TrendingUp className="w-5 h-5 text-[#0DBACC]" />
             ) : (
-              <TrendingDown className="w-5 h-5 text-rose-500" />
+              <TrendingDown className="w-5 h-5 text-[#F18AB5]" />
             )}
             <span
               className={`text-2xl font-light ${
-                data.dailyChangePercent >= 0 ? 'text-emerald-600' : 'text-rose-500'
+                data.dailyChangePercent >= 0 ? 'text-[#0DBACC]' : 'text-[#F18AB5]'
               }`}
+              dir="ltr"
             >
               {data.dailyChangePercent >= 0 ? '+' : ''}
               {data.dailyChangePercent.toFixed(2)}%
             </span>
           </div>
           <SensitiveData as="p" className={`text-xs mt-1 ${
-            data.dailyChangeILS >= 0 ? 'text-emerald-600' : 'text-rose-500'
-          }`}>
+            data.dailyChangeILS >= 0 ? 'text-[#0DBACC]' : 'text-[#F18AB5]'
+          }`} dir="ltr">
             {data.dailyChangeILS >= 0 ? '+' : ''}
             {data.dailyChangeILS.toLocaleString('he-IL')}₪
           </SensitiveData>
         </div>
 
         {/* Beta */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <p className="text-xs text-slate-400 mb-1">סיכון משוקלל</p>
+        <div className="bg-white rounded-3xl border border-[#E8E8ED] p-4">
+          <p className="text-xs text-[#BDBDCB] mb-1">סיכון משוקלל</p>
           <p className={`text-2xl font-light ${
-            data.beta < 0.8 ? 'text-emerald-600' :
-            data.beta <= 1.2 ? 'text-sky-600' : 'text-rose-500'
+            data.beta < 0.8 ? 'text-[#0DBACC]' :
+            data.beta <= 1.2 ? 'text-[#69ADFF]' : 'text-[#F18AB5]'
           }`}>
             {data.beta.toFixed(2)}
           </p>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-[#BDBDCB] mt-1">
             {data.riskLevel === 'conservative' && 'שמרני'}
             {data.riskLevel === 'moderate' && 'מאוזן'}
             {data.riskLevel === 'aggressive' && 'אגרסיבי'}
@@ -688,31 +689,31 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
         </div>
 
         {/* Diversification */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <p className="text-xs text-slate-400 mb-1">ציון פיזור</p>
+        <div className="bg-white rounded-3xl border border-[#E8E8ED] p-4">
+          <p className="text-xs text-[#BDBDCB] mb-1">ציון פיזור</p>
           <p className={`text-2xl font-light ${
-            data.diversificationScore >= 70 ? 'text-emerald-600' :
-            data.diversificationScore >= 50 ? 'text-sky-600' :
-            data.diversificationScore >= 30 ? 'text-amber-500' : 'text-rose-500'
+            data.diversificationScore >= 70 ? 'text-[#0DBACC]' :
+            data.diversificationScore >= 50 ? 'text-[#69ADFF]' :
+            data.diversificationScore >= 30 ? 'text-[#FFB84D]' : 'text-[#F18AB5]'
           }`}>
             {data.diversificationScore}
           </p>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-[#BDBDCB] mt-1">
             {data.sectorAllocation.length} סקטורים
           </p>
         </div>
       </div>
 
       {/* Cash Balance Section */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4">
+      <div className="bg-white rounded-3xl border border-[#E8E8ED] p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-              <Banknote className="w-5 h-5 text-emerald-600" />
+            <div className="w-10 h-10 bg-[#B4F1F1] rounded-full flex items-center justify-center">
+              <Banknote className="w-5 h-5 text-[#0DBACC]" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-700">מזומן בתיק</p>
-              <SensitiveData as="p" className="text-xl font-semibold text-slate-900">
+              <p className="text-sm font-medium text-[#303150]">מזומן בתיק</p>
+              <SensitiveData as="p" className="text-xl font-semibold text-[#303150]">
                 {(data.cashBalance ?? 0).toLocaleString('he-IL', {
                   style: 'currency',
                   currency: 'ILS',
@@ -724,15 +725,15 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
           <div className="flex items-center gap-4">
             {data.cashWeight !== undefined && data.cashWeight > 0 && (
               <div className="text-right">
-                <p className="text-xs text-slate-400">אחוז מהתיק</p>
-                <p className="text-sm font-medium text-slate-600">{data.cashWeight.toFixed(1)}%</p>
+                <p className="text-xs text-[#BDBDCB]">אחוז מהתיק</p>
+                <p className="text-sm font-medium text-[#7E7F90]">{data.cashWeight.toFixed(1)}%</p>
               </div>
             )}
             <button
               onClick={() => setIsEditingCash(true)}
-              className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition-colors"
+              className="p-2 rounded-xl border border-[#E8E8ED] bg-white hover:bg-[#F7F7F8] transition-colors"
             >
-              <Pencil className="w-4 h-4 text-slate-600" />
+              <Pencil className="w-4 h-4 text-[#7E7F90]" />
             </button>
           </div>
         </div>

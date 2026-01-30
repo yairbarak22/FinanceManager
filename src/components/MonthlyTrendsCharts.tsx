@@ -62,22 +62,35 @@ export default function MonthlyTrendsCharts({ data }: MonthlyTrendsChartsProps) 
 
   const isEmpty = allChartData.length === 0;
 
-  // Custom tooltip component
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  // Custom tooltip component - Apple minimalist style
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ dataKey: string; value: number; color: string }>; label?: string }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white px-4 py-3 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.15)] border border-slate-100">
-          <p className="font-semibold text-slate-900 mb-2 text-sm">{label}</p>
-          {payload.map((entry: any, index: number) => (
+        <div 
+          className="bg-white px-4 py-3 rounded-2xl border-0"
+          style={{ boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)' }}
+        >
+          <p 
+            className="font-semibold mb-2 text-sm"
+            style={{ color: '#1D1D35' }}
+          >
+            {label}
+          </p>
+          {payload.map((entry, index: number) => (
             <div key={index} className="flex items-center gap-2 text-sm">
               <div
                 className="w-2.5 h-2.5 rounded-full"
                 style={{ backgroundColor: entry.color }}
               />
-              <span className="text-slate-600">
+              <span style={{ color: '#7E7F90' }}>
                 {entry.dataKey === 'income' ? 'הכנסות' : entry.dataKey === 'expenses' ? 'הוצאות' : 'יתרה'}:
               </span>
-              <span className="font-medium text-slate-900">{formatCurrency(entry.value)}</span>
+              <span 
+                className="font-medium"
+                style={{ color: '#1D1D35' }}
+              >
+                {formatCurrency(entry.value)}
+              </span>
             </div>
           ))}
         </div>
@@ -86,34 +99,37 @@ export default function MonthlyTrendsCharts({ data }: MonthlyTrendsChartsProps) 
     return null;
   };
 
-  // Custom legend component
+  // Custom legend component - Apple minimalist style
   const renderLegend = () => (
     <div className="flex items-center justify-center gap-6 mt-4">
       <div className="flex items-center gap-2">
-        <div className="w-3 h-3 rounded-full bg-teal-500" />
-        <span className="text-xs text-slate-600">הכנסות</span>
+        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#0DBACC' }} />
+        <span className="text-xs" style={{ color: '#7E7F90' }}>הכנסות</span>
       </div>
       <div className="flex items-center gap-2">
-        <div className="w-3 h-3 rounded-full bg-pink-500" />
-        <span className="text-xs text-slate-600">הוצאות</span>
+        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#F18AB5' }} />
+        <span className="text-xs" style={{ color: '#7E7F90' }}>הוצאות</span>
       </div>
       <div className="flex items-center gap-2">
-        <div className="w-3 h-3 rounded-full bg-emerald-500" />
-        <span className="text-xs text-slate-600">יתרה</span>
+        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#69ADFF' }} />
+        <span className="text-xs" style={{ color: '#7E7F90' }}>יתרה</span>
       </div>
     </div>
   );
 
   return (
     <Card className="flex flex-col" style={{ height: '450px' }}>
-      {/* Header with Navigation */}
+      {/* Header with Navigation - Apple minimalist style */}
       <div className="flex items-center justify-between mb-4 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-            <BarChart3 className="w-5 h-5 text-indigo-600" />
-          </div>
-          <h2 className="text-lg font-semibold text-slate-900">מגמות חודשיות</h2>
-        </div>
+        <h3 
+          className="text-lg font-semibold"
+          style={{ 
+            fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+            color: '#1D1D35'
+          }}
+        >
+          מגמות חודשיות
+        </h3>
         
         {/* Navigation Arrows */}
         {allChartData.length > MAX_VISIBLE_MONTHS && (
@@ -167,13 +183,15 @@ export default function MonthlyTrendsCharts({ data }: MonthlyTrendsChartsProps) 
                 barCategoryGap="20%"
               >
                 <defs>
+                  {/* Fincheck Turquoise gradient for income */}
                   <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#14b8a6" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#14b8a6" stopOpacity={0.6} />
+                    <stop offset="0%" stopColor="#0DBACC" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#B4F1F1" stopOpacity={0.8} />
                   </linearGradient>
+                  {/* Fincheck Cotton Candy gradient for expenses */}
                   <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ec4899" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#ec4899" stopOpacity={0.6} />
+                    <stop offset="0%" stopColor="#F18AB5" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#FFC0DB" stopOpacity={0.8} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid
@@ -213,10 +231,10 @@ export default function MonthlyTrendsCharts({ data }: MonthlyTrendsChartsProps) 
                 <Line
                   type="monotone"
                   dataKey="balance"
-                  stroke="#22c55e"
+                  stroke="#69ADFF"
                   strokeWidth={3}
-                  dot={{ fill: '#22c55e', strokeWidth: 0, r: 5 }}
-                  activeDot={{ r: 7, fill: '#22c55e', stroke: '#fff', strokeWidth: 2 }}
+                  dot={{ fill: '#69ADFF', strokeWidth: 0, r: 5 }}
+                  activeDot={{ r: 7, fill: '#69ADFF', stroke: '#fff', strokeWidth: 2 }}
                 />
               </ComposedChart>
             </ResponsiveContainer>

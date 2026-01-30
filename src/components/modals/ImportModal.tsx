@@ -92,16 +92,22 @@ function ProgressStep({
   isComplete: boolean;
   isError?: boolean;
 }) {
+  const getStepStyle = () => {
+    if (isError) return { backgroundColor: 'rgba(241, 138, 181, 0.15)', color: '#F18AB5' };
+    if (isComplete) return { backgroundColor: 'rgba(13, 186, 204, 0.15)', color: '#0DBACC' };
+    if (isActive) return { 
+      backgroundColor: 'rgba(105, 173, 255, 0.15)', 
+      color: '#69ADFF',
+      boxShadow: '0 0 0 2px #69ADFF, 0 0 0 4px rgba(105, 173, 255, 0.2)',
+    };
+    return { backgroundColor: '#F7F7F8', color: '#BDBDCB' };
+  };
+
   return (
     <div className="flex flex-col items-center">
       <div
-        className={cn(
-          'w-10 h-10 rounded-full flex items-center justify-center transition-all',
-          isError ? 'bg-red-100 text-red-600' :
-            isComplete ? 'bg-green-100 text-green-600' :
-              isActive ? 'bg-indigo-100 text-indigo-600 ring-2 ring-indigo-300 ring-offset-2' :
-                'bg-slate-100 text-slate-400'
-        )}
+        className="w-10 h-10 rounded-full flex items-center justify-center transition-all"
+        style={getStepStyle()}
       >
         {isComplete ? (
           <CheckCircle className="w-5 h-5" />
@@ -114,10 +120,12 @@ function ProgressStep({
         )}
       </div>
       <span
-        className={cn(
-          'text-xs mt-2 text-center',
-          isActive || isComplete ? 'text-slate-900 font-medium' : 'text-slate-400'
-        )}
+        className="text-xs mt-2 text-center"
+        style={{
+          color: isActive || isComplete ? '#303150' : '#BDBDCB',
+          fontWeight: isActive || isComplete ? 500 : 400,
+          fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+        }}
       >
         {label}
       </span>
@@ -129,10 +137,10 @@ function ProgressStep({
 function ProgressLine({ isComplete }: { isComplete: boolean }) {
   return (
     <div
-      className={cn(
-        'flex-1 h-0.5 mx-2 transition-colors',
-        isComplete ? 'bg-green-300' : 'bg-slate-200'
-      )}
+      className="flex-1 h-0.5 mx-2 transition-colors"
+      style={{
+        backgroundColor: isComplete ? 'rgba(13, 186, 204, 0.5)' : '#E8E8ED',
+      }}
     />
   );
 }
@@ -246,13 +254,14 @@ function CategoryDropdown({
   const dropdownContent = (
     <div
       ref={dropdownRef}
-      className="fixed z-[10000] bg-white border border-slate-200 rounded-xl shadow-lg overflow-y-auto"
+      className="fixed z-[10000] bg-white rounded-xl shadow-lg overflow-y-auto"
       style={{
         top: position.top,
         bottom: position.bottom,
         left: position.left,
         width: position.width,
         maxHeight: position.maxHeight,
+        border: '1px solid #F7F7F8',
       }}
       dir="rtl"
     >
@@ -269,16 +278,16 @@ function CategoryDropdown({
                 onChange(cat.id);
                 onClose();
               }}
-              className={cn(
-                'w-full px-3 py-2 rounded-lg text-sm font-medium text-right',
-                'flex items-center justify-between gap-2 transition-colors',
-                isSelected
-                  ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300'
-                  : 'text-slate-700 hover:bg-slate-100 border-2 border-transparent'
-              )}
+              className="w-full px-3 py-2 rounded-lg text-sm font-medium text-right flex items-center justify-between gap-2 transition-colors"
+              style={{
+                backgroundColor: isSelected ? 'rgba(105, 173, 255, 0.15)' : 'transparent',
+                color: isSelected ? '#69ADFF' : '#303150',
+                border: isSelected ? '2px solid rgba(105, 173, 255, 0.4)' : '2px solid transparent',
+                fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+              }}
             >
               <span>{cat.nameHe}</span>
-              {isSelected && <Check className="w-4 h-4 text-indigo-600" />}
+              {isSelected && <Check className="w-4 h-4" style={{ color: '#69ADFF' }} />}
             </button>
           );
         })}
@@ -293,14 +302,13 @@ function CategoryDropdown({
         ref={triggerRef}
         type="button"
         onClick={onToggle}
-        className={cn(
-          'w-full px-3 py-2.5 border-2 rounded-xl text-sm font-medium transition-all',
-          'flex items-center justify-between gap-2',
-          'focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 focus:outline-none',
-          value
-            ? 'border-indigo-300 bg-indigo-50 text-indigo-700 hover:border-indigo-400'
-            : 'border-amber-300 bg-amber-50 text-amber-700 hover:border-amber-400'
-        )}
+        className="w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-between gap-2 focus:ring-2 focus:ring-offset-1 focus:outline-none"
+        style={{
+          border: value ? '2px solid rgba(105, 173, 255, 0.4)' : '2px solid rgba(241, 138, 181, 0.4)',
+          backgroundColor: value ? 'rgba(105, 173, 255, 0.1)' : 'rgba(241, 138, 181, 0.1)',
+          color: value ? '#69ADFF' : '#F18AB5',
+          fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+        }}
       >
         <span className="truncate">
           {selectedCategory ? selectedCategory.nameHe : 'בחר קטגוריה...'}
@@ -336,28 +344,37 @@ function TransactionCard({
   onDropdownClose: () => void;
 }) {
   return (
-    <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+    <div 
+      className="bg-white rounded-xl p-4 space-y-3"
+      style={{ border: '1px solid #F7F7F8' }}
+    >
       {/* Merchant name and amount */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <SensitiveData as="p" className="font-medium text-slate-900 truncate">
+          <SensitiveData as="p" className="font-medium truncate" style={{ color: '#303150' }}>
             {transaction.merchantName}
           </SensitiveData>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm" style={{ color: '#7E7F90' }}>
             {new Date(transaction.date).toLocaleDateString('he-IL')}
           </p>
         </div>
-        <SensitiveData className={cn(
-          'font-bold text-lg whitespace-nowrap',
-          transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-        )}>
-          {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+        <SensitiveData 
+          className="font-bold text-lg whitespace-nowrap"
+          style={{ color: transaction.type === 'income' ? '#0DBACC' : '#F18AB5' }}
+          dir="ltr"
+        >
+          {`${transaction.type === 'income' ? '+' : '-'}${formatCurrency(transaction.amount)}`}
         </SensitiveData>
       </div>
       
       {/* Category selector - full width on mobile */}
       <div>
-        <label className="block text-xs font-medium text-slate-500 mb-1.5">קטגוריה</label>
+        <label 
+          className="block text-xs font-medium mb-1.5"
+          style={{ color: '#7E7F90' }}
+        >
+          קטגוריה
+        </label>
         <CategoryDropdown
           value={selectedCategory}
           onChange={onCategoryChange}
@@ -584,22 +601,44 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
         {/* Header */}
         <div className="modal-header">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-200">
+            <div 
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{
+                background: 'linear-gradient(135deg, #9F7FE0 0%, #69ADFF 100%)',
+                boxShadow: '0 4px 12px rgba(159, 127, 224, 0.3)',
+              }}
+            >
               <FileSpreadsheet className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-slate-900">ייבוא עסקאות חכם</h3>
-              <p className="text-sm text-slate-500">סיווג אוטומטי עם AI</p>
+              <h3 
+                className="text-lg font-semibold"
+                style={{ 
+                  color: '#303150', 
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif' 
+                }}
+              >
+                ייבוא עסקאות חכם
+              </h3>
+              <p 
+                className="text-sm"
+                style={{ 
+                  color: '#7E7F90', 
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif' 
+                }}
+              >
+                סיווג אוטומטי עם AI
+              </p>
             </div>
           </div>
           <button onClick={handleClose} className="btn-icon">
-            <X className="w-5 h-5 text-slate-500" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Progress Stepper (show when processing) */}
         {phase !== 'idle' && phase !== 'error' && (
-          <div className="px-6 py-4 border-b border-slate-100">
+          <div className="px-6 py-4 border-b border-[#F7F7F8]">
             <div className="flex items-center justify-between">
               <ProgressStep
                 step={1}
@@ -642,12 +681,11 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
           {phase === 'idle' && (
             <>
               <div
-                className={cn(
-                  'border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer',
-                  isDragging
-                    ? 'border-indigo-400 bg-indigo-50'
-                    : 'border-slate-200 hover:border-slate-300'
-                )}
+                className="border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer"
+                style={{
+                  borderColor: isDragging ? '#69ADFF' : '#E8E8ED',
+                  backgroundColor: isDragging ? 'rgba(105, 173, 255, 0.08)' : 'transparent',
+                }}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
@@ -660,38 +698,44 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                   accept=".xlsx,.xls,.csv"
                   className="hidden"
                 />
-                <Upload className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-                <p className="text-sm text-slate-600 mb-1">
+                <Upload className="w-10 h-10 mx-auto mb-3" style={{ color: '#BDBDCB' }} />
+                <p className="text-sm mb-1" style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
                   גרור קובץ לכאן או לחץ לבחירה
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs" style={{ color: '#7E7F90' }}>
                   Excel (.xlsx, .xls) או CSV
                 </p>
               </div>
 
               {file && (
-                <div className="mt-4 p-3 bg-slate-50 rounded-xl flex items-center gap-3">
-                  <FileSpreadsheet className="w-5 h-5 text-indigo-600" />
+                <div className="mt-4 p-3 rounded-xl flex items-center gap-3" style={{ backgroundColor: '#F7F7F8' }}>
+                  <FileSpreadsheet className="w-5 h-5" style={{ color: '#69ADFF' }} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-900 truncate">
+                    <p className="text-sm font-medium truncate" style={{ color: '#303150' }}>
                       {file.name}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs" style={{ color: '#7E7F90' }}>
                       {(file.size / 1024).toFixed(1)} KB
                     </p>
                   </div>
                 </div>
               )}
 
-              <div className="mt-4 p-3 bg-blue-50 rounded-xl">
-                <p className="text-sm text-blue-800 font-medium mb-1">ייבוא מכל בנק או חברת אשראי</p>
-                <p className="text-xs text-blue-600">
+              <div 
+                className="mt-4 p-3 rounded-xl"
+                style={{
+                  backgroundColor: 'rgba(105, 173, 255, 0.08)',
+                  border: '1px solid rgba(105, 173, 255, 0.15)',
+                }}
+              >
+                <p className="text-sm font-medium mb-1" style={{ color: '#69ADFF' }}>ייבוא מכל בנק או חברת אשראי</p>
+                <p className="text-xs" style={{ color: '#69ADFF' }}>
                   ניתן להעלות קבצי Excel מבנק לאומי, פועלים, דיסקונט, ישראכרט, מקס ועוד.
                 </p>
-                <p className="text-xs text-blue-600 mt-1">
+                <p className="text-xs mt-1" style={{ color: '#69ADFF' }}>
                   המערכת תזהה אוטומטית את מבנה הקובץ ותסווג את העסקאות.
                 </p>
-                <p className="text-xs text-amber-600 mt-2 font-medium">
+                <p className="text-xs mt-2 font-medium" style={{ color: '#F18AB5' }}>
                   💡 לפרטיות מומלץ למחוק עמודות עם מידע אישי (מספר כרטיס, יתרה) לפני ההעלאה.
                 </p>
               </div>
@@ -701,14 +745,14 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
           {/* Processing states */}
           {(phase === 'parsing' || phase === 'classifying' || phase === 'saving') && (
             <div className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
-              <p className="text-slate-700 font-medium">
+              <Loader2 className="w-12 h-12 animate-spin mb-4" style={{ color: '#69ADFF' }} />
+              <p className="font-medium" style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
                 {phase === 'parsing' && 'מנתח את הקובץ...'}
                 {phase === 'classifying' && 'מסווג עסקאות עם AI...'}
                 {phase === 'saving' && 'שומר עסקאות...'}
               </p>
               {phase === 'classifying' && (
-                <p className="text-sm text-slate-500 mt-2">
+                <p className="text-sm mt-2" style={{ color: '#7E7F90' }}>
                   זה עשוי לקחת מספר שניות
                 </p>
               )}
@@ -718,14 +762,20 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
           {/* Review mode */}
           {phase === 'review' && (
             <div className="space-y-4">
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <div 
+                className="rounded-xl p-4"
+                style={{
+                  backgroundColor: 'rgba(241, 138, 181, 0.08)',
+                  border: '1px solid rgba(241, 138, 181, 0.2)',
+                }}
+              >
                 <div className="flex items-start gap-3">
-                  <HelpCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <HelpCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#F18AB5' }} />
                   <div>
-                    <p className="font-medium text-amber-800">
+                    <p className="font-medium" style={{ color: '#F18AB5' }}>
                       נדרשת עזרתך ב-{needsReview.length} עסקאות
                     </p>
-                    <p className="text-sm text-amber-700 mt-1">
+                    <p className="text-sm mt-1" style={{ color: '#F18AB5', opacity: 0.8 }}>
                       ה-AI לא הצליח לזהות את הקטגוריה. בחר קטגוריה לכל עסקה.
                     </p>
                   </div>
@@ -734,11 +784,17 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
 
               {stats && (
                 <div className="flex gap-3 text-sm flex-wrap">
-                  <span className="px-2 py-1 bg-green-100 text-green-700 rounded-lg">
+                  <span 
+                    className="px-2 py-1 rounded-lg"
+                    style={{ backgroundColor: 'rgba(13, 186, 204, 0.15)', color: '#0DBACC' }}
+                  >
                     ✓ {stats.cached + stats.aiClassified} סווגו אוטומטית
                   </span>
                   {stats.parseErrors > 0 && (
-                    <span className="px-2 py-1 bg-red-100 text-red-700 rounded-lg">
+                    <span 
+                      className="px-2 py-1 rounded-lg"
+                      style={{ backgroundColor: 'rgba(241, 138, 181, 0.15)', color: '#F18AB5' }}
+                    >
                       ✗ {stats.parseErrors} שורות לא זוהו
                     </span>
                   )}
@@ -749,37 +805,38 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
               {categoriesLoading ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
-                  <p className="text-slate-700 font-medium">טוען קטגוריות...</p>
+                  <p className="text-[#303150] font-medium">טוען קטגוריות...</p>
                 </div>
               ) : (
                 <>
-                  <div className="hidden md:block border border-slate-200 rounded-xl overflow-hidden">
+                  <div className="hidden md:block rounded-xl overflow-hidden" style={{ border: '1px solid #F7F7F8' }}>
                     <table className="w-full text-sm">
-                      <thead className="bg-slate-50">
+                      <thead style={{ backgroundColor: '#F7F7F8' }}>
                         <tr>
-                          <th className="text-right px-4 py-3 font-medium text-slate-600">עסק</th>
-                          <th className="text-right px-4 py-3 font-medium text-slate-600">סכום</th>
-                          <th className="text-right px-4 py-3 font-medium text-slate-600">תאריך</th>
-                          <th className="text-right px-4 py-3 font-medium text-slate-600 min-w-[160px]">קטגוריה</th>
+                          <th className="text-right px-4 py-3 font-medium" style={{ color: '#7E7F90' }}>עסק</th>
+                          <th className="text-right px-4 py-3 font-medium" style={{ color: '#7E7F90' }}>סכום</th>
+                          <th className="text-right px-4 py-3 font-medium" style={{ color: '#7E7F90' }}>תאריך</th>
+                          <th className="text-right px-4 py-3 font-medium min-w-[160px]" style={{ color: '#7E7F90' }}>קטגוריה</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
+                      <tbody style={{ borderColor: '#F7F7F8' }}>
                         {needsReview.map((t) => (
-                          <tr key={t.rowNum} className="hover:bg-slate-50">
+                          <tr key={t.rowNum} className="hover:bg-[#F7F7F8]" style={{ borderBottom: '1px solid #F7F7F8' }}>
                             <td className="px-4 py-3">
-                              <SensitiveData className="font-medium text-slate-900">
+                              <SensitiveData className="font-medium" style={{ color: '#303150' }}>
                                 {t.merchantName}
                               </SensitiveData>
                             </td>
                             <td className="px-4 py-3">
-                              <SensitiveData className={cn(
-                                'font-medium',
-                                t.type === 'income' ? 'text-green-600' : 'text-red-600'
-                              )}>
-                                {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                              <SensitiveData 
+                                className="font-medium"
+                                style={{ color: t.type === 'income' ? '#0DBACC' : '#F18AB5' }}
+                                dir="ltr"
+                              >
+                                {`${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}`}
                               </SensitiveData>
                             </td>
-                            <td className="px-4 py-3 text-slate-600">
+                            <td className="px-4 py-3" style={{ color: '#7E7F90' }}>
                               {new Date(t.date).toLocaleDateString('he-IL')}
                             </td>
                             <td className="px-4 py-3">
@@ -821,13 +878,21 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
           {/* Done state */}
           {phase === 'done' && (
             <div className="flex flex-col items-center justify-center py-12">
-              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
-                <CheckCircle className="w-8 h-8 text-green-600" />
+              <div 
+                className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                style={{ backgroundColor: 'rgba(13, 186, 204, 0.15)' }}
+              >
+                <CheckCircle className="w-8 h-8" style={{ color: '#0DBACC' }} />
               </div>
-              <h4 className="text-lg font-semibold text-slate-900 mb-2">הייבוא הושלם!</h4>
-              <p className="text-slate-600 text-center">
+              <h4 
+                className="text-lg font-semibold mb-2"
+                style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+              >
+                הייבוא הושלם!
+              </h4>
+              <p className="text-center" style={{ color: '#7E7F90' }}>
                 {savedCount > 0 ? (
-                  <>נשמרו <span className="font-bold text-indigo-600">{savedCount}</span> עסקאות בהצלחה</>
+                  <>נשמרו <span className="font-bold" style={{ color: '#69ADFF' }}>{savedCount}</span> עסקאות בהצלחה</>
                 ) : (
                   'לא נמצאו עסקאות לייבוא'
                 )}
@@ -835,17 +900,26 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
               {stats && (
                 <div className="mt-4 flex flex-wrap gap-2 justify-center">
                   {stats.cached > 0 && (
-                    <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                    <span 
+                      className="px-3 py-1 rounded-full text-sm"
+                      style={{ backgroundColor: 'rgba(105, 173, 255, 0.15)', color: '#69ADFF' }}
+                    >
                       📚 {stats.cached} שמורים
                     </span>
                   )}
                   {stats.aiClassified > 0 && (
-                    <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm">
+                    <span 
+                      className="px-3 py-1 rounded-full text-sm"
+                      style={{ backgroundColor: 'rgba(159, 127, 224, 0.15)', color: '#9F7FE0' }}
+                    >
                       🧠 {stats.aiClassified} סווגו ע&quot;י AI
                     </span>
                   )}
                   {stats.needsReview > 0 && (
-                    <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm">
+                    <span 
+                      className="px-3 py-1 rounded-full text-sm"
+                      style={{ backgroundColor: 'rgba(241, 138, 181, 0.15)', color: '#F18AB5' }}
+                    >
                       ✍️ {stats.needsReview} סווגו ידנית
                     </span>
                   )}
@@ -876,13 +950,21 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
           {/* Error state */}
           {phase === 'error' && (
             <div className="flex flex-col items-center justify-center py-12">
-              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4">
-                <AlertCircle className="w-8 h-8 text-red-600" />
+              <div 
+                className="w-16 h-16 rounded-full flex items-center justify-center mb-4"
+                style={{ backgroundColor: 'rgba(241, 138, 181, 0.15)' }}
+              >
+                <AlertCircle className="w-8 h-8" style={{ color: '#F18AB5' }} />
               </div>
-              <h4 className="text-lg font-semibold text-slate-900 mb-2">שגיאה</h4>
+              <h4 
+                className="text-lg font-semibold mb-2"
+                style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+              >
+                שגיאה
+              </h4>
               <div className="space-y-1 text-center">
                 {errors.map((err, i) => (
-                  <p key={i} className="text-red-600">{err}</p>
+                  <p key={i} style={{ color: '#F18AB5' }}>{err}</p>
                 ))}
               </div>
             </div>
@@ -890,13 +972,19 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
 
           {/* Parse errors list */}
           {errors.length > 0 && phase !== 'error' && (
-            <div className="mt-4 p-3 bg-amber-50 rounded-xl max-h-32 overflow-y-auto border border-amber-200">
-              <p className="text-sm font-medium text-amber-800 mb-1">שורות שלא זוהו:</p>
+            <div 
+              className="mt-4 p-3 rounded-xl max-h-32 overflow-y-auto"
+              style={{
+                backgroundColor: 'rgba(241, 138, 181, 0.08)',
+                border: '1px solid rgba(241, 138, 181, 0.2)',
+              }}
+            >
+              <p className="text-sm font-medium mb-1" style={{ color: '#F18AB5' }}>שורות שלא זוהו:</p>
               {errors.slice(0, 5).map((err, i) => (
-                <p key={i} className="text-xs text-amber-700">{translateError(err)}</p>
+                <p key={i} className="text-xs" style={{ color: '#F18AB5', opacity: 0.8 }}>{translateError(err)}</p>
               ))}
               {errors.length > 5 && (
-                <p className="text-xs text-amber-600 mt-1">
+                <p className="text-xs mt-1" style={{ color: '#F18AB5', opacity: 0.7 }}>
                   ועוד {errors.length - 5} שורות...
                 </p>
               )}

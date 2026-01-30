@@ -42,22 +42,22 @@ const categoryConfig: Record<ContactCategory, {
     icon: Bug,
     label: 'דיווח על באג',
     description: 'משהו לא עובד כמו שצריך?',
-    gradient: 'from-rose-50 to-rose-100',
-    borderColor: 'border-rose-200',
+    gradient: 'from-[#FFC0DB]/30 to-[#F18AB5]/30',
+    borderColor: 'border-[#F18AB5]/50',
   },
   feature: {
     icon: Lightbulb,
     label: 'בקשת תכונה',
     description: 'יש לך רעיון לשיפור?',
-    gradient: 'from-amber-50 to-amber-100',
-    borderColor: 'border-amber-200',
+    gradient: 'from-[#B4F1F1]/30 to-[#0DBACC]/30',
+    borderColor: 'border-[#0DBACC]/50',
   },
   general: {
     icon: MessageSquare,
     label: 'פנייה כללית',
     description: 'כל דבר אחר',
-    gradient: 'from-blue-50 to-blue-100',
-    borderColor: 'border-blue-200',
+    gradient: 'from-[#C1DDFF]/30 to-[#69ADFF]/30',
+    borderColor: 'border-[#69ADFF]/50',
   },
 };
 
@@ -170,8 +170,8 @@ export default function ContactSection() {
       <div className="flex flex-col gap-6">
         {/* Page Title */}
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">צור קשר</h1>
-          <p className="text-slate-600">נשמח לשמוע ממך</p>
+          <h1 className="text-2xl font-bold text-[#303150] mb-2">צור קשר</h1>
+          <p className="text-[#7E7F90]">נשמח לשמוע ממך</p>
         </div>
 
         <Card padding="lg">
@@ -186,7 +186,7 @@ export default function ContactSection() {
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 12 }}
-              className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-emerald-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/25"
+              className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-[#0DBACC] to-[#0DBACC] rounded-full flex items-center justify-center shadow-lg shadow-[#0DBACC]/25"
             >
               <CheckCircle2 className="w-10 h-10 text-white" strokeWidth={2.5} />
             </motion.div>
@@ -196,7 +196,7 @@ export default function ContactSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-2xl font-bold text-slate-900 mb-3"
+              className="text-2xl font-bold text-[#303150] mb-3"
             >
               ההודעה נשלחה בהצלחה!
             </motion.h2>
@@ -205,7 +205,7 @@ export default function ContactSection() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="text-slate-600 mb-6"
+              className="text-[#7E7F90] mb-6"
             >
               תודה שפנית אלינו! נחזור אליך בהקדם האפשרי.
             </motion.p>
@@ -218,7 +218,7 @@ export default function ContactSection() {
             >
               <button
                 onClick={handleReset}
-                className="px-6 py-3 bg-gradient-to-r from-[#2B4699] to-[#3556AB] text-white font-medium rounded-xl hover:opacity-90 transition-opacity"
+                className="px-6 py-3 bg-gradient-to-r from-[#69ADFF] to-[#74ACEF] text-white font-medium rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-[#69ADFF]/25"
               >
                 שלח הודעה נוספת
               </button>
@@ -236,8 +236,8 @@ export default function ContactSection() {
     <div className="flex flex-col gap-6">
       {/* Page Title */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">צור קשר</h1>
-        <p className="text-slate-600">נשמח לשמוע ממך. בחר קטגוריה ושלח לנו הודעה.</p>
+        <h1 className="text-2xl font-bold text-[#303150] mb-2">צור קשר</h1>
+        <p className="text-[#7E7F90]">נשמח לשמוע ממך. בחר קטגוריה ושלח לנו הודעה.</p>
       </div>
 
       <Card padding="lg">
@@ -246,7 +246,7 @@ export default function ContactSection() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Category Selection */}
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-slate-700">
+              <label className="block text-sm font-medium text-[#303150]">
                 מה תרצה לעשות?
               </label>
 
@@ -262,10 +262,10 @@ export default function ContactSection() {
                       type="button"
                       onClick={() => handleCategorySelect(category)}
                       className={`
-                        relative p-4 rounded-2xl border-2 transition-all duration-200
+                        relative p-4 rounded-3xl border-2 transition-all duration-200
                         ${isSelected
                           ? `bg-gradient-to-br ${config.gradient} ${config.borderColor} shadow-lg`
-                          : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
+                          : 'bg-white border-[#E8E8ED] hover:border-[#69ADFF] hover:shadow-md'
                         }
                       `}
                     >
@@ -273,20 +273,20 @@ export default function ContactSection() {
                       {isSelected && (
                         <motion.div
                           layoutId="selected-category"
-                          className="absolute inset-0 rounded-2xl ring-2 ring-[#2B4699] ring-offset-2"
+                          className="absolute inset-0 rounded-3xl ring-2 ring-[#69ADFF] ring-offset-2"
                           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         />
                       )}
 
                       <div className="relative flex flex-col items-center text-center gap-2">
                         <Icon
-                          className={`w-8 h-8 ${isSelected ? 'text-[#2B4699]' : 'text-slate-400'}`}
+                          className={`w-8 h-8 ${isSelected ? 'text-[#69ADFF]' : 'text-[#BDBDCB]'}`}
                           strokeWidth={1.5}
                         />
-                        <span className={`font-semibold ${isSelected ? 'text-slate-900' : 'text-slate-700'}`}>
+                        <span className={`font-semibold ${isSelected ? 'text-[#303150]' : 'text-[#303150]'}`}>
                           {config.label}
                         </span>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-[#7E7F90]">
                           {config.description}
                         </span>
                       </div>
@@ -303,10 +303,10 @@ export default function ContactSection() {
             {/* Subject Input */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <label htmlFor="subject" className="block text-sm font-medium text-slate-700">
+                <label htmlFor="subject" className="block text-sm font-medium text-[#303150]">
                   נושא
                 </label>
-                <span className={`text-xs ${form.subject.length > CONTACT_FORM_LIMITS.subject.max ? 'text-rose-500' : 'text-slate-400'}`}>
+                <span className={`text-xs ${form.subject.length > CONTACT_FORM_LIMITS.subject.max ? 'text-rose-500' : 'text-[#BDBDCB]'}`}>
                   {form.subject.length}/{CONTACT_FORM_LIMITS.subject.max}
                 </span>
               </div>
@@ -321,10 +321,10 @@ export default function ContactSection() {
                 placeholder="תאר בקצרה את הנושא..."
                 className={`
                   w-full px-4 py-3 rounded-xl border-2 transition-colors
-                  focus:outline-none focus:ring-0
+                  focus:outline-none focus:ring-0 placeholder:text-[#BDBDCB]
                   ${touched.subject && errors.subject
                     ? 'border-rose-300 focus:border-rose-400'
-                    : 'border-slate-200 focus:border-[#2B4699]'
+                    : 'border-[#E8E8ED] focus:border-[#69ADFF]'
                   }
                 `}
                 maxLength={CONTACT_FORM_LIMITS.subject.max + 10}
@@ -338,10 +338,10 @@ export default function ContactSection() {
             {/* Message Textarea */}
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <label htmlFor="message" className="block text-sm font-medium text-slate-700">
+                <label htmlFor="message" className="block text-sm font-medium text-[#303150]">
                   הודעה
                 </label>
-                <span className={`text-xs ${form.message.length > CONTACT_FORM_LIMITS.message.max ? 'text-rose-500' : 'text-slate-400'}`}>
+                <span className={`text-xs ${form.message.length > CONTACT_FORM_LIMITS.message.max ? 'text-rose-500' : 'text-[#BDBDCB]'}`}>
                   {form.message.length}/{CONTACT_FORM_LIMITS.message.max}
                 </span>
               </div>
@@ -356,10 +356,10 @@ export default function ContactSection() {
                 rows={6}
                 className={`
                   w-full px-4 py-3 rounded-xl border-2 transition-colors resize-none
-                  focus:outline-none focus:ring-0
+                  focus:outline-none focus:ring-0 placeholder:text-[#BDBDCB]
                   ${touched.message && errors.message
                     ? 'border-rose-300 focus:border-rose-400'
-                    : 'border-slate-200 focus:border-[#2B4699]'
+                    : 'border-[#E8E8ED] focus:border-[#69ADFF]'
                   }
                 `}
                 maxLength={CONTACT_FORM_LIMITS.message.max + 100}
@@ -405,8 +405,8 @@ export default function ContactSection() {
                 w-full py-4 rounded-xl font-semibold text-white text-lg
                 transition-all duration-200 flex items-center justify-center gap-3
                 ${status === 'loading'
-                  ? 'bg-slate-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-[#2B4699] to-[#3556AB] hover:opacity-90 shadow-lg shadow-blue-500/25'
+                  ? 'bg-[#BDBDCB] cursor-not-allowed'
+                  : 'bg-gradient-to-r from-[#69ADFF] to-[#74ACEF] hover:opacity-90 shadow-lg shadow-[#69ADFF]/25'
                 }
               `}
             >
@@ -427,7 +427,7 @@ export default function ContactSection() {
       </Card>
 
       {/* Disclaimer */}
-      <p className="text-xs text-slate-400 text-center">
+      <p className="text-xs text-[#BDBDCB] text-center">
         ההודעות נשלחות לצוות התמיכה שלנו ונענות בהקדם האפשרי.
       </p>
     </div>

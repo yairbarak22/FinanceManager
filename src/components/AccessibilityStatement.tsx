@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { X, Accessibility, Plus, Minus, RotateCcw, Eye, Link2, Pause, Play, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAccessibility } from '@/context/AccessibilityContext';
 
 // Accessibility settings interface
 interface AccessibilitySettings {
@@ -22,7 +23,13 @@ const DEFAULT_SETTINGS: AccessibilitySettings = {
 const STORAGE_KEY = 'neto-accessibility-settings';
 
 export function AccessibilityStatement() {
-  const [isOpen, setIsOpen] = useState(false);
+  const { isAccessibilityOpen: isOpen, closeAccessibility } = useAccessibility();
+  
+  const setIsOpen = (value: boolean) => {
+    if (!value) {
+      closeAccessibility();
+    }
+  };
   const [activeTab, setActiveTab] = useState<'settings' | 'statement'>('settings');
   const [settings, setSettings] = useState<AccessibilitySettings>(DEFAULT_SETTINGS);
   const [mounted, setMounted] = useState(false);
@@ -109,24 +116,6 @@ export function AccessibilityStatement() {
 
   return (
     <>
-      {/* Floating Accessibility Button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className={cn(
-          'fixed bottom-4 left-4 z-40',
-          'w-12 h-12 rounded-full',
-          'bg-indigo-600 hover:bg-indigo-700 text-white',
-          'flex items-center justify-center',
-          'shadow-lg transition-all duration-200',
-          'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500',
-          isModified && 'ring-2 ring-yellow-400 ring-offset-2'
-        )}
-        aria-label="תפריט נגישות"
-        title="תפריט נגישות"
-      >
-        <Accessibility className="w-6 h-6" aria-hidden="true" />
-      </button>
-
       {/* Modal */}
       {isOpen && (
         <div
@@ -358,10 +347,10 @@ export function AccessibilityStatement() {
                       <p>
                         <span className="font-medium">דוא"ל: </span>
                         <a
-                          href="mailto:accessibility@financemanager.co.il"
+                          href="mailto:accessibility@myneto.co.il"
                           className="text-indigo-600 hover:underline"
                         >
-                          accessibility@financemanager.co.il
+                          accessibility@myneto.co.il
                         </a>
                       </p>
                     </div>

@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccountId } from '@/lib/authHelpers';
+import { saveCurrentMonthNetWorth } from '@/lib/netWorthHistory';
 
 export async function PUT(
   request: NextRequest,
@@ -130,6 +131,9 @@ export async function PUT(
       where: sharedWhere,
     });
 
+    // Update net worth history for current month
+    await saveCurrentMonthNetWorth(userId);
+
     return NextResponse.json(liability);
   } catch (error) {
     console.error('Error updating liability:', error);
@@ -157,6 +161,9 @@ export async function DELETE(
     if (result.count === 0) {
       return NextResponse.json({ error: 'Liability not found' }, { status: 404 });
     }
+    
+    // Update net worth history for current month
+    await saveCurrentMonthNetWorth(userId);
     
     return NextResponse.json({ success: true });
   } catch (error) {

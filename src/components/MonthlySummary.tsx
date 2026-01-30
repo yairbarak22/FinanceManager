@@ -45,42 +45,64 @@ export default function MonthlySummary({
 
   return (
     <Card className="flex flex-col" style={{ height: '450px' }}>
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-4 flex-shrink-0">
-        <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
-          <CalendarDays className="w-5 h-5 text-indigo-600" />
-        </div>
-        <h2 className="text-lg font-semibold text-slate-900">סיכום חודשי</h2>
-      </div>
+      {/* Header - Fincheck style */}
+      <h3 
+        className="text-lg font-semibold mb-4 flex-shrink-0"
+        style={{ 
+            fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+          color: 'var(--text-primary, #303150)'
+        }}
+      >
+        סיכום חודשי
+      </h3>
 
-      {/* Overall Summary */}
-      <div className="bg-slate-50 rounded-xl p-4 mb-4 border border-slate-200 flex-shrink-0">
+      {/* Overall Summary - Fincheck style */}
+      <div 
+        className="rounded-2xl p-4 mb-4 flex-shrink-0"
+        style={{ background: 'rgba(105, 173, 255, 0.1)' }}
+      >
         <div className="grid grid-cols-3 gap-3 text-center">
           <div>
-            <p className="text-xs text-slate-500 mb-1">הכנסות</p>
-            <SensitiveData as="p" className="text-sm font-bold text-emerald-600">
+            <p 
+              className="text-xs mb-1"
+              style={{ color: 'var(--text-secondary, #7E7F90)' }}
+            >
+              הכנסות
+            </p>
+            <SensitiveData as="p" className="text-sm font-bold" style={{ color: '#0DBACC' }}>
               {formatCurrency(totalIncome)}
             </SensitiveData>
           </div>
           <div>
-            <p className="text-xs text-slate-500 mb-1">הוצאות</p>
-            <SensitiveData as="p" className="text-sm font-bold text-rose-600">
+            <p 
+              className="text-xs mb-1"
+              style={{ color: 'var(--text-secondary, #7E7F90)' }}
+            >
+              הוצאות
+            </p>
+            <SensitiveData as="p" className="text-sm font-bold" style={{ color: '#F18AB5' }}>
               {formatCurrency(totalExpenses)}
             </SensitiveData>
           </div>
           <div>
-            <p className="text-xs text-slate-500 mb-1">יתרה</p>
-            <SensitiveData as="p" className={cn(
-              'text-sm font-bold',
-              totalBalance >= 0 ? 'text-emerald-600' : 'text-rose-600'
-            )}>
+            <p 
+              className="text-xs mb-1"
+              style={{ color: 'var(--text-secondary, #7E7F90)' }}
+            >
+              יתרה
+            </p>
+            <SensitiveData 
+              as="p" 
+              className="text-sm font-bold"
+              style={{ color: totalBalance >= 0 ? '#0DBACC' : '#F18AB5' }}
+            >
               {formatCurrency(totalBalance)}
             </SensitiveData>
           </div>
         </div>
       </div>
 
-      {/* Monthly Cards - Scrollable area */}
+      {/* Monthly Cards - Scrollable area - Fincheck style */}
       <div className="space-y-2 flex-1 overflow-y-auto min-h-0">
         {summaries.map((summary) => {
           const monthKey = `${summary.year}-${summary.month}`;
@@ -89,27 +111,34 @@ export default function MonthlySummary({
           const isPositive = summary.balance >= 0;
 
           return (
-            <div key={monthKey} className="border border-slate-200 rounded-xl overflow-hidden">
+            <div 
+              key={monthKey} 
+              className="rounded-2xl overflow-hidden"
+              style={{ background: isExpanded ? 'rgba(105, 173, 255, 0.05)' : 'transparent' }}
+            >
               {/* Month Header */}
               <button
                 onClick={() => toggleMonth(monthKey)}
-                className="w-full flex items-center justify-between p-3 hover:bg-slate-50 transition-colors"
+                className="w-full flex items-center justify-between p-3 hover:bg-slate-50 transition-colors rounded-2xl"
               >
                 <div className="flex items-center gap-2">
                   <div
-                    className={cn(
-                      'w-7 h-7 rounded-lg flex items-center justify-center',
-                      isPositive ? 'bg-green-100' : 'bg-red-100'
-                    )}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center"
+                    style={{ 
+                      background: isPositive ? 'rgba(13, 186, 204, 0.15)' : 'rgba(241, 138, 181, 0.15)'
+                    }}
                   >
                     {isPositive ? (
-                      <TrendingUp className="w-3.5 h-3.5 text-green-600" />
+                      <TrendingUp className="w-4 h-4" style={{ color: '#0DBACC' }} />
                     ) : (
-                      <TrendingDown className="w-3.5 h-3.5 text-red-600" />
+                      <TrendingDown className="w-4 h-4" style={{ color: '#F18AB5' }} />
                     )}
                   </div>
                   <div className="text-right">
-                    <p className="font-medium text-slate-900 text-sm">
+                    <p 
+                      className="font-medium text-sm"
+                      style={{ color: 'var(--text-primary, #303150)' }}
+                    >
                       {monthName} {summary.year}
                     </p>
                   </div>
@@ -118,41 +147,43 @@ export default function MonthlySummary({
                 <div className="flex items-center gap-2">
                   <SensitiveData
                     as="p"
-                    className={cn(
-                      'text-sm font-bold',
-                      isPositive ? 'text-green-600' : 'text-red-600'
-                    )}
+                    className="text-sm font-bold"
+                    style={{ color: isPositive ? '#0DBACC' : '#F18AB5' }}
+                    dir="ltr"
                   >
-                    {isPositive ? '+' : ''}{formatCurrency(summary.balance)}
+                    {`${isPositive ? '+' : ''}${formatCurrency(summary.balance)}`}
                   </SensitiveData>
                   {isExpanded ? (
-                    <ChevronUp className="w-4 h-4 text-slate-500" />
+                    <ChevronUp className="w-4 h-4" style={{ color: 'var(--text-secondary, #7E7F90)' }} />
                   ) : (
-                    <ChevronDown className="w-4 h-4 text-slate-500" />
+                    <ChevronDown className="w-4 h-4" style={{ color: 'var(--text-secondary, #7E7F90)' }} />
                   )}
                 </div>
               </button>
 
               {/* Expanded Content */}
               {isExpanded && (
-                <div className="px-3 pb-3 border-t border-gray-100 bg-slate-50">
+                <div className="px-3 pb-3">
                   <div className="grid grid-cols-2 gap-2 pt-3">
                     <div className="text-center">
-                      <p className="text-xs text-slate-500">הכנסות</p>
-                      <SensitiveData as="p" className="text-sm font-semibold text-emerald-600">
+                      <p className="text-xs" style={{ color: 'var(--text-secondary, #7E7F90)' }}>הכנסות</p>
+                      <SensitiveData as="p" className="text-sm font-semibold" style={{ color: '#0DBACC' }}>
                         {formatCurrency(summary.income)}
                       </SensitiveData>
                     </div>
                     <div className="text-center">
-                      <p className="text-xs text-slate-500">הוצאות</p>
-                      <SensitiveData as="p" className="text-sm font-semibold text-rose-600">
+                      <p className="text-xs" style={{ color: 'var(--text-secondary, #7E7F90)' }}>הוצאות</p>
+                      <SensitiveData as="p" className="text-sm font-semibold" style={{ color: '#F18AB5' }}>
                         {formatCurrency(summary.expenses)}
                       </SensitiveData>
                     </div>
                   </div>
                   {summary.savingsRate > 0 && (
                     <div className="mt-2 text-center">
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                      <span 
+                        className="text-xs px-2 py-0.5 rounded-full"
+                        style={{ background: 'rgba(13, 186, 204, 0.15)', color: '#0DBACC' }}
+                      >
                         חיסכון {summary.savingsRate.toFixed(1)}%
                       </span>
                     </div>

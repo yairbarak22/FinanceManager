@@ -38,7 +38,7 @@ export default function NetWorthChart({ data, currentNetWorth, transactionBalanc
 
         {/* Change Badge */}
         <div className={`px-3 py-1.5 rounded-lg ${isPositive ? 'bg-green-100' : 'bg-red-100'}`}>
-          <span className={`text-sm font-medium ${isPositive ? 'text-green-700' : 'text-red-700'}`}>
+          <span className={`text-sm font-medium ${isPositive ? 'text-green-700' : 'text-red-700'}`} dir="ltr">
             {isPositive ? '+' : ''}{changePercent}%
           </span>
         </div>

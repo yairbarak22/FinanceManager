@@ -95,19 +95,19 @@ function StyledSelect({ value, onChange, options, placeholder = 'בחר...' }: S
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm
+          w-full px-4 py-3 bg-white border border-[#E8E8ED] rounded-xl text-sm
           flex items-center justify-between gap-2
-          hover:border-indigo-300 hover:bg-slate-50
-          focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+          hover:border-[#69ADFF] hover:bg-[#F7F7F8]
+          focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent
           transition-all duration-200
-          ${!selectedOption ? 'text-slate-400' : 'text-slate-900'}
+          ${!selectedOption ? 'text-[#BDBDCB]' : 'text-[#303150]'}
         `}
       >
         <span className="flex-1 text-right truncate">
           {selectedOption?.label || placeholder}
         </span>
         <ChevronDown
-          className={`w-4 h-4 text-slate-400 transition-transform flex-shrink-0 ${
+          className={`w-4 h-4 text-[#7E7F90] transition-transform flex-shrink-0 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
@@ -129,7 +129,7 @@ function StyledSelect({ value, onChange, options, placeholder = 'בחר...' }: S
                 left: dropdownStyle.left,
                 width: dropdownStyle.width,
               }}
-              className="z-[12000] bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden"
+              className="z-[12000] bg-white rounded-3xl shadow-xl border border-[#F7F7F8] overflow-hidden"
               dir="rtl"
             >
               <div className="max-h-48 overflow-y-auto py-1">
@@ -143,13 +143,13 @@ function StyledSelect({ value, onChange, options, placeholder = 'בחר...' }: S
                     }}
                     className={`
                       w-full px-4 py-2.5 text-sm flex items-center justify-between gap-2
-                      hover:bg-indigo-50 transition-colors text-right
-                      ${value === option.value ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700'}
+                      hover:bg-[#F7F7F8] transition-colors text-right
+                      ${value === option.value ? 'bg-[#F7F7F8] text-[#69ADFF]' : 'text-[#303150]'}
                     `}
                   >
                     <span className="flex-1">{option.label}</span>
                     {value === option.value && (
-                      <Check className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                      <Check className="w-4 h-4 text-[#69ADFF] flex-shrink-0" />
                     )}
                   </button>
                 ))}
@@ -519,18 +519,18 @@ export default function OnboardingWizard() {
       return (
         <div
           key={field.key}
-          className="bg-slate-50 rounded-xl p-4 border border-slate-100 hover:border-indigo-200 transition-all"
+          className="bg-[#F7F7F8] rounded-xl p-4 border border-[#F7F7F8] hover:border-[#69ADFF] transition-all"
         >
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <FeatureIcon className="w-5 h-5 text-indigo-600" />
+            <div className="w-10 h-10 bg-[#C1DDFF] rounded-xl flex items-center justify-center flex-shrink-0">
+              <FeatureIcon className="w-5 h-5 text-[#69ADFF]" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-slate-900 text-sm">{field.label}</h4>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">{field.helperText}</p>
+              <h4 className="font-semibold text-[#303150] text-sm">{field.label}</h4>
+              <p className="text-xs text-[#7E7F90] mt-1 leading-relaxed">{field.helperText}</p>
               <button
                 onClick={() => field.demoId && handleFeatureDemoClick(field.demoId)}
-                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#69ADFF] text-white text-xs font-medium rounded-lg hover:bg-[#5A9EE6] transition-colors"
               >
                 <Play className="w-3.5 h-3.5" />
                 הראה לי
@@ -548,7 +548,7 @@ export default function OnboardingWizard() {
           ref={(el) => { if (el) fieldRefs.current.set(field.key, el); }}
           className="space-y-2"
         >
-          <label className="block text-sm font-medium text-slate-700">
+          <label className="block text-sm font-medium text-[#303150]">
             {field.label}
             {field.required && <span className="text-rose-500 mr-1">*</span>}
           </label>
@@ -569,7 +569,7 @@ export default function OnboardingWizard() {
           ref={(el) => { if (el) fieldRefs.current.set(field.key, el); }}
           className="space-y-2"
         >
-          <label className="block text-sm font-medium text-slate-700">
+          <label className="block text-sm font-medium text-[#303150]">
             {field.label}
             {field.required && <span className="text-rose-500 mr-1">*</span>}
           </label>
@@ -583,21 +583,21 @@ export default function OnboardingWizard() {
                 handleFieldChange(field.key, cleaned);
               }}
               placeholder={field.placeholder}
-              className={`w-full py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm
-                         hover:border-indigo-300 hover:bg-slate-50
-                         focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+              className={`w-full py-3 bg-white border border-[#E8E8ED] rounded-xl text-[#303150] text-sm
+                         hover:border-[#69ADFF] hover:bg-[#F7F7F8]
+                         focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent
                          transition-all duration-200 text-left
                          ${field.type === 'currency' ? 'pl-10 pr-4' : 'px-4'}`}
               dir="ltr"
             />
             {field.type === 'currency' && (
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium pointer-events-none">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#BDBDCB] text-sm font-medium pointer-events-none">
                 ₪
               </span>
             )}
           </div>
           {field.helperText && (
-            <p className="text-xs text-slate-500">{field.helperText}</p>
+            <p className="text-xs text-[#7E7F90]">{field.helperText}</p>
           )}
         </div>
       );
@@ -610,7 +610,7 @@ export default function OnboardingWizard() {
         ref={(el) => { if (el) fieldRefs.current.set(field.key, el); }}
         className="space-y-2"
       >
-        <label className="block text-sm font-medium text-slate-700">
+        <label className="block text-sm font-medium text-[#303150]">
           {field.label}
           {field.required && <span className="text-rose-500 mr-1">*</span>}
         </label>
@@ -619,14 +619,14 @@ export default function OnboardingWizard() {
           value={value}
           onChange={(e) => handleFieldChange(field.key, e.target.value)}
           placeholder={field.placeholder}
-          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 text-sm
-                     hover:border-indigo-300 hover:bg-slate-50
-                     focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+          className="w-full px-4 py-3 bg-white border border-[#E8E8ED] rounded-xl text-[#303150] text-sm
+                     hover:border-[#69ADFF] hover:bg-[#F7F7F8]
+                     focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent
                      transition-all duration-200"
           dir="rtl"
         />
         {field.helperText && (
-          <p className="text-xs text-slate-500">{field.helperText}</p>
+          <p className="text-xs text-[#7E7F90]">{field.helperText}</p>
         )}
       </div>
     );
@@ -651,11 +651,11 @@ export default function OnboardingWizard() {
       >
         {/* Step Header */}
         <div className="text-center space-y-3">
-          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-indigo-100 to-indigo-50 rounded-2xl flex items-center justify-center shadow-sm">
-            <Icon className="w-8 h-8 text-indigo-600" />
+          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-[#C1DDFF] to-[#69ADFF] rounded-3xl flex items-center justify-center shadow-sm">
+            <Icon className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900">{step.title}</h2>
-          <p className="text-slate-600 text-sm max-w-sm mx-auto leading-relaxed">
+          <h2 className="text-2xl font-bold text-[#303150]">{step.title}</h2>
+          <p className="text-[#7E7F90] text-sm max-w-sm mx-auto leading-relaxed">
             {step.description}
           </p>
         </div>
@@ -698,7 +698,7 @@ export default function OnboardingWizard() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm"
+              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
               onClick={endTour}
             />
 
@@ -711,13 +711,13 @@ export default function OnboardingWizard() {
             className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
           >
             <div
-              className="relative w-full max-w-md h-[600px] bg-white rounded-3xl shadow-2xl border border-slate-100 pointer-events-auto flex flex-col overflow-hidden"
+              className="relative w-full max-w-md h-[600px] bg-white rounded-3xl shadow-2xl border border-[#F7F7F8] pointer-events-auto flex flex-col overflow-hidden"
               dir="rtl"
             >
               {/* Close Button */}
               <button
                 onClick={endTour}
-                className="absolute top-4 left-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all z-10"
+                className="absolute top-4 left-4 p-2 text-[#7E7F90] hover:text-[#303150] hover:bg-[#F7F7F8] rounded-xl transition-all z-10"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -730,7 +730,7 @@ export default function OnboardingWizard() {
               </div>
 
               {/* Footer - Fixed at bottom */}
-              <div className="flex-shrink-0 px-8 pb-6 pt-4 border-t border-slate-100 space-y-3">
+              <div className="flex-shrink-0 px-8 pb-6 pt-4 border-t border-[#F7F7F8] space-y-3">
                 {/* Add button (hidden on features step) */}
                 {currentStep.id !== 'features' && (
                   <motion.button
@@ -738,11 +738,11 @@ export default function OnboardingWizard() {
                     disabled={!areRequiredFieldsFilled() || isSaving}
                     whileHover={areRequiredFieldsFilled() && !isSaving ? { scale: 1.02 } : {}}
                     whileTap={areRequiredFieldsFilled() && !isSaving ? { scale: 0.98 } : {}}
-                    className={`w-full py-4 px-6 font-semibold rounded-2xl
+                    className={`w-full py-4 px-6 font-semibold rounded-xl
                                flex items-center justify-center gap-2 transition-all duration-200
                                ${areRequiredFieldsFilled() && !isSaving
-                                 ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 cursor-pointer'
-                                 : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                 ? 'bg-gradient-to-r from-[#69ADFF] to-[#74ACEF] text-white shadow-lg shadow-[#69ADFF]/25 hover:shadow-xl hover:shadow-[#69ADFF]/30 cursor-pointer'
+                                 : 'bg-[#F7F7F8] text-[#BDBDCB] cursor-not-allowed'
                                }`}
                   >
                     <span>לחץ כאן כדי להוסיף עכשיו</span>
@@ -760,8 +760,8 @@ export default function OnboardingWizard() {
                     onClick={endTour}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="w-full py-4 px-6 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-semibold rounded-2xl
-                               shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30
+                    className="w-full py-4 px-6 bg-gradient-to-r from-[#0DBACC] to-[#0DBACC] text-white font-semibold rounded-xl
+                               shadow-lg shadow-[#0DBACC]/25 hover:shadow-xl hover:shadow-[#0DBACC]/30
                                flex items-center justify-center gap-2 transition-all duration-200"
                   >
                     <Check className="w-5 h-5" />
@@ -779,8 +779,8 @@ export default function OnboardingWizard() {
                     className={`flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-xl transition-all
                       ${
                         isFirstStep
-                          ? 'text-slate-300 cursor-not-allowed'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                          ? 'text-[#BDBDCB] cursor-not-allowed'
+                          : 'text-[#7E7F90] hover:text-[#303150] hover:bg-[#F7F7F8]'
                       }`}
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -797,10 +797,10 @@ export default function OnboardingWizard() {
                           scale: index === currentStepIndex ? 1.2 : 1,
                           backgroundColor:
                             index === currentStepIndex
-                              ? '#6366f1'
+                              ? '#69ADFF'
                               : index < currentStepIndex
-                              ? '#a5b4fc'
-                              : '#e2e8f0',
+                              ? '#0DBACC'
+                              : '#BDBDCB',
                         }}
                         className="w-2 h-2 rounded-full"
                       />
@@ -810,7 +810,7 @@ export default function OnboardingWizard() {
                   {/* Next/Skip Button */}
                   <button
                     onClick={isLastStep ? endTour : goToNextStep}
-                    className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all"
+                    className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-[#7E7F90] hover:text-[#303150] hover:bg-[#F7F7F8] rounded-xl transition-all"
                   >
                     {isLastStep ? 'סיום' : 'דלג'}
                     <ChevronLeft className="w-4 h-4" />

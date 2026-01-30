@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { RecurringTransaction } from '@/lib/types';
 import { CategoryInfo } from '@/lib/categories';
 import CategorySelect from '@/components/ui/CategorySelect';
@@ -11,7 +11,7 @@ import AddCategoryModal from '@/components/ui/AddCategoryModal';
 interface RecurringModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (transaction: Omit<RecurringTransaction, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  onSave: (transaction: Omit<RecurringTransaction, 'id' | 'createdAt' | 'updatedAt'>) => void | Promise<void>;
   transaction?: RecurringTransaction | null;
   expenseCategories: { default: CategoryInfo[]; custom: CategoryInfo[] };
   incomeCategories: { default: CategoryInfo[]; custom: CategoryInfo[] };
@@ -34,6 +34,7 @@ export default function RecurringModal({
   const [isActive, setIsActive] = useState(true);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Set mounted state for portal
   useEffect(() => {
@@ -58,16 +59,23 @@ export default function RecurringModal({
 
   const currentCategories = type === 'income' ? incomeCategories : expenseCategories;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({
-      type,
-      amount: parseFloat(amount),
-      category,
-      name,
-      isActive,
-    });
-    onClose();
+    setIsLoading(true);
+    try {
+      await onSave({
+        type,
+        amount: parseFloat(amount),
+        category,
+        name,
+        isActive,
+      });
+      onClose();
+    } catch (error) {
+      // Error handling is done in the parent component
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleAddCategory = async (categoryName: string) => {
@@ -91,15 +99,21 @@ export default function RecurringModal({
           height: '100vh',
           zIndex: 9999
         }}
-        onClick={onClose}
+        onClick={() => !isLoading && onClose()}
       >
         <div className="modal-content animate-scale-in" onClick={(e) => e.stopPropagation()}>
           {/* Header */}
           <div className="modal-header">
-            <h2 className="text-xl font-bold text-slate-900">
+            <h2 
+              className="text-xl font-bold"
+              style={{ 
+                color: '#303150', 
+                fontFamily: 'var(--font-nunito), system-ui, sans-serif' 
+              }}
+            >
               {transaction ? 'עריכת עסקה קבועה' : 'עסקה קבועה חדשה'}
             </h2>
-            <button onClick={onClose} className="btn-icon">
+            <button onClick={onClose} className="btn-icon" disabled={isLoading}>
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -117,10 +131,12 @@ export default function RecurringModal({
                       setType('expense');
                       setCategory('');
                     }}
-                    className={`py-3 px-4 rounded-xl font-medium transition-all ${type === 'expense'
-                      ? 'bg-indigo-500 text-white'
-                      : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
-                      }`}
+                    className="py-3 px-4 rounded-xl font-medium transition-all"
+                    style={{
+                      backgroundColor: type === 'expense' ? '#F18AB5' : '#F7F7F8',
+                      color: type === 'expense' ? '#FFFFFF' : '#7E7F90',
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    }}
                   >
                     הוצאה
                   </button>
@@ -130,10 +146,12 @@ export default function RecurringModal({
                       setType('income');
                       setCategory('');
                     }}
-                    className={`py-3 px-4 rounded-xl font-medium transition-all ${type === 'income'
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-gray-100 text-slate-600 hover:bg-gray-200'
-                      }`}
+                    className="py-3 px-4 rounded-xl font-medium transition-all"
+                    style={{
+                      backgroundColor: type === 'income' ? '#0DBACC' : '#F7F7F8',
+                      color: type === 'income' ? '#FFFFFF' : '#7E7F90',
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    }}
                   >
                     הכנסה
                   </button>
@@ -200,11 +218,15 @@ export default function RecurringModal({
 
             {/* Footer */}
             <div className="modal-footer">
-              <button type="button" onClick={onClose} className="btn-secondary flex-1">
+              <button type="button" onClick={onClose} className="btn-secondary flex-1" disabled={isLoading}>
                 ביטול
               </button>
-              <button type="submit" className="btn-primary flex-1">
-                {transaction ? 'עדכן' : 'הוסף'}
+              <button type="submit" className="btn-primary flex-1" disabled={isLoading}>
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                ) : (
+                  transaction ? 'עדכן' : 'הוסף'
+                )}
               </button>
             </div>
           </form>

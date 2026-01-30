@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Heebo, Inter } from "next/font/google";
+import { Heebo, Inter, Nunito } from "next/font/google";
 import Script from "next/script";
 import Providers from "@/components/Providers";
-import AIChatProvider from "@/components/ai/AIChatProvider";
 import { OnboardingProvider } from "@/context/OnboardingContext";
+import { AccessibilityProvider } from "@/context/AccessibilityContext";
 import OnboardingLayer from "@/components/onboarding/OnboardingLayer";
 import Analytics from "@/components/Analytics";
 import CookieConsent from "@/components/CookieConsent";
@@ -21,6 +21,13 @@ const heebo = Heebo({
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+const nunito = Nunito({
+  subsets: ["latin", "hebrew"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-nunito",
   display: "swap",
 });
 
@@ -128,18 +135,18 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${heebo.variable} ${inter.variable} font-sans antialiased`}>
+      <body className={`${heebo.variable} ${inter.variable} ${nunito.variable} font-sans antialiased`}>
         <SkipToContent />
         <Providers>
-          <OnboardingProvider>
-            <AIChatProvider>
+          <AccessibilityProvider>
+            <OnboardingProvider>
               {children}
-            </AIChatProvider>
-            <OnboardingLayer />
-          </OnboardingProvider>
-          <Analytics />
-          <CookieConsent />
-          <AccessibilityStatement />
+              <OnboardingLayer />
+            </OnboardingProvider>
+            <Analytics />
+            <CookieConsent />
+            <AccessibilityStatement />
+          </AccessibilityProvider>
         </Providers>
       </body>
     </html>

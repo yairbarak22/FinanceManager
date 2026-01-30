@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccount, getSharedUserIds } from '@/lib/authHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { saveAssetHistory } from '@/lib/assetHistory';
+import { saveCurrentMonthNetWorth } from '@/lib/netWorthHistory';
 
 export async function GET(request: NextRequest) {
   try {
@@ -109,6 +110,9 @@ export async function POST(request: NextRequest) {
     
     // Save initial value to history for current month
     await saveAssetHistory(asset.id, body.value);
+    
+    // Update net worth history for current month
+    await saveCurrentMonthNetWorth(userId);
     
     return NextResponse.json(asset);
   } catch (error) {

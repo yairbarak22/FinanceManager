@@ -62,18 +62,18 @@ const CompoundInterest = forwardRef<HTMLDivElement, CompoundInterestProps>(({ id
     <div ref={ref} id={id}>
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
-          <Calculator className="w-5 h-5 text-emerald-600" />
+        <div className="w-10 h-10 bg-[#B4F1F1] rounded-xl flex items-center justify-center">
+          <Calculator className="w-5 h-5 text-[#0DBACC]" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-slate-900">מחשבון ריבית דריבית</h2>
-          <p className="text-sm text-slate-500">גלה כמה הכסף שלך יכול לצמוח עם הזמן</p>
+          <h2 className="text-lg font-semibold text-[#303150]">מחשבון ריבית דריבית</h2>
+          <p className="text-sm text-[#7E7F90]">גלה כמה הכסף שלך יכול לצמוח עם הזמן</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Sliders */}
-        <div className="space-y-6 bg-slate-50 rounded-2xl p-5">
+        <div className="space-y-6 bg-[#F7F7F8] rounded-3xl p-5">
           <CurrencySlider
             label="הון התחלתי"
             value={initialDeposit}
@@ -110,9 +110,9 @@ const CompoundInterest = forwardRef<HTMLDivElement, CompoundInterestProps>(({ id
           />
 
           {/* Quick tip */}
-          <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-xl border border-amber-100">
+          <div className="flex items-start gap-2 p-3 bg-[#FFE5B4]/30 rounded-xl border border-[#FFB84D]/50">
             <Sparkles className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-800">
+            <p className="text-xs text-[#303150]">
               <strong>טיפ:</strong> תשואה ממוצעת היסטורית של S&P 500 היא כ-7% אחרי אינפלציה.
             </p>
           </div>
@@ -121,37 +121,37 @@ const CompoundInterest = forwardRef<HTMLDivElement, CompoundInterestProps>(({ id
         {/* Chart & Results */}
         <div className="space-y-4">
           {/* Chart */}
-          <div className="bg-slate-50 rounded-2xl p-4">
+          <div className="bg-[#F7F7F8] rounded-3xl p-4">
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={calculationData}>
                   <defs>
                     <linearGradient id="principalGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#94a3b8" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#94a3b8" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#7E7F90" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#7E7F90" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="interestGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#0DBACC" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#0DBACC" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <XAxis 
                     dataKey="year" 
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#94a3b8', fontSize: 11 }}
+                    tick={{ fill: '#7E7F90', fontSize: 11 }}
                   />
                   <YAxis 
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#94a3b8', fontSize: 11 }}
+                    tick={{ fill: '#7E7F90', fontSize: 11 }}
                     tickFormatter={(value) => `₪${(value / 1000).toFixed(0)}K`}
                     width={50}
                   />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: 'white',
-                      border: '1px solid #e2e8f0',
+                      border: '1px solid #E8E8ED',
                       borderRadius: '12px',
                       boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
                       direction: 'rtl',
@@ -166,7 +166,7 @@ const CompoundInterest = forwardRef<HTMLDivElement, CompoundInterestProps>(({ id
                     type="monotone"
                     dataKey="principal"
                     stackId="1"
-                    stroke="#94a3b8"
+                    stroke="#7E7F90"
                     strokeWidth={2}
                     fill="url(#principalGradient)"
                   />
@@ -174,7 +174,7 @@ const CompoundInterest = forwardRef<HTMLDivElement, CompoundInterestProps>(({ id
                     type="monotone"
                     dataKey="interest"
                     stackId="1"
-                    stroke="#10b981"
+                    stroke="#0DBACC"
                     strokeWidth={2}
                     fill="url(#interestGradient)"
                   />
@@ -183,27 +183,27 @@ const CompoundInterest = forwardRef<HTMLDivElement, CompoundInterestProps>(({ id
             </div>
 
             {/* Legend */}
-            <div className="flex justify-center gap-4 mt-3 pt-3 border-t border-slate-200">
+            <div className="flex justify-center gap-4 mt-3 pt-3 border-t border-[#E8E8ED]">
               <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-                <span className="text-xs text-slate-600">הכסף שלך</span>
+                <div className="w-2.5 h-2.5 rounded-full bg-[#7E7F90]" />
+                <span className="text-xs text-[#7E7F90]">הכסף שלך</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                <span className="text-xs text-slate-600">רווחים</span>
+                <div className="w-2.5 h-2.5 rounded-full bg-[#0DBACC]" />
+                <span className="text-xs text-[#7E7F90]">רווחים</span>
               </div>
             </div>
           </div>
 
           {/* Results Summary */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 text-white">
+          <div className="bg-gradient-to-br from-[#303150] to-[#303150] rounded-3xl p-5 text-white">
             <div className="flex items-center gap-2 mb-3">
-              <TrendingUp className="w-4 h-4 text-emerald-400" />
-              <span className="text-sm font-medium text-slate-300">התוצאה שלך</span>
+              <TrendingUp className="w-4 h-4 text-[#0DBACC]" />
+              <span className="text-sm font-medium text-[#BDBDCB]">התוצאה שלך</span>
             </div>
 
             <div>
-              <p className="text-xs text-slate-400 mb-1">סך הכל אחרי {years} שנים</p>
+              <p className="text-xs text-[#BDBDCB] mb-1">סך הכל אחרי {years} שנים</p>
               <p className="text-2xl font-bold text-white mb-3">
                 {formatCurrency(finalData.total)}
               </p>
@@ -211,22 +211,22 @@ const CompoundInterest = forwardRef<HTMLDivElement, CompoundInterestProps>(({ id
 
             <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/10">
               <div>
-                <p className="text-xs text-slate-400 mb-0.5">הכסף שלך</p>
-                <p className="text-sm font-semibold text-slate-200">
+                <p className="text-xs text-[#BDBDCB] mb-0.5">הכסף שלך</p>
+                <p className="text-sm font-semibold text-[#F7F7F8]">
                   {formatCurrency(finalData.principal)}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-slate-400 mb-0.5">רווחים</p>
-                <p className="text-sm font-semibold text-emerald-400">
+                <p className="text-xs text-[#BDBDCB] mb-0.5">רווחים</p>
+                <p className="text-sm font-semibold text-[#0DBACC]">
                   {formatCurrency(finalData.interest)}
                 </p>
               </div>
             </div>
 
             {interestPercentage > 0 && (
-              <p className="text-xs text-slate-300 mt-3 pt-3 border-t border-white/10">
-                <span className="text-emerald-400 font-bold">{interestPercentage}%</span> מהכסף הזה הוא רווחים!
+              <p className="text-xs text-[#BDBDCB] mt-3 pt-3 border-t border-white/10">
+                <span className="text-[#0DBACC] font-bold">{interestPercentage}%</span> מהכסף הזה הוא רווחים!
               </p>
             )}
           </div>

@@ -18,7 +18,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { Resend } from 'resend';
 import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rateLimit';
-import { validateContactForm, ContactCategory } from '@/lib/contactValidation';
+import { validateContactForm, ContactCategory, escapeHtml } from '@/lib/contactValidation';
 import { logAuditEvent, AuditAction } from '@/lib/auditLog';
 import { config } from '@/lib/config';
 
@@ -84,6 +84,14 @@ async function sendContactEmail(submission: ContactSubmission): Promise<boolean>
     return false;
   }
 
+  // SECURITY: Escape all user-provided data before inserting into HTML
+  const safeSubject = escapeHtml(submission.subject);
+  const safeMessage = escapeHtml(submission.message);
+  const safeUserEmail = escapeHtml(submission.userEmail);
+  const safeUserId = escapeHtml(submission.userId || 'אורח');
+  const safeTimestamp = escapeHtml(submission.timestamp.toLocaleString('he-IL'));
+  const safeIpAddress = escapeHtml(submission.ipAddress);
+
   try {
     await resendClient.emails.send({
       from: 'NETO Contact <onboarding@resend.dev>',
@@ -106,11 +114,11 @@ async function sendContactEmail(submission: ContactSubmission): Promise<boolean>
             </div>
 
             <!-- Subject -->
-            <h2 style="color: #f1f5f9; margin: 0 0 16px 0; font-size: 20px;">${submission.subject}</h2>
+            <h2 style="color: #f1f5f9; margin: 0 0 16px 0; font-size: 20px;">${safeSubject}</h2>
             
             <!-- Message -->
             <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-              <p style="color: #cbd5e1; line-height: 1.8; margin: 0; white-space: pre-wrap;">${submission.message}</p>
+              <p style="color: #cbd5e1; line-height: 1.8; margin: 0; white-space: pre-wrap;">${safeMessage}</p>
             </div>
             
             <!-- User Info -->
@@ -120,20 +128,20 @@ async function sendContactEmail(submission: ContactSubmission): Promise<boolean>
                 ${submission.userEmail ? `
                 <tr>
                   <td style="color: #64748b; font-size: 13px; padding: 4px 0;">אימייל:</td>
-                  <td style="color: #e2e8f0; font-size: 13px; padding: 4px 0;"><a href="mailto:${submission.userEmail}" style="color: #60a5fa;">${submission.userEmail}</a></td>
+                  <td style="color: #e2e8f0; font-size: 13px; padding: 4px 0;"><a href="mailto:${safeUserEmail}" style="color: #60a5fa;">${safeUserEmail}</a></td>
                 </tr>
                 ` : ''}
                 <tr>
                   <td style="color: #64748b; font-size: 13px; padding: 4px 0;">מזהה משתמש:</td>
-                  <td style="color: #e2e8f0; font-size: 13px; padding: 4px 0;">${submission.userId || 'אורח'}</td>
+                  <td style="color: #e2e8f0; font-size: 13px; padding: 4px 0;">${safeUserId}</td>
                 </tr>
                 <tr>
                   <td style="color: #64748b; font-size: 13px; padding: 4px 0;">תאריך:</td>
-                  <td style="color: #e2e8f0; font-size: 13px; padding: 4px 0;">${submission.timestamp.toLocaleString('he-IL')}</td>
+                  <td style="color: #e2e8f0; font-size: 13px; padding: 4px 0;">${safeTimestamp}</td>
                 </tr>
                 <tr>
                   <td style="color: #64748b; font-size: 13px; padding: 4px 0;">IP:</td>
-                  <td style="color: #e2e8f0; font-size: 13px; padding: 4px 0;">${submission.ipAddress}</td>
+                  <td style="color: #e2e8f0; font-size: 13px; padding: 4px 0;">${safeIpAddress}</td>
                 </tr>
               </table>
             </div>
