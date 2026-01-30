@@ -179,6 +179,28 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     setIsCursorClicking(false);
     setIsWizardOpen(false);
 
+    // First, fill any empty steps with demo data
+    try {
+      const fillResponse = await fetch('/api/onboarding/fill-empty-steps', {
+        method: 'POST',
+        headers: {
+          'X-CSRF-Protection': '1',
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (fillResponse.ok) {
+        const fillData = await fillResponse.json();
+        if (fillData.filledSteps) {
+          console.debug('[Onboarding] Filled empty steps with demo data:', fillData.data);
+          // Trigger dashboard data refresh
+          window.dispatchEvent(new CustomEvent('onboarding-data-added'));
+        }
+      }
+    } catch (error) {
+      console.error('[Onboarding] Failed to fill empty steps:', error);
+    }
+
     // Mark onboarding as completed in the database with retry logic
     let success = false;
     let attempts = 0;

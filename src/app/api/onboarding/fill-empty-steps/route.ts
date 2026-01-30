@@ -1,6 +1,6 @@
 /**
- * Demo Data API for Onboarding
- * Creates sample data for users who want to start with demo data
+ * Fill Empty Steps API for Onboarding
+ * Called automatically when user completes onboarding to fill any empty steps with demo data
  * Only adds data for categories that don't already have data
  */
 
@@ -161,7 +161,7 @@ async function createDemoTransactionsIfEmpty(userId: string): Promise<number> {
   return 2;
 }
 
-// POST - Create demo data for the user (only for empty categories)
+// POST - Fill empty onboarding steps with demo data
 export async function POST() {
   try {
     const { userId, error } = await requireAuth();
@@ -184,18 +184,11 @@ export async function POST() {
       await saveCurrentMonthNetWorth(userId);
     }
 
-    // Mark onboarding as complete
-    await prisma.user.update({
-      where: { id: userId },
-      data: { hasSeenOnboarding: true },
-    });
-
-    // Dispatch event to trigger dashboard data refresh
     const totalAdded = assetsAdded + liabilitiesAdded + recurringAdded + transactionsAdded;
 
     return NextResponse.json({ 
       success: true,
-      message: totalAdded > 0 ? 'נתוני הדמה נוספו בהצלחה!' : 'כבר קיימים נתונים במערכת',
+      filledSteps: totalAdded > 0,
       data: {
         assets: assetsAdded,
         liabilities: liabilitiesAdded,
@@ -204,7 +197,8 @@ export async function POST() {
       },
     });
   } catch (error) {
-    console.error('Error creating demo data:', error);
-    return NextResponse.json({ error: 'Failed to create demo data' }, { status: 500 });
+    console.error('Error filling empty steps:', error);
+    return NextResponse.json({ error: 'Failed to fill empty steps' }, { status: 500 });
   }
 }
+
