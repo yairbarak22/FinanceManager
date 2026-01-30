@@ -269,7 +269,7 @@ async function mapColumnsWithAI(
     console.log('[AI Column Mapping] Sample:', sampleStr);
 
     const response = await generateText({
-      model: groq('llama-3.3-70b-versatile'),
+      model: groq('meta-llama/llama-4-scout-17b-16e-instruct'),
       system: COLUMN_MAPPING_PROMPT,
       messages: [{
         role: 'user',
@@ -723,7 +723,7 @@ async function classifyMerchantsWithAI(
     console.log('[AI Classification] Starting classification for', merchants.length, 'merchants');
 
     const response = await generateText({
-      model: groq('llama-3.3-70b-versatile'),
+      model: groq('meta-llama/llama-4-scout-17b-16e-instruct'),
       system: CLASSIFICATION_PROMPT,
       messages: [{
         role: 'user',

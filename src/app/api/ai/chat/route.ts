@@ -105,7 +105,7 @@ export async function POST(request: Request) {
 
     // Generate response using Groq with Llama 3.3
     const result = await generateText({
-      model: groq('llama-3.3-70b-versatile'),
+      model: groq('meta-llama/llama-4-scout-17b-16e-instruct'),
       system: BASE_SYSTEM_PROMPT + contextString,
       messages,
     });
