@@ -79,9 +79,16 @@ const HEADER_KEYWORDS = [
 /**
  * Find ALL header rows in the file (for multi-table files like Bank Leumi)
  * Returns array of row indices that appear to be headers
+ * 
+ * Improved logic:
+ * - Skip rows that are too long (likely explanation text)
+ * - Require at least 2 non-empty cells
+ * - Verify next row has data (real headers have data below them)
  */
 function findAllHeaderRows(rows: unknown[][]): number[] {
   const MIN_MATCHES = 3; // Minimum keywords to consider a header row
+  const MAX_HEADER_LENGTH = 200; // Skip rows longer than this (likely explanation text)
+  const MIN_NON_EMPTY_CELLS = 2; // Minimum non-empty cells for a valid header
   const headerRows: number[] = [];
   
   for (let i = 0; i < rows.length; i++) {
@@ -93,13 +100,39 @@ function findAllHeaderRows(rows: unknown[][]): number[] {
       .map(cell => String(cell || '').toLowerCase())
       .join(' ');
     
+    // Skip rows that are too long (likely explanation text, not headers)
+    if (rowText.length > MAX_HEADER_LENGTH) {
+      continue;
+    }
+    
+    // Check that there are at least MIN_NON_EMPTY_CELLS non-empty cells
+    const nonEmptyCells = row.filter(cell => 
+      cell !== null && 
+      cell !== undefined && 
+      String(cell).trim().length > 0
+    ).length;
+    
+    if (nonEmptyCells < MIN_NON_EMPTY_CELLS) {
+      continue;
+    }
+    
     // Count keyword matches
     const matches = HEADER_KEYWORDS.filter(kw => 
       rowText.includes(kw.toLowerCase())
     ).length;
     
     if (matches >= MIN_MATCHES) {
-      headerRows.push(i);
+      // Verify next row has data (real headers have data below them)
+      const nextRow = rows[i + 1];
+      const hasNextRowData = nextRow && nextRow.some(cell => 
+        cell !== null && 
+        cell !== undefined && 
+        String(cell).trim().length > 0
+      );
+      
+      if (hasNextRowData) {
+        headerRows.push(i);
+      }
     }
   }
   
@@ -113,11 +146,38 @@ function findAllHeaderRows(rows: unknown[][]): number[] {
       if (!row || row.length === 0) continue;
       
       const rowText = row.map(cell => String(cell || '').toLowerCase()).join(' ');
+      
+      // Skip rows that are too long
+      if (rowText.length > MAX_HEADER_LENGTH) {
+        continue;
+      }
+      
+      // Check non-empty cells
+      const nonEmptyCells = row.filter(cell => 
+        cell !== null && 
+        cell !== undefined && 
+        String(cell).trim().length > 0
+      ).length;
+      
+      if (nonEmptyCells < MIN_NON_EMPTY_CELLS) {
+        continue;
+      }
+      
       const matches = HEADER_KEYWORDS.filter(kw => rowText.includes(kw.toLowerCase())).length;
       
       if (matches > maxMatches) {
-        maxMatches = matches;
-        bestRowIndex = i;
+        // Verify next row has data
+        const nextRow = rows[i + 1];
+        const hasNextRowData = nextRow && nextRow.some(cell => 
+          cell !== null && 
+          cell !== undefined && 
+          String(cell).trim().length > 0
+        );
+        
+        if (hasNextRowData) {
+          maxMatches = matches;
+          bestRowIndex = i;
+        }
       }
     }
     
@@ -160,21 +220,47 @@ const COLUMN_MAPPING_PROMPT = `אתה ממפה עמודות בקובץ אקסל 
    חפש: "שם בית עסק", "שם העסק", "תיאור", "פרטים", "שם", "עסק", "merchant", "description", "פירוט"
 
 כללים:
-- החזר JSON בלבד, ללא הסברים
+- **חשוב מאוד:** החזר JSON בלבד, ללא הסברים או טקסט נוסף לפני או אחרי
 - אם לא מצאת עמודה, החזר -1
-- התבסס גם על תוכן שורת הדוגמה (תאריכים נראים כמו 01/12/2024, סכומים כמו 150.00)
+- התבסס גם על תוכן שורת הדוגמה (תאריכים נראים כמו 01/12/2024 או 01.01.26, סכומים כמו 150.00)
+- אם שורת הכותרות ארוכה מדי (מעל 500 תווים) או שורת הדוגמה ריקה - החזר {"dateIndex": -1, "amountIndex": -1, "merchantIndex": -1}
+- לא לכתוב הסברים, רק JSON!
 
 החזר בפורמט:
 {"dateIndex": X, "amountIndex": Y, "merchantIndex": Z}`;
 
 /**
  * Use AI to identify column indices from header + sample row
+ * 
+ * Improved logic:
+ * - Early validation: skip AI if sample row is empty or header is too long
+ * - Better JSON extraction from text responses
+ * - Recovery mechanism if JSON parsing fails
  */
 async function mapColumnsWithAI(
   headerRow: unknown[],
   sampleRow: unknown[]
 ): Promise<ColumnMapping | null> {
   try {
+    // Early validation: check if sample row has data
+    const hasSampleData = sampleRow.some(cell => 
+      cell !== null && 
+      cell !== undefined && 
+      String(cell).trim().length > 0
+    );
+    
+    if (!hasSampleData) {
+      console.log('[AI Column Mapping] Sample row is empty, skipping AI');
+      return null;
+    }
+    
+    // Early validation: check if header is not too long
+    const headerText = headerRow.map(h => String(h || '')).join(' ');
+    if (headerText.length > 500) {
+      console.log('[AI Column Mapping] Header too long (>500 chars), skipping AI');
+      return null;
+    }
+    
     const headerStr = headerRow.map((h, i) => `[${i}] ${String(h || '')}`).join(', ');
     const sampleStr = sampleRow.map((s, i) => `[${i}] ${String(s || '')}`).join(', ');
 
@@ -196,13 +282,45 @@ async function mapColumnsWithAI(
     // Parse JSON response
     let jsonStr = response.text.trim();
 
-    // Handle markdown code blocks
-    if (jsonStr.includes('```')) {
-      const match = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (match) jsonStr = match[1].trim();
+    // Check if response starts with JSON
+    if (!jsonStr.startsWith('{') && !jsonStr.startsWith('[')) {
+      console.warn('[AI Column Mapping] Response does not start with { or [, attempting to extract JSON');
+      // Try to find JSON in the text
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonStr = jsonMatch[0];
+      } else {
+        console.error('[AI Column Mapping] No JSON found in response');
+        return null;
+      }
     }
 
-    const mapping = JSON.parse(jsonStr) as ColumnMapping;
+    // Handle markdown code blocks
+    if (jsonStr.includes('```')) {
+      const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) jsonStr = codeBlockMatch[1].trim();
+    }
+
+    // Try to parse JSON with recovery
+    let mapping: ColumnMapping;
+    try {
+      mapping = JSON.parse(jsonStr) as ColumnMapping;
+    } catch (parseError) {
+      // Recovery: try to find JSON in the original response
+      console.warn('[AI Column Mapping] JSON parse failed, attempting recovery');
+      const jsonMatch = response.text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          mapping = JSON.parse(jsonMatch[0]) as ColumnMapping;
+          console.log('[AI Column Mapping] Recovered mapping from text');
+        } catch (recoveryError) {
+          console.error('[AI Column Mapping] Recovery also failed');
+          throw parseError;
+        }
+      } else {
+        throw parseError;
+      }
+    }
 
     // Validate the mapping
     if (
@@ -221,7 +339,6 @@ async function mapColumnsWithAI(
     console.error('[AI Column Mapping] Error details:', {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
     });
     return null;
   }
@@ -230,6 +347,11 @@ async function mapColumnsWithAI(
 /**
  * Fallback: Try to find columns using simple heuristics
  * Priority for amount: "סכום חיוב" > "חיוב" > "סכום" (to handle installment transactions)
+ * 
+ * Improved logic:
+ * - Validates mapping before returning
+ * - Ensures all indices are different
+ * - Better logging for debugging
  */
 function findColumnsFallback(headerRow: unknown[]): ColumnMapping {
   let dateIndex = -1;
@@ -267,11 +389,54 @@ function findColumnsFallback(headerRow: unknown[]): ColumnMapping {
     }
   }
   
-  // If still not found, use defaults
+  // Validate that we found valid, unique columns
+  const allFound = dateIndex !== -1 && amountIndex !== -1 && merchantIndex !== -1;
+  const allDifferent = dateIndex !== amountIndex && dateIndex !== merchantIndex && amountIndex !== merchantIndex;
+  
+  if (allFound && allDifferent) {
+    console.log('[Fallback] Found valid mapping:', { dateIndex, amountIndex, merchantIndex });
+    return { dateIndex, amountIndex, merchantIndex };
+  }
+  
+  // If no columns found at all, use sensible defaults
+  if (dateIndex === -1 && amountIndex === -1 && merchantIndex === -1) {
+    console.warn('[Fallback] No columns found, using defaults (0, 1, 2)');
+    return { dateIndex: 0, amountIndex: 1, merchantIndex: 2 };
+  }
+  
+  // Fill in missing columns with unique indices
+  const usedIndices = new Set<number>();
+  if (dateIndex !== -1) usedIndices.add(dateIndex);
+  if (amountIndex !== -1) usedIndices.add(amountIndex);
+  if (merchantIndex !== -1) usedIndices.add(merchantIndex);
+  
+  // Find available indices
+  const availableIndices: number[] = [];
+  for (let i = 0; i < Math.max(headerRow.length, 3); i++) {
+    if (!usedIndices.has(i)) {
+      availableIndices.push(i);
+    }
+  }
+  
+  // Fill in missing values
+  if (merchantIndex === -1 && availableIndices.length > 0) {
+    merchantIndex = availableIndices.shift()!;
+    usedIndices.add(merchantIndex);
+  }
+  if (amountIndex === -1 && availableIndices.length > 0) {
+    amountIndex = availableIndices.shift()!;
+    usedIndices.add(amountIndex);
+  }
+  if (dateIndex === -1 && availableIndices.length > 0) {
+    dateIndex = availableIndices.shift()!;
+  }
+  
+  // Final fallback if still missing
   if (merchantIndex === -1) merchantIndex = 0;
   if (amountIndex === -1) amountIndex = 1;
   if (dateIndex === -1) dateIndex = 2;
   
+  console.log('[Fallback] Using partial mapping:', { dateIndex, amountIndex, merchantIndex });
   return { dateIndex, amountIndex, merchantIndex };
 }
 
@@ -532,6 +697,14 @@ other (אחר)
 החזר JSON בפורמט הבא בלבד (ללא הסברים נוספים):
 {"merchantName1 (הוצאה)": "category", "merchantName2 (הכנסה)": "category", ...}`;
 
+/**
+ * Classify merchants using AI
+ * 
+ * Improved logic:
+ * - Better JSON extraction from text responses
+ * - Recovery mechanism if JSON parsing fails
+ * - Remove JSON comments before parsing
+ */
 async function classifyMerchantsWithAI(
   merchants: string[],
   transactionTypes: Map<string, 'income' | 'expense'>
@@ -563,14 +736,51 @@ async function classifyMerchantsWithAI(
     // Parse the JSON response
     let jsonStr = response.text.trim();
 
-    // Handle markdown code blocks
-    if (jsonStr.includes('```')) {
-      const match = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (match) jsonStr = match[1].trim();
+    // Check if response starts with JSON
+    if (!jsonStr.startsWith('{')) {
+      console.warn('[AI Classification] Response does not start with {, attempting to extract JSON');
+      // Try to find JSON in the text
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonStr = jsonMatch[0];
+      } else {
+        throw new Error('No JSON found in response');
+      }
     }
 
-    console.log('[AI Classification] Parsing JSON response');
-    const parsed = JSON.parse(jsonStr);
+    // Handle markdown code blocks
+    if (jsonStr.includes('```')) {
+      const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) jsonStr = codeBlockMatch[1].trim();
+    }
+
+    // Remove JSON comments before parsing
+    jsonStr = jsonStr.replace(/\/\*[\s\S]*?\*\//g, ''); // Remove /* */ comments
+    jsonStr = jsonStr.replace(/\/\/.*$/gm, ''); // Remove // comments
+
+    // Try to parse JSON with recovery
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch (parseError) {
+      // Recovery: try to find JSON in the original response
+      console.warn('[AI Classification] JSON parse failed, attempting recovery');
+      const jsonMatch = response.text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          const cleanedJson = jsonMatch[0]
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .replace(/\/\/.*$/gm, '');
+          parsed = JSON.parse(cleanedJson);
+          console.log('[AI Classification] Recovered JSON from text');
+        } catch (recoveryError) {
+          console.error('[AI Classification] Recovery also failed');
+          throw parseError;
+        }
+      } else {
+        throw parseError;
+      }
+    }
 
     // Map the results
     // IMPORTANT: AI returns keys with type suffix like "Merchant (הוצאה)"
@@ -602,7 +812,6 @@ async function classifyMerchantsWithAI(
     console.error('[AI Classification] Error details:', {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
     });
     // Set all to null on error
     for (const merchant of merchants) {
