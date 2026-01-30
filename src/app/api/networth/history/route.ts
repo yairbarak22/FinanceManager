@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { requireAuth, getSharedUserIds } from '@/lib/authHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
-import { needsInitialBackfill, initialBackfillNetWorthHistory } from '@/lib/netWorthHistory';
+import { needsInitialBackfill, initialBackfillNetWorthHistory, saveCurrentMonthNetWorth } from '@/lib/netWorthHistory';
 
 export async function GET() {
   try {
@@ -19,6 +19,11 @@ export async function GET() {
     const needsBackfill = await needsInitialBackfill(userId);
     if (needsBackfill) {
       await initialBackfillNetWorthHistory(userId);
+    } else {
+      // Always ensure current month has updated record
+      // This fixes the issue when entering a new month - without this,
+      // the current month would have no record and show incorrect data
+      await saveCurrentMonthNetWorth(userId);
     }
 
     // Get all user IDs in the shared account
