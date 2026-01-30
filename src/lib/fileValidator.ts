@@ -16,7 +16,9 @@ import JSZip from 'jszip';
 
 /**
  * Validate Excel file signature (Magic Bytes)
- * XLSX files are ZIP archives starting with PK\x03\x04 (50 4B 03 04)
+ * Supports both XLSX (ZIP archive) and XLS (OLE compound document)
+ * - XLSX: PK\x03\x04 (50 4B 03 04)
+ * - XLS:  D0 CF 11 E0 (OLE compound document)
  */
 export function validateExcelSignature(buffer: Buffer): boolean {
   if (!buffer || buffer.length < 4) {
@@ -25,8 +27,9 @@ export function validateExcelSignature(buffer: Buffer): boolean {
 
   const magicBytes = buffer.slice(0, 4).toString('hex');
 
-  // XLSX/ZIP signature: 50 4B 03 04
-  return magicBytes === '504b0304';
+  // XLSX/ZIP signature: 50 4B 03 04 (PK\x03\x04)
+  // XLS (legacy OLE) signature: D0 CF 11 E0
+  return magicBytes === '504b0304' || magicBytes === 'd0cf11e0';
 }
 
 /**
