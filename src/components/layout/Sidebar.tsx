@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
@@ -9,10 +9,12 @@ import {
   Mail,
   PieChart,
   ChevronDown,
+  X,
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSidebar } from '@/context/SidebarContext';
+import { createPortal } from 'react-dom';
 
 interface SubNavItem {
   id: string;
@@ -71,13 +73,25 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
-  const { isCollapsed } = useSidebar();
+  const { isCollapsed, isMobileOpen, closeMobileSidebar } = useSidebar();
   const [expandedMenu, setExpandedMenu] = useState<string | null>(
     pathname.startsWith('/help') ? 'help' : null
   );
+  const [mounted, setMounted] = useState(false);
+
+  // For portal mounting
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Close mobile sidebar on navigation
+  useEffect(() => {
+    closeMobileSidebar();
+  }, [pathname, closeMobileSidebar]);
 
   const handleNavigate = (path: string) => {
     router.push(path);
+    closeMobileSidebar();
   };
 
   const toggleSubmenu = (itemId: string) => {
@@ -93,53 +107,56 @@ export default function Sidebar() {
     return pathname === item.path;
   };
 
-  return (
-    <motion.aside
-      initial={false}
-      animate={{ width: isCollapsed ? 80 : 288 }}
-      transition={{ duration: 0.2, ease: 'easeInOut' }}
-      className="hidden lg:flex flex-col bg-white border-l border-slate-100 sticky top-0 h-screen overflow-hidden"
-      aria-label="ניווט ראשי"
-    >
+  // Shared navigation content
+  const renderNavContent = (isMobile: boolean = false) => (
+    <>
       {/* Logo Section */}
-      <div className={`py-7 ${isCollapsed ? 'px-4' : 'px-6'}`}>
-        <button
-          type="button"
-          onClick={() => handleNavigate('/dashboard')}
-          className={`flex items-center gap-3 group cursor-pointer ${isCollapsed ? 'justify-center' : ''}`}
-          aria-label="חזרה לדשבורד הראשי"
-        >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm flex-shrink-0">
-            <PieChart
-              className="w-5 h-5 text-white"
-              strokeWidth={2.5}
-            />
-          </div>
-          <AnimatePresence>
-            {!isCollapsed && (
-              <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 'auto' }}
-                exit={{ opacity: 0, width: 0 }}
-                transition={{ duration: 0.15 }}
-                className="text-xl font-bold text-slate-800 tracking-tight whitespace-nowrap overflow-hidden"
+      <div className={`py-7 ${isMobile ? 'px-6' : isCollapsed ? 'px-4' : 'px-6'}`}>
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => handleNavigate('/dashboard')}
+            className={`flex items-center gap-3 group cursor-pointer ${!isMobile && isCollapsed ? 'justify-center' : ''}`}
+            aria-label="חזרה לדשבורד הראשי"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm flex-shrink-0">
+              <PieChart
+                className="w-5 h-5 text-white"
+                strokeWidth={2.5}
+              />
+            </div>
+            {(isMobile || !isCollapsed) && (
+              <span
+                className="text-xl font-bold text-slate-800 tracking-tight whitespace-nowrap"
                 style={{ fontFamily: 'var(--font-heebo)' }}
               >
                 NETO
-              </motion.span>
+              </span>
             )}
-          </AnimatePresence>
-        </button>
+          </button>
+          
+          {/* Close button for mobile */}
+          {isMobile && (
+            <button
+              type="button"
+              onClick={closeMobileSidebar}
+              className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all"
+              aria-label="סגור תפריט"
+            >
+              <X className="w-5 h-5" strokeWidth={2} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Navigation Items */}
-      <nav className={`flex-1 py-3 ${isCollapsed ? 'px-3' : 'px-4'}`} role="navigation">
+      <nav className={`flex-1 py-3 ${isMobile ? 'px-4' : isCollapsed ? 'px-3' : 'px-4'}`} role="navigation">
         <div className="space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = isItemActive(item);
             const hasSubItems = item.subItems && item.subItems.length > 0;
-            const isExpanded = expandedMenu === item.id && !isCollapsed;
+            const isExpanded = expandedMenu === item.id && (isMobile || !isCollapsed);
 
             return (
               <div key={item.id}>
@@ -147,23 +164,23 @@ export default function Sidebar() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (hasSubItems && !isCollapsed) {
+                    if (hasSubItems && (isMobile || !isCollapsed)) {
                       toggleSubmenu(item.id);
                     } else {
                       handleNavigate(item.path);
                     }
                   }}
-                  title={isCollapsed ? item.label : undefined}
+                  title={!isMobile && isCollapsed ? item.label : undefined}
                   className={`
                     w-full flex items-center gap-3 py-3 rounded-xl
                     transition-all duration-150 ease-out cursor-pointer
-                    ${isCollapsed ? 'px-3 justify-center' : 'px-4 justify-between'}
+                    ${!isMobile && isCollapsed ? 'px-3 justify-center' : 'px-4 justify-between'}
                     ${isActive ? 'bg-slate-100' : 'hover:bg-slate-50'}
                   `}
                   aria-current={isActive && !hasSubItems ? 'page' : undefined}
                   aria-expanded={hasSubItems ? isExpanded : undefined}
                 >
-                  <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
+                  <div className={`flex items-center gap-3 ${!isMobile && isCollapsed ? 'justify-center' : ''}`}>
                     {/* Icon with pastel background */}
                     <div className={`
                       w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0
@@ -178,26 +195,20 @@ export default function Sidebar() {
                     </div>
                     
                     {/* Label */}
-                    <AnimatePresence>
-                      {!isCollapsed && (
-                        <motion.span
-                          initial={{ opacity: 0, width: 0 }}
-                          animate={{ opacity: 1, width: 'auto' }}
-                          exit={{ opacity: 0, width: 0 }}
-                          transition={{ duration: 0.15 }}
-                          className={`
-                            text-sm font-medium transition-colors duration-150 whitespace-nowrap overflow-hidden
-                            ${isActive ? 'text-slate-900' : 'text-slate-600'}
-                          `}
-                        >
-                          {item.label}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
+                    {(isMobile || !isCollapsed) && (
+                      <span
+                        className={`
+                          text-sm font-medium transition-colors duration-150 whitespace-nowrap
+                          ${isActive ? 'text-slate-900' : 'text-slate-600'}
+                        `}
+                      >
+                        {item.label}
+                      </span>
+                    )}
                   </div>
 
                   {/* Chevron for submenu */}
-                  {hasSubItems && !isCollapsed && (
+                  {hasSubItems && (isMobile || !isCollapsed) && (
                     <motion.div
                       animate={{ rotate: isExpanded ? 180 : 0 }}
                       transition={{ duration: 0.2 }}
@@ -209,7 +220,7 @@ export default function Sidebar() {
 
                 {/* Submenu */}
                 <AnimatePresence>
-                  {hasSubItems && isExpanded && !isCollapsed && (
+                  {hasSubItems && isExpanded && (isMobile || !isCollapsed) && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
@@ -253,46 +264,87 @@ export default function Sidebar() {
 
       {/* User Info Footer */}
       {session?.user && (
-        <div className={`py-5 border-t border-slate-100 ${isCollapsed ? 'px-3' : 'px-4'}`}>
-          <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : 'px-2'}`}>
+        <div className={`py-5 border-t border-slate-100 ${isMobile ? 'px-4' : isCollapsed ? 'px-3' : 'px-4'}`}>
+          <div className={`flex items-center gap-3 ${!isMobile && isCollapsed ? 'justify-center' : 'px-2'}`}>
             {session.user.image ? (
               <img
                 src={session.user.image}
                 alt=""
                 className="w-10 h-10 rounded-full ring-2 ring-slate-100 flex-shrink-0"
-                title={isCollapsed ? session.user.name || 'משתמש' : undefined}
+                title={!isMobile && isCollapsed ? session.user.name || 'משתמש' : undefined}
               />
             ) : (
               <div 
                 className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center flex-shrink-0"
-                title={isCollapsed ? session.user.name || 'משתמש' : undefined}
+                title={!isMobile && isCollapsed ? session.user.name || 'משתמש' : undefined}
               >
                 <span className="text-slate-600 text-sm font-medium">
                   {session.user.name?.[0] || 'U'}
                 </span>
               </div>
             )}
-            <AnimatePresence>
-              {!isCollapsed && (
-                <motion.div
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: 'auto' }}
-                  exit={{ opacity: 0, width: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="flex-1 min-w-0 overflow-hidden"
-                >
-                  <p className="text-sm font-medium text-slate-700 truncate">
-                    {session.user.name || 'משתמש'}
-                  </p>
-                  <p className="text-xs text-slate-400 truncate">
-                    {session.user.email}
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {(isMobile || !isCollapsed) && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-slate-700 truncate">
+                  {session.user.name || 'משתמש'}
+                </p>
+                <p className="text-xs text-slate-400 truncate">
+                  {session.user.email}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
-    </motion.aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <motion.aside
+        initial={false}
+        animate={{ width: isCollapsed ? 80 : 288 }}
+        transition={{ duration: 0.2, ease: 'easeInOut' }}
+        className="hidden lg:flex flex-col bg-white border-l border-slate-100 sticky top-0 h-screen overflow-hidden"
+        aria-label="ניווט ראשי"
+      >
+        {renderNavContent(false)}
+      </motion.aside>
+
+      {/* Mobile Sidebar - Rendered via Portal */}
+      {mounted && createPortal(
+        <AnimatePresence>
+          {isMobileOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="lg:hidden fixed inset-0 bg-black/50 z-[100]"
+                onClick={closeMobileSidebar}
+                aria-hidden="true"
+              />
+              
+              {/* Sidebar Panel */}
+              <motion.aside
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                className="lg:hidden fixed top-0 right-0 bottom-0 w-[280px] bg-white shadow-xl z-[101] flex flex-col overflow-hidden"
+                aria-label="ניווט ראשי"
+                dir="rtl"
+              >
+                {renderNavContent(true)}
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+    </>
   );
 }

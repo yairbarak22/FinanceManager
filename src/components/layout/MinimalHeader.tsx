@@ -14,6 +14,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Accessibility,
+  Menu,
 } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { useAccessibility } from '@/context/AccessibilityContext';
@@ -49,7 +50,7 @@ export default function MinimalHeader({
   const { data: session } = useSession();
   const { startTour } = useOnboarding();
   const { openAccessibility } = useAccessibility();
-  const { isCollapsed, toggleSidebar } = useSidebar();
+  const { isCollapsed, toggleSidebar, openMobileSidebar } = useSidebar();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -69,16 +70,29 @@ export default function MinimalHeader({
     <header className="sticky top-0 z-40 bg-white border-b border-slate-100">
       <div className="px-4 lg:px-6">
         <div className="flex items-center justify-between h-14">
-          {/* Right: Sidebar Toggle + Page Title (Desktop) / Logo (Mobile) */}
+          {/* Right: Sidebar Toggle + Page Title (Desktop) / Hamburger + Logo (Mobile) */}
           <div className="flex items-center gap-3">
-            {/* Mobile Logo */}
-            <div className="lg:hidden flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                <PieChart className="w-4 h-4 text-white" strokeWidth={2.5} />
+            {/* Mobile: Hamburger + Logo */}
+            <div className="lg:hidden flex items-center gap-2">
+              {/* Hamburger Menu Button */}
+              <button
+                type="button"
+                onClick={openMobileSidebar}
+                className="p-2 -ml-2 rounded-lg text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition-all"
+                aria-label="פתח תפריט ניווט"
+              >
+                <Menu className="w-5 h-5" strokeWidth={2} />
+              </button>
+              
+              {/* Logo */}
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                  <PieChart className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+                </div>
+                <span className="text-sm font-bold text-slate-800" style={{ fontFamily: 'var(--font-heebo)' }}>
+                  NETO
+                </span>
               </div>
-              <span className="text-base font-bold text-slate-800" style={{ fontFamily: 'var(--font-heebo)' }}>
-                NETO
-              </span>
             </div>
             
             {/* Desktop: Sidebar Toggle + Page Title */}

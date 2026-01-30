@@ -2,7 +2,6 @@
 
 import { ReactNode } from 'react';
 import Sidebar from './Sidebar';
-import MobileNav from './MobileNav';
 import MinimalHeader from './MinimalHeader';
 
 interface AppLayoutProps {
@@ -34,7 +33,7 @@ export default function AppLayout({
 }: AppLayoutProps) {
   return (
     <div className="flex min-h-screen bg-slate-50/50">
-      {/* Sidebar - Desktop only */}
+      {/* Sidebar - Desktop + Mobile (hamburger menu) */}
       <Sidebar />
 
       {/* Main Content Area */}
@@ -54,13 +53,10 @@ export default function AppLayout({
         />
 
         {/* Page Content */}
-        <main className="flex-1 p-4 lg:p-6 pb-20 lg:pb-6">
+        <main className="flex-1 p-4 lg:p-6">
           {children}
         </main>
       </div>
-
-      {/* Mobile Navigation */}
-      <MobileNav />
     </div>
   );
 }
