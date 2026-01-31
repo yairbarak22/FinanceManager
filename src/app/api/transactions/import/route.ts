@@ -486,7 +486,8 @@ function parseAmount(value: unknown): number | null {
  */
 function parseDate(value: unknown, enableLogging = false, isHtmlFile = false): Date | null {
   const log = (msg: string) => {
-    if (enableLogging) console.log(`[parseDate] ${msg}`);
+    // Always log for debugging this issue
+    console.log(`[parseDate] ${msg}`);
   };
   
   log(`Input: ${JSON.stringify(value)}, type: ${typeof value}, isHtmlFile: ${isHtmlFile}`);
@@ -1042,6 +1043,10 @@ export async function POST(request: NextRequest) {
                         firstBytes.toLowerCase().includes('<html') ||
                         firstBytes.toLowerCase().includes('<table');
     
+    // DEBUG: Log file type detection
+    console.log('[DEBUG HTML Detection] First 100 bytes:', JSON.stringify(firstBytes));
+    console.log('[DEBUG HTML Detection] isHtmlBased:', isHtmlBased);
+    
     try {
       console.log('[Excel Import] Parsing workbook with security options...');
 
@@ -1256,9 +1261,12 @@ export async function POST(request: NextRequest) {
 
         // Parse date - enable logging for first 10 rows
         // Pass isHtmlBased to force DD.MM.YYYY format for Israeli bank HTML files
+          if (shouldLog) {
+            console.log(`[IMPORT DEBUG] About to parse date. Raw value: ${JSON.stringify(date)}, isHtmlBased: ${isHtmlBased}`);
+          }
           const parsedDate = parseDate(date, shouldLog, isHtmlBased);
           if (shouldLog) {
-            console.log(`[IMPORT DEBUG] Parsed date result: ${parsedDate ? parsedDate.toISOString() : 'null'}`);
+            console.log(`[IMPORT DEBUG] Parsed date result: ${parsedDate ? parsedDate.toISOString() : 'null'}, Local: ${parsedDate ? `${parsedDate.getDate()}/${parsedDate.getMonth() + 1}/${parsedDate.getFullYear()}` : 'null'}`);
             debugRowCount++;
           }
           if (!parsedDate) {
