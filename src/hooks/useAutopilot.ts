@@ -3,6 +3,23 @@
 import { useCallback } from 'react';
 import { useOnboarding, WizardData } from '@/context/OnboardingContext';
 import { getStepById } from '@/components/onboarding/stepsConfig';
+import {
+  assetCategories as defaultAssetCategories,
+  incomeCategories as defaultIncomeCategories,
+  expenseCategories as defaultExpenseCategories,
+  CategoryInfo,
+} from '@/lib/categories';
+
+/**
+ * Build a label map from CategoryInfo array
+ */
+function buildCategoryLabelMap(categories: CategoryInfo[]): Record<string, string> {
+  const map: Record<string, string> = {};
+  categories.forEach(cat => {
+    map[cat.id] = cat.nameHe;
+  });
+  return map;
+}
 
 /**
  * Autopilot sequence result
@@ -462,17 +479,8 @@ export function useAutopilot() {
       // 4. Select Asset Category using CategorySelect
       const categoryTrigger = modal.querySelector('.category-select-trigger') as HTMLElement;
       if (categoryTrigger && data.assetCategory) {
-        // Map wizard values to CategorySelect labels
-        const categoryLabels: Record<string, string> = {
-          'cash': 'מזומן',
-          'savings': 'חסכונות',
-          'investments': 'השקעות',
-          'pension': 'פנסיה',
-          'keren_hishtalmut': 'קרן השתלמות',
-          'real_estate': 'נדל"ן',
-          'vehicle': 'רכב',
-          'other': 'אחר',
-        };
+        // Use category labels from categories.ts for synchronization
+        const categoryLabels = buildCategoryLabelMap(defaultAssetCategories);
         const categoryLabel = categoryLabels[data.assetCategory] || data.assetCategory;
 
         await moveToElement(categoryTrigger, `בוחר סוג: ${categoryLabel}...`);
@@ -738,14 +746,8 @@ export function useAutopilot() {
       // 6. Select category using CategorySelect
       const categoryTrigger = modal.querySelector('.category-select-trigger') as HTMLElement;
       if (categoryTrigger && data.incomeCategory) {
-        // Map wizard values to category labels
-        const categoryLabels: Record<string, string> = {
-          'salary': 'משכורת',
-          'freelance': 'פרילנס',
-          'rental': 'שכירות',
-          'pension': 'קצבה',
-          'other': 'אחר',
-        };
+        // Use category labels from categories.ts for synchronization
+        const categoryLabels = buildCategoryLabelMap(defaultIncomeCategories);
         const categoryLabel = categoryLabels[data.incomeCategory] || data.incomeCategory;
 
         await moveToElement(categoryTrigger, `בוחר קטגוריה: ${categoryLabel}...`);
@@ -852,16 +854,8 @@ export function useAutopilot() {
       // 5. Select category using CategorySelect
       const categoryTrigger = modal.querySelector('.category-select-trigger') as HTMLElement;
       if (categoryTrigger && data.expenseCategory) {
-        // Map wizard values to category labels
-        const categoryLabels: Record<string, string> = {
-          'groceries': 'מזון',
-          'dining': 'מסעדות',
-          'transport': 'תחבורה',
-          'entertainment': 'בילויים',
-          'shopping': 'קניות',
-          'health': 'בריאות',
-          'other': 'אחר',
-        };
+        // Use category labels from categories.ts for synchronization
+        const categoryLabels = buildCategoryLabelMap(defaultExpenseCategories);
         const categoryLabel = categoryLabels[data.expenseCategory] || data.expenseCategory;
 
         await moveToElement(categoryTrigger, `בוחר קטגוריה: ${categoryLabel}...`);

@@ -20,6 +20,11 @@ export interface StepField {
   demoId?: string;
   /** For feature-demos type: icon name */
   featureIcon?: 'sparkles' | 'bot' | 'upload';
+  /** 
+   * When true, options are generated dynamically from categories.ts 
+   * This ensures synchronization with regular modals (AssetModal, TransactionModal, etc.)
+   */
+  useDynamicOptions?: boolean;
 }
 
 export interface OnboardingStep {
@@ -93,16 +98,7 @@ export const onboardingSteps: OnboardingStep[] = [
         label: 'סוג הנכס',
         type: 'select',
         required: true,
-        options: [
-          { value: 'cash', label: 'מזומן / עו"ש' },
-          { value: 'savings', label: 'חסכונות' },
-          { value: 'investments', label: 'השקעות' },
-          { value: 'pension', label: 'פנסיה' },
-          { value: 'keren_hishtalmut', label: 'קרן השתלמות' },
-          { value: 'real_estate', label: 'נדל"ן' },
-          { value: 'vehicle', label: 'רכב' },
-          { value: 'other', label: 'אחר' },
-        ],
+        useDynamicOptions: true, // Uses categories from categories.ts - synchronized with AssetModal
       },
       {
         key: 'assetName',
@@ -133,11 +129,7 @@ export const onboardingSteps: OnboardingStep[] = [
         label: 'סוג התחייבות',
         type: 'select',
         required: true,
-        options: [
-          { value: 'none', label: 'אין לי התחייבויות' },
-          { value: 'mortgage', label: 'משכנתא' },
-          { value: 'loan', label: 'הלוואה' },
-        ],
+        useDynamicOptions: true, // Uses categories from categories.ts - synchronized with LiabilityModal
       },
       {
         key: 'liabilityAmount',
@@ -177,13 +169,7 @@ export const onboardingSteps: OnboardingStep[] = [
         label: 'סוג הכנסה',
         type: 'select',
         required: true,
-        options: [
-          { value: 'salary', label: 'משכורת' },
-          { value: 'freelance', label: 'פרילנס' },
-          { value: 'rental', label: 'שכירות' },
-          { value: 'pension', label: 'קצבה/פנסיה' },
-          { value: 'other', label: 'אחר' },
-        ],
+        useDynamicOptions: true, // Uses categories from categories.ts - synchronized with RecurringModal
       },
       {
         key: 'incomeName',
@@ -221,15 +207,7 @@ export const onboardingSteps: OnboardingStep[] = [
         label: 'קטגוריה',
         type: 'select',
         required: true,
-        options: [
-          { value: 'groceries', label: 'מזון וסופר' },
-          { value: 'dining', label: 'מסעדות וקפה' },
-          { value: 'transport', label: 'תחבורה' },
-          { value: 'entertainment', label: 'בילויים' },
-          { value: 'shopping', label: 'קניות' },
-          { value: 'health', label: 'בריאות' },
-          { value: 'other', label: 'אחר' },
-        ],
+        useDynamicOptions: true, // Uses categories from categories.ts - synchronized with TransactionModal
       },
       {
         key: 'expenseAmount',

@@ -23,7 +23,25 @@ import {
 } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { useAutopilot } from '@/hooks/useAutopilot';
+import { useCategories } from '@/hooks/useCategories';
+import {
+  assetCategories as defaultAssetCategories,
+  incomeCategories as defaultIncomeCategories,
+  expenseCategories as defaultExpenseCategories,
+  liabilityTypes as defaultLiabilityTypes,
+  CategoryInfo,
+} from '@/lib/categories';
 import { onboardingSteps, OnboardingStep, StepField } from './stepsConfig';
+
+/**
+ * Convert CategoryInfo array to options format for select dropdowns
+ */
+function categoriesToOptions(categories: CategoryInfo[]): { value: string; label: string }[] {
+  return categories.map(cat => ({
+    value: cat.id,
+    label: cat.nameHe,
+  }));
+}
 
 /**
  * Icon mapping for steps
@@ -180,6 +198,54 @@ export default function OnboardingWizard() {
   } = useOnboarding();
 
   const { runAutopilotSequence, runFeatureDemo } = useAutopilot();
+
+  // Get custom categories from hook
+  const { getCustomByType } = useCategories();
+
+  // Memoized category options for dropdowns - synchronized with regular modals
+  const assetCategoryOptions = useMemo(() => {
+    const defaultOptions = categoriesToOptions(defaultAssetCategories);
+    const customOptions = categoriesToOptions(getCustomByType('asset'));
+    return [...defaultOptions, ...customOptions];
+  }, [getCustomByType]);
+
+  const incomeCategoryOptions = useMemo(() => {
+    const defaultOptions = categoriesToOptions(defaultIncomeCategories);
+    const customOptions = categoriesToOptions(getCustomByType('income'));
+    return [...defaultOptions, ...customOptions];
+  }, [getCustomByType]);
+
+  const expenseCategoryOptions = useMemo(() => {
+    const defaultOptions = categoriesToOptions(defaultExpenseCategories);
+    const customOptions = categoriesToOptions(getCustomByType('expense'));
+    return [...defaultOptions, ...customOptions];
+  }, [getCustomByType]);
+
+  const liabilityTypeOptions = useMemo(() => {
+    // Add "none" option at the beginning for onboarding
+    const noneOption = { value: 'none', label: 'אין לי התחייבויות' };
+    const defaultOptions = categoriesToOptions(defaultLiabilityTypes);
+    const customOptions = categoriesToOptions(getCustomByType('liability'));
+    return [noneOption, ...defaultOptions, ...customOptions];
+  }, [getCustomByType]);
+
+  /**
+   * Get dynamic options for category fields
+   */
+  const getDynamicOptions = useCallback((fieldKey: string): { value: string; label: string }[] | null => {
+    switch (fieldKey) {
+      case 'assetCategory':
+        return assetCategoryOptions;
+      case 'incomeCategory':
+        return incomeCategoryOptions;
+      case 'expenseCategory':
+        return expenseCategoryOptions;
+      case 'liabilityType':
+        return liabilityTypeOptions;
+      default:
+        return null;
+    }
+  }, [assetCategoryOptions, incomeCategoryOptions, expenseCategoryOptions, liabilityTypeOptions]);
 
   const [direction, setDirection] = useState(0);
 
@@ -401,7 +467,7 @@ export default function OnboardingWizard() {
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
             name: wizardData.assetName || 'נכס חדש',
-            category: wizardData.assetCategory || 'savings',
+            category: wizardData.assetCategory || 'savings_account', // Default from categories.ts
             value: parseFloat((wizardData.assetValue || '10000').replace(/,/g, '')),
           }),
         });
@@ -414,12 +480,17 @@ export default function OnboardingWizard() {
       } else if (stepId === 'liabilities') {
         // Skip if user selected "none"
         if (wizardData.liabilityType !== 'none') {
+          // Get liability name from selected category
+          const liabilityType = wizardData.liabilityType || 'loan';
+          const liabilityCategory = defaultLiabilityTypes.find(c => c.id === liabilityType);
+          const liabilityName = liabilityCategory?.nameHe || 'הלוואה';
+          
           response = await fetch('/api/liabilities', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
             body: JSON.stringify({
-              name: wizardData.liabilityType === 'mortgage' ? 'משכנתא' : 'הלוואה',
-              type: wizardData.liabilityType || 'loan',
+              name: liabilityName,
+              type: liabilityType,
               totalAmount: parseFloat((wizardData.liabilityAmount || '100000').replace(/,/g, '')),
               monthlyPayment: 1000,
               interestRate: parseFloat(wizardData.liabilityInterest || '5'),
@@ -584,6 +655,10 @@ export default function OnboardingWizard() {
     }
 
     if (field.type === 'select') {
+      // Use dynamic options for category fields, fallback to field.options for other selects
+      const dynamicOptions = getDynamicOptions(field.key);
+      const options = dynamicOptions || field.options || [];
+      
       return (
         <div 
           key={field.key} 
@@ -597,7 +672,7 @@ export default function OnboardingWizard() {
           <StyledSelect
             value={value}
             onChange={(v) => handleFieldChange(field.key, v)}
-            options={field.options || []}
+            options={options}
             placeholder="בחר..."
           />
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { liabilityTypes as defaultLiabilityTypes } from '@/lib/categories';
 
 /**
  * Onboarding Tour Steps
@@ -424,19 +425,24 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
             name: wizardData.assetName || 'נכס חדש',
-            category: wizardData.assetCategory || 'savings',
+            category: wizardData.assetCategory || 'savings_account', // Default from categories.ts
             value: parseFloat((wizardData.assetValue || '10000').replace(/,/g, '')),
           }),
         });
         if (res.ok) successMessage = 'הנכס נוסף בהצלחה!';
       } else if (currentStepId === 'liabilities') {
         if (wizardData.liabilityType !== 'none') {
+          // Get liability name from selected category
+          const liabilityType = wizardData.liabilityType || 'loan';
+          const liabilityCategory = defaultLiabilityTypes.find(c => c.id === liabilityType);
+          const liabilityName = liabilityCategory?.nameHe || 'הלוואה';
+          
           const res = await fetch('/api/liabilities', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
             body: JSON.stringify({
-              name: wizardData.liabilityType === 'mortgage' ? 'משכנתא' : 'הלוואה',
-              type: wizardData.liabilityType || 'loan',
+              name: liabilityName,
+              type: liabilityType,
               totalAmount: parseFloat((wizardData.liabilityAmount || '100000').replace(/,/g, '')),
               monthlyPayment: 1000,
               interestRate: parseFloat(wizardData.liabilityInterest || '5'),
