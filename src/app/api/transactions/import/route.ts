@@ -1324,17 +1324,20 @@ export async function POST(request: NextRequest) {
     // PHASE 4: CHECK CACHE
     // ============================================
     const uniqueMerchants = [...new Set(parsedTransactions.map(t => t.merchantName))];
+    // Normalize merchant names for cache lookup (lowercase + trim)
+    const normalizedMerchants = uniqueMerchants.map(m => m.toLowerCase().trim());
     
-    // Get cached mappings
+    // Get cached mappings using NORMALIZED names
     const cachedMappings = await prisma.merchantCategoryMap.findMany({
       where: {
             userId,
-        merchantName: { in: uniqueMerchants },
+        merchantName: { in: normalizedMerchants },
           },
         });
 
     // Create maps for category and alwaysAsk flag
     // Note: alwaysAsk field was added in schema update
+    // Cache keys are already normalized (lowercase) from database
     const cacheMap = new Map(cachedMappings.map(m => [m.merchantName, m.category]));
     const alwaysAskMap = new Map(
       cachedMappings
@@ -1343,7 +1346,11 @@ export async function POST(request: NextRequest) {
     );
     
     // Separate known and unknown merchants (excluding alwaysAsk merchants)
-    const unknownMerchants = uniqueMerchants.filter(m => !cacheMap.has(m) || alwaysAskMap.has(m));
+    // Use normalized names for lookup
+    const unknownMerchants = uniqueMerchants.filter(m => {
+      const normalized = m.toLowerCase().trim();
+      return !cacheMap.has(normalized) || alwaysAskMap.has(normalized);
+    });
 
     // ============================================
     // PHASE 5: AI CLASSIFICATION (only unknowns)
@@ -1367,17 +1374,18 @@ export async function POST(request: NextRequest) {
 
     for (const transaction of parsedTransactions) {
       const { merchantName } = transaction;
+      const normalizedName = merchantName.toLowerCase().trim();
       
       // Check if this merchant is marked as "always ask"
-      if (alwaysAskMap.has(merchantName)) {
+      if (alwaysAskMap.has(normalizedName)) {
         // Put in review even if we have a cached category
         needsReviewTransactions.push(transaction);
         continue;
       }
       
-      // Check cache first
-      if (cacheMap.has(merchantName)) {
-        transaction.category = cacheMap.get(merchantName)!;
+      // Check cache first (using normalized name)
+      if (cacheMap.has(normalizedName)) {
+        transaction.category = cacheMap.get(normalizedName)!;
         classifiedTransactions.push(transaction);
         cachedCount++;
         continue;
@@ -1396,10 +1404,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Save AI classifications to cache (only confident ones)
+    // Normalize merchant names for consistent storage
     const newMappings: { userId: string; merchantName: string; category: string }[] = [];
     for (const [merchant, category] of aiClassifications) {
       if (category !== null) {
-        newMappings.push({ userId, merchantName: merchant, category });
+        newMappings.push({ userId, merchantName: merchant.toLowerCase().trim(), category });
       }
     }
     

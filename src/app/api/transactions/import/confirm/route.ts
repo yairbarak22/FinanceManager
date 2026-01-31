@@ -65,33 +65,35 @@ export async function POST(request: NextRequest) {
     // UPDATE MERCHANT CACHE (Learning)
     // ============================================
     // Collect unique manual mappings to save
+    // Use normalized merchant names as keys for consistent deduplication
     const manualMappings = new Map<string, { category: string; isManual: boolean }>();
     
     for (const t of transactions) {
+      const normalizedKey = t.merchantName.toLowerCase().trim();
       if (t.isManualCategory) {
         // User manually categorized this - we should learn
-        manualMappings.set(t.merchantName, {
+        manualMappings.set(normalizedKey, {
           category: t.category,
           isManual: true,
         });
-      } else if (!manualMappings.has(t.merchantName)) {
+      } else if (!manualMappings.has(normalizedKey)) {
         // AI categorized - save to cache if not already there
-        manualMappings.set(t.merchantName, {
+        manualMappings.set(normalizedKey, {
           category: t.category,
           isManual: false,
         });
       }
     }
 
-    // Upsert merchant mappings
-    for (const [merchantName, { category, isManual }] of manualMappings) {
+    // Upsert merchant mappings (keys are already normalized)
+    for (const [normalizedName, { category, isManual }] of manualMappings) {
       await prisma.merchantCategoryMap.upsert({
         where: {
-          userId_merchantName: { userId, merchantName },
+          userId_merchantName: { userId, merchantName: normalizedName },
         },
         create: {
           userId,
-          merchantName,
+          merchantName: normalizedName,
           category,
           isManual,
         },
