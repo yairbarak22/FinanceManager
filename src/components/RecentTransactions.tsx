@@ -22,7 +22,8 @@ interface RecentTransactionsProps {
     merchantName: string,
     saveBehavior: SaveBehavior,
     newDescription?: string,
-    newAmount?: number
+    newAmount?: number,
+    updateExistingTransactions?: boolean
   ) => Promise<void> | void;
   onNewTransaction: () => void;
   onImport: () => void;
@@ -55,6 +56,7 @@ export default function RecentTransactions({
   const [editingDescription, setEditingDescription] = useState<string>('');
   const [editingAmount, setEditingAmount] = useState<string>('');
   const [saveBehavior, setSaveBehavior] = useState<SaveBehavior>('once');
+  const [updateExistingTransactions, setUpdateExistingTransactions] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null);
@@ -94,6 +96,7 @@ export default function RecentTransactions({
     setEditingDescription(transaction.description);
     setEditingAmount(transaction.amount.toString());
     setSaveBehavior('once');
+    setUpdateExistingTransactions(false);
     setIsDropdownOpen(false);
     setIsSaving(false);
   };
@@ -104,6 +107,7 @@ export default function RecentTransactions({
     setEditingDescription('');
     setEditingAmount('');
     setSaveBehavior('once');
+    setUpdateExistingTransactions(false);
     setIsDropdownOpen(false);
     setIsSaving(false);
   };
@@ -111,8 +115,9 @@ export default function RecentTransactions({
   const handleSaveTransaction = async () => {
     if (!editingTransaction || !onUpdateTransaction) return;
     
+    const categoryChanged = selectedCategory !== editingTransaction.category;
     const hasChanges = 
-      selectedCategory !== editingTransaction.category ||
+      categoryChanged ||
       editingDescription !== editingTransaction.description ||
       parseFloat(editingAmount) !== editingTransaction.amount;
     
@@ -129,7 +134,8 @@ export default function RecentTransactions({
         editingTransaction.description, // Original description for merchant mapping
         saveBehavior,
         editingDescription !== editingTransaction.description ? editingDescription : undefined,
-        parseFloat(editingAmount) !== editingTransaction.amount ? parseFloat(editingAmount) : undefined
+        parseFloat(editingAmount) !== editingTransaction.amount ? parseFloat(editingAmount) : undefined,
+        categoryChanged && updateExistingTransactions ? true : undefined
       );
       closeEditDialog();
     } catch (error) {
@@ -686,6 +692,23 @@ export default function RecentTransactions({
                         <div>
                           <p className="font-medium text-[#303150]">תמיד תשאל אותי</p>
                           <p className="text-xs text-[#7E7F90]">לעסקים גנריים כמו העברה בביט, PayBox וכו׳</p>
+                        </div>
+                      </label>
+                    </div>
+
+                    {/* Update existing transactions checkbox */}
+                    <div className="mt-4 pt-4 border-t border-[#E8E8ED]">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={updateExistingTransactions}
+                          onChange={(e) => setUpdateExistingTransactions(e.target.checked)}
+                          className="w-5 h-5 rounded border-gray-300 text-[#69ADFF] focus:ring-[#69ADFF]"
+                          disabled={isSaving}
+                        />
+                        <div>
+                          <p className="font-medium text-[#303150]">עדכן את כל העסקאות הקיימות מאותו עסק</p>
+                          <p className="text-xs text-[#7E7F90]">שנה את הקטגוריה בכל העסקאות מעסק זה</p>
                         </div>
                       </label>
                     </div>

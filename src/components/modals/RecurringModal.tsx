@@ -14,10 +14,7 @@ const FIELD_ORDER = ['type', 'name', 'amount', 'category', 'isActive'];
 interface RecurringModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (
-    transaction: Omit<RecurringTransaction, 'id' | 'createdAt' | 'updatedAt'>,
-    updateExistingTransactions?: boolean
-  ) => void | Promise<void>;
+  onSave: (transaction: Omit<RecurringTransaction, 'id' | 'createdAt' | 'updatedAt'>) => void | Promise<void>;
   transaction?: RecurringTransaction | null;
   expenseCategories: { default: CategoryInfo[]; custom: CategoryInfo[] };
   incomeCategories: { default: CategoryInfo[]; custom: CategoryInfo[] };
@@ -41,8 +38,6 @@ export default function RecurringModal({
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [updateExistingTransactions, setUpdateExistingTransactions] = useState(false);
-  const [originalCategory, setOriginalCategory] = useState('');
 
   // Refs for auto-scroll to next field
   const fieldRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -72,19 +67,15 @@ export default function RecurringModal({
       setType(transaction.type as 'income' | 'expense');
       setAmount(transaction.amount.toString());
       setCategory(transaction.category);
-      setOriginalCategory(transaction.category);
       setName(transaction.name);
       setIsActive(transaction.isActive);
     } else {
       setType('expense');
       setAmount('');
       setCategory('');
-      setOriginalCategory('');
       setName('');
       setIsActive(true);
     }
-    // Reset the "update existing" checkbox when modal opens/closes
-    setUpdateExistingTransactions(false);
   }, [transaction, isOpen]);
 
   const currentCategories = type === 'income' ? incomeCategories : expenseCategories;
@@ -93,15 +84,13 @@ export default function RecurringModal({
     e.preventDefault();
     setIsLoading(true);
     try {
-      // Only pass updateExistingTransactions if editing and category changed
-      const shouldUpdateExisting = transaction && category !== originalCategory && updateExistingTransactions;
       await onSave({
         type,
         amount: parseFloat(amount),
         category,
         name,
         isActive,
-      }, shouldUpdateExisting);
+      });
       onClose();
     } catch (error) {
       // Error handling is done in the parent component
@@ -238,26 +227,6 @@ export default function RecurringModal({
                   required
                 />
               </div>
-
-              {/* Update Existing Transactions Checkbox - Only show when editing and category changed */}
-              {transaction && category !== originalCategory && (
-                <div className="flex items-center gap-3 py-2">
-                  <input
-                    type="checkbox"
-                    id="updateExistingTransactions"
-                    checked={updateExistingTransactions}
-                    onChange={(e) => setUpdateExistingTransactions(e.target.checked)}
-                    className="w-5 h-5 rounded border-gray-300 text-blue-500 focus:ring-blue-500"
-                  />
-                  <label 
-                    htmlFor="updateExistingTransactions" 
-                    className="text-sm cursor-pointer"
-                    style={{ color: '#303150' }}
-                  >
-                    עדכן את כל העסקאות הקיימות מאותו עסק
-                  </label>
-                </div>
-              )}
 
               {/* Active Toggle */}
               <div ref={(el) => { if (el) fieldRefs.current.set('isActive', el); }} className="flex items-center justify-between">

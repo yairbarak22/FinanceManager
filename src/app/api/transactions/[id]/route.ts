@@ -67,12 +67,39 @@ export async function PUT(
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
     }
 
+    // Handle updating existing transactions from same merchant if requested
+    let updatedTransactionsCount = 0;
+    if (body.updateExistingTransactions === true && body.category !== undefined && body.merchantName) {
+      // Normalize the merchant name for matching (consistent with merchant category mapping)
+      const normalizedMerchantName = String(body.merchantName).toLowerCase().trim();
+      
+      // Update all transactions with matching normalized description (excluding current transaction)
+      const updateResult = await prisma.transaction.updateMany({
+        where: {
+          userId,
+          id: { not: id }, // Exclude current transaction (already updated)
+          description: {
+            mode: 'insensitive',
+            equals: normalizedMerchantName,
+          },
+        },
+        data: {
+          category: body.category.trim(),
+        },
+      });
+      
+      updatedTransactionsCount = updateResult.count;
+    }
+
     // Fetch the updated transaction
     const transaction = await prisma.transaction.findFirst({
       where: sharedWhere,
     });
 
-    return NextResponse.json(transaction);
+    return NextResponse.json({
+      ...transaction,
+      updatedTransactionsCount,
+    });
   } catch (error) {
     console.error('Error updating transaction:', error);
     return NextResponse.json({ error: 'Failed to update transaction' }, { status: 500 });

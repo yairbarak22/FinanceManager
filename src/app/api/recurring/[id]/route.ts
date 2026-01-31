@@ -58,15 +58,6 @@ export async function PUT(
       updateData.isActive = Boolean(body.isActive);
     }
 
-    // Get the current recurring transaction before updating (for name comparison)
-    const existingRecurring = await prisma.recurringTransaction.findFirst({
-      where: sharedWhere,
-    });
-
-    if (!existingRecurring) {
-      return NextResponse.json({ error: 'Recurring transaction not found' }, { status: 404 });
-    }
-
     const result = await prisma.recurringTransaction.updateMany({
       where: sharedWhere,
       data: updateData,
@@ -76,39 +67,11 @@ export async function PUT(
       return NextResponse.json({ error: 'Recurring transaction not found' }, { status: 404 });
     }
 
-    // Handle updating existing transactions if requested
-    let updatedTransactionsCount = 0;
-    if (body.updateExistingTransactions === true && body.category !== undefined) {
-      // Normalize the merchant name for matching (consistent with merchant category mapping)
-      const normalizedMerchantName = existingRecurring.name.toLowerCase().trim();
-      
-      // Find and update all transactions with matching normalized description
-      // Note: PostgreSQL LOWER() function is used for case-insensitive matching
-      const updateResult = await prisma.transaction.updateMany({
-        where: {
-          userId,
-          // Use raw query approach for case-insensitive matching
-          description: {
-            mode: 'insensitive',
-            equals: normalizedMerchantName,
-          },
-        },
-        data: {
-          category: body.category.trim(),
-        },
-      });
-      
-      updatedTransactionsCount = updateResult.count;
-    }
-
     const recurring = await prisma.recurringTransaction.findFirst({
       where: sharedWhere,
     });
 
-    return NextResponse.json({
-      ...recurring,
-      updatedTransactionsCount,
-    });
+    return NextResponse.json(recurring);
   } catch (error) {
     console.error('Error updating recurring transaction:', error);
     return NextResponse.json({ error: 'Failed to update recurring transaction' }, { status: 500 });

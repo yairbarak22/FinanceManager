@@ -415,11 +415,16 @@ export default function DashboardPage() {
     merchantName: string,
     saveBehavior: 'once' | 'always' | 'alwaysAsk',
     newDescription?: string,
-    newAmount?: number
+    newAmount?: number,
+    updateExistingTransactions?: boolean
   ) => {
     try {
       // Build update body with all changed fields
-      const updateBody: Record<string, unknown> = { category: newCategory };
+      const updateBody: Record<string, unknown> = { 
+        category: newCategory,
+        updateExistingTransactions,
+        merchantName, // Pass merchant name for batch update
+      };
       if (newDescription !== undefined) {
         updateBody.description = newDescription;
       }
@@ -434,6 +439,8 @@ export default function DashboardPage() {
       });
 
       if (!res.ok) throw new Error('Failed to update transaction');
+      
+      const responseData = await res.json();
 
       if (saveBehavior !== 'once') {
         await apiFetch('/api/merchant-category', {
@@ -449,7 +456,10 @@ export default function DashboardPage() {
 
       await fetchData();
 
-      if (saveBehavior === 'once') {
+      // Show appropriate toast message
+      if (responseData.updatedTransactionsCount > 0) {
+        toast.success(`העסקה עודכנה ו-${responseData.updatedTransactionsCount} עסקאות נוספות עודכנו`);
+      } else if (saveBehavior === 'once') {
         toast.success('העסקה עודכנה');
       } else if (saveBehavior === 'always') {
         toast.success('העסקה עודכנה ותישמר לפעמים הבאות');
@@ -464,10 +474,7 @@ export default function DashboardPage() {
   };
 
   // Recurring transaction handlers
-  const handleAddRecurring = async (
-    data: Omit<RecurringTransaction, 'id' | 'createdAt' | 'updatedAt'>,
-    updateExistingTransactions?: boolean
-  ) => {
+  const handleAddRecurring = async (data: Omit<RecurringTransaction, 'id' | 'createdAt' | 'updatedAt'>) => {
     const isNewRecurring = !editingRecurring;
 
     try {
@@ -479,25 +486,17 @@ export default function DashboardPage() {
       const res = await apiFetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, updateExistingTransactions }),
+        body: JSON.stringify(data),
       });
       if (!res.ok) {
         const errData = await res.json();
         throw new Error(errData.error || 'Failed to save');
       }
-      
-      const responseData = await res.json();
       setEditingRecurring(null);
       await fetchData();
-      
-      // Show appropriate toast message based on whether transactions were updated
+      toast.success(isNewRecurring ? 'העסקה הקבועה נוספה' : 'העסקה הקבועה עודכנה');
       if (isNewRecurring) {
-        toast.success('העסקה הקבועה נוספה');
         analytics.trackAddRecurring(data.type, data.category, data.amount);
-      } else if (responseData.updatedTransactionsCount > 0) {
-        toast.success(`העסקה הקבועה עודכנה ו-${responseData.updatedTransactionsCount} עסקאות קיימות עודכנו`);
-      } else {
-        toast.success('העסקה הקבועה עודכנה');
       }
     } catch (error) {
       console.error('Error saving recurring transaction:', error);
