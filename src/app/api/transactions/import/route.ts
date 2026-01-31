@@ -547,21 +547,33 @@ function parseDate(value: unknown, enableLogging = false, isHtmlFile = false): D
       day = first;
       month = second - 1;
       log(`HTML file DD.MM format (Israeli): day=${first}, month=${second}, year=${year}`);
+      // #region agent log - parseDate branch taken
+      fetch('http://127.0.0.1:7242/ingest/b8de791a-b92e-4d32-afea-6bca7e0f2680',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:549',message:'parseDate branch: HTML+dot',data:{branch:'isHtmlFile&&hasDot',first,second,year,day,month:month+1,isHtmlFile,hasDot},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'ALL'})}).catch(()=>{});
+      // #endregion
     } else if (first > 12) {
       // First value > 12 means it MUST be the day (DD/MM format)
       day = first;
       month = second - 1;
       log(`DD/MM format detected (first > 12): day=${first}, month=${second}, year=${year}`);
+      // #region agent log - parseDate branch
+      fetch('http://127.0.0.1:7242/ingest/b8de791a-b92e-4d32-afea-6bca7e0f2680',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:558',message:'parseDate branch: first>12',data:{branch:'first>12',first,second,year,day,month:month+1,isHtmlFile,hasDot},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'ALL'})}).catch(()=>{});
+      // #endregion
     } else if (second > 12) {
       // Second value > 12 means it MUST be the day (MM/DD format)
       month = first - 1;
       day = second;
       log(`MM/DD format detected (second > 12): month=${first}, day=${second}, year=${year}`);
+      // #region agent log - parseDate branch
+      fetch('http://127.0.0.1:7242/ingest/b8de791a-b92e-4d32-afea-6bca7e0f2680',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:567',message:'parseDate branch: second>12',data:{branch:'second>12',first,second,year,day,month:month+1,isHtmlFile,hasDot},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'ALL'})}).catch(()=>{});
+      // #endregion
     } else if (hasDot) {
       // Dots = Israeli format (DD.MM.YYYY)
       day = first;
       month = second - 1;
       log(`DD.MM format (Israeli with dots): day=${first}, month=${second}, year=${year}`);
+      // #region agent log - parseDate branch
+      fetch('http://127.0.0.1:7242/ingest/b8de791a-b92e-4d32-afea-6bca7e0f2680',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:576',message:'parseDate branch: hasDot (non-HTML)',data:{branch:'hasDot',first,second,year,day,month:month+1,isHtmlFile,hasDot},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'ALL'})}).catch(()=>{});
+      // #endregion
     } else if (hasSlash && is2DigitYear) {
       // Slashes with 2-digit year = XLSX converted American format (MM/DD/YY)
       // This is the most reliable indicator for Excel-sourced dates
@@ -1041,9 +1053,9 @@ export async function POST(request: NextRequest) {
                         firstBytes.toLowerCase().includes('<html') ||
                         firstBytes.toLowerCase().includes('<table');
     
-    // DEBUG: Log file type detection
-    console.log('[DEBUG HTML Detection] First 100 bytes:', JSON.stringify(firstBytes));
-    console.log('[DEBUG HTML Detection] isHtmlBased:', isHtmlBased);
+    // #region agent log - Hypothesis A: HTML detection
+    fetch('http://127.0.0.1:7242/ingest/b8de791a-b92e-4d32-afea-6bca7e0f2680',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:1044',message:'HTML Detection',data:{firstBytes:firstBytes.substring(0,50),isHtmlBased,startsWithLT:firstBytes.startsWith('<')},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     
     // Variable to hold the parsed data
     let rawData: unknown[][];
@@ -1095,12 +1107,22 @@ export async function POST(request: NextRequest) {
       
       console.log('[Excel Import] Manually parsed', rows.length, 'rows from HTML');
       
+      // #region agent log - Hypothesis B: HTML parsing sample
+      const sampleRows = rows.slice(0, 5).map(r => r.slice(0, 4));
+      fetch('http://127.0.0.1:7242/ingest/b8de791a-b92e-4d32-afea-6bca7e0f2680',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:1097',message:'HTML parsed rows sample',data:{rowCount:rows.length,sampleRows},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+      // #endregion
+      
       // ✅ FIX: Use parsed rows directly without going through XLSX
       // This preserves the original date format (DD.MM.YYYY)
       console.log('[Excel Security] Sanitizing HTML data...');
       rawData = sanitizeExcelData(rows);
       console.log('[Excel Security] Sanitization complete ✓');
       console.log('[Excel Import] HTML processing complete, preserved', rawData.length, 'rows');
+      
+      // #region agent log - Hypothesis E: After sanitization
+      const sanitizedSample = rawData.slice(0, 5).map(r => Array.isArray(r) ? r.slice(0, 4) : r);
+      fetch('http://127.0.0.1:7242/ingest/b8de791a-b92e-4d32-afea-6bca7e0f2680',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:1105',message:'After sanitization sample',data:{sanitizedSample},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+      // #endregion
       
     } else {
       // ============================================
@@ -1278,14 +1300,19 @@ export async function POST(request: NextRequest) {
 
         // Parse date - enable logging for first 10 rows
         // Pass isHtmlBased to force DD.MM.YYYY format for Israeli bank HTML files
-          if (shouldLog) {
-            console.log(`[IMPORT DEBUG] About to parse date. Raw value: ${JSON.stringify(date)}, isHtmlBased: ${isHtmlBased}`);
+          // #region agent log - Hypothesis C,D: Before parseDate
+          if (debugRowCount < 5) {
+            fetch('http://127.0.0.1:7242/ingest/b8de791a-b92e-4d32-afea-6bca7e0f2680',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:1295',message:'Before parseDate',data:{rowNum,dateValue:date,dateType:typeof date,isHtmlBased,merchantName},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,D'})}).catch(()=>{});
           }
-          const parsedDate = parseDate(date, shouldLog, isHtmlBased);
-          if (shouldLog) {
-            console.log(`[IMPORT DEBUG] Parsed date result: ${parsedDate ? parsedDate.toISOString() : 'null'}, Local: ${parsedDate ? `${parsedDate.getDate()}/${parsedDate.getMonth() + 1}/${parsedDate.getFullYear()}` : 'null'}`);
+          // #endregion
+          const parsedDate = parseDate(date, debugRowCount < 5, isHtmlBased);
+          // #region agent log - Hypothesis C,D: After parseDate
+          if (debugRowCount < 5) {
+            const localDate = parsedDate ? `${parsedDate.getDate()}/${parsedDate.getMonth() + 1}/${parsedDate.getFullYear()}` : 'null';
+            fetch('http://127.0.0.1:7242/ingest/b8de791a-b92e-4d32-afea-6bca7e0f2680',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:1300',message:'After parseDate',data:{rowNum,dateValue:date,parsedLocal:localDate,isHtmlBased},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,D'})}).catch(()=>{});
             debugRowCount++;
           }
+          // #endregion
           if (!parsedDate) {
             errors.push(`שורה ${rowNum}: תאריך לא תקין - ${String(date)}`);
           continue;
