@@ -486,8 +486,7 @@ function parseAmount(value: unknown): number | null {
  */
 function parseDate(value: unknown, enableLogging = false, isHtmlFile = false): Date | null {
   const log = (msg: string) => {
-    // Always log for debugging this issue
-    console.log(`[parseDate] ${msg}`);
+    if (enableLogging) console.log(`[parseDate] ${msg}`);
   };
   
   log(`Input: ${JSON.stringify(value)}, type: ${typeof value}, isHtmlFile: ${isHtmlFile}`);
@@ -1032,8 +1031,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[Excel Import] File validation passed ✓');
 
-    // Step 3: Parse with HARDENED options - Security Layer #2
-    let workbook: XLSX.WorkBook;
+    // Step 3: Parse file based on type
     
     // Detect if file is HTML-based (common from Israeli banks)
     // This is used later for date parsing to force DD.MM.YYYY format
@@ -1047,53 +1045,72 @@ export async function POST(request: NextRequest) {
     console.log('[DEBUG HTML Detection] First 100 bytes:', JSON.stringify(firstBytes));
     console.log('[DEBUG HTML Detection] isHtmlBased:', isHtmlBased);
     
-    try {
-      console.log('[Excel Import] Parsing workbook with security options...');
-
-      if (isHtmlBased) {
-        console.log('[Excel Import] Detected HTML-based Excel file, parsing manually...');
+    // Variable to hold the parsed data
+    let rawData: unknown[][];
+    
+    if (isHtmlBased) {
+      // ============================================
+      // HTML FILE PROCESSING - Skip XLSX to preserve date format
+      // ============================================
+      // IMPORTANT: We do NOT use XLSX for HTML files because XLSX converts
+      // dates like "12.1.2026" (DD.MM.YYYY) to American format, causing
+      // dates with day <= 12 to be misparsed.
+      
+      console.log('[Excel Import] Detected HTML-based Excel file, parsing manually...');
+      console.log('[Excel Import] Skipping XLSX to preserve Israeli date format (DD.MM.YYYY)');
+      
+      const htmlContent = buffer.toString('utf8');
+      
+      // Manual HTML table parsing for Israeli bank files
+      // Extract all <tr> rows and their <td>/<th> cells
+      const rows: string[][] = [];
+      
+      // Find all table rows
+      const rowMatches = htmlContent.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
+      for (const rowMatch of rowMatches) {
+        const rowHtml = rowMatch[1];
+        const cells: string[] = [];
         
-        const htmlContent = buffer.toString('utf8');
-        
-        // Manual HTML table parsing for Israeli bank files
-        // Extract all <tr> rows and their <td>/<th> cells
-        const rows: string[][] = [];
-        
-        // Find all table rows
-        const rowMatches = htmlContent.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
-        for (const rowMatch of rowMatches) {
-          const rowHtml = rowMatch[1];
-          const cells: string[] = [];
-          
-          // Extract all cells (td and th)
-          const cellMatches = rowHtml.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi);
-          for (const cellMatch of cellMatches) {
-            // Clean the cell content - remove HTML tags and decode entities
-            let cellContent = cellMatch[1]
-              .replace(/<[^>]+>/g, '') // Remove HTML tags
-              .replace(/&nbsp;/gi, ' ')
-              .replace(/&quot;/gi, '"')
-              .replace(/&amp;/gi, '&')
-              .replace(/&lt;/gi, '<')
-              .replace(/&gt;/gi, '>')
-              .replace(/&#\d+;/g, '') // Remove numeric entities
-              .replace(/\s+/g, ' ') // Normalize whitespace
-              .trim();
-            cells.push(cellContent);
-          }
-          
-          if (cells.length > 0) {
-            rows.push(cells);
-          }
+        // Extract all cells (td and th)
+        const cellMatches = rowHtml.matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi);
+        for (const cellMatch of cellMatches) {
+          // Clean the cell content - remove HTML tags and decode entities
+          let cellContent = cellMatch[1]
+            .replace(/<[^>]+>/g, '') // Remove HTML tags
+            .replace(/&nbsp;/gi, ' ')
+            .replace(/&quot;/gi, '"')
+            .replace(/&amp;/gi, '&')
+            .replace(/&lt;/gi, '<')
+            .replace(/&gt;/gi, '>')
+            .replace(/&#\d+;/g, '') // Remove numeric entities
+            .replace(/\s+/g, ' ') // Normalize whitespace
+            .trim();
+          cells.push(cellContent);
         }
         
-        console.log('[Excel Import] Manually parsed', rows.length, 'rows from HTML');
+        if (cells.length > 0) {
+          rows.push(cells);
+        }
+      }
+      
+      console.log('[Excel Import] Manually parsed', rows.length, 'rows from HTML');
+      
+      // ✅ FIX: Use parsed rows directly without going through XLSX
+      // This preserves the original date format (DD.MM.YYYY)
+      console.log('[Excel Security] Sanitizing HTML data...');
+      rawData = sanitizeExcelData(rows);
+      console.log('[Excel Security] Sanitization complete ✓');
+      console.log('[Excel Import] HTML processing complete, preserved', rawData.length, 'rows');
+      
+    } else {
+      // ============================================
+      // EXCEL/CSV FILE PROCESSING - Use XLSX library
+      // ============================================
+      
+      let workbook: XLSX.WorkBook;
+      try {
+        console.log('[Excel Import] Parsing workbook with security options...');
         
-        // Create a workbook from the parsed rows
-        const ws = XLSX.utils.aoa_to_sheet(rows);
-        workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, ws, 'Sheet1');
-      } else {
         // Standard Excel file parsing
         workbook = XLSX.read(buffer, {
           type: 'buffer',
@@ -1109,56 +1126,56 @@ export async function POST(request: NextRequest) {
           // Additional hardening:
           WTF: false,           // Disable "What The Format" (legacy/unsafe formats)
         });
+
+        console.log('[Excel Import] Workbook parsed successfully ✓');
+        console.log('[Excel Import] Sheets found:', workbook.SheetNames.length);
+      } catch (parseError) {
+        console.error('[Excel Parsing] ERROR:', parseError);
+        console.error('[Excel Parsing] Error details:', {
+          name: parseError instanceof Error ? parseError.name : 'Unknown',
+          message: parseError instanceof Error ? parseError.message : String(parseError),
+        });
+
+        // Generic error message for security (don't expose internals)
+        return NextResponse.json(
+          { error: 'שגיאה בקריאת קובץ Excel. ודא שהקובץ תקין ולא פגום' },
+          { status: 400 }
+        );
       }
 
-      console.log('[Excel Import] Workbook parsed successfully ✓');
-      console.log('[Excel Import] Sheets found:', workbook.SheetNames.length);
-    } catch (parseError) {
-      console.error('[Excel Parsing] ERROR:', parseError);
-      console.error('[Excel Parsing] Error details:', {
-        name: parseError instanceof Error ? parseError.name : 'Unknown',
-        message: parseError instanceof Error ? parseError.message : String(parseError),
+      // Step 4: Get first sheet
+      const firstSheetName = workbook.SheetNames[0];
+      if (!firstSheetName) {
+        return NextResponse.json(
+          { error: 'הקובץ לא מכיל גליונות עבודה' },
+          { status: 400 }
+        );
+      }
+
+      const worksheet = workbook.Sheets[firstSheetName];
+      if (!worksheet) {
+        return NextResponse.json(
+          { error: 'שגיאה בקריאת גליון העבודה' },
+          { status: 400 }
+        );
+      }
+
+      // Step 5: Convert to array of arrays
+      console.log('[Excel Import] Converting sheet to array...');
+      const unsafeData: unknown[][] = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,        // Return array of arrays (not objects)
+        raw: false,       // Return formatted strings (not raw values)
+        defval: '',       // Default value for empty cells
+        blankrows: true,  // Keep blank rows (for header detection)
       });
 
-      // Generic error message for security (don't expose internals)
-      return NextResponse.json(
-        { error: 'שגיאה בקריאת קובץ Excel. ודא שהקובץ תקין ולא פגום' },
-        { status: 400 }
-      );
+      console.log('[Excel Import] Converted', unsafeData.length, 'rows');
+
+      // Step 6: SANITIZE ALL DATA - Security Layer #3
+      console.log('[Excel Security] Sanitizing all cell values...');
+      rawData = sanitizeExcelData(unsafeData);
+      console.log('[Excel Security] Sanitization complete ✓');
     }
-
-    // Step 4: Get first sheet
-    const firstSheetName = workbook.SheetNames[0];
-    if (!firstSheetName) {
-      return NextResponse.json(
-        { error: 'הקובץ לא מכיל גליונות עבודה' },
-        { status: 400 }
-      );
-    }
-
-    const worksheet = workbook.Sheets[firstSheetName];
-    if (!worksheet) {
-      return NextResponse.json(
-        { error: 'שגיאה בקריאת גליון העבודה' },
-        { status: 400 }
-      );
-    }
-
-    // Step 5: Convert to array of arrays
-    console.log('[Excel Import] Converting sheet to array...');
-    const unsafeData: unknown[][] = XLSX.utils.sheet_to_json(worksheet, {
-      header: 1,        // Return array of arrays (not objects)
-      raw: false,       // Return formatted strings (not raw values)
-      defval: '',       // Default value for empty cells
-      blankrows: true,  // Keep blank rows (for header detection)
-    });
-
-    console.log('[Excel Import] Converted', unsafeData.length, 'rows');
-
-    // Step 6: SANITIZE ALL DATA - Security Layer #3
-    console.log('[Excel Security] Sanitizing all cell values...');
-    const rawData = sanitizeExcelData(unsafeData);
-    console.log('[Excel Security] Sanitization complete ✓');
 
     if (rawData.length === 0) {
       return NextResponse.json(
