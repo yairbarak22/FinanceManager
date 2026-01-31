@@ -542,13 +542,14 @@ function parseDate(value: unknown, enableLogging = false, isHtmlFile = false): D
     // 5. Slashes with 2-digit year → MM/DD/YY (XLSX American format)
     // 6. Default: DD/MM/YYYY (Israeli standard)
     
-    if (isHtmlFile && hasDot) {
-      // HTML files from Israeli banks: ALWAYS DD.MM.YYYY format
+    if (isHtmlFile) {
+      // HTML files from Israeli banks: ALWAYS DD/MM/YYYY or DD.MM.YYYY format
+      // Israeli banks use DD/MM format regardless of separator (dots or slashes)
       day = first;
       month = second - 1;
-      log(`HTML file DD.MM format (Israeli): day=${first}, month=${second}, year=${year}`);
+      log(`HTML file Israeli format (DD/MM): day=${first}, month=${second}, year=${year}, separator=${hasDot ? 'dot' : hasSlash ? 'slash' : 'other'}`);
       // #region agent log - parseDate branch taken
-      fetch('http://127.0.0.1:7242/ingest/b8de791a-b92e-4d32-afea-6bca7e0f2680',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:549',message:'parseDate branch: HTML+dot',data:{branch:'isHtmlFile&&hasDot',first,second,year,day,month:month+1,isHtmlFile,hasDot},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'ALL'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/b8de791a-b92e-4d32-afea-6bca7e0f2680',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:549',message:'parseDate branch: HTML Israeli',data:{branch:'isHtmlFile',first,second,year,day,month:month+1,isHtmlFile,hasDot,hasSlash},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'ALL'})}).catch(()=>{});
       // #endregion
     } else if (first > 12) {
       // First value > 12 means it MUST be the day (DD/MM format)
