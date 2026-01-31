@@ -147,7 +147,8 @@ function LoginContent() {
               fontFamily: 'var(--font-heebo), sans-serif',
             }}
           >
-            דואגים לעתיד שלך          </h1>
+            ניהול הון חכם
+          </h1>
 
           {/* Error Message */}
           {error && (
