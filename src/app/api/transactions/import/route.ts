@@ -480,13 +480,16 @@ function parseAmount(value: unknown): number | null {
  * 
  * Key insight: When XLSX reads Excel dates, it often converts them to
  * American format (MM/DD/YY) with slashes, regardless of the original format.
+ * 
+ * For HTML files from Israeli banks, dates are ALWAYS in DD.MM.YYYY format.
+ * The isHtmlFile parameter forces DD.MM interpretation for dots.
  */
-function parseDate(value: unknown, enableLogging = false): Date | null {
+function parseDate(value: unknown, enableLogging = false, isHtmlFile = false): Date | null {
   const log = (msg: string) => {
     if (enableLogging) console.log(`[parseDate] ${msg}`);
   };
   
-  log(`Input: ${JSON.stringify(value)}, type: ${typeof value}`);
+  log(`Input: ${JSON.stringify(value)}, type: ${typeof value}, isHtmlFile: ${isHtmlFile}`);
   
   if (value === null || value === undefined || value === '') {
     log('Empty value, returning null');
@@ -531,44 +534,62 @@ function parseDate(value: unknown, enableLogging = false): Date | null {
     let day: number, month: number;
     
     // FORMAT DETECTION LOGIC:
-    // 1. Slashes with 2-digit year (e.g., "12/7/25") → XLSX converted to American MM/DD/YY
-    // 2. Dots (e.g., "7.12.2025") → Israeli DD.MM.YYYY
+    // Priority for HTML files (Israeli banks): ALWAYS DD.MM.YYYY
+    // 1. HTML files with dots → DD.MM.YYYY (Israeli format, highest priority)
+    // 2. If first > 12 → Must be DD/MM (day can't be > 12 in MM/DD)
     // 3. If second > 12 → Must be MM/DD (month can't be > 12)
-    // 4. If first > 12 → Must be DD/MM (month can't be > 12)
-    // 5. Otherwise, use separator as hint
+    // 4. Dots without HTML context → DD.MM.YYYY (Israeli format)
+    // 5. Slashes with 2-digit year → MM/DD/YY (XLSX American format)
+    // 6. Default: DD/MM/YYYY (Israeli standard)
     
-    if (second > 12) {
-      // Second value > 12 means it MUST be the day (MM/DD format)
-      month = first - 1;
-      day = second;
-      log(`MM/DD format detected (second > 12): month=${first}, day=${second}, year=${year}`);
+    if (isHtmlFile && hasDot) {
+      // HTML files from Israeli banks: ALWAYS DD.MM.YYYY format
+      day = first;
+      month = second - 1;
+      log(`HTML file DD.MM format (Israeli): day=${first}, month=${second}, year=${year}`);
     } else if (first > 12) {
       // First value > 12 means it MUST be the day (DD/MM format)
       day = first;
       month = second - 1;
       log(`DD/MM format detected (first > 12): day=${first}, month=${second}, year=${year}`);
+    } else if (second > 12) {
+      // Second value > 12 means it MUST be the day (MM/DD format)
+      month = first - 1;
+      day = second;
+      log(`MM/DD format detected (second > 12): month=${first}, day=${second}, year=${year}`);
+    } else if (hasDot) {
+      // Dots = Israeli format (DD.MM.YYYY)
+      day = first;
+      month = second - 1;
+      log(`DD.MM format (Israeli with dots): day=${first}, month=${second}, year=${year}`);
     } else if (hasSlash && is2DigitYear) {
       // Slashes with 2-digit year = XLSX converted American format (MM/DD/YY)
       // This is the most reliable indicator for Excel-sourced dates
       month = first - 1;
       day = second;
       log(`MM/DD/YY format (XLSX American): month=${first}, day=${second}, year=${year}`);
-    } else if (hasDot) {
-      // Dots = Israeli format (DD.MM.YYYY)
-      day = first;
-      month = second - 1;
-      log(`DD.MM format (Israeli with dots): day=${first}, month=${second}, year=${year}`);
     } else {
-      // Default: assume DD/MM/YYYY (Israeli standard for ambiguous cases with dashes)
+      // Default: assume DD/MM/YYYY (Israeli standard for ambiguous cases)
       day = first;
       month = second - 1;
       log(`DD/MM format assumed (default): day=${first}, month=${second}, year=${year}`);
     }
     
+    // Validate day and month ranges
     if (!isNaN(day) && !isNaN(month) && !isNaN(year) && month >= 0 && month <= 11 && day >= 1 && day <= 31) {
       const date = new Date(year, month, day);
-      log(`Created date: ${date.toISOString()}`);
-      if (!isNaN(date.getTime())) return date;
+      
+      // Extra validation: ensure the date wasn't auto-corrected by JS Date
+      // (e.g., Feb 30 becomes Mar 2)
+      if (!isNaN(date.getTime()) && 
+          date.getDate() === day && 
+          date.getMonth() === month && 
+          date.getFullYear() === year) {
+        log(`Created date: ${date.toISOString()}`);
+        return date;
+      } else {
+        log(`Date validation failed: expected ${day}/${month + 1}/${year}, got ${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`);
+      }
     }
   }
   
@@ -583,8 +604,15 @@ function parseDate(value: unknown, enableLogging = false): Date | null {
     
     if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
       const date = new Date(year, month, day);
-      log(`Created date: ${date.toISOString()}`);
-      if (!isNaN(date.getTime())) return date;
+      
+      // Extra validation for ISO format as well
+      if (!isNaN(date.getTime()) && 
+          date.getDate() === day && 
+          date.getMonth() === month && 
+          date.getFullYear() === year) {
+        log(`Created date: ${date.toISOString()}`);
+        return date;
+      }
     }
   }
   
@@ -1005,15 +1033,17 @@ export async function POST(request: NextRequest) {
 
     // Step 3: Parse with HARDENED options - Security Layer #2
     let workbook: XLSX.WorkBook;
+    
+    // Detect if file is HTML-based (common from Israeli banks)
+    // This is used later for date parsing to force DD.MM.YYYY format
+    const firstBytes = buffer.slice(0, 100).toString('utf8').trim();
+    const isHtmlBased = firstBytes.startsWith('<') || 
+                        firstBytes.toLowerCase().startsWith('<!doctype') ||
+                        firstBytes.toLowerCase().includes('<html') ||
+                        firstBytes.toLowerCase().includes('<table');
+    
     try {
       console.log('[Excel Import] Parsing workbook with security options...');
-
-      // Detect if file is HTML-based (common from Israeli banks)
-      const firstBytes = buffer.slice(0, 100).toString('utf8').trim();
-      const isHtmlBased = firstBytes.startsWith('<') || 
-                          firstBytes.toLowerCase().startsWith('<!doctype') ||
-                          firstBytes.toLowerCase().includes('<html') ||
-                          firstBytes.toLowerCase().includes('<table');
 
       if (isHtmlBased) {
         console.log('[Excel Import] Detected HTML-based Excel file, parsing manually...');
@@ -1225,7 +1255,8 @@ export async function POST(request: NextRequest) {
         }
 
         // Parse date - enable logging for first 10 rows
-          const parsedDate = parseDate(date, shouldLog);
+        // Pass isHtmlBased to force DD.MM.YYYY format for Israeli bank HTML files
+          const parsedDate = parseDate(date, shouldLog, isHtmlBased);
           if (shouldLog) {
             console.log(`[IMPORT DEBUG] Parsed date result: ${parsedDate ? parsedDate.toISOString() : 'null'}`);
             debugRowCount++;
