@@ -11,7 +11,7 @@
     "backfill:networth": "npx tsx scripts/backfill-networth.ts"
   },
   "dependencies": {
-    "@ai-sdk/groq": "^3.0.0",
+    "@ai-sdk/openai": "^3.0.25",
     "@auth/prisma-adapter": "^2.11.1",
     "@google/generative-ai": "^0.24.1",
     "@next/third-parties": "^16.1.1",

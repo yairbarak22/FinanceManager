@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/authHelpers';
-import { groq } from '@ai-sdk/groq';
+import { openai } from '@ai-sdk/openai';
 import { generateText } from 'ai';
 import * as XLSX from 'xlsx';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
@@ -269,7 +269,7 @@ async function mapColumnsWithAI(
     console.log('[AI Column Mapping] Sample:', sampleStr);
 
     const response = await generateText({
-      model: groq('openai/gpt-oss-120b'),
+      model: openai('gpt-4o'),
       system: COLUMN_MAPPING_PROMPT,
       messages: [{
         role: 'user',
@@ -811,7 +811,7 @@ async function classifyMerchantsWithAI(
     console.log('[AI Classification] Starting classification for', merchants.length, 'merchants');
 
     const response = await generateText({
-      model: groq('openai/gpt-oss-120b'),
+      model: openai('gpt-4o'),
       system: CLASSIFICATION_PROMPT,
       messages: [{
         role: 'user',

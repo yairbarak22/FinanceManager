@@ -24,7 +24,7 @@ interface Config {
   // Optional services
   resendApiKey?: string;
   gaMeasurementId?: string;
-  groqApiKey?: string;
+  openaiApiKey?: string;
   googleAiApiKey?: string;
 
   // Rate Limiting (Upstash Redis)
@@ -94,7 +94,7 @@ function loadConfig(): Config {
     // Optional services
     resendApiKey: process.env.RESEND_API_KEY,
     gaMeasurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
-    groqApiKey: process.env.GROQ_API_KEY,
+    openaiApiKey: process.env.OPENAI_API_KEY,
     googleAiApiKey: process.env.GOOGLE_AI_API_KEY,
 
     // Rate Limiting (Upstash Redis)

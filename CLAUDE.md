@@ -21,7 +21,7 @@ npx prisma generate  # Regenerate Prisma client
 - **Database**: PostgreSQL (Neon) with Prisma ORM
 - **Auth**: NextAuth.js with Google OAuth, JWT sessions
 - **Styling**: Tailwind CSS v4 with custom design system in `globals.css`
-- **AI**: Groq API for transaction classification and chat assistance
+- **AI**: OpenAI API (gpt-4o) for transaction classification and column mapping
 
 ### Key Directories
 - `src/app/` - Next.js App Router pages and API routes
