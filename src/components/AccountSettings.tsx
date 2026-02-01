@@ -286,6 +286,7 @@ export default function AccountSettings({ isOpen, onClose }: AccountSettingsProp
                             src={member.user.image}
                             alt={member.user.name || 'User'}
                             className="w-10 h-10 rounded-full"
+                            data-sl="mask"
                           />
                         ) : (
                           <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">

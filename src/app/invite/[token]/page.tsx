@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Users, Check, X, Loader2 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
+import { SensitiveData } from '@/components/common/SensitiveData';
 
 export default function InvitePage() {
   const { token } = useParams();
@@ -131,6 +132,7 @@ export default function InvitePage() {
                     src={session.user.image}
                     alt={session.user.name || 'User'}
                     className="w-12 h-12 rounded-full"
+                    data-sl="mask"
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
@@ -138,8 +140,8 @@ export default function InvitePage() {
                   </div>
                 )}
                 <div>
-                  <p className="font-medium text-gray-900">{session.user.name}</p>
-                  <p className="text-sm text-gray-500">{session.user.email}</p>
+                  <SensitiveData as="p" className="font-medium text-gray-900">{session.user.name}</SensitiveData>
+                  <SensitiveData as="p" className="text-sm text-gray-500">{session.user.email}</SensitiveData>
                 </div>
               </div>
             )}

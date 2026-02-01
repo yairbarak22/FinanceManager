@@ -353,6 +353,7 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
                 alt=""
                 className="w-10 h-10 rounded-full ring-2 ring-slate-100 flex-shrink-0"
                 title={isCollapsed ? session.user.name || 'משתמש' : undefined}
+                data-sl="mask"
               />
             ) : (
               <div 
@@ -366,12 +367,12 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
             )}
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-700 truncate">
+                <SensitiveData as="p" className="text-sm font-medium text-slate-700 truncate">
                   {session.user.name || 'משתמש'}
-                </p>
-                <p className="text-xs text-slate-400 truncate">
+                </SensitiveData>
+                <SensitiveData as="p" className="text-xs text-slate-400 truncate">
                   {session.user.email}
-                </p>
+                </SensitiveData>
               </div>
             )}
           </div>

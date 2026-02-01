@@ -46,6 +46,7 @@ export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserM
             src={image}
             alt={name || 'User'}
             className="w-8 h-8 rounded-full"
+            data-sl="mask"
           />
         ) : (
           <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">

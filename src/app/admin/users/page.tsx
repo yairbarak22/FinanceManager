@@ -20,6 +20,7 @@ import {
   Activity
 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
+import { SensitiveData } from '@/components/common/SensitiveData';
 
 interface UserData {
   id: string;
@@ -400,19 +401,20 @@ export default function AdminUsersPage() {
                               src={user.image}
                               alt={user.name || 'User'}
                               className="w-10 h-10 rounded-full"
+                              data-sl="mask"
                             />
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
                               <User className="w-5 h-5 text-indigo-600" />
                             </div>
                           )}
-                          <span className="font-medium text-gray-900">
+                          <SensitiveData as="span" className="font-medium text-gray-900">
                             {user.name || 'ללא שם'}
-                          </span>
+                          </SensitiveData>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {user.email}
+                        <SensitiveData>{user.email}</SensitiveData>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatDate(user.createdAt)}
