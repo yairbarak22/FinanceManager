@@ -496,22 +496,48 @@ function parseDate(value: unknown, enableLogging = false, isHtmlFile = false): D
     return null;
   }
   
+  // Helper function to validate date is in reasonable range
+  function isValidDateRange(date: Date): boolean {
+    const year = date.getFullYear();
+    // Only accept dates between 2000 and 2100 (reasonable range for financial transactions)
+    return year >= 2000 && year <= 2100;
+  }
+  
   // Handle Excel serial date number
   if (typeof value === 'number') {
     log(`Detected NUMBER: ${value}`);
+    
+    // Reject numbers that are clearly not dates
+    if (value <= 0 || value > 1000000) {
+      log(`Number ${value} is out of valid Excel serial range, returning null`);
+      return null;
+    }
+    
     if (value > 30000 && value < 100000) {
       // Excel dates start from 1899-12-30
       const date = new Date((value - 25569) * 86400 * 1000);
       log(`Excel serial conversion: ${value} -> ${date.toISOString()}`);
-      if (!isNaN(date.getTime())) return date;
+      if (!isNaN(date.getTime()) && isValidDateRange(date)) {
+        return date;
+      }
+      log(`Excel serial date ${value} resulted in invalid or out-of-range date`);
+      return null;
     }
-    log('Number out of Excel serial range, returning null');
+    
+    // Number in range but not Excel serial - might be a regular number mistaken for date
+    log(`Number ${value} is not in Excel serial range (30000-100000), returning null`);
     return null;
   }
   
   const str = String(value).trim();
   log(`String value: "${str}"`);
   if (!str) return null;
+  
+  // Reject strings that are just large numbers (likely not dates)
+  if (/^\d{5,}$/.test(str)) {
+    log(`String "${str}" is a large number, likely not a date, returning null`);
+    return null;
+  }
   
   // Detect separator type - this is KEY for format detection
   const hasSlash = str.includes('/');
@@ -529,6 +555,12 @@ function parseDate(value: unknown, enableLogging = false, isHtmlFile = false): D
     // Handle 2-digit year
     if (year < 100) {
       year += year > 50 ? 1900 : 2000;
+    }
+    
+    // Validate year is reasonable
+    if (year < 2000 || year > 2100) {
+      log(`Year ${year} is out of reasonable range (2000-2100), returning null`);
+      return null;
     }
     
     let day: number, month: number;
@@ -585,7 +617,8 @@ function parseDate(value: unknown, enableLogging = false, isHtmlFile = false): D
       if (!isNaN(date.getTime()) && 
           date.getDate() === day && 
           date.getMonth() === month && 
-          date.getFullYear() === year) {
+          date.getFullYear() === year &&
+          isValidDateRange(date)) {
         log(`Created date: ${date.toISOString()}`);
         return date;
       } else {
@@ -601,6 +634,12 @@ function parseDate(value: unknown, enableLogging = false, isHtmlFile = false): D
     const month = parseInt(isoMatch[2], 10) - 1;
     const day = parseInt(isoMatch[3], 10);
     
+    // Validate year is reasonable
+    if (year < 2000 || year > 2100) {
+      log(`Year ${year} is out of reasonable range (2000-2100), returning null`);
+      return null;
+    }
+    
     log(`ISO match: year=${year}, month=${month + 1}, day=${day}`);
     
     if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
@@ -610,7 +649,8 @@ function parseDate(value: unknown, enableLogging = false, isHtmlFile = false): D
       if (!isNaN(date.getTime()) && 
           date.getDate() === day && 
           date.getMonth() === month && 
-          date.getFullYear() === year) {
+          date.getFullYear() === year &&
+          isValidDateRange(date)) {
         log(`Created date: ${date.toISOString()}`);
         return date;
       }
@@ -620,7 +660,7 @@ function parseDate(value: unknown, enableLogging = false, isHtmlFile = false): D
   // Try standard date parsing as last resort
   log('Trying fallback Date parsing');
   const date = new Date(str);
-  if (!isNaN(date.getTime())) {
+  if (!isNaN(date.getTime()) && isValidDateRange(date)) {
     log(`Fallback succeeded: ${date.toISOString()}`);
     return date;
   }
@@ -1276,7 +1316,29 @@ export async function POST(request: NextRequest) {
         // Parse date - pass isHtmlBased to force DD/MM format for Israeli bank HTML files
           const parsedDate = parseDate(date, false, isHtmlBased);
           if (!parsedDate) {
-            errors.push(`שורה ${rowNum}: תאריך לא תקין - ${String(date)}`);
+            // Provide detailed error message based on the value type
+            let errorMsg = `שורה ${rowNum}: תאריך לא תקין`;
+            
+            if (date === null || date === undefined || date === '') {
+              errorMsg += ' - תאריך ריק';
+            } else if (typeof date === 'number') {
+              if (date > 100000) {
+                errorMsg += ` - המספר ${date} גדול מדי ולא יכול להיות תאריך תקין. ייתכן שהעמודה הלא נכונה מזוהה כתאריך`;
+              } else if (date <= 0) {
+                errorMsg += ` - המספר ${date} לא תקין לתאריך`;
+              } else {
+                errorMsg += ` - לא הצלחנו לפרסר את המספר ${date} כתאריך. ודא שהעמודה הנכונה מזוהה כתאריך`;
+              }
+            } else {
+              const dateStr = String(date);
+              if (/^\d{5,}$/.test(dateStr)) {
+                errorMsg += ` - הערך "${dateStr}" נראה כמו מספר גדול ולא תאריך. ייתכן שהעמודה הלא נכונה מזוהה כתאריך`;
+              } else {
+                errorMsg += ` - הערך "${dateStr}" לא בפורמט תאריך מוכר. נסה לבדוק את פורמט התאריך בקובץ`;
+              }
+            }
+            
+            errors.push(errorMsg);
           continue;
         }
 
