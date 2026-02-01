@@ -269,7 +269,7 @@ async function mapColumnsWithAI(
     console.log('[AI Column Mapping] Sample:', sampleStr);
 
     const response = await generateText({
-      model: openai('gpt-4o'),
+      model: openai('gpt-4-turbo'),
       system: COLUMN_MAPPING_PROMPT,
       messages: [{
         role: 'user',
@@ -811,7 +811,7 @@ async function classifyMerchantsWithAI(
     console.log('[AI Classification] Starting classification for', merchants.length, 'merchants');
 
     const response = await generateText({
-      model: openai('gpt-4o'),
+      model: openai('gpt-4-turbo'),
       system: CLASSIFICATION_PROMPT,
       messages: [{
         role: 'user',
