@@ -44,6 +44,9 @@ export const RATE_LIMITS = {
 
   // Contact form per user - additional limit
   contactUser: { maxRequests: 10, windowSeconds: 300 } as RateLimitConfig,
+
+  // Admin endpoints - strict limits to prevent abuse if credentials compromised
+  admin: { maxRequests: 30, windowSeconds: 60 } as RateLimitConfig,
 };
 
 // ============================================================================

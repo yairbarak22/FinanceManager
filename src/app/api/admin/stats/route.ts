@@ -2,13 +2,23 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminHelpers';
 import { cleanupOldAuditLogs } from '@/lib/auditLog';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 // GET - Fetch admin statistics (admin only)
 export async function GET() {
   try {
     // SECURITY: Triple validation - middleware, then this check
-    const { error } = await requireAdmin();
+    const { userId, error } = await requireAdmin();
     if (error) return error;
+
+    // Rate limit admin endpoints to prevent abuse
+    const rateLimitResult = await checkRateLimit(`admin:${userId}`, RATE_LIMITS.admin);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'יותר מדי בקשות. נסה שוב בעוד דקה.' },
+        { status: 429 }
+      );
+    }
 
     // Cleanup old audit logs (fire-and-forget, 90-day retention)
     cleanupOldAuditLogs().catch(() => {});

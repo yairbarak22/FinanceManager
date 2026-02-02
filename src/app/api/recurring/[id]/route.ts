@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, withSharedAccountId } from '@/lib/authHelpers';
+import { requireAuth, withSharedAccountId, checkPermission } from '@/lib/authHelpers';
 
 export async function PUT(
   request: NextRequest,
@@ -9,6 +9,10 @@ export async function PUT(
   try {
     const { userId, error } = await requireAuth();
     if (error) return error;
+
+    // Check edit permission for shared accounts
+    const editPermission = await checkPermission(userId, 'canEdit');
+    if (!editPermission.allowed) return editPermission.error!;
 
     const { id } = await params;
     const body = await request.json();
@@ -86,12 +90,16 @@ export async function PATCH(
     const { userId, error } = await requireAuth();
     if (error) return error;
 
+    // Check edit permission for shared accounts
+    const editPermission = await checkPermission(userId, 'canEdit');
+    if (!editPermission.allowed) return editPermission.error!;
+
     const { id } = await params;
     const body = await request.json();
-    
+
     // Use shared account to allow editing records from all members
     const sharedWhere = await withSharedAccountId(id, userId);
-    
+
     const result = await prisma.recurringTransaction.updateMany({
       where: sharedWhere,
       data: {
@@ -122,11 +130,15 @@ export async function DELETE(
     const { userId, error } = await requireAuth();
     if (error) return error;
 
+    // Check delete permission for shared accounts
+    const deletePermission = await checkPermission(userId, 'canDelete');
+    if (!deletePermission.allowed) return deletePermission.error!;
+
     const { id } = await params;
-    
+
     // Use shared account to allow deleting records from all members
     const sharedWhere = await withSharedAccountId(id, userId);
-    
+
     const result = await prisma.recurringTransaction.deleteMany({
       where: sharedWhere,
     });

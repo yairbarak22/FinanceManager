@@ -80,6 +80,7 @@ model Transaction {
 
   @@index([userId])
   @@index([userId, date]) // Composite index for date filtering queries
+  @@index([userId, category]) // Composite for category summaries in dashboard
 }
 
 model RecurringTransaction {
@@ -284,6 +285,7 @@ model SharedAccountMember {
   @@unique([userId, sharedAccountId])
   @@index([userId])
   @@index([sharedAccountId])
+  @@index([sharedAccountId, userId]) // Composite for getSharedUserIds() - called on every API request
 }
 
 model AccountInvite {

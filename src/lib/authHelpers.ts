@@ -159,3 +159,46 @@ export async function withSharedAccountId(
   return { id, userId: { in: userIds } };
 }
 
+/**
+ * Check if the user has permission to perform an action in their shared account
+ * Returns allowed: true for personal accounts (no shared account membership)
+ * For shared accounts, checks the specific permission flag (canEdit, canDelete, canInvite)
+ */
+export async function checkPermission(
+  userId: string,
+  permission: 'canEdit' | 'canDelete' | 'canInvite'
+): Promise<{ allowed: boolean; error?: NextResponse }> {
+  const member = await prisma.sharedAccountMember.findFirst({
+    where: { userId },
+    select: {
+      role: true,
+      canEdit: true,
+      canDelete: true,
+      canInvite: true
+    },
+  });
+
+  // No membership found - this shouldn't happen but allow (will be created on first access)
+  if (!member) {
+    return { allowed: true };
+  }
+
+  // Owner always has full permissions
+  if (member.role === MemberRole.OWNER) {
+    return { allowed: true };
+  }
+
+  // Check the specific permission
+  if (!member[permission]) {
+    return {
+      allowed: false,
+      error: NextResponse.json(
+        { error: 'אין לך הרשאה לבצע פעולה זו' },
+        { status: 403 }
+      ),
+    };
+  }
+
+  return { allowed: true };
+}
+
