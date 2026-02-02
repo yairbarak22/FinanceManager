@@ -196,12 +196,12 @@ export async function initialBackfillNetWorthHistory(userId: string): Promise<vo
   }
   
   // Create history records for all months with same value
-  for (const monthKey of monthsToBackfill) {
+  // Use batch transaction instead of sequential upserts (N+1 fix)
+  const upsertOperations = monthsToBackfill.map((monthKey) => {
     const [year, monthNum] = monthKey.split('-').map(Number);
     const date = new Date(year, monthNum - 1, 1);
-    
-    // Use upsert to avoid duplicates
-    await prisma.netWorthHistory.upsert({
+
+    return prisma.netWorthHistory.upsert({
       where: {
         userId_date: {
           userId,
@@ -225,7 +225,10 @@ export async function initialBackfillNetWorthHistory(userId: string): Promise<vo
         liabilities: totalLiabilities,
       },
     });
-  }
+  });
+
+  // Execute all upserts in a single transaction
+  await prisma.$transaction(upsertOperations);
 }
 
 /**
@@ -253,9 +256,14 @@ export async function backfillNetWorthHistory(userId: string): Promise<void> {
     },
   });
 
-  // Save net worth for each month
-  for (const record of historyRecords) {
-    await saveNetWorthHistory(userId, record.monthKey);
+  // Save net worth for each month using parallel batches (N+1 fix)
+  // Process in batches of 5 to avoid overwhelming the database
+  const BATCH_SIZE = 5;
+  for (let i = 0; i < historyRecords.length; i += BATCH_SIZE) {
+    const batch = historyRecords.slice(i, i + BATCH_SIZE);
+    await Promise.all(
+      batch.map((record) => saveNetWorthHistory(userId, record.monthKey))
+    );
   }
 
   // Also save current month if not already saved

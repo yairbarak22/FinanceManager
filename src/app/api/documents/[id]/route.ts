@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { del } from '@vercel/blob';
 import { requireAuth, withIdAndUserId } from '@/lib/authHelpers';
+import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 
 // DELETE - Delete a document from Vercel Blob and database
 export async function DELETE(
@@ -39,6 +40,18 @@ export async function DELETE(
     // Delete from database (with user check for IDOR prevention)
     await prisma.document.deleteMany({
       where: withIdAndUserId(id, userId),
+    });
+
+    // Audit log: document deleted
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.DELETE,
+      entityType: 'Document',
+      entityId: id,
+      metadata: { filename: document.filename },
+      ipAddress,
+      userAgent,
     });
 
     return NextResponse.json({ success: true });

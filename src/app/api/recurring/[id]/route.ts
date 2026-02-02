@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccountId, checkPermission } from '@/lib/authHelpers';
+import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 
 export async function PUT(
   request: NextRequest,
@@ -75,6 +76,18 @@ export async function PUT(
       where: sharedWhere,
     });
 
+    // Audit log: recurring transaction updated
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.UPDATE,
+      entityType: 'RecurringTransaction',
+      entityId: id,
+      metadata: { fieldsUpdated: Object.keys(updateData) },
+      ipAddress,
+      userAgent,
+    });
+
     return NextResponse.json(recurring);
   } catch (error) {
     console.error('Error updating recurring transaction:', error);
@@ -114,7 +127,19 @@ export async function PATCH(
     const recurring = await prisma.recurringTransaction.findFirst({
       where: sharedWhere,
     });
-    
+
+    // Audit log: recurring transaction toggled
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.UPDATE,
+      entityType: 'RecurringTransaction',
+      entityId: id,
+      metadata: { toggled: 'isActive', newValue: body.isActive },
+      ipAddress,
+      userAgent,
+    });
+
     return NextResponse.json(recurring);
   } catch (error) {
     console.error('Error toggling recurring transaction:', error);
@@ -146,7 +171,18 @@ export async function DELETE(
     if (result.count === 0) {
       return NextResponse.json({ error: 'Recurring transaction not found' }, { status: 404 });
     }
-    
+
+    // Audit log: recurring transaction deleted
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.DELETE,
+      entityType: 'RecurringTransaction',
+      entityId: id,
+      ipAddress,
+      userAgent,
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting recurring transaction:', error);

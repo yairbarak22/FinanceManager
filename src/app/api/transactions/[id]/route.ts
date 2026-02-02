@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccountId, checkPermission } from '@/lib/authHelpers';
+import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 
 export async function PUT(
   request: NextRequest,
@@ -100,6 +101,18 @@ export async function PUT(
       where: sharedWhere,
     });
 
+    // Audit log: transaction updated
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.UPDATE,
+      entityType: 'Transaction',
+      entityId: id,
+      metadata: { fieldsUpdated: Object.keys(updateData), updatedTransactionsCount },
+      ipAddress,
+      userAgent,
+    });
+
     return NextResponse.json({
       ...transaction,
       updatedTransactionsCount,
@@ -134,7 +147,18 @@ export async function DELETE(
     if (result.count === 0) {
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
     }
-    
+
+    // Audit log: transaction deleted
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.DELETE,
+      entityType: 'Transaction',
+      entityId: id,
+      ipAddress,
+      userAgent,
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting transaction:', error);

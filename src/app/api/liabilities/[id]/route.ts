@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccountId, checkPermission } from '@/lib/authHelpers';
 import { saveCurrentMonthNetWorth } from '@/lib/netWorthHistory';
+import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 
 export async function PUT(
   request: NextRequest,
@@ -138,6 +139,18 @@ export async function PUT(
     // Update net worth history for current month
     await saveCurrentMonthNetWorth(userId);
 
+    // Audit log: liability updated
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.UPDATE,
+      entityType: 'Liability',
+      entityId: id,
+      metadata: { fieldsUpdated: Object.keys(updateData) },
+      ipAddress,
+      userAgent,
+    });
+
     return NextResponse.json(liability);
   } catch (error) {
     console.error('Error updating liability:', error);
@@ -172,7 +185,18 @@ export async function DELETE(
     
     // Update net worth history for current month
     await saveCurrentMonthNetWorth(userId);
-    
+
+    // Audit log: liability deleted
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.DELETE,
+      entityType: 'Liability',
+      entityId: id,
+      ipAddress,
+      userAgent,
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting liability:', error);

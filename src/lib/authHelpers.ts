@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { MemberRole } from '@prisma/client';
 import { authOptions } from './auth';
 import { prisma } from './prisma';
+import { cacheGet, cacheSet, cacheDelete, CacheKeys, CacheTTL } from './cache';
 
 /**
  * Get the current authenticated user's session
@@ -33,6 +34,16 @@ export async function requireAuth(): Promise<
   }
 
   // JWT Revocation Check: Verify user still exists and is active
+  // Use cache to reduce DB queries (user deletion is rare)
+  const cacheKey = CacheKeys.authUser(session.user.id);
+  const cachedUser = await cacheGet<{ id: string }>(cacheKey);
+
+  if (cachedUser) {
+    // User exists in cache, skip DB query
+    return { userId: session.user.id, error: null };
+  }
+
+  // Not in cache - check DB
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { id: true },
@@ -47,6 +58,9 @@ export async function requireAuth(): Promise<
       ),
     };
   }
+
+  // Cache the user existence for 1 hour
+  void cacheSet(cacheKey, { id: user.id }, CacheTTL.AUTH_USER);
 
   return { userId: session.user.id, error: null };
 }
@@ -98,8 +112,17 @@ export async function getUserSharedAccountId(userId: string): Promise<string | n
 /**
  * Get all user IDs that share the same account
  * This is used to query data for shared accounts
+ * Results are cached for 5 minutes to reduce DB queries
  */
 export async function getSharedUserIds(userId: string): Promise<string[]> {
+  // Check cache first
+  const cacheKey = CacheKeys.sharedMembers(userId);
+  const cachedMembers = await cacheGet<string[]>(cacheKey);
+
+  if (cachedMembers) {
+    return cachedMembers;
+  }
+
   // Get user's shared account
   const sharedAccountId = await getOrCreateSharedAccount(userId);
 
@@ -109,7 +132,20 @@ export async function getSharedUserIds(userId: string): Promise<string[]> {
     select: { userId: true },
   });
 
-  return members.map((m) => m.userId);
+  const userIds = members.map((m) => m.userId);
+
+  // Cache for 5 minutes
+  void cacheSet(cacheKey, userIds, CacheTTL.SHARED_MEMBERS);
+
+  return userIds;
+}
+
+/**
+ * Invalidate shared members cache for a user
+ * Call this when members are added/removed from shared account
+ */
+export async function invalidateSharedMembersCache(userId: string): Promise<void> {
+  await cacheDelete(CacheKeys.sharedMembers(userId));
 }
 
 /**

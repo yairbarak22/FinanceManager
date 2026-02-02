@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { MemberRole } from '@prisma/client';
-import { requireAuth, getOrCreateSharedAccount } from '@/lib/authHelpers';
+import { requireAuth, getOrCreateSharedAccount, invalidateSharedMembersCache } from '@/lib/authHelpers';
 import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 
 // GET - Get all members of the shared account
@@ -108,6 +108,18 @@ export async function DELETE(request: Request) {
         },
       },
     });
+
+    // Invalidate cache for all members of the shared account
+    // (their shared members list has changed)
+    const remainingMembers = await prisma.sharedAccountMember.findMany({
+      where: { sharedAccountId },
+      select: { userId: true },
+    });
+    await Promise.all(
+      remainingMembers.map((m) => invalidateSharedMembersCache(m.userId))
+    );
+    // Also invalidate for the removed user
+    await invalidateSharedMembersCache(memberToRemove.userId);
 
     // Audit log: member removed
     const { ipAddress, userAgent } = getRequestInfo(request.headers);

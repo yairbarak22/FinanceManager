@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { MemberRole } from '@prisma/client';
-import { requireAuth } from '@/lib/authHelpers';
+import { requireAuth, invalidateSharedMembersCache } from '@/lib/authHelpers';
 import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 
 // POST - Accept an invite
@@ -96,6 +96,15 @@ export async function POST(request: Request) {
     await prisma.accountInvite.delete({
       where: { id: invite.id },
     });
+
+    // Invalidate cache for all existing members (their shared members list has changed)
+    const existingMembers = await prisma.sharedAccountMember.findMany({
+      where: { sharedAccountId: invite.sharedAccountId },
+      select: { userId: true },
+    });
+    await Promise.all(
+      existingMembers.map((m) => invalidateSharedMembersCache(m.userId))
+    );
 
     // Audit log: invite accepted
     const { ipAddress, userAgent } = getRequestInfo(request.headers);

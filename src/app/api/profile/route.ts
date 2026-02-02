@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/authHelpers';
 import { encrypt, decrypt, ENCRYPTED_PROFILE_FIELDS } from '@/lib/encryption';
+import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 
 // Valid enum values for profile fields
 const VALID_MARITAL_STATUS = ['single', 'married', 'divorced', 'widowed'];
@@ -158,6 +159,18 @@ export async function PUT(request: Request) {
         userId,
         ...updateFields,
       },
+    });
+
+    // Audit log: profile updated (don't log sensitive field values)
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.UPDATE,
+      entityType: 'UserProfile',
+      entityId: profile.id,
+      metadata: { fieldsUpdated: Object.keys(updateFields) },
+      ipAddress,
+      userAgent,
     });
 
     // Decrypt before returning

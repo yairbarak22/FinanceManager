@@ -4,6 +4,7 @@ import { requireAuth, withSharedAccountId, checkPermission } from '@/lib/authHel
 import { saveAssetHistoryIfChanged } from '@/lib/assetHistory';
 import { saveCurrentMonthNetWorth } from '@/lib/netWorthHistory';
 import { isPortfolioSyncAsset } from '@/lib/portfolioAssetSync';
+import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 
 export async function PUT(
   request: NextRequest,
@@ -104,6 +105,18 @@ export async function PUT(
       }
     }
 
+    // Audit log: asset updated
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.UPDATE,
+      entityType: 'Asset',
+      entityId: id,
+      metadata: { fieldsUpdated: Object.keys(updateData) },
+      ipAddress,
+      userAgent,
+    });
+
     return NextResponse.json(asset);
   } catch (error) {
     console.error('Error updating asset:', error);
@@ -150,7 +163,18 @@ export async function DELETE(
     
     // Update net worth history for current month
     await saveCurrentMonthNetWorth(userId);
-    
+
+    // Audit log: asset deleted
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.DELETE,
+      entityType: 'Asset',
+      entityId: id,
+      ipAddress,
+      userAgent,
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting asset:', error);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth, withIdAndUserId } from '@/lib/authHelpers';
+import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 
 // DELETE - Delete a custom category
 export async function DELETE(
@@ -24,6 +25,17 @@ export async function DELETE(
         { status: 404 }
       );
     }
+
+    // Audit log: category deleted
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.DELETE,
+      entityType: 'CustomCategory',
+      entityId: id,
+      ipAddress,
+      userAgent,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

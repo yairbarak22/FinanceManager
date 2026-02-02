@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth, withSharedAccountId, checkPermission } from '@/lib/authHelpers';
 import { syncPortfolioAsset } from '@/lib/portfolioAssetSync';
+import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 
 // GET single holding
 export async function GET(
@@ -110,6 +111,17 @@ export async function PUT(
       console.error('[Holdings] Error syncing portfolio asset:', err);
     }
 
+    // Audit log: holding updated
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.UPDATE,
+      entityType: 'Holding',
+      entityId: id,
+      ipAddress,
+      userAgent,
+    });
+
     return NextResponse.json(holding);
   } catch (error) {
     console.error('Error updating holding:', error);
@@ -155,6 +167,17 @@ export async function DELETE(
     } catch (err) {
       console.error('[Holdings] Error syncing portfolio asset:', err);
     }
+
+    // Audit log: holding deleted
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.DELETE,
+      entityType: 'Holding',
+      entityId: id,
+      ipAddress,
+      userAgent,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

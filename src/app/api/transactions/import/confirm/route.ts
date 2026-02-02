@@ -85,23 +85,30 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Upsert merchant mappings (keys are already normalized)
-    for (const [normalizedName, { category, isManual }] of manualMappings) {
-      await prisma.merchantCategoryMap.upsert({
-        where: {
-          userId_merchantName: { userId, merchantName: normalizedName },
-        },
-        create: {
-          userId,
-          merchantName: normalizedName,
-          category,
-          isManual,
-        },
-        update: {
-          category,
-          isManual: isManual || undefined, // Only update to true, never to false
-        },
-      });
+    // Upsert merchant mappings using batch transaction (N+1 fix)
+    // Keys are already normalized
+    const upsertOperations = Array.from(manualMappings.entries()).map(
+      ([normalizedName, { category, isManual }]) =>
+        prisma.merchantCategoryMap.upsert({
+          where: {
+            userId_merchantName: { userId, merchantName: normalizedName },
+          },
+          create: {
+            userId,
+            merchantName: normalizedName,
+            category,
+            isManual,
+          },
+          update: {
+            category,
+            isManual: isManual || undefined, // Only update to true, never to false
+          },
+        })
+    );
+
+    // Execute all upserts in a single transaction
+    if (upsertOperations.length > 0) {
+      await prisma.$transaction(upsertOperations);
     }
 
     return NextResponse.json({
