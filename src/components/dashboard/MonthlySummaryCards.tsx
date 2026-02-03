@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 
 interface MonthlySummaryCardsProps {
   totalIncome: number;
@@ -31,6 +32,7 @@ function SummaryCard({
   positiveColor,
   negativeColor,
   invertColors = false,
+  tooltipContent,
 }: {
   title: string;
   value: number;
@@ -38,6 +40,7 @@ function SummaryCard({
   positiveColor: string;
   negativeColor: string;
   invertColors?: boolean; // For expenses: positive change (more spending) is bad
+  tooltipContent?: string;
 }) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('he-IL', {
@@ -68,18 +71,23 @@ function SummaryCard({
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
       }}
     >
-      {/* Title */}
-      <span
-        className="text-sm mb-4"
-        style={{
-          fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-          fontWeight: 400,
-          fontSize: '14px',
-          color: COLORS.steelGray,
-        }}
-      >
-        {title}
-      </span>
+      {/* Title with InfoTooltip */}
+      <div className="flex items-center justify-between mb-4">
+        <span
+          className="text-sm"
+          style={{
+            fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+            fontWeight: 400,
+            fontSize: '14px',
+            color: COLORS.steelGray,
+          }}
+        >
+          {title}
+        </span>
+        {tooltipContent && (
+          <InfoTooltip content={tooltipContent} side="top" />
+        )}
+      </div>
 
       {/* Main Value */}
       <h3
@@ -182,6 +190,7 @@ export default function MonthlySummaryCards({
         previousValue={previousMonthIncome}
         positiveColor={COLORS.turquoise}
         negativeColor={COLORS.pink}
+        tooltipContent="סך כל ההכנסות שלך בחודש הנוכחי, כולל משכורת, הכנסות נוספות והעברות חוזרות."
       />
 
       {/* Expenses Card */}
@@ -192,6 +201,7 @@ export default function MonthlySummaryCards({
         positiveColor={COLORS.turquoise}
         negativeColor={COLORS.pink}
         invertColors={true} // For expenses, less spending (negative change) is good
+        tooltipContent="סך כל ההוצאות שלך בחודש הנוכחי, כולל הוצאות קבועות ומשתנות."
       />
 
       {/* Cashflow Card */}
@@ -201,6 +211,7 @@ export default function MonthlySummaryCards({
         previousValue={previousMonthCashflow}
         positiveColor={COLORS.babyBlue}
         negativeColor={COLORS.pink}
+        tooltipContent="ההפרש בין ההכנסות להוצאות. ערך חיובי משמעותו שיש לך עודף, ערך שלילי משמעותו גירעון."
       />
     </div>
   );

@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 import {
   AreaChart,
   Area,
@@ -44,7 +45,7 @@ export default function NetWorthHeroCard({
   };
 
   // Prepare chart data from history (always show last 6 months)
-  // Fill missing months with current value to ensure 6 months are always shown
+  // Fill missing months with 0 to ensure 6 months are always shown
   const chartData = useMemo(() => {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const now = new Date();
@@ -67,8 +68,9 @@ export default function NetWorthHeroCard({
       const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
       const monthName = monthNames[monthDate.getMonth()];
       
-      // Use historical value if available, otherwise use current net worth
-      const value = historyMap.get(monthKey) ?? netWorth;
+      // Use historical value if available, otherwise use 0
+      // (don't assume current net worth for missing months - no historical data available)
+      const value = historyMap.get(monthKey) ?? 0;
       
       result.push({
         month: monthName,
@@ -78,7 +80,7 @@ export default function NetWorthHeroCard({
     }
 
     return result;
-  }, [netWorthHistory, netWorth]);
+  }, [netWorthHistory]);
 
   // Find current point (last point)
   const currentPoint = chartData.length > 0 ? chartData[chartData.length - 1] : null;
@@ -126,22 +128,28 @@ export default function NetWorthHeroCard({
       {/* Content */}
       <div className="relative z-10">
         {/* Header with icon */}
-        <div className="flex items-center gap-3 mb-4">
-          <div 
-            className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ background: 'rgba(13, 186, 204, 0.1)' }}
-          >
-            <Wallet className="w-5 h-5" style={{ color: '#0DBACC' }} strokeWidth={1.5} />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div 
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: 'rgba(13, 186, 204, 0.1)' }}
+            >
+              <Wallet className="w-5 h-5" style={{ color: '#0DBACC' }} strokeWidth={1.5} />
+            </div>
+            <span 
+              className="text-base font-medium"
+              style={{ 
+                fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                color: '#7E7F90'
+              }}
+            >
+              שווי נקי
+            </span>
           </div>
-          <span 
-            className="text-base font-medium"
-            style={{ 
-              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-              color: '#7E7F90'
-            }}
-          >
-            שווי נקי
-          </span>
+          <InfoTooltip 
+            content="סך כל הנכסים שלך (דירה, רכב, חסכונות) פחות ההתחייבויות (משכנתא, הלוואות)."
+            side="top"
+          />
         </div>
 
         {/* Main Net Worth Value with Badge */}

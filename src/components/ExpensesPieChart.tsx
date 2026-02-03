@@ -207,11 +207,6 @@ export default function ExpensesPieChart({
               </Pie>
             </PieChart>
           </ResponsiveContainer>
-          
-          {/* Center - subtle icon */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <PieChartIcon className="w-5 h-5" style={{ color: '#BDBDCB' }} strokeWidth={1.5} />
-          </div>
         </div>
       </div>
 

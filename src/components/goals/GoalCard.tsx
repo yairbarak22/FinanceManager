@@ -20,6 +20,7 @@ import {
   formatGoalStatus,
 } from '@/lib/goalCalculations';
 import GoalProgressBar from './GoalProgressBar';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 import type { FinancialGoal } from '@/lib/api/goals';
 
 const GOAL_ICONS: Record<string, React.ElementType> = {
@@ -203,14 +204,22 @@ export default function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
           )}
         </div>
         
-        <div 
-          className="px-2 py-1 rounded-lg text-xs font-medium"
-          style={{ 
-            backgroundColor: `${statusDisplay.color}15`,
-            color: statusDisplay.color,
-          }}
-        >
-          {statusDisplay.label}
+        <div className="flex items-center gap-2">
+          <div 
+            className="px-2 py-1 rounded-lg text-xs font-medium"
+            style={{ 
+              backgroundColor: `${statusDisplay.color}15`,
+              color: statusDisplay.color,
+            }}
+          >
+            {statusDisplay.label}
+          </div>
+          {!hasRecurring && (
+            <InfoTooltip 
+              content="סכום החודשי הנדרש כדי להגיע ליעד בזמן. אם יש לך העברה חוזרת, היא תיכלל בחישוב."
+              side="top"
+            />
+          )}
         </div>
       </div>
     </div>

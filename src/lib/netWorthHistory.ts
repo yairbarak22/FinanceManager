@@ -5,6 +5,14 @@ import { getRemainingBalance } from '@/lib/loanCalculations';
 import { Liability } from '@/lib/types';
 
 /**
+ * Platform launch date - the platform was inactive before this date.
+ * All months before this should have netWorth = 0 in backfill operations.
+ * This prevents showing incorrect historical data for users who registered
+ * after the platform became active.
+ */
+export const PLATFORM_START_MONTH_KEY = '2026-01';
+
+/**
  * Calculate total assets for a specific month
  * Uses AssetValueHistory to get historical values
  * 
@@ -172,13 +180,19 @@ export async function needsInitialBackfill(userId: string): Promise<boolean> {
 
 /**
  * Initial backfill: Create net worth history for past 6 months
- * All past months get the CURRENT net worth value (snapshot)
- * This only runs ONCE when user has no historical data
+ * 
+ * Logic:
+ * - Months BEFORE platform start (PLATFORM_START_MONTH_KEY): netWorth = 0
+ * - Current month: actual calculated values
+ * - Past months AFTER platform start but not current: netWorth = 0
+ *   (we don't have historical data for these months)
+ * 
+ * This only runs ONCE when user has no historical data.
  */
 export async function initialBackfillNetWorthHistory(userId: string): Promise<void> {
   const currentMonth = getCurrentMonthKey();
   
-  // Calculate current net worth
+  // Calculate current net worth (only used for current month)
   const [totalAssets, totalLiabilities] = await Promise.all([
     getTotalAssetsForMonthKey(userId, currentMonth),
     getTotalLiabilitiesForMonthKey(userId, currentMonth),
@@ -195,11 +209,19 @@ export async function initialBackfillNetWorthHistory(userId: string): Promise<vo
     monthsToBackfill.push(monthKey);
   }
   
-  // Create history records for all months with same value
+  // Create history records for all months
   // Use batch transaction instead of sequential upserts (N+1 fix)
   const upsertOperations = monthsToBackfill.map((monthKey) => {
     const [year, monthNum] = monthKey.split('-').map(Number);
     const date = new Date(year, monthNum - 1, 1);
+    
+    // Determine values based on month:
+    // - Current month: use actual calculated values
+    // - All other months (past): use 0 (no historical data available)
+    const isCurrentMonth = monthKey === currentMonth;
+    const netWorthValue = isCurrentMonth ? currentNetWorth : 0;
+    const assetsValue = isCurrentMonth ? totalAssets : 0;
+    const liabilitiesValue = isCurrentMonth ? totalLiabilities : 0;
 
     return prisma.netWorthHistory.upsert({
       where: {
@@ -209,20 +231,20 @@ export async function initialBackfillNetWorthHistory(userId: string): Promise<vo
         },
       },
       update: {
-        // Don't update past months if they already exist
-        // Only update current month
-        ...(monthKey === currentMonth ? {
-          netWorth: currentNetWorth,
-          assets: totalAssets,
-          liabilities: totalLiabilities,
+        // Only update current month if it already exists
+        // Don't update past months (preserve existing data)
+        ...(isCurrentMonth ? {
+          netWorth: netWorthValue,
+          assets: assetsValue,
+          liabilities: liabilitiesValue,
         } : {}),
       },
       create: {
         userId,
         date,
-        netWorth: currentNetWorth,
-        assets: totalAssets,
-        liabilities: totalLiabilities,
+        netWorth: netWorthValue,
+        assets: assetsValue,
+        liabilities: liabilitiesValue,
       },
     });
   });
