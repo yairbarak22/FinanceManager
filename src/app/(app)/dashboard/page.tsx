@@ -102,6 +102,9 @@ export default function DashboardPage() {
   // Loading state
   const [isLoading, setIsLoading] = useState(true);
 
+  // Category filter state
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
   // Section refs for scrolling
   const transactionsRef = useRef<HTMLDivElement>(null);
   const recurringRef = useRef<HTMLDivElement>(null);
@@ -272,18 +275,34 @@ export default function DashboardPage() {
 
   const monthlyLiabilityPayments = liabilities.reduce((sum, l) => sum + getEffectiveMonthlyExpense(l), 0);
 
-  // Calculate totals
-  const filteredTransactions = selectedMonth === 'all'
+  // Calculate totals - filter by month only (for summaries)
+  const monthFilteredTransactions = selectedMonth === 'all'
     ? transactions
     : transactions.filter((tx) => getMonthKey(tx.date) === selectedMonth);
 
+  // Filter by category as well (for display in Activity section)
+  const filteredTransactions = monthFilteredTransactions.filter((tx) => {
+    const matchesCategory = !selectedCategory || tx.category === selectedCategory;
+    return matchesCategory;
+  });
+
+  // Category filter handlers
+  const handleCategoryClick = (category: string) => {
+    // Toggle: if already selected, clear it
+    setSelectedCategory(prev => prev === category ? null : category);
+  };
+
+  const handleClearCategoryFilter = () => {
+    setSelectedCategory(null);
+  };
+
   const monthsCount = selectedMonth === 'all' ? Math.max(monthsWithData.size, 1) : 1;
 
-  const transactionIncome = filteredTransactions
+  const transactionIncome = monthFilteredTransactions
     .filter((tx) => tx.type === 'income')
     .reduce((sum, tx) => sum + tx.amount, 0);
 
-  const transactionExpenses = filteredTransactions
+  const transactionExpenses = monthFilteredTransactions
     .filter((tx) => tx.type === 'expense')
     .reduce((sum, tx) => sum + tx.amount, 0);
 
@@ -814,9 +833,11 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <Card padding="sm" className="h-[500px] flex flex-col lg:col-span-1">
                 <ExpensesPieChart 
-                  transactions={filteredTransactions} 
+                  transactions={monthFilteredTransactions} 
                   recurringExpenses={recurringTransactions}
-                  customExpenseCategories={expenseCats.custom} 
+                  customExpenseCategories={expenseCats.custom}
+                  selectedCategory={selectedCategory}
+                  onCategoryClick={handleCategoryClick}
                 />
               </Card>
 
@@ -830,6 +851,8 @@ export default function DashboardPage() {
                   onImport={() => setIsImportModalOpen(true)}
                   customExpenseCategories={expenseCats.custom}
                   customIncomeCategories={incomeCats.custom}
+                  selectedCategory={selectedCategory}
+                  onClearCategoryFilter={handleClearCategoryFilter}
                 />
               </Card>
             </div>

@@ -12,6 +12,8 @@ interface ExpensesPieChartProps {
   transactions: Transaction[];
   recurringExpenses?: RecurringTransaction[];
   customExpenseCategories?: CategoryInfo[];
+  selectedCategory?: string | null;
+  onCategoryClick?: (category: string) => void;
 }
 
 // Fincheck style color palette
@@ -27,9 +29,18 @@ const EXPENSE_COLORS: Record<string, string> = {
   other: '#BDBDCB',          // Light Grey
 };
 
-export default function ExpensesPieChart({ transactions, recurringExpenses = [], customExpenseCategories = [] }: ExpensesPieChartProps) {
+export default function ExpensesPieChart({ 
+  transactions, 
+  recurringExpenses = [], 
+  customExpenseCategories = [],
+  selectedCategory = null,
+  onCategoryClick
+}: ExpensesPieChartProps) {
   // Hover state for synchronized chart/legend interaction
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+  
+  // Check if any category is selected (for dimming non-selected items)
+  const hasSelection = selectedCategory !== null;
 
   // Calculate expenses by category - memoized
   // Includes both regular transactions and recurring expenses
@@ -164,25 +175,35 @@ export default function ExpensesPieChart({ transactions, recurringExpenses = [],
                 dataKey="value"
                 strokeWidth={0}
               >
-                {data.map((entry) => (
-                  <Cell
-                    key={entry.id}
-                    fill={entry.color}
-                    style={{
-                      filter: hoveredItemId === entry.id 
-                        ? `drop-shadow(0 0 8px ${entry.color}33)` 
-                        : 'none',
-                      transform: hoveredItemId === entry.id 
-                        ? 'scale(1.07)' 
-                        : 'scale(1)',
-                      transformOrigin: 'center',
-                      transition: 'all 250ms ease-out',
-                      cursor: 'pointer',
-                    }}
-                    onMouseEnter={() => setHoveredItemId(entry.id)}
-                    onMouseLeave={() => setHoveredItemId(null)}
-                  />
-                ))}
+                {data.map((entry) => {
+                  const isSelected = selectedCategory === entry.id;
+                  const isHovered = hoveredItemId === entry.id;
+                  const isDimmed = hasSelection && !isSelected;
+                  
+                  return (
+                    <Cell
+                      key={entry.id}
+                      fill={entry.color}
+                      style={{
+                        filter: (isHovered || isSelected)
+                          ? `drop-shadow(0 0 8px ${entry.color}66)` 
+                          : 'none',
+                        transform: isSelected 
+                          ? 'scale(1.12)' 
+                          : isHovered 
+                            ? 'scale(1.07)' 
+                            : 'scale(1)',
+                        opacity: isDimmed ? 0.4 : 1,
+                        transformOrigin: 'center',
+                        transition: 'all 250ms ease-out',
+                        cursor: onCategoryClick ? 'pointer' : 'default',
+                      }}
+                      onClick={() => onCategoryClick?.(entry.id)}
+                      onMouseEnter={() => setHoveredItemId(entry.id)}
+                      onMouseLeave={() => setHoveredItemId(null)}
+                    />
+                  );
+                })}
               </Pie>
             </PieChart>
           </ResponsiveContainer>
@@ -201,15 +222,29 @@ export default function ExpensesPieChart({ transactions, recurringExpenses = [],
       >
         {data.map((item) => {
           const isHovered = hoveredItemId === item.id;
-          const hasHover = hoveredItemId !== null;
+          const isSelected = selectedCategory === item.id;
+          const isActive = isHovered || isSelected;
+          const isDimmed = hasSelection && !isSelected && !isHovered;
           
           return (
             <div
               key={item.id}
-              className="flex items-center justify-between py-2 cursor-pointer"
+              role="button"
+              tabIndex={0}
+              className="flex items-center justify-between py-2 rounded-lg px-2 -mx-2"
               style={{
-                opacity: hasHover && !isHovered ? 0.4 : 1,
+                opacity: isDimmed ? 0.4 : 1,
+                backgroundColor: isSelected ? `${item.color}15` : 'transparent',
+                boxShadow: isSelected ? `inset 0 0 0 1px ${item.color}40` : 'none',
+                cursor: onCategoryClick ? 'pointer' : 'default',
                 transition: 'all 250ms ease-out',
+              }}
+              onClick={() => onCategoryClick?.(item.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onCategoryClick?.(item.id);
+                }
               }}
               onMouseEnter={() => setHoveredItemId(item.id)}
               onMouseLeave={() => setHoveredItemId(null)}
@@ -218,16 +253,21 @@ export default function ExpensesPieChart({ transactions, recurringExpenses = [],
               <div className="flex items-center gap-2 pr-4">
                 <div
                   className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: item.color }}
+                  style={{ 
+                    backgroundColor: item.color,
+                    transform: isActive ? 'scale(1.3)' : 'scale(1)',
+                    boxShadow: isActive ? `0 0 6px ${item.color}66` : 'none',
+                    transition: 'all 250ms ease-out',
+                  }}
                 />
                 <SensitiveData 
                   as="span"
                   className="text-right"
                   style={{ 
                     fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-                    color: isHovered ? '#303150' : '#7E7F90',
-                    fontWeight: isHovered ? 700 : 400,
-                    fontSize: isHovered ? '16px' : '14px',
+                    color: isActive ? '#303150' : '#7E7F90',
+                    fontWeight: isActive ? 700 : 400,
+                    fontSize: isActive ? '16px' : '14px',
                     transition: 'all 250ms ease-out',
                   }}
                 >
@@ -245,11 +285,11 @@ export default function ExpensesPieChart({ transactions, recurringExpenses = [],
                     color: '#303150',
                     fontWeight: 600,
                     fontSize: '14px',
-                    opacity: isHovered ? 1 : 0,
-                    maxWidth: isHovered ? '120px' : '0px',
+                    opacity: isActive ? 1 : 0,
+                    maxWidth: isActive ? '120px' : '0px',
                     overflow: 'hidden',
                     whiteSpace: 'nowrap',
-                    transform: isHovered ? 'translateX(0)' : 'translateX(-12px)',
+                    transform: isActive ? 'translateX(0)' : 'translateX(-12px)',
                     transition: 'all 250ms ease-out',
                   }}
                 >
@@ -262,9 +302,9 @@ export default function ExpensesPieChart({ transactions, recurringExpenses = [],
                   className="text-left"
                   style={{ 
                     fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-                    color: isHovered ? '#303150' : '#7E7F90',
-                    fontWeight: isHovered ? 700 : 400,
-                    fontSize: isHovered ? '16px' : '14px',
+                    color: isActive ? '#303150' : '#7E7F90',
+                    fontWeight: isActive ? 700 : 400,
+                    fontSize: isActive ? '16px' : '14px',
                     minWidth: '40px',
                     transition: 'all 250ms ease-out',
                   }}

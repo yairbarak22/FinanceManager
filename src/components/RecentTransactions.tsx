@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, Edit3, ChevronDown, Check, Pencil, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, Edit3, ChevronDown, Check, Pencil, Loader2, Filter } from 'lucide-react';
 import { Transaction } from '@/lib/types';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { getCategoryInfo, expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
@@ -29,6 +30,8 @@ interface RecentTransactionsProps {
   onImport: () => void;
   customExpenseCategories?: CategoryInfo[];
   customIncomeCategories?: CategoryInfo[];
+  selectedCategory?: string | null;
+  onClearCategoryFilter?: () => void;
 }
 
 export default function RecentTransactions({
@@ -39,7 +42,9 @@ export default function RecentTransactions({
   onNewTransaction,
   onImport,
   customExpenseCategories = [],
-  customIncomeCategories = []
+  customIncomeCategories = [],
+  selectedCategory = null,
+  onClearCategoryFilter
 }: RecentTransactionsProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; description: string }>({
     isOpen: false,
@@ -52,7 +57,7 @@ export default function RecentTransactions({
 
   // Transaction edit state
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [editingCategory, setEditingCategory] = useState<string>('');
   const [editingDescription, setEditingDescription] = useState<string>('');
   const [editingAmount, setEditingAmount] = useState<string>('');
   const [saveBehavior, setSaveBehavior] = useState<SaveBehavior>('once');
@@ -92,7 +97,7 @@ export default function RecentTransactions({
 
   const openEditDialog = (transaction: Transaction) => {
     setEditingTransaction(transaction);
-    setSelectedCategory(transaction.category);
+    setEditingCategory(transaction.category);
     setEditingDescription(transaction.description);
     setEditingAmount(transaction.amount.toString());
     setSaveBehavior('once');
@@ -103,7 +108,7 @@ export default function RecentTransactions({
 
   const closeEditDialog = () => {
     setEditingTransaction(null);
-    setSelectedCategory('');
+    setEditingCategory('');
     setEditingDescription('');
     setEditingAmount('');
     setSaveBehavior('once');
@@ -115,7 +120,7 @@ export default function RecentTransactions({
   const handleSaveTransaction = async () => {
     if (!editingTransaction || !onUpdateTransaction) return;
     
-    const categoryChanged = selectedCategory !== editingTransaction.category;
+    const categoryChanged = editingCategory !== editingTransaction.category;
     const hasChanges = 
       categoryChanged ||
       editingDescription !== editingTransaction.description ||
@@ -130,7 +135,7 @@ export default function RecentTransactions({
     try {
       await onUpdateTransaction(
         editingTransaction.id,
-        selectedCategory,
+        editingCategory,
         editingTransaction.description, // Original description for merchant mapping
         saveBehavior,
         editingDescription !== editingTransaction.description ? editingDescription : undefined,
@@ -168,6 +173,13 @@ export default function RecentTransactions({
     });
     return map;
   }, [transactions, customExpenseCategories, customIncomeCategories]);
+
+  // Get selected category display name
+  const selectedCategoryName = useMemo(() => {
+    if (!selectedCategory) return null;
+    const categoryInfo = getCategoryInfo(selectedCategory, 'expense', customExpenseCategories);
+    return categoryInfo?.nameHe || selectedCategory;
+  }, [selectedCategory, customExpenseCategories]);
 
   const toggleSelectMode = () => {
     setIsSelectMode(!isSelectMode);
@@ -289,154 +301,211 @@ export default function RecentTransactions({
         </div>
       </div>
 
+      {/* Category Filter Chip */}
+      <AnimatePresence>
+        {selectedCategory && selectedCategoryName && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: -10, height: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="mb-3 flex-shrink-0 overflow-hidden"
+          >
+            <div
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl"
+              style={{
+                backgroundColor: '#F7F7F8',
+                border: '1px solid #69ADFF',
+              }}
+            >
+              <Filter className="w-3.5 h-3.5" style={{ color: '#69ADFF' }} strokeWidth={2} />
+              <span
+                className="text-sm font-medium"
+                style={{
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                  color: '#303150',
+                }}
+              >
+                {selectedCategoryName}
+              </span>
+              <button
+                onClick={onClearCategoryFilter}
+                className="p-0.5 rounded-md hover:bg-[#E8E8ED] transition-colors"
+                style={{ color: '#7E7F90' }}
+                aria-label="בטל סינון קטגוריה"
+              >
+                <X className="w-4 h-4" strokeWidth={2} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Transactions List - Scrollable - Matching AssetsSection Style */}
       <div className="overflow-y-scroll flex-1 min-h-0 scrollbar-transactions scrollbar-edge-left scrollbar-fade-bottom">
-        {transactions.map((transaction, index) => {
-          const cached = categoryInfoMap.get(transaction.id);
-          const categoryInfo = cached?.info;
-          const Icon = categoryInfo?.icon;
-          const isIncome = cached?.isIncome ?? transaction.type === 'income';
-          const isSelected = selectedIds.has(transaction.id);
+        <AnimatePresence mode="popLayout">
+          {transactions.map((transaction, index) => {
+            const cached = categoryInfoMap.get(transaction.id);
+            const categoryInfo = cached?.info;
+            const Icon = categoryInfo?.icon;
+            const isIncome = cached?.isIncome ?? transaction.type === 'income';
+            const isSelected = selectedIds.has(transaction.id);
 
-          // Icon colors based on transaction type
-          const iconBgColor = isIncome ? 'rgba(13, 186, 204, 0.1)' : 'rgba(241, 138, 181, 0.1)';
-          const iconColor = isIncome ? '#0DBACC' : '#F18AB5';
-          const amountColor = isIncome ? '#0DBACC' : '#F18AB5';
+            // Icon colors based on transaction type
+            const iconBgColor = isIncome ? 'rgba(13, 186, 204, 0.1)' : 'rgba(241, 138, 181, 0.1)';
+            const iconColor = isIncome ? '#0DBACC' : '#F18AB5';
+            const amountColor = isIncome ? '#0DBACC' : '#F18AB5';
 
-          return (
-            <div
-              key={transaction.id}
-              onClick={isSelectMode ? () => toggleSelection(transaction.id) : undefined}
-              role={isSelectMode ? 'button' : undefined}
-              tabIndex={isSelectMode ? 0 : undefined}
-              onKeyDown={isSelectMode ? (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  toggleSelection(transaction.id);
-                }
-              } : undefined}
-              aria-pressed={isSelectMode ? isSelected : undefined}
-              aria-label={isSelectMode ? `${isSelected ? 'בטל בחירה' : 'בחר'} עסקה: ${transaction.description}` : undefined}
-              className={cn(
-                'p-3',
-                isSelectMode && 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500',
-                isSelected ? 'bg-indigo-50' : 'bg-white',
-                index < transactions.length - 1 && 'border-b'
-              )}
-              style={{ borderColor: '#F7F7F8' }}
-            >
-              {/* Row 1: Icon + Category + Date */}
-              <div className="flex items-start gap-3 mb-2">
-                {/* Checkbox (Select Mode) or Category Icon */}
-                {isSelectMode ? (
-                  <div
-                    className={cn(
-                      'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors',
-                      isSelected ? 'bg-[#C1DDFF]' : 'bg-[#F7F7F8]'
-                    )}
-                  >
-                    {isSelected ? (
-                      <CheckSquare className="w-4 h-4 text-[#69ADFF]" />
-                    ) : (
-                      <Square className="w-4 h-4 text-[#7E7F90]" />
-                    )}
-                  </div>
-                ) : (
-                  <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ background: iconBgColor }}
-                  >
-                    {Icon && (
-                      <Icon
-                        className="w-4 h-4"
-                        style={{ color: iconColor }}
-                        strokeWidth={1.5}
-                      />
-                    )}
-                  </div>
+            return (
+              <motion.div
+                key={transaction.id}
+                layout
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                transition={{ 
+                  type: 'spring', 
+                  stiffness: 300, 
+                  damping: 30,
+                  opacity: { duration: 0.2 }
+                }}
+                onClick={isSelectMode ? () => toggleSelection(transaction.id) : undefined}
+                role={isSelectMode ? 'button' : undefined}
+                tabIndex={isSelectMode ? 0 : undefined}
+                onKeyDown={isSelectMode ? (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleSelection(transaction.id);
+                  }
+                } : undefined}
+                aria-pressed={isSelectMode ? isSelected : undefined}
+                aria-label={isSelectMode ? `${isSelected ? 'בטל בחירה' : 'בחר'} עסקה: ${transaction.description}` : undefined}
+                className={cn(
+                  'p-3',
+                  isSelectMode && 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                  isSelected ? 'bg-indigo-50' : 'bg-white',
+                  index < transactions.length - 1 && 'border-b'
                 )}
+                style={{ borderColor: '#F7F7F8' }}
+              >
+                {/* Row 1: Icon + Category + Date */}
+                <div className="flex items-start gap-3 mb-2">
+                  {/* Checkbox (Select Mode) or Category Icon */}
+                  {isSelectMode ? (
+                    <div
+                      className={cn(
+                        'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors',
+                        isSelected ? 'bg-[#C1DDFF]' : 'bg-[#F7F7F8]'
+                      )}
+                    >
+                      {isSelected ? (
+                        <CheckSquare className="w-4 h-4 text-[#69ADFF]" />
+                      ) : (
+                        <Square className="w-4 h-4 text-[#7E7F90]" />
+                      )}
+                    </div>
+                  ) : (
+                    <div
+                      className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ background: iconBgColor }}
+                    >
+                      {Icon && (
+                        <Icon
+                          className="w-4 h-4"
+                          style={{ color: iconColor }}
+                          strokeWidth={1.5}
+                        />
+                      )}
+                    </div>
+                  )}
 
-                {/* Details - full width, allow wrapping */}
-                <div className="flex-1 pr-3">
-                  <SensitiveData 
-                    as="p" 
-                    className="font-medium text-sm leading-tight"
+                  {/* Details - full width, allow wrapping */}
+                  <div className="flex-1 pr-3">
+                    <SensitiveData 
+                      as="p" 
+                      className="font-medium text-sm leading-tight"
+                      style={{ 
+                        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                        color: '#303150'
+                      }}
+                    >
+                      {categoryInfo?.nameHe || transaction.category}
+                    </SensitiveData>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span 
+                        className="text-xs"
+                        style={{ color: '#7E7F90' }}
+                      >
+                        {formatDate(transaction.date)}
+                      </span>
+                    </div>
+                    <SensitiveData 
+                      as="p" 
+                      className="text-xs mt-0.5"
+                      style={{ color: '#7E7F90' }}
+                    >
+                      {transaction.description}
+                    </SensitiveData>
+                  </div>
+                </div>
+
+                {/* Row 2: Amount + Actions */}
+                <div className="flex items-center justify-between mr-12 pl-3">
+                  {/* Amount */}
+                  <SensitiveData
+                    as="p"
+                    className="text-sm font-semibold"
                     style={{ 
                       fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-                      color: '#303150'
+                      color: amountColor
                     }}
+                    dir="ltr"
                   >
-                    {categoryInfo?.nameHe || transaction.category}
+                    {`${isIncome ? '+' : '-'}${formatCurrency(transaction.amount)}`}
                   </SensitiveData>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span 
-                      className="text-xs"
-                      style={{ color: '#7E7F90' }}
-                    >
-                      {formatDate(transaction.date)}
-                    </span>
-                  </div>
-                  <SensitiveData 
-                    as="p" 
-                    className="text-xs mt-0.5"
-                    style={{ color: '#7E7F90' }}
-                  >
-                    {transaction.description}
-                  </SensitiveData>
+
+                  {/* Action Buttons (only in normal mode) */}
+                  {!isSelectMode && (
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => openEditDialog(transaction)}
+                        className="p-1.5 rounded hover:bg-[#F7F7F8] transition-colors"
+                        style={{ color: '#7E7F90' }}
+                        aria-label={`ערוך עסקה: ${transaction.description}`}
+                      >
+                        <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteConfirm({ isOpen: true, id: transaction.id, description: transaction.description })}
+                        className="p-1.5 rounded hover:bg-red-50 transition-colors"
+                        style={{ color: '#7E7F90' }}
+                        aria-label={`מחק עסקה: ${transaction.description}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} aria-hidden="true" />
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
-
-              {/* Row 2: Amount + Actions */}
-              <div className="flex items-center justify-between mr-12 pl-3">
-                {/* Amount */}
-                <SensitiveData
-                  as="p"
-                  className="text-sm font-semibold"
-                  style={{ 
-                    fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-                    color: amountColor
-                  }}
-                  dir="ltr"
-                >
-                  {`${isIncome ? '+' : '-'}${formatCurrency(transaction.amount)}`}
-                </SensitiveData>
-
-                {/* Action Buttons (only in normal mode) */}
-                {!isSelectMode && (
-                  <div className="flex gap-1">
-                    <button
-                      type="button"
-                      onClick={() => openEditDialog(transaction)}
-                      className="p-1.5 rounded hover:bg-[#F7F7F8] transition-colors"
-                      style={{ color: '#7E7F90' }}
-                      aria-label={`ערוך עסקה: ${transaction.description}`}
-                    >
-                      <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeleteConfirm({ isOpen: true, id: transaction.id, description: transaction.description })}
-                      className="p-1.5 rounded hover:bg-red-50 transition-colors"
-                      style={{ color: '#7E7F90' }}
-                      aria-label={`מחק עסקה: ${transaction.description}`}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} aria-hidden="true" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
         
-        {transactions.length === 0 && (
-          <p 
-            className="text-center text-sm py-4"
-            style={{ color: '#7E7F90' }}
-          >
-            אין עסקאות להצגה
-          </p>
-        )}
+        <AnimatePresence>
+          {transactions.length === 0 && (
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center text-sm py-4"
+              style={{ color: '#7E7F90' }}
+            >
+              אין עסקאות להצגה
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Floating Action Bar (Select Mode) */}
@@ -569,7 +638,7 @@ export default function RecentTransactions({
                     >
                       <span>
                         {getCategoryInfo(
-                          selectedCategory,
+                          editingCategory,
                           editingTransaction.type as 'income' | 'expense',
                           editingTransaction.type === 'income' ? customIncomeCategories : customExpenseCategories
                         )?.nameHe || 'בחר קטגוריה...'}
@@ -596,25 +665,25 @@ export default function RecentTransactions({
                       >
                         <div className="p-1">
                           {getCategoriesForType(editingTransaction.type).map((cat) => {
-                            const isSelected = cat.id === selectedCategory;
+                            const isCatSelected = cat.id === editingCategory;
                             return (
                               <button
                                 key={cat.id}
                                 type="button"
                                 onClick={() => {
-                                  setSelectedCategory(cat.id);
+                                  setEditingCategory(cat.id);
                                   setIsDropdownOpen(false);
                                 }}
                                 className={cn(
                                   'w-full px-3 py-2 rounded-lg text-sm font-medium text-right',
                                   'flex items-center justify-between gap-2 transition-colors',
-                                  isSelected
+                                  isCatSelected
                                     ? 'bg-[#C1DDFF] text-[#303150] border-2 border-[#69ADFF]'
                                     : 'text-[#303150] hover:bg-[#F7F7F8] border-2 border-transparent'
                                 )}
                               >
                                 <span>{cat.nameHe}</span>
-                                {isSelected && <Check className="w-4 h-4 text-[#69ADFF]" />}
+                                {isCatSelected && <Check className="w-4 h-4 text-[#69ADFF]" />}
                               </button>
                             );
                           })}
@@ -626,7 +695,7 @@ export default function RecentTransactions({
                 </div>
 
                 {/* Save behavior options - only show if category changed */}
-                {selectedCategory !== editingTransaction.category && (
+                {editingCategory !== editingTransaction.category && (
                   <div>
                     <label className="block text-sm font-medium text-[#303150] mb-2">
                       שמירת הקטגוריה לפעמים הבאות
