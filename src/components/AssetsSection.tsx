@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, TrendingUp, HelpCircle, FolderOpen, Link } from 'lucide-react';
+import { Plus, Trash2, TrendingUp, HelpCircle, FolderOpen, Link } from 'lucide-react';
 import { Asset, AssetValueHistory } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
@@ -94,15 +94,33 @@ export default function AssetsSection({
           // Get value for the selected month (uses history if available)
           const displayValue = getAssetValueForMonth(asset, assetHistory, selectedMonth);
 
+          const isSyncAsset = isPortfolioSyncAsset(asset.name);
+
           return (
             <div
               key={asset.id}
+              onClick={!isSyncAsset ? () => onEdit(asset) : undefined}
+              onKeyDown={!isSyncAsset ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onEdit(asset);
+                }
+              } : undefined}
+              role={!isSyncAsset ? 'button' : undefined}
+              tabIndex={!isSyncAsset ? 0 : undefined}
+              aria-label={!isSyncAsset ? `ערוך נכס: ${asset.name}` : undefined}
               className={cn(
-                "p-3 bg-white",
+                "group relative p-3 bg-white transition-all duration-200",
+                !isSyncAsset && "hover:bg-[#F7F7F8] hover:shadow-sm cursor-pointer active:scale-[0.98]",
                 index < assets.length - 1 && "border-b"
               )}
               style={{ borderColor: '#F7F7F8' }}
             >
+              {/* Edge Indicator - only for non-sync assets */}
+              {!isSyncAsset && (
+                <div className="absolute right-0 top-2 bottom-2 w-0.5 bg-[#69ADFF] opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
+              )}
+
               {/* Row 1: Icon + Name + Category */}
               <div className="flex items-start gap-3 mb-2">
                 {/* Icon */}
@@ -151,7 +169,7 @@ export default function AssetsSection({
 
                 {/* Actions */}
                 <div className="flex gap-1">
-                  {isPortfolioSyncAsset(asset.name) ? (
+                  {isSyncAsset ? (
                     /* Sync indicator for portfolio sync asset */
                     <div 
                       className="flex items-center gap-1 px-2 py-1 rounded-full text-xs"
@@ -168,24 +186,25 @@ export default function AssetsSection({
                     /* Regular actions for non-sync assets */
                     <>
                       <button
-                        onClick={() => onViewDocuments(asset)}
-                        className="p-1.5 rounded hover:bg-slate-100 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewDocuments(asset);
+                        }}
+                        className="p-1.5 rounded hover:bg-[#F7F7F8] transition-colors"
                         style={{ color: '#7E7F90' }}
                         title="מסמכים"
+                        aria-label={`צפייה במסמכים של ${asset.name}`}
                       >
                         <FolderOpen className="w-3.5 h-3.5" strokeWidth={1.5} />
                       </button>
                       <button
-                        onClick={() => onEdit(asset)}
-                        className="p-1.5 rounded hover:bg-slate-100 transition-colors"
-                        style={{ color: '#7E7F90' }}
-                      >
-                        <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirm({ isOpen: true, id: asset.id, name: asset.name })}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteConfirm({ isOpen: true, id: asset.id, name: asset.name });
+                        }}
                         className="p-1.5 rounded hover:bg-red-50 transition-colors"
                         style={{ color: '#7E7F90' }}
+                        aria-label={`מחיקת ${asset.name}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
                       </button>

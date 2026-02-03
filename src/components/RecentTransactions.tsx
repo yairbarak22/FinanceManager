@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, Edit3, ChevronDown, Check, Pencil, Loader2, Filter } from 'lucide-react';
+import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, ChevronDown, Check, Loader2, Filter } from 'lucide-react';
 import { Transaction } from '@/lib/types';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { getCategoryInfo, expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
@@ -369,25 +369,37 @@ export default function RecentTransactions({
                   damping: 30,
                   opacity: { duration: 0.2 }
                 }}
-                onClick={isSelectMode ? () => toggleSelection(transaction.id) : undefined}
-                role={isSelectMode ? 'button' : undefined}
-                tabIndex={isSelectMode ? 0 : undefined}
-                onKeyDown={isSelectMode ? (e) => {
+                onClick={isSelectMode ? () => toggleSelection(transaction.id) : () => openEditDialog(transaction)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    toggleSelection(transaction.id);
+                    if (isSelectMode) {
+                      toggleSelection(transaction.id);
+                    } else {
+                      openEditDialog(transaction);
+                    }
                   }
-                } : undefined}
+                }}
                 aria-pressed={isSelectMode ? isSelected : undefined}
-                aria-label={isSelectMode ? `${isSelected ? 'בטל בחירה' : 'בחר'} עסקה: ${transaction.description}` : undefined}
+                aria-label={isSelectMode 
+                  ? `${isSelected ? 'בטל בחירה' : 'בחר'} עסקה: ${transaction.description}` 
+                  : `ערוך עסקה: ${transaction.description}`}
                 className={cn(
-                  'p-3',
-                  isSelectMode && 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                  'group relative p-3 transition-all duration-200 cursor-pointer',
+                  isSelectMode 
+                    ? 'focus:outline-none focus:ring-2 focus:ring-indigo-500'
+                    : 'hover:bg-[#F7F7F8] hover:shadow-sm active:scale-[0.98]',
                   isSelected ? 'bg-indigo-50' : 'bg-white',
                   index < transactions.length - 1 && 'border-b'
                 )}
                 style={{ borderColor: '#F7F7F8' }}
               >
+                {/* Edge Indicator - only in normal mode */}
+                {!isSelectMode && (
+                  <div className="absolute right-0 top-2 bottom-2 w-0.5 bg-[#69ADFF] opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
+                )}
                 {/* Row 1: Icon + Category + Date */}
                 <div className="flex items-start gap-3 mb-2">
                   {/* Checkbox (Select Mode) or Category Icon */}
@@ -469,16 +481,10 @@ export default function RecentTransactions({
                     <div className="flex gap-1">
                       <button
                         type="button"
-                        onClick={() => openEditDialog(transaction)}
-                        className="p-1.5 rounded hover:bg-[#F7F7F8] transition-colors"
-                        style={{ color: '#7E7F90' }}
-                        aria-label={`ערוך עסקה: ${transaction.description}`}
-                      >
-                        <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleteConfirm({ isOpen: true, id: transaction.id, description: transaction.description })}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteConfirm({ isOpen: true, id: transaction.id, description: transaction.description });
+                        }}
                         className="p-1.5 rounded hover:bg-red-50 transition-colors"
                         style={{ color: '#7E7F90' }}
                         aria-label={`מחק עסקה: ${transaction.description}`}

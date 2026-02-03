@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, Trash2, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
 import { RecurringTransaction } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { getCategoryInfo, CategoryInfo } from '@/lib/categories';
@@ -143,12 +143,25 @@ export default function RecurringTransactions({
           return (
             <div
               key={transaction.id}
+              onClick={() => onEdit(transaction)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onEdit(transaction);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label={`ערוך עסקה קבועה: ${transaction.name}`}
               className={cn(
-                'p-3 bg-white',
+                'group relative p-3 bg-white transition-all duration-200 hover:bg-[#F7F7F8] hover:shadow-sm cursor-pointer active:scale-[0.98]',
                 index < transactions.length - 1 && 'border-b'
               )}
               style={{ borderColor: '#F7F7F8' }}
             >
+              {/* Edge Indicator */}
+              <div className="absolute right-0 top-2 bottom-2 w-0.5 bg-[#69ADFF] opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
+
               {/* Row 1: Icon + Name + Category */}
               <div className="flex items-start gap-3 mb-2">
                 {/* Icon */}
@@ -203,16 +216,13 @@ export default function RecurringTransactions({
                 {/* Actions */}
                 <div className="flex gap-1">
                   <button
-                    onClick={() => onEdit(transaction)}
-                    className="p-1.5 rounded hover:bg-slate-100 transition-colors"
-                    style={{ color: '#7E7F90' }}
-                  >
-                    <Pencil className="w-3.5 h-3.5" strokeWidth={1.5} />
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirm({ isOpen: true, id: transaction.id, name: transaction.name })}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteConfirm({ isOpen: true, id: transaction.id, name: transaction.name });
+                    }}
                     className="p-1.5 rounded hover:bg-red-50 transition-colors"
                     style={{ color: '#7E7F90' }}
+                    aria-label={`מחיקת ${transaction.name}`}
                   >
                     <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
                   </button>

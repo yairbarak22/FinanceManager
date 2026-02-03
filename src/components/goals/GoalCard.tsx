@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { 
   Plane, 
   Car, 
@@ -9,8 +8,6 @@ import {
   Umbrella, 
   PiggyBank,
   Shield,
-  MoreHorizontal,
-  Edit2,
   Trash2,
   RefreshCw,
   Link,
@@ -42,8 +39,6 @@ interface GoalCardProps {
 }
 
 export default function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
-  const [showMenu, setShowMenu] = useState(false);
-  
   const Icon = GOAL_ICONS[goal.category] || PiggyBank;
   const progress = calculateProgressPercentage(goal.currentAmount, goal.targetAmount);
   const requiredMonthly = calculateMonthlyContribution(
@@ -71,11 +66,28 @@ export default function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
 
   return (
     <div
-      className="bg-white rounded-3xl p-6 relative group transition-all hover:scale-[1.02]"
+      onClick={onEdit ? () => onEdit(goal) : undefined}
+      onKeyDown={onEdit ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onEdit(goal);
+        }
+      } : undefined}
+      role={onEdit ? 'button' : undefined}
+      tabIndex={onEdit ? 0 : undefined}
+      aria-label={onEdit ? `ערוך יעד: ${goal.name}` : undefined}
+      className={`bg-white rounded-3xl p-6 relative group transition-all duration-200 ${
+        onEdit ? 'hover:shadow-lg cursor-pointer active:scale-[0.98]' : 'hover:scale-[1.02]'
+      }`}
       style={{
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
       }}
     >
+      {/* Edge Indicator */}
+      {onEdit && (
+        <div className="absolute right-0 top-4 bottom-4 w-0.5 bg-[#69ADFF] opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -104,48 +116,19 @@ export default function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
           </div>
         </div>
         
-        {/* Menu button */}
-        <div className="relative">
+        {/* Delete button */}
+        {onDelete && (
           <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="p-2 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-            style={{ 
-              backgroundColor: showMenu ? '#F7F7F8' : 'transparent',
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(goal);
             }}
+            className="p-2 rounded-lg hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+            aria-label={`מחיקת יעד: ${goal.name}`}
           >
-            <MoreHorizontal className="w-5 h-5" style={{ color: '#7E7F90' }} />
+            <Trash2 className="w-5 h-5" style={{ color: '#7E7F90' }} />
           </button>
-          
-          {showMenu && (
-            <div 
-              className="absolute left-0 top-full mt-1 bg-white rounded-xl shadow-lg py-1 z-10 min-w-[140px]"
-              style={{ boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)' }}
-            >
-              <button
-                onClick={() => {
-                  onEdit?.(goal);
-                  setShowMenu(false);
-                }}
-                className="flex items-center gap-2 px-4 py-2 w-full text-right hover:bg-[#F7F7F8] transition-colors"
-                style={{ color: '#303150' }}
-              >
-                <Edit2 className="w-4 h-4" />
-                <span>עריכה</span>
-              </button>
-              <button
-                onClick={() => {
-                  onDelete?.(goal);
-                  setShowMenu(false);
-                }}
-                className="flex items-center gap-2 px-4 py-2 w-full text-right hover:bg-[#F7F7F8] transition-colors"
-                style={{ color: '#F18AB5' }}
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>מחיקה</span>
-              </button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
       
       {/* Progress bar */}

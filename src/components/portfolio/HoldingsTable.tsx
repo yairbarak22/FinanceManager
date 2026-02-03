@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Trash2 } from 'lucide-react';
 import { SensitiveData } from '../common/SensitiveData';
 
 type PriceDisplayUnit = 'ILS' | 'ILS_AGOROT' | 'USD';
@@ -137,68 +136,28 @@ function ChangeIndicator({ change }: { change: number }) {
 }
 
 /**
- * Action menu for each holding row
+ * Delete button for each holding row
  */
-function HoldingActions({
+function HoldingDeleteButton({
   holding,
-  onEdit,
   onDelete
 }: {
   holding: Holding;
-  onEdit?: (holding: Holding) => void;
   onDelete?: (holding: Holding) => void;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  if (!onEdit && !onDelete) return null;
+  if (!onDelete) return null;
 
   return (
-    <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-1.5 rounded-lg hover:bg-[#F7F7F8] transition-colors"
-      >
-        <MoreHorizontal className="w-4 h-4 text-[#BDBDCB]" />
-      </button>
-
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setIsOpen(false)}
-          />
-
-          {/* Dropdown */}
-          <div className="absolute left-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-[#E8E8ED] py-1 z-20 min-w-[120px]">
-            {onEdit && (
-              <button
-                onClick={() => {
-                  onEdit(holding);
-                  setIsOpen(false);
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#303150] hover:bg-[#F7F7F8] transition-colors"
-              >
-                <Pencil className="w-4 h-4" />
-                <span>עריכה</span>
-              </button>
-            )}
-            {onDelete && (
-              <button
-                onClick={() => {
-                  onDelete(holding);
-                  setIsOpen(false);
-                }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[#F18AB5] hover:bg-[#FFC0DB]/30 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>מחיקה</span>
-              </button>
-            )}
-          </div>
-        </>
-      )}
-    </div>
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onDelete(holding);
+      }}
+      className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+      aria-label={`מחיקת ${holding.symbol}`}
+    >
+      <Trash2 className="w-4 h-4 text-[#7E7F90]" />
+    </button>
   );
 }
 
@@ -232,18 +191,34 @@ export function HoldingsTable({ holdings, className = '', onEdit, onDelete }: Ho
               <th className="text-center font-medium px-3 py-3">שינוי</th>
               <th className="text-center font-medium px-3 py-3">סיכון משוקלל</th>
               <th className="text-center font-medium px-3 py-3">אחוז מהתיק</th>
-              <th className="text-center font-medium px-5 py-3">שווי בש"ח</th>
-              {(onEdit || onDelete) && <th className="w-10"></th>}
+              <th className="text-center font-medium px-5 py-3">שווי בש&quot;ח</th>
+              {onDelete && <th className="w-10"></th>}
             </tr>
           </thead>
           <tbody>
             {holdings.map((holding, index) => (
               <tr
                 key={holding.id || holding.symbol}
-                className={`border-b border-[#F7F7F8] hover:bg-[#F7F7F8]/50 transition-colors ${
-                  index === holdings.length - 1 ? 'border-b-0' : ''
-                }`}
+                onClick={onEdit ? () => onEdit(holding) : undefined}
+                onKeyDown={onEdit ? (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onEdit(holding);
+                  }
+                } : undefined}
+                role={onEdit ? 'button' : undefined}
+                tabIndex={onEdit ? 0 : undefined}
+                aria-label={onEdit ? `ערוך אחזקה: ${holding.symbol}` : undefined}
+                className={`group relative border-b border-[#F7F7F8] transition-all duration-200 ${
+                  onEdit ? 'hover:bg-[#F7F7F8] hover:shadow-sm cursor-pointer active:scale-[0.99]' : 'hover:bg-[#F7F7F8]/50'
+                } ${index === holdings.length - 1 ? 'border-b-0' : ''}`}
               >
+                {/* Edge Indicator */}
+                {onEdit && (
+                  <td className="w-0 p-0 relative">
+                    <div className="absolute right-0 top-2 bottom-2 w-0.5 bg-[#69ADFF] opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
+                  </td>
+                )}
                 {/* Symbol & Name */}
                 <td className="px-5 py-4">
                   <div>
@@ -308,11 +283,10 @@ export function HoldingsTable({ holdings, className = '', onEdit, onDelete }: Ho
                 </td>
 
                 {/* Actions */}
-                {(onEdit || onDelete) && (
+                {onDelete && (
                   <td className="px-2 py-4">
-                    <HoldingActions
+                    <HoldingDeleteButton
                       holding={holding}
-                      onEdit={onEdit}
                       onDelete={onDelete}
                     />
                   </td>
