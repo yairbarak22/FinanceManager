@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { Info } from 'lucide-react';
 
@@ -15,6 +15,8 @@ interface InfoTooltipProps {
 /**
  * InfoTooltip - A contextual help tooltip with info icon
  * Follows Neto Design System with RTL support
+ * 
+ * Works on both desktop (hover) and mobile (tap to open/close)
  */
 export default function InfoTooltip({
   content,
@@ -23,16 +25,56 @@ export default function InfoTooltip({
   side = 'top',
   align = 'center',
 }: InfoTooltipProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+  // Detect touch device on mount
+  useEffect(() => {
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
+
+  // Close tooltip when clicking outside on mobile
+  const handleClickOutside = useCallback((e: MouseEvent | TouchEvent) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('[data-tooltip-trigger]') && !target.closest('[data-tooltip-content]')) {
+      setIsOpen(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && isTouchDevice) {
+      document.addEventListener('touchstart', handleClickOutside);
+      document.addEventListener('click', handleClickOutside);
+      return () => {
+        document.removeEventListener('touchstart', handleClickOutside);
+        document.removeEventListener('click', handleClickOutside);
+      };
+    }
+  }, [isOpen, isTouchDevice, handleClickOutside]);
+
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    if (isTouchDevice) {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsOpen(!isOpen);
+    }
+  };
+
   return (
     <Tooltip.Provider delayDuration={300} skipDelayDuration={100}>
-      <Tooltip.Root>
+      <Tooltip.Root 
+        open={isTouchDevice ? isOpen : undefined}
+        onOpenChange={isTouchDevice ? undefined : setIsOpen}
+      >
         <Tooltip.Trigger asChild>
           <button
             type="button"
+            data-tooltip-trigger
+            onClick={handleTriggerClick}
             className={`
               inline-flex items-center justify-center
-              w-4 h-4
-              text-[#BDBDCB] hover:text-[#69ADFF]
+              w-5 h-5
+              text-[#BDBDCB] hover:text-[#69ADFF] active:text-[#69ADFF]
               cursor-help
               transition-colors duration-200
               focus:outline-none focus-visible:ring-2 focus-visible:ring-[#69ADFF] focus-visible:ring-offset-2
@@ -40,6 +82,7 @@ export default function InfoTooltip({
               ${className}
             `}
             aria-label="מידע נוסף"
+            aria-expanded={isOpen}
           >
             <Info className="w-4 h-4" strokeWidth={1.75} />
           </button>
@@ -47,6 +90,7 @@ export default function InfoTooltip({
         
         <Tooltip.Portal>
           <Tooltip.Content
+            data-tooltip-content
             side={side}
             align={align}
             sideOffset={8}
@@ -71,6 +115,12 @@ export default function InfoTooltip({
               boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
             }}
             dir="rtl"
+            onPointerDownOutside={(e) => {
+              // Prevent closing on mobile when tapping the content
+              if (isTouchDevice) {
+                e.preventDefault();
+              }
+            }}
           >
             <p className="m-0">{content}</p>
             

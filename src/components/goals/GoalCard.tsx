@@ -117,14 +117,14 @@ export default function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
           </div>
         </div>
         
-        {/* Delete button */}
+        {/* Delete button - visible on mobile (with lower opacity), full opacity on hover for desktop */}
         {onDelete && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               onDelete(goal);
             }}
-            className="p-2 rounded-lg hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+            className="p-2 rounded-lg hover:bg-red-50 active:bg-red-50 transition-colors opacity-50 md:opacity-0 md:group-hover:opacity-100 active:opacity-100"
             aria-label={`מחיקת יעד: ${goal.name}`}
           >
             <Trash2 className="w-5 h-5" style={{ color: '#7E7F90' }} />
