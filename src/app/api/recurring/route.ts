@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
+import { autoLinkGoalToRecurring } from './[id]/route';
 
 export async function GET() {
   try {
@@ -77,6 +78,16 @@ export async function POST(request: NextRequest) {
         isActive: body.isActive ?? true,
       },
     });
+    
+    // Auto-link to goal if this is an expense with matching category
+    if (recurring.type === 'expense' && recurring.isActive) {
+      try {
+        await autoLinkGoalToRecurring(userId, recurring.category, recurring.id);
+      } catch (linkError) {
+        console.error('Error auto-linking goal to recurring:', linkError);
+        // Don't fail the request if auto-link fails
+      }
+    }
     
     return NextResponse.json(recurring);
   } catch (error) {

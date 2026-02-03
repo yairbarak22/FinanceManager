@@ -1,8 +1,64 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth, withSharedAccountId, checkPermission } from '@/lib/authHelpers';
+import { requireAuth, withSharedAccountId, checkPermission, getSharedUserIds } from '@/lib/authHelpers';
 import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 import { recalculateDeadline } from '@/lib/goalCalculations';
+
+/**
+ * Auto-link a goal to a recurring transaction if:
+ * 1. Goal has the same category as the recurring transaction
+ * 2. Goal doesn't have a linked recurring transaction
+ * 3. The recurring transaction is not already linked to another goal
+ */
+export async function autoLinkGoalToRecurring(
+  userId: string,
+  recurringCategory: string,
+  recurringId: string
+): Promise<void> {
+  // Get all user IDs in the shared account
+  const userIds = await getSharedUserIds(userId);
+  
+  // Find goal with matching category that has no linked recurring transaction
+  const goal = await prisma.financialGoal.findFirst({
+    where: {
+      userId: { in: userIds },
+      category: recurringCategory,
+      recurringTransactionId: null,
+    },
+  });
+
+  if (!goal) return;
+
+  // Check if this recurring transaction is already linked to another goal
+  const existingLink = await prisma.financialGoal.findUnique({
+    where: { recurringTransactionId: recurringId },
+  });
+
+  if (existingLink) return;
+
+  // Get the recurring transaction details
+  const recurring = await prisma.recurringTransaction.findUnique({
+    where: { id: recurringId },
+  });
+
+  if (!recurring || !recurring.isActive) return;
+
+  // Recalculate deadline based on the new recurring amount
+  const newDeadline = recalculateDeadline(
+    goal.targetAmount,
+    goal.currentAmount,
+    recurring.amount
+  );
+
+  // Link the goal to this recurring transaction
+  await prisma.financialGoal.update({
+    where: { id: goal.id },
+    data: {
+      recurringTransactionId: recurringId,
+      ...(newDeadline ? { deadline: newDeadline } : {}),
+    },
+  });
+}
 
 // Helper function to update linked goal when recurring transaction changes
 async function updateLinkedGoalDeadline(recurringTransactionId: string, newAmount: number, isActive: boolean) {
@@ -120,6 +176,15 @@ export async function PUT(
       }
     }
 
+    // If category changed, try to auto-link to a goal with matching category
+    if (recurring && body.category !== undefined && recurring.type === 'expense' && recurring.isActive) {
+      try {
+        await autoLinkGoalToRecurring(userId, recurring.category, id);
+      } catch (linkError) {
+        console.error('Error auto-linking goal after category change:', linkError);
+      }
+    }
+
     // Audit log: recurring transaction updated
     const { ipAddress, userAgent } = getRequestInfo(request.headers);
     void logAuditEvent({
@@ -220,6 +285,49 @@ export async function DELETE(
 
     // Use shared account to allow deleting records from all members
     const sharedWhere = await withSharedAccountId(id, userId);
+
+    // Before deleting, check if there's a linked goal and try to find an alternative
+    const linkedGoal = await prisma.financialGoal.findUnique({
+      where: { recurringTransactionId: id },
+    });
+
+    if (linkedGoal) {
+      // Get the recurring transaction being deleted to find its category
+      const recurringToDelete = await prisma.recurringTransaction.findFirst({
+        where: sharedWhere,
+      });
+
+      if (recurringToDelete) {
+        // Try to find another active recurring transaction with the same category
+        const alternativeRecurring = await prisma.recurringTransaction.findFirst({
+          where: {
+            userId: recurringToDelete.userId,
+            category: linkedGoal.category,
+            type: 'expense',
+            isActive: true,
+            id: { not: id }, // Not the one being deleted
+          },
+        });
+
+        if (alternativeRecurring) {
+          // Link goal to alternative recurring transaction and recalculate deadline
+          const newDeadline = recalculateDeadline(
+            linkedGoal.targetAmount,
+            linkedGoal.currentAmount,
+            alternativeRecurring.amount
+          );
+
+          await prisma.financialGoal.update({
+            where: { id: linkedGoal.id },
+            data: {
+              recurringTransactionId: alternativeRecurring.id,
+              ...(newDeadline ? { deadline: newDeadline } : {}),
+            },
+          });
+        }
+        // If no alternative found, goal.recurringTransactionId will be set to null by onDelete: SetNull
+      }
+    }
 
     const result = await prisma.recurringTransaction.deleteMany({
       where: sharedWhere,
