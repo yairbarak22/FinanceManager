@@ -32,7 +32,7 @@ export default function AppLayout({
   showMonthFilter = true,
 }: AppLayoutProps) {
   return (
-    <div className="flex min-h-screen bg-slate-50/50">
+    <div className="flex min-h-screen bg-[#F5F5F7]">
       {/* Sidebar - Desktop + Mobile (hamburger menu) */}
       <Sidebar
         onOpenProfile={onOpenProfile}

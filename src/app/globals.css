@@ -917,6 +917,38 @@ body.pause-animations *::after {
 }
 
 /* ============================================
+   GHOST SCROLLBAR - Design System Standard
+   4px thumb, 10% opacity at rest, 60% on hover
+   ============================================ */
+.scrollbar-ghost {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(189, 189, 203, 0.1) transparent;
+}
+
+.scrollbar-ghost::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scrollbar-ghost::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-ghost::-webkit-scrollbar-thumb {
+  background: rgba(189, 189, 203, 0.1);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.scrollbar-ghost:hover::-webkit-scrollbar-thumb {
+  background: rgba(189, 189, 203, 0.6);
+}
+
+.scrollbar-ghost::-webkit-scrollbar-thumb:hover {
+  background: rgba(189, 189, 203, 0.6);
+}
+
+/* ============================================
    UTILITY CLASSES
    ============================================ */
 .scrollbar-hide {

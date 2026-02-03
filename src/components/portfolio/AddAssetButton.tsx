@@ -24,10 +24,11 @@ export function AddAssetButton({ onAddAsset }: AddAssetButtonProps) {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="rounded-xl bg-[#303150] text-white px-4 py-2 flex items-center gap-2 hover:bg-[#303150]/90 transition-all active:scale-95 shadow-lg"
+        className="rounded-xl bg-[#69ADFF] text-white px-5 py-2.5 flex items-center gap-2 hover:bg-[#5A9EE6] transition-all duration-200 active:scale-95 shadow-sm hover:shadow-md"
+        style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
       >
-        <Plus className="w-4 h-4" />
-        <span className="font-medium">הוסף נכס</span>
+        <Plus className="w-4 h-4" strokeWidth={1.75} />
+        <span className="font-medium text-sm">הוסף נכס</span>
       </button>
 
       <AddAssetDialog
