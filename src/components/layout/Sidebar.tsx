@@ -15,6 +15,7 @@ import {
   Users,
   Sparkles,
   LogOut,
+  Target,
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -57,11 +58,19 @@ const navItems: NavItem[] = [
   },
   { 
     id: 'investments', 
-    label: 'תיק השקעות', 
+    label: 'תיק מסחר עצמאי', 
     path: '/investments', 
     icon: TrendingUp,
     iconBg: 'bg-sky-100',
     iconColor: 'text-sky-600',
+  },
+  { 
+    id: 'goals', 
+    label: 'יעדים', 
+    path: '/goals', 
+    icon: Target,
+    iconBg: 'bg-purple-100',
+    iconColor: 'text-purple-600',
   },
   { 
     id: 'help', 

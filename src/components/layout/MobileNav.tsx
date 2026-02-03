@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, TrendingUp, BookOpen, Mail } from 'lucide-react';
+import { Home, TrendingUp, BookOpen, Mail, Target } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface NavItem {
@@ -15,6 +15,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { id: 'dashboard', label: 'דשבורד', path: '/dashboard', icon: Home, activeColor: 'text-blue-500' },
   { id: 'investments', label: 'השקעות', path: '/investments', icon: TrendingUp, activeColor: 'text-emerald-500' },
+  { id: 'goals', label: 'יעדים', path: '/goals', icon: Target, activeColor: 'text-purple-500' },
   { id: 'help', label: 'ידע', path: '/help', icon: BookOpen, activeColor: 'text-amber-500' },
   { id: 'contact', label: 'צור קשר', path: '/contact', icon: Mail, activeColor: 'text-rose-400' },
 ];

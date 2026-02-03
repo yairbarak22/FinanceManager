@@ -2,16 +2,24 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Plus, Check, Star } from 'lucide-react';
+import { ChevronDown, Plus, Check, Star, Target } from 'lucide-react';
 import { CategoryInfo, defaultCustomIcon } from '@/lib/categories';
 import { cn } from '@/lib/utils';
 import { SensitiveData } from '../common/SensitiveData';
+
+// Goal category color
+const GOAL_CATEGORY_COLOR = '#0DBACC';
+
+// Extended CategoryInfo that may include goal flag
+interface ExtendedCategoryInfo extends CategoryInfo {
+  isGoalCategory?: boolean;
+}
 
 interface CategorySelectProps {
   value: string;
   onChange: (value: string) => void;
   defaultCategories: CategoryInfo[];
-  customCategories: CategoryInfo[];
+  customCategories: ExtendedCategoryInfo[];
   placeholder?: string;
   onAddNew?: () => void;
   required?: boolean;
@@ -115,10 +123,11 @@ export default function CategorySelect({
     setIsOpen(false);
   };
 
-  const renderCategoryOption = (category: CategoryInfo, showCheckmark: boolean) => {
+  const renderCategoryOption = (category: ExtendedCategoryInfo, showCheckmark: boolean) => {
     const isSelected = value === category.id;
     // Ensure we have a valid icon component - fallback to Star if not
     const IconComponent = typeof category.icon === 'function' ? category.icon : Star;
+    const isGoal = category.isGoalCategory;
 
     return (
       <button
@@ -127,25 +136,45 @@ export default function CategorySelect({
         onClick={() => handleSelect(category.id)}
         className={cn(
           'category-option',
-          isSelected && 'selected'
+          isSelected && 'selected',
+          isGoal && 'bg-gradient-to-l from-[rgba(13,186,204,0.05)] to-transparent'
         )}
       >
         <div
-          className={cn('category-option-icon', category.bgColor)}
-          style={{ color: category.color }}
+          className={cn('category-option-icon', isGoal ? 'bg-[rgba(13,186,204,0.15)]' : category.bgColor)}
+          style={{ color: isGoal ? GOAL_CATEGORY_COLOR : category.color }}
         >
-          <IconComponent className="w-4 h-4" />
+          {isGoal ? (
+            <Target className="w-4 h-4" />
+          ) : (
+            <IconComponent className="w-4 h-4" />
+          )}
         </div>
         <SensitiveData as="span" className="flex-1 text-right">{category.nameHe}</SensitiveData>
+        {isGoal && (
+          <span 
+            className="text-xs px-2 py-0.5 rounded-full font-medium"
+            style={{ 
+              backgroundColor: 'rgba(13, 186, 204, 0.1)',
+              color: GOAL_CATEGORY_COLOR,
+            }}
+          >
+            יעד
+          </span>
+        )}
         {showCheckmark && isSelected && (
           <Check className="w-4 h-4 text-indigo-500" />
         )}
-        {category.isCustom && (
+        {category.isCustom && !isGoal && (
           <span className="text-xs text-slate-400 px-1">מותאם</span>
         )}
       </button>
     );
   };
+
+  // Separate goal categories from regular custom categories
+  const goalCategories = customCategories.filter(cat => cat.isGoalCategory);
+  const regularCustomCategories = customCategories.filter(cat => !cat.isGoalCategory);
 
   // Dropdown content
   const dropdownContent = (
@@ -161,19 +190,36 @@ export default function CategorySelect({
       }}
       dir="rtl"
     >
+      {/* Goal Categories - shown first */}
+      {goalCategories.length > 0 && (
+        <>
+          <div 
+            className="category-group-header flex items-center gap-2"
+            style={{ color: GOAL_CATEGORY_COLOR }}
+          >
+            <Target className="w-3.5 h-3.5" />
+            <span>יעדים פיננסיים</span>
+          </div>
+          <div className="category-options-list">
+            {goalCategories.map((cat) => renderCategoryOption(cat, true))}
+          </div>
+          <div className="category-divider" />
+        </>
+      )}
+
       {/* Default Categories */}
       <div className="category-group-header">קטגוריות ברירת מחדל</div>
       <div className="category-options-list">
         {defaultCategories.map((cat) => renderCategoryOption(cat, true))}
       </div>
 
-      {/* Custom Categories */}
-      {customCategories.length > 0 && (
+      {/* Regular Custom Categories (non-goal) */}
+      {regularCustomCategories.length > 0 && (
         <>
           <div className="category-divider" />
           <div className="category-group-header">הקטגוריות שלי</div>
           <div className="category-options-list">
-            {customCategories.map((cat) => renderCategoryOption(cat, true))}
+            {regularCustomCategories.map((cat) => renderCategoryOption(cat, true))}
           </div>
         </>
       )}

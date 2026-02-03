@@ -2,6 +2,84 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
+import { recalculateDeadline } from '@/lib/goalCalculations';
+
+// Helper function to find a goal by category ID (handles both default and custom categories)
+async function findGoalByCategory(userId: string, categoryId: string) {
+  // First, try to find goal with category matching the ID directly (for default categories)
+  let goal = await prisma.financialGoal.findFirst({
+    where: {
+      userId,
+      category: categoryId,
+    },
+    include: {
+      recurringTransaction: true,
+    },
+  });
+
+  // If not found, it might be a custom category - find by name
+  if (!goal) {
+    const customCategory = await prisma.customCategory.findFirst({
+      where: {
+        id: categoryId,
+        userId,
+        type: 'expense',
+      },
+    });
+
+    if (customCategory) {
+      // Find goal with category matching the custom category name
+      goal = await prisma.financialGoal.findFirst({
+        where: {
+          userId,
+          category: customCategory.name, // Goal category = custom category name
+        },
+        include: {
+          recurringTransaction: true,
+        },
+      });
+    }
+  }
+
+  return goal;
+}
+
+// Helper function to update goal when a transaction with matching category is created
+async function updateGoalFromTransaction(
+  userId: string,
+  categoryId: string,
+  amount: number
+) {
+  // Find goal with matching category (handles both default and custom categories)
+  const goal = await findGoalByCategory(userId, categoryId);
+
+  if (!goal) return null;
+
+  // Calculate new current amount (cap at target amount)
+  const newCurrentAmount = Math.min(
+    goal.currentAmount + amount,
+    goal.targetAmount
+  );
+
+  // Get monthly contribution from linked recurring transaction
+  const monthlyContribution = goal.recurringTransaction?.amount || 0;
+
+  // Recalculate deadline if we have a monthly contribution
+  const newDeadline = monthlyContribution > 0
+    ? recalculateDeadline(goal.targetAmount, newCurrentAmount, monthlyContribution)
+    : null;
+
+  // Update the goal
+  const updatedGoal = await prisma.financialGoal.update({
+    where: { id: goal.id },
+    data: {
+      currentAmount: newCurrentAmount,
+      ...(newDeadline ? { deadline: newDeadline } : {}),
+    },
+  });
+
+  return updatedGoal;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -132,6 +210,16 @@ export async function POST(request: NextRequest) {
         date: new Date(body.date),
       },
     });
+
+    // If this is an expense with a category matching a goal, update the goal
+    if (body.type === 'expense') {
+      try {
+        await updateGoalFromTransaction(userId, body.category.trim(), body.amount);
+      } catch (goalError) {
+        // Log but don't fail the transaction creation
+        console.error('Error updating goal from transaction:', goalError);
+      }
+    }
     
     return NextResponse.json(transaction);
   } catch (error) {

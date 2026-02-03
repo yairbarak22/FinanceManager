@@ -11,6 +11,7 @@ import {
   CreateTransactionInput,
   UpdateTransactionInput,
 } from '@/lib/api/transactions';
+import { goalKeys } from './useGoals';
 
 // Query keys
 export const transactionKeys = {
@@ -39,6 +40,8 @@ export function useCreateTransaction() {
     onSuccess: () => {
       // Invalidate all transaction lists
       queryClient.invalidateQueries({ queryKey: transactionKeys.lists() });
+      // Also invalidate goals (transaction may update goal's currentAmount)
+      queryClient.invalidateQueries({ queryKey: goalKeys.lists() });
     },
   });
 }
@@ -76,6 +79,8 @@ export function useUpdateTransaction() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.lists() });
+      // Also invalidate goals (transaction may update goal's currentAmount)
+      queryClient.invalidateQueries({ queryKey: goalKeys.lists() });
     },
   });
 }
@@ -106,6 +111,8 @@ export function useDeleteTransaction() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: transactionKeys.lists() });
+      // Also invalidate goals (deleted transaction may affect goal's currentAmount)
+      queryClient.invalidateQueries({ queryKey: goalKeys.lists() });
     },
   });
 }

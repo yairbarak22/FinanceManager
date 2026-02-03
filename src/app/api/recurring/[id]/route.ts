@@ -2,6 +2,37 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccountId, checkPermission } from '@/lib/authHelpers';
 import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
+import { recalculateDeadline } from '@/lib/goalCalculations';
+
+// Helper function to update linked goal when recurring transaction changes
+async function updateLinkedGoalDeadline(recurringTransactionId: string, newAmount: number, isActive: boolean) {
+  // Find goal linked to this recurring transaction
+  const goal = await prisma.financialGoal.findUnique({
+    where: { recurringTransactionId },
+  });
+
+  if (!goal) return null;
+
+  // If recurring is deactivated, we don't recalculate deadline
+  if (!isActive) return goal;
+
+  // Recalculate deadline based on new monthly contribution
+  const newDeadline = recalculateDeadline(
+    goal.targetAmount,
+    goal.currentAmount,
+    newAmount
+  );
+
+  if (!newDeadline) return goal;
+
+  // Update the goal with new deadline
+  const updatedGoal = await prisma.financialGoal.update({
+    where: { id: goal.id },
+    data: { deadline: newDeadline },
+  });
+
+  return updatedGoal;
+}
 
 export async function PUT(
   request: NextRequest,
@@ -76,6 +107,19 @@ export async function PUT(
       where: sharedWhere,
     });
 
+    // If amount or isActive changed, update linked goal deadline
+    if (recurring && (body.amount !== undefined || body.isActive !== undefined)) {
+      try {
+        await updateLinkedGoalDeadline(
+          id,
+          recurring.amount,
+          recurring.isActive
+        );
+      } catch (goalError) {
+        console.error('Error updating linked goal:', goalError);
+      }
+    }
+
     // Audit log: recurring transaction updated
     const { ipAddress, userAgent } = getRequestInfo(request.headers);
     void logAuditEvent({
@@ -127,6 +171,19 @@ export async function PATCH(
     const recurring = await prisma.recurringTransaction.findFirst({
       where: sharedWhere,
     });
+
+    // Update linked goal deadline when isActive changes
+    if (recurring) {
+      try {
+        await updateLinkedGoalDeadline(
+          id,
+          recurring.amount,
+          recurring.isActive
+        );
+      } catch (goalError) {
+        console.error('Error updating linked goal after toggle:', goalError);
+      }
+    }
 
     // Audit log: recurring transaction toggled
     const { ipAddress, userAgent } = getRequestInfo(request.headers);

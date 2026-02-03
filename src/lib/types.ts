@@ -18,9 +18,37 @@ export interface RecurringTransaction {
   category: string;
   name: string;
   isActive: boolean;
+  goalId?: string; // קישור ליעד פיננסי (אופציונלי)
   createdAt?: string;
   updatedAt?: string;
 }
+
+// יעד פיננסי
+export interface FinancialGoal {
+  id: string;
+  userId: string;
+  name: string;                    // שם היעד (למשל: "קניית דירה לילד")
+  targetAmount: number;            // סכום היעד הכולל
+  currentAmount: number;           // סכום שנצבר עד כה
+  deadline: string;                // תאריך היעד
+  category: string;                // קטגוריה (saving, travel, car, home, education, emergency)
+  icon?: string;                   // שם האייקון מ-Lucide
+  recurringTransactionId?: string; // קישור להוצאה קבועה (אופציונלי)
+  recurringTransaction?: RecurringTransaction; // הוצאה קבועה מקושרת
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// קטגוריות יעדים מוגדרות מראש
+export type GoalCategory = 
+  | 'saving'    // חיסכון כללי
+  | 'travel'    // נסיעות
+  | 'car'       // רכב
+  | 'home'      // דירה/בית
+  | 'education' // לימודים
+  | 'vacation'  // חופשה
+  | 'emergency' // קרן חירום
+  | 'other';    // אחר
 
 export interface Asset {
   id: string;

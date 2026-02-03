@@ -21,6 +21,7 @@ model User {
   assets                Asset[]
   customCategories      CustomCategory[]
   documents             Document[]
+  financialGoals        FinancialGoal[]
   holdings              Holding[]
   liabilities           Liability[]
   netWorthHistory       NetWorthHistory[]
@@ -84,19 +85,45 @@ model Transaction {
 }
 
 model RecurringTransaction {
-  id        String   @id @default(cuid())
+  id        String          @id @default(cuid())
   userId    String
   type      String
   amount    Float
   category  String
   name      String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isActive  Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal      FinancialGoal?
 
   @@index([userId])
   @@index([userId, isActive])
+}
+
+// ============================================
+// FINANCIAL GOALS - Savings targets and planning
+// ============================================
+model FinancialGoal {
+  id                     String                @id @default(cuid())
+  userId                 String
+  name                   String                // e.g., "קניית דירה לילד"
+  targetAmount           Float                 // סכום היעד הכולל
+  currentAmount          Float                 @default(0) // סכום שנצבר עד כה
+  deadline               DateTime              // תאריך היעד
+  category               String                @default("saving") // קטגוריה
+  icon                   String?               // Lucide icon name
+  
+  // קישור להוצאה קבועה (אופציונלי)
+  recurringTransactionId String?               @unique
+  recurringTransaction   RecurringTransaction? @relation(fields: [recurringTransactionId], references: [id], onDelete: SetNull)
+
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  user                   User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, category])
 }
 
 model Asset {

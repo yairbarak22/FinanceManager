@@ -1,6 +1,12 @@
 {
   "framework": "nextjs",
   "buildCommand": "npm run build",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/goals/cron-update?secret=${CRON_SECRET}",
+      "schedule": "0 0 1 * *"
+    }
+  ]
 }
 
