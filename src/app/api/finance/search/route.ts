@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/authHelpers';
 import { searchSymbols, getQuote } from '@/lib/finance/marketService';
+import { searchHebrew } from '@/lib/finance/enrichmentService';
+import { normalizeSymbol } from '@/lib/finance/providers/eod';
 
 /**
  * GET /api/finance/search
@@ -19,17 +21,58 @@ export async function GET(request: Request) {
       return NextResponse.json({ results: [] });
     }
 
-    // Search both providers
-    const searchResults = await searchSymbols(query);
+    // Check if query contains Hebrew characters
+    const hasHebrew = /[\u0590-\u05FF]/.test(query);
+    
+    // Search Hebrew enrichment DB first if query is in Hebrew
+    let hebrewResults: Array<{
+      symbol: string;
+      name: string;
+      nameHe: string;
+      exchange: string;
+      type: string;
+      provider: 'EOD';
+      isEnriched: boolean;
+    }> = [];
+    
+    if (hasHebrew) {
+      const enrichmentResults = await searchHebrew(query);
+      hebrewResults = enrichmentResults.map(enrichment => ({
+        symbol: enrichment.symbol,
+        name: enrichment.nameHe, // Use Hebrew name as primary
+        nameHe: enrichment.nameHe,
+        exchange: 'תל אביב',
+        type: enrichment.assetType.toLowerCase() as any,
+        provider: 'EOD' as const,
+        isEnriched: true,
+      }));
+    }
+
+    // Search EOD API
+    const eodSearchResults = await searchSymbols(query);
+
+    // Merge results: Hebrew first, then EOD
+    // Remove duplicates (by symbol) - prefer Hebrew results
+    const allResults = [...hebrewResults, ...eodSearchResults];
+    const seenSymbols = new Set<string>();
+    const uniqueResults = allResults.filter(result => {
+      const normalized = normalizeSymbol(result.symbol);
+      if (seenSymbols.has(normalized)) {
+        return false;
+      }
+      seenSymbols.add(normalized);
+      return true;
+    });
 
     // Enrich top results with live data
     const enrichedResults = await Promise.all(
-      searchResults.slice(0, 10).map(async (result) => {
+      uniqueResults.slice(0, 10).map(async (result) => {
         try {
           const quote = await getQuote(result.symbol);
           return {
             symbol: result.symbol,
             name: result.name,
+            nameHe: result.nameHe || quote?.nameHe,
             exchange: result.exchange,
             type: result.type,
             provider: result.provider,
@@ -39,6 +82,8 @@ export async function GET(request: Request) {
             changePercent: quote?.changePercent ?? 0,
             beta: quote?.beta,
             sector: quote?.sector,
+            sectorHe: quote?.sectorHe,
+            isEnriched: result.isEnriched || quote?.isEnriched || false,
             // Logo URL (try Clearbit for US stocks)
             logo: result.symbol.includes('.US') || !result.symbol.includes('.')
               ? `https://logo.clearbit.com/${result.symbol.toLowerCase().split('.')[0]}.com`
@@ -48,6 +93,7 @@ export async function GET(request: Request) {
           return {
             symbol: result.symbol,
             name: result.name,
+            nameHe: result.nameHe,
             exchange: result.exchange,
             type: result.type,
             provider: result.provider,
@@ -55,6 +101,7 @@ export async function GET(request: Request) {
             priceILS: 0,
             currency: 'USD',
             changePercent: 0,
+            isEnriched: result.isEnriched || false,
             logo: null,
           };
         }

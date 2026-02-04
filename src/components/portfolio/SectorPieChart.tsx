@@ -8,6 +8,7 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 
 interface SectorAllocation {
   sector: string;
+  sectorHe?: string; // Hebrew sector name from enrichment
   value: number;
   percent: number;
 }
@@ -17,6 +18,10 @@ interface SectorPieChartProps {
   sectorAllocation: SectorAllocation[];
   /** Additional CSS classes */
   className?: string;
+  /** Callback when a sector is clicked */
+  onSectorClick?: (sector: string) => void;
+  /** Currently selected sector (for filtering) */
+  selectedSector?: string | null;
 }
 
 // Sector name translations (GICS sectors + ETF categories + Custom)
@@ -49,7 +54,7 @@ const SECTOR_NAMES: Record<string, string> = {
   'Emerging Markets': 'שווקים מתפתחים',
   'Bonds': 'אג"ח',
   'Israel': 'ישראל',
-  'US Equity': 'מניות ארה"ב',
+  'US Equity': 'מניות - ארה"ב',
   'Growth': 'צמיחה',
   'Unknown': 'אחר',
   'Other': 'אחר',
@@ -87,6 +92,17 @@ const SECTOR_COLORS: Record<string, string> = {
   'Growth': '#0DBACC',
   'Unknown': '#7E7F90',
   'Other': '#7E7F90',
+  // Hebrew sector names from enrichment (for consistent colors)
+  'מניות - ארה"ב': '#6366f1',
+  'מניות - בינלאומי': '#06b6d4',
+  'מניות - אירופה': '#0ea5e9',
+  'מניות - תל אביב 125': '#69ADFF',
+  'מניות - תל אביב 35': '#69ADFF',
+  'מניות - ישראל': '#69ADFF',
+  'מניות גדולות': '#6366f1',
+  'סחורות': '#eab308',
+  'סחורות - זהב': '#eab308',
+  'אג"ח': '#8b5cf6',
 };
 
 /**
@@ -97,6 +113,7 @@ interface CustomTooltipProps {
   payload?: Array<{
     payload: {
       name: string;
+      displayName?: string;
       value: number;
       percent: number;
       color: string;
@@ -108,7 +125,7 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   if (!active || !payload || !payload.length) return null;
 
   const data = payload[0].payload;
-  const hebrewName = SECTOR_NAMES[data.name] || data.name;
+  const hebrewName = data.displayName || SECTOR_NAMES[data.name] || data.name;
 
   return (
     <div
@@ -157,8 +174,13 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
 export function SectorPieChart({
   sectorAllocation,
   className = '',
+  onSectorClick,
+  selectedSector,
 }: SectorPieChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  
+  // Check if any sector is selected
+  const hasSelection = selectedSector !== null && selectedSector !== undefined;
 
   // Empty state
   if (sectorAllocation.length === 0) {
@@ -180,12 +202,20 @@ export function SectorPieChart({
   }
 
   // Prepare data with colors
-  const chartData = sectorAllocation.map((s) => ({
-    name: s.sector,
-    value: s.value,
-    percent: s.percent,
-    color: SECTOR_COLORS[s.sector] || SECTOR_COLORS['Unknown'],
-  }));
+  // Use Hebrew sector name if available, otherwise translate
+  const chartData = sectorAllocation.map((s) => {
+    const displayName = s.sectorHe || SECTOR_NAMES[s.sector] || s.sector;
+    // Check if this sector is selected (compare with displayName which is the Hebrew name)
+    const isSelected = selectedSector === displayName;
+    return {
+      name: s.sector, // Keep original for color mapping
+      displayName, // Hebrew name for display
+      value: s.value,
+      percent: s.percent,
+      color: SECTOR_COLORS[displayName] || SECTOR_COLORS[s.sector] || SECTOR_COLORS['Unknown'],
+      isSelected,
+    };
+  });
 
   return (
     <div
@@ -214,35 +244,43 @@ export function SectorPieChart({
       </div>
 
       {/* Pie Chart */}
-      <div className="h-[10rem]">
+      <div className="h-[14rem]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={chartData}
               cx="50%"
               cy="50%"
-              innerRadius={35}
-              outerRadius={55}
+              innerRadius={50}
+              outerRadius={75}
               paddingAngle={2}
               dataKey="value"
               onMouseEnter={(_, index) => setHoveredIndex(index)}
               onMouseLeave={() => setHoveredIndex(null)}
             >
-              {chartData.map((entry, index) => (
+              {chartData.map((entry, index) => {
+              const isHovered = hoveredIndex === index;
+              const isActive = entry.isSelected || isHovered;
+              const isDimmed = hasSelection && !entry.isSelected && !isHovered;
+              
+              return (
                 <Cell
                   key={entry.name}
                   fill={entry.color}
                   style={{
-                    transform: hoveredIndex === index ? 'scale(1.05)' : 'scale(1)',
+                    transform: isActive ? 'scale(1.08)' : 'scale(1)',
                     transformOrigin: 'center',
                     transition: 'all 200ms ease-out',
-                    cursor: 'pointer',
-                    filter: hoveredIndex === index
-                      ? `drop-shadow(0 0 8px ${entry.color}66)`
+                    cursor: onSectorClick ? 'pointer' : 'default',
+                    filter: isActive
+                      ? `drop-shadow(0 0 10px ${entry.color}88)`
                       : 'none',
+                    opacity: isDimmed ? 0.4 : 1,
                   }}
+                  onClick={() => onSectorClick?.(entry.displayName)}
                 />
-              ))}
+              );
+            })}
             </Pie>
             <Tooltip content={<CustomTooltip />} />
           </PieChart>
@@ -250,32 +288,70 @@ export function SectorPieChart({
       </div>
 
       {/* Legend */}
-      <div className="mt-4 space-y-2">
-        {chartData.slice(0, 5).map((item, index) => (
-          <div
-            key={item.name}
-            className="flex items-center justify-between text-xs"
-            onMouseEnter={() => setHoveredIndex(index)}
-            onMouseLeave={() => setHoveredIndex(null)}
-            style={{
-              opacity: hoveredIndex !== null && hoveredIndex !== index ? 0.5 : 1,
-              transition: 'opacity 200ms ease-out',
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <div
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ backgroundColor: item.color }}
-              />
-              <SensitiveData as="span" className="text-[#7E7F90] font-medium">
-                {SECTOR_NAMES[item.name] || item.name}
+      <div className="mt-4 space-y-1">
+        {chartData.slice(0, 5).map((item, index) => {
+          const isHovered = hoveredIndex === index;
+          const isActive = item.isSelected || isHovered;
+          const isDimmed = hasSelection && !item.isSelected && !isHovered;
+          
+          return (
+            <div
+              key={item.name}
+              role={onSectorClick ? 'button' : undefined}
+              tabIndex={onSectorClick ? 0 : undefined}
+              className="flex items-center justify-between text-xs py-1.5 px-2 -mx-2 rounded-lg"
+              onMouseEnter={() => setHoveredIndex(index)}
+              onMouseLeave={() => setHoveredIndex(null)}
+              onClick={() => onSectorClick?.(item.displayName)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onSectorClick?.(item.displayName);
+                }
+              }}
+              style={{
+                opacity: isDimmed ? 0.4 : 1,
+                backgroundColor: item.isSelected ? `${item.color}15` : isHovered ? '#F7F7F8' : 'transparent',
+                boxShadow: item.isSelected ? `inset 0 0 0 1px ${item.color}40` : 'none',
+                cursor: onSectorClick ? 'pointer' : 'default',
+                transition: 'all 200ms ease-out',
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                  style={{ 
+                    backgroundColor: item.color,
+                    transform: isActive ? 'scale(1.3)' : 'scale(1)',
+                    boxShadow: isActive ? `0 0 6px ${item.color}66` : 'none',
+                    transition: 'all 200ms ease-out',
+                  }}
+                />
+                <SensitiveData 
+                  as="span" 
+                  className="font-medium"
+                  style={{
+                    color: isActive ? '#303150' : '#7E7F90',
+                    fontWeight: isActive ? 700 : 500,
+                    transition: 'all 200ms ease-out',
+                  }}
+                >
+                  {item.displayName || SECTOR_NAMES[item.name] || item.name}
+                </SensitiveData>
+              </div>
+              <SensitiveData 
+                as="span" 
+                style={{
+                  color: isActive ? '#303150' : '#BDBDCB',
+                  fontWeight: isActive ? 600 : 400,
+                  transition: 'all 200ms ease-out',
+                }}
+              >
+                {item.percent.toFixed(0)}%
               </SensitiveData>
             </div>
-            <SensitiveData as="span" className="text-[#BDBDCB]">
-              {item.percent.toFixed(0)}%
-            </SensitiveData>
-          </div>
-        ))}
+          );
+        })}
         {chartData.length > 5 && (
           <p className="text-xs text-[#BDBDCB] text-center pt-1">
             +{chartData.length - 5} סקטורים נוספים

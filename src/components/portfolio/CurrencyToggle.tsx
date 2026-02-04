@@ -11,7 +11,7 @@ interface CurrencyToggleProps {
   onChange: (currency: Currency) => void;
   /** Current exchange rate (USD to ILS) */
   exchangeRate?: number;
-  /** Show exchange rate in tooltip */
+  /** Show exchange rate below toggle */
   showRate?: boolean;
   /** Additional CSS classes */
   className?: string;
@@ -46,19 +46,12 @@ export function CurrencyToggle({
 
   return (
     <div
-      className={`flex items-center gap-2 ${className}`}
+      className={`flex flex-col gap-2 ${className}`}
       style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
     >
-      {/* Exchange Rate Display */}
-      {showRate && (
-        <span className="text-xs text-[#BDBDCB] hidden sm:inline" dir="ltr">
-          1$ = ₪{exchangeRate.toFixed(2)}
-        </span>
-      )}
-
       {/* Toggle Container */}
       <div
-        className="flex items-center p-1 rounded-xl bg-[#F7F7F8] border border-[#E8E8ED]"
+        className="flex items-center p-1 rounded-xl bg-[#F7F7F8]"
         role="group"
         aria-label="בחירת מטבע תצוגה"
       >
@@ -67,11 +60,11 @@ export function CurrencyToggle({
           type="button"
           onClick={() => handleToggle('ILS')}
           className={`
-            px-3 py-1.5 rounded-lg text-sm font-medium
-            transition-all duration-200
+            flex-1 h-9 px-3 rounded-lg text-sm font-medium
+            transition-all duration-200 ease-in-out
             ${
               value === 'ILS'
-                ? 'bg-[#FFFFFF] text-[#303150] shadow-sm'
+                ? 'bg-[#FFFFFF] text-[#303150] shadow-sm font-bold'
                 : 'bg-transparent text-[#7E7F90] hover:text-[#303150]'
             }
           `}
@@ -86,11 +79,11 @@ export function CurrencyToggle({
           type="button"
           onClick={() => handleToggle('USD')}
           className={`
-            px-3 py-1.5 rounded-lg text-sm font-medium
-            transition-all duration-200
+            flex-1 h-9 px-3 rounded-lg text-sm font-medium
+            transition-all duration-200 ease-in-out
             ${
               value === 'USD'
-                ? 'bg-[#FFFFFF] text-[#303150] shadow-sm'
+                ? 'bg-[#FFFFFF] text-[#303150] shadow-sm font-bold'
                 : 'bg-transparent text-[#7E7F90] hover:text-[#303150]'
             }
           `}
@@ -100,9 +93,15 @@ export function CurrencyToggle({
           $ דולר
         </button>
       </div>
+
+      {/* Exchange Rate Display - Below toggle */}
+      {showRate && (
+        <span className="text-xs text-[#BDBDCB]" dir="ltr">
+          1$ = ₪{exchangeRate.toFixed(2)}
+        </span>
+      )}
     </div>
   );
 }
 
 export default CurrencyToggle;
-

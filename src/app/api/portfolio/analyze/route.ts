@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
-import { analyzePortfolio, detectAssetType } from '@/lib/finance/marketService';
+import { analyzePortfolio, detectAssetType, getUsdIlsRate } from '@/lib/finance/marketService';
 import type { HybridHolding } from '@/lib/finance/types';
 
 /**
@@ -59,6 +59,7 @@ export async function POST(request: Request) {
     const cashBalance = typeof body.cashBalance === 'number' ? body.cashBalance : 0;
 
     if (holdings.length === 0 && cashBalance === 0) {
+      const exchangeRate = await getUsdIlsRate();
       return NextResponse.json({
         equity: 0,
         equityILS: 0,
@@ -70,11 +71,13 @@ export async function POST(request: Request) {
         sectorAllocation: [],
         holdings: [],
         riskLevel: 'moderate',
+        exchangeRate,
       });
     }
 
     // If only cash and no holdings
     if (holdings.length === 0) {
+      const exchangeRate = await getUsdIlsRate();
       return NextResponse.json({
         equity: cashBalance,
         equityILS: cashBalance,
@@ -86,6 +89,7 @@ export async function POST(request: Request) {
         sectorAllocation: [],
         holdings: [],
         riskLevel: 'conservative',
+        exchangeRate,
       });
     }
 
@@ -154,6 +158,7 @@ export async function GET() {
       });
 
     if (holdings.length === 0 && cashBalance === 0) {
+      const exchangeRate = await getUsdIlsRate();
       return NextResponse.json({
         equity: 0,
         equityILS: 0,
@@ -165,11 +170,13 @@ export async function GET() {
         sectorAllocation: [],
         holdings: [],
         riskLevel: 'moderate',
+        exchangeRate,
       });
     }
 
     // If only cash and no holdings
     if (holdings.length === 0) {
+      const exchangeRate = await getUsdIlsRate();
       return NextResponse.json({
         equity: cashBalance,
         equityILS: cashBalance,
@@ -181,6 +188,7 @@ export async function GET() {
         sectorAllocation: [],
         holdings: [],
         riskLevel: 'conservative',
+        exchangeRate,
       });
     }
 

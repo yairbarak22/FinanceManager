@@ -33,6 +33,10 @@ interface SmartInsightsPanelProps {
   riskLevel?: 'conservative' | 'moderate' | 'aggressive';
   /** Additional CSS classes */
   className?: string;
+  /** Callback when a sector is clicked in the pie chart */
+  onSectorClick?: (sector: string) => void;
+  /** Currently selected sector (for filtering) */
+  selectedSector?: string | null;
 }
 
 interface Insight {
@@ -145,6 +149,8 @@ export function SmartInsightsPanel({
   diversificationScore,
   holdings,
   className = '',
+  onSectorClick,
+  selectedSector,
 }: SmartInsightsPanelProps) {
   // Generate insights
   const insights = useMemo(
@@ -155,13 +161,20 @@ export function SmartInsightsPanel({
   return (
     <div
       className={`flex flex-col gap-6 overflow-y-auto scrollbar-ghost ${className}`}
-      style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+      style={{
+        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+        minHeight: '700px',
+      }}
     >
       {/* Risk Gauge */}
       <RiskGauge beta={beta} />
 
       {/* Sector Pie Chart */}
-      <SectorPieChart sectorAllocation={sectorAllocation} />
+      <SectorPieChart 
+        sectorAllocation={sectorAllocation}
+        onSectorClick={onSectorClick}
+        selectedSector={selectedSector}
+      />
 
       {/* AI Portfolio Analysis */}
       <div

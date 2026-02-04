@@ -26,7 +26,10 @@ export interface AssetData {
 export interface QuoteData extends AssetData {
   beta?: number;
   sector?: string;
+  sectorHe?: string; // Hebrew sector name from enrichment
   exchange?: string;
+  nameHe?: string; // Hebrew name from enrichment
+  isEnriched?: boolean; // Whether data was enriched from local DB
 }
 
 /**
@@ -35,10 +38,12 @@ export interface QuoteData extends AssetData {
 export interface SearchResult {
   symbol: string;
   name: string;
+  nameHe?: string; // Hebrew name from enrichment
   type: AssetType;
   provider: Provider;
   exchange?: string;
   logoUrl?: string;
+  isEnriched?: boolean; // Whether result came from local enrichment DB
 }
 
 /**
@@ -79,6 +84,7 @@ export interface EnrichedHolding {
   id?: string;
   symbol: string;
   name: string;
+  nameHe?: string; // Hebrew name from enrichment
   quantity: number;
   price: number;
   priceILS: number;
@@ -86,12 +92,14 @@ export interface EnrichedHolding {
   valueILS: number;
   beta: number;
   sector: string;
+  sectorHe?: string; // Hebrew sector name from enrichment
   currency: Currency;
   provider: Provider;
   priceDisplayUnit?: PriceDisplayUnit;
   changePercent: number;
   weight: number;
   sparklineData: number[];
+  isEnriched?: boolean; // Whether data was enriched from local DB
 }
 
 /**
@@ -109,6 +117,7 @@ export interface PortfolioAnalysis {
   sectorAllocation: SectorAllocation[];
   holdings: EnrichedHolding[];
   riskLevel: RiskLevel;
+  exchangeRate: number; // USD/ILS exchange rate
 }
 
 export interface SectorAllocation {

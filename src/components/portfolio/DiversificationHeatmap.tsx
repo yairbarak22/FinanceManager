@@ -61,7 +61,7 @@ const SECTOR_NAMES: Record<string, string> = {
 
   // Custom categories from estimateSector
   'Israel': 'ישראל',
-  'US Equity': 'מניות ארה"ב',
+  'US Equity': 'מניות - ארה"ב',
   'Growth': 'צמיחה',
 
   // Fallback
@@ -115,6 +115,18 @@ const SECTOR_COLORS: Record<string, string> = {
   'Israel': '#3b82f6',          // blue-500
   'US Equity': '#6366f1',       // indigo-500
   'Growth': '#10b981',          // emerald-500
+
+  // Hebrew sector names from enrichment (for consistent colors)
+  'מניות - ארה"ב': '#6366f1',
+  'מניות - בינלאומי': '#06b6d4',
+  'מניות - אירופה': '#0ea5e9',
+  'מניות - תל אביב 125': '#3b82f6',
+  'מניות - תל אביב 35': '#3b82f6',
+  'מניות - ישראל': '#3b82f6',
+  'מניות גדולות': '#6366f1',
+  'סחורות': '#eab308',
+  'סחורות - זהב': '#eab308',
+  'אג"ח': '#8b5cf6',
 
   // Fallback
   'Unknown': '#64748b',         // slate-500

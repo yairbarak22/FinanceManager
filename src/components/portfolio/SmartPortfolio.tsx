@@ -8,6 +8,7 @@ import { AddAssetButton } from './AddAssetButton';
 import { PortfolioSummaryHero } from './PortfolioSummaryHero';
 import { SmartInsightsPanel } from './SmartInsightsPanel';
 import { PortfolioSettingsCard } from './PortfolioSettingsCard';
+import { ImportPortfolioDialog } from './ImportPortfolioDialog';
 import SectionHeader from '@/components/dashboard/SectionHeader';
 import { apiFetch } from '@/lib/utils';
 
@@ -189,6 +190,8 @@ function EditCashModal({
   );
 }
 
+type ValueCurrency = 'ILS' | 'USD';
+
 /**
  * Edit Holding Modal
  */
@@ -196,10 +199,12 @@ function EditHoldingModal({
   holding,
   onClose,
   onSave,
+  exchangeRate = DEFAULT_EXCHANGE_RATE,
 }: {
   holding: HoldingData;
   onClose: () => void;
   onSave: (id: string, quantity: number, priceDisplayUnit: PriceDisplayUnit) => Promise<void>;
+  exchangeRate?: number;
 }) {
   const [quantity, setQuantity] = useState(holding.quantity.toString());
   const [priceDisplayUnit, setPriceDisplayUnit] = useState<PriceDisplayUnit>(
@@ -207,6 +212,78 @@ function EditHoldingModal({
   );
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+  
+  // Value-based input states
+  const [value, setValue] = useState('');
+  const [valueCurrency, setValueCurrency] = useState<ValueCurrency>('ILS');
+  const [manualPrice, setManualPrice] = useState('');
+  const [manualPriceCurrency, setManualPriceCurrency] = useState<ValueCurrency>('ILS');
+  const [lastEditedField, setLastEditedField] = useState<'quantity' | 'value' | null>(null);
+  
+  // Use holding's price or manual price
+  const effectivePriceILS = manualPrice && parseFloat(manualPrice) > 0
+    ? (manualPriceCurrency === 'ILS' 
+        ? parseFloat(manualPrice) 
+        : parseFloat(manualPrice) * exchangeRate)
+    : holding.priceILS || 0;
+    
+  const effectivePriceUSD = effectivePriceILS > 0 ? effectivePriceILS / exchangeRate : 0;
+  
+  // Initialize value from quantity on mount
+  useEffect(() => {
+    if (effectivePriceILS > 0 && holding.quantity > 0) {
+      const initialValue = holding.quantity * effectivePriceILS;
+      setValue(initialValue.toFixed(2));
+    }
+  }, []);
+
+  // Calculate value from quantity when quantity changes
+  useEffect(() => {
+    if (lastEditedField === 'quantity' && quantity && effectivePriceILS > 0) {
+      const qty = parseFloat(quantity);
+      if (!isNaN(qty) && qty > 0) {
+        let newValue: number;
+        if (valueCurrency === 'ILS') {
+          newValue = qty * effectivePriceILS;
+        } else {
+          newValue = qty * effectivePriceUSD;
+        }
+        setValue(newValue.toFixed(2));
+      }
+    }
+  }, [quantity, effectivePriceILS, effectivePriceUSD, valueCurrency, lastEditedField]);
+
+  // Calculate quantity from value when value changes
+  useEffect(() => {
+    if (lastEditedField === 'value' && value && effectivePriceILS > 0) {
+      const val = parseFloat(value);
+      if (!isNaN(val) && val > 0) {
+        let newQuantity: number;
+        if (valueCurrency === 'ILS') {
+          newQuantity = val / effectivePriceILS;
+        } else {
+          newQuantity = val / effectivePriceUSD;
+        }
+        setQuantity(newQuantity.toFixed(4).replace(/\.?0+$/, ''));
+      }
+    }
+  }, [value, effectivePriceILS, effectivePriceUSD, valueCurrency, lastEditedField]);
+
+  // Recalculate when currency changes
+  useEffect(() => {
+    if (effectivePriceILS > 0 && quantity) {
+      const qty = parseFloat(quantity);
+      if (!isNaN(qty) && qty > 0) {
+        let newValue: number;
+        if (valueCurrency === 'ILS') {
+          newValue = qty * effectivePriceILS;
+        } else {
+          newValue = qty * effectivePriceUSD;
+        }
+        setValue(newValue.toFixed(2));
+      }
+    }
+  }, [valueCurrency]);
 
   const handleSave = async () => {
     const qty = parseFloat(quantity);
@@ -249,7 +326,7 @@ function EditHoldingModal({
         className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm z-[9999]"
       >
         <div
-          className="bg-[#FFFFFF] rounded-3xl overflow-hidden mx-4 p-6"
+          className="bg-[#FFFFFF] rounded-3xl overflow-hidden mx-4 p-6 max-h-[90vh] overflow-y-auto"
           style={{
             boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
             fontFamily: 'var(--font-nunito), system-ui, sans-serif',
@@ -267,15 +344,22 @@ function EditHoldingModal({
           </div>
 
           {/* Stock Info */}
-          <div className="flex items-center gap-3 p-4 bg-[#F7F7F8] rounded-xl mb-6">
+          <div className="flex items-center gap-3 p-4 bg-[#F7F7F8] rounded-xl mb-4">
             <div className="flex-1 text-right">
               <p className="font-bold text-[#303150]">{holding.symbol}</p>
               <p className="text-sm text-[#7E7F90] truncate">{holding.name}</p>
             </div>
+            {effectivePriceILS > 0 && (
+              <div className="text-left">
+                <p className="font-semibold text-[#303150]">
+                  ₪{effectivePriceILS.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Quantity Input */}
-          <div className="mb-6">
+          <div className="mb-3">
             <label className="block text-[0.8125rem] font-medium text-[#7E7F90] mb-2 text-right">
               כמות יחידות
             </label>
@@ -285,6 +369,7 @@ function EditHoldingModal({
               onChange={(e) => {
                 setQuantity(e.target.value);
                 setError('');
+                setLastEditedField('quantity');
               }}
               className={`w-full px-4 py-3 text-lg text-right rounded-xl border transition-colors outline-none ${
                 error
@@ -302,8 +387,85 @@ function EditHoldingModal({
             )}
           </div>
 
+          {/* Divider */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex-1 h-px bg-[#E8E8ED]" />
+            <span className="text-xs text-[#BDBDCB] font-medium">או</span>
+            <div className="flex-1 h-px bg-[#E8E8ED]" />
+          </div>
+
+          {/* Value Input */}
+          <div className="mb-4">
+            <label className="block text-[0.8125rem] font-medium text-[#7E7F90] mb-2 text-right">
+              שווי (₪)
+            </label>
+            <input
+              type="number"
+              value={value}
+              onChange={(e) => {
+                setValue(e.target.value);
+                setError('');
+                setLastEditedField('value');
+              }}
+              placeholder="0"
+              className="w-full px-4 py-3 text-lg text-right rounded-xl border border-[#E8E8ED] focus:border-[#69ADFF] focus:ring-2 focus:ring-[#69ADFF]/20 transition-colors outline-none"
+              style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+              min="0"
+              step="0.01"
+              dir="ltr"
+            />
+          </div>
+
+          {/* Manual Price Input (when price not available) */}
+          {effectivePriceILS === 0 && (
+            <div className="mb-4 p-3 bg-[#FFF9E6] border border-[#FFE0A3] rounded-xl">
+              <label className="block text-[0.8125rem] font-medium text-[#303150] mb-2 text-right">
+                מחיר ליחידה (לא זמין)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={manualPrice}
+                  onChange={(e) => setManualPrice(e.target.value)}
+                  placeholder="הזן מחיר"
+                  className="flex-1 px-4 py-2 text-right rounded-xl border border-[#E8E8ED] focus:border-[#69ADFF] focus:ring-2 focus:ring-[#69ADFF]/20 transition-colors outline-none"
+                  style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                  min="0"
+                  step="0.01"
+                  dir="ltr"
+                />
+                <div className="flex rounded-xl overflow-hidden border border-[#E8E8ED]">
+                  <button
+                    type="button"
+                    onClick={() => setManualPriceCurrency('ILS')}
+                    className={`px-3 py-2 text-sm font-medium transition-all ${
+                      manualPriceCurrency === 'ILS'
+                        ? 'bg-[#69ADFF] text-white'
+                        : 'bg-white text-[#303150] hover:bg-[#F7F7F8]'
+                    }`}
+                    style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                  >
+                    ₪
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setManualPriceCurrency('USD')}
+                    className={`px-3 py-2 text-sm font-medium transition-all ${
+                      manualPriceCurrency === 'USD'
+                        ? 'bg-[#69ADFF] text-white'
+                        : 'bg-white text-[#303150] hover:bg-[#F7F7F8]'
+                    }`}
+                    style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                  >
+                    $
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Price Display Unit Selector */}
-          <div className="mb-6">
+          <div className="mb-4">
             <label className="block text-[0.8125rem] font-medium text-[#7E7F90] mb-2 text-right">
               יחידת תצוגת מחיר
             </label>
@@ -325,6 +487,14 @@ function EditHoldingModal({
               ))}
             </div>
           </div>
+
+          {/* Summary */}
+          {effectivePriceILS > 0 && quantity && parseFloat(quantity) > 0 && (
+            <p className="text-sm text-[#7E7F90] mb-4 text-right">
+              שווי: ₪{(effectivePriceILS * parseFloat(quantity)).toLocaleString('he-IL', { maximumFractionDigits: 0 })}
+              {' '}• כמות: {parseFloat(quantity).toFixed(2)} יח'
+            </p>
+          )}
 
           {/* Actions */}
           <div className="flex gap-3">
@@ -498,7 +668,7 @@ function EmptyState({ onAddAsset }: { onAddAsset: (data: Parameters<typeof AddAs
 
         {/* Hidden AddAssetButton for dialog */}
         <div className="hidden">
-          <AddAssetButton onAddAsset={onAddAsset} />
+          <AddAssetButton onAddAsset={onAddAsset} exchangeRate={DEFAULT_EXCHANGE_RATE} />
         </div>
       </div>
     </div>
@@ -510,6 +680,12 @@ function EmptyState({ onAddAsset }: { onAddAsset: (data: Parameters<typeof AddAs
  * Main dashboard component integrating all portfolio analysis features
  * Following Neto Design System - Apple Design Philosophy
  */
+// Portfolio history item type
+interface PortfolioHistoryItem {
+  date: string;
+  value: number;
+}
+
 export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
   const [data, setData] = useState<PortfolioData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -517,11 +693,33 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [currency, setCurrency] = useState<Currency>('ILS');
   const [exchangeRate, setExchangeRate] = useState(DEFAULT_EXCHANGE_RATE);
+  const [portfolioHistory, setPortfolioHistory] = useState<PortfolioHistoryItem[]>([]);
 
   // Edit/Delete state
   const [editingHolding, setEditingHolding] = useState<HoldingData | null>(null);
   const [deletingHolding, setDeletingHolding] = useState<HoldingData | null>(null);
   const [isEditingCash, setIsEditingCash] = useState(false);
+  
+  // Import dialog state
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  
+  // Sector filter state
+  const [selectedSector, setSelectedSector] = useState<string | null>(null);
+
+  // Fetch portfolio history for chart
+  const fetchPortfolioHistory = useCallback(async () => {
+    try {
+      const response = await fetch('/api/portfolio/history');
+      if (response.ok) {
+        const historyData = await response.json();
+        setPortfolioHistory(historyData);
+      }
+    } catch (err) {
+      console.error('Portfolio history fetch error:', err);
+      // Don't set error for history - it's not critical
+    }
+  }, []);
 
   const fetchPortfolioData = useCallback(async () => {
     try {
@@ -544,13 +742,21 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
 
       setData(result);
       setLastUpdated(new Date());
+      
+      // Update exchange rate from API response
+      if (result.exchangeRate) {
+        setExchangeRate(result.exchangeRate);
+      }
+      
+      // Also fetch history after portfolio data
+      fetchPortfolioHistory();
     } catch (err) {
       console.error('Portfolio fetch error:', err);
       setError(err instanceof Error ? err.message : 'שגיאה בטעינת הנתונים');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchPortfolioHistory]);
 
   const handleAddAsset = async (assetData: {
     symbol: string;
@@ -629,6 +835,46 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
     await fetchPortfolioData();
   };
 
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      const response = await fetch('/api/portfolio/export');
+      
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `portfolio-export-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export error:', err);
+      // Could show a toast notification here
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImportSuccess = () => {
+    setIsImportDialogOpen(false);
+    fetchPortfolioData();
+  };
+
+  // Sector filter handlers
+  const handleSectorClick = (sector: string) => {
+    setSelectedSector(prev => prev === sector ? null : sector);
+  };
+
+  const handleClearSectorFilter = () => {
+    setSelectedSector(null);
+  };
+
   useEffect(() => {
     fetchPortfolioData();
   }, [fetchPortfolioData]);
@@ -686,7 +932,7 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
         <EmptyState onAddAsset={handleAddAsset} />
         {/* Visible AddAssetButton for empty state */}
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-          <AddAssetButton onAddAsset={handleAddAsset} />
+          <AddAssetButton onAddAsset={handleAddAsset} exchangeRate={exchangeRate} />
         </div>
       </div>
     );
@@ -716,6 +962,8 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
               dailyChangePercent={data.dailyChangePercent}
               cashBalance={data.cashBalance ?? 0}
               cashWeight={data.cashWeight}
+              yearlyReturnPercent={8.5} // TODO: Calculate from actual data
+              portfolioHistory={portfolioHistory}
               currency={currency}
               exchangeRate={exchangeRate}
             />
@@ -728,9 +976,11 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
               onCurrencyChange={setCurrency}
               exchangeRate={exchangeRate}
               onRefresh={fetchPortfolioData}
-              loading={loading}
+              loading={loading || isExporting}
               lastUpdated={lastUpdated}
               onAddAsset={handleAddAsset}
+              onImport={() => setIsImportDialogOpen(true)}
+              onExport={handleExport}
             />
           </div>
         </div>
@@ -754,6 +1004,8 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
               onEdit={(holding) => setEditingHolding(holding)}
               onDelete={(holding) => setDeletingHolding(holding)}
               maxHeight="35rem"
+              selectedSector={selectedSector}
+              onClearSectorFilter={handleClearSectorFilter}
             />
 
             {/* Cash Balance Card */}
@@ -799,7 +1051,7 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
           </div>
 
           {/* Left Column (4 cols) - Smart Insights Panel */}
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-4" style={{ minHeight: '700px' }}>
             <SmartInsightsPanel
               beta={data.beta}
               sectorAllocation={data.sectorAllocation}
@@ -812,6 +1064,8 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
                 beta: h.beta,
               }))}
               riskLevel={data.riskLevel}
+              onSectorClick={handleSectorClick}
+              selectedSector={selectedSector}
             />
           </div>
         </div>
@@ -823,6 +1077,7 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
           holding={editingHolding}
           onClose={() => setEditingHolding(null)}
           onSave={handleEditHolding}
+          exchangeRate={exchangeRate}
         />
       )}
 
@@ -841,6 +1096,13 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
           onConfirm={handleDeleteHolding}
         />
       )}
+
+      {/* Import Dialog */}
+      <ImportPortfolioDialog
+        isOpen={isImportDialogOpen}
+        onClose={() => setIsImportDialogOpen(false)}
+        onSuccess={handleImportSuccess}
+      />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import { apiFetch } from '@/lib/utils';
 interface SearchResult {
   symbol: string;
   name: string;
+  nameHe?: string; // Hebrew name from enrichment
   exchange?: string;
   type?: string;
   provider: 'YAHOO' | 'EOD';
@@ -18,6 +19,8 @@ interface SearchResult {
   changePercent: number;
   beta?: number;
   sector?: string;
+  sectorHe?: string; // Hebrew sector from enrichment
+  isEnriched?: boolean; // Whether result came from local enrichment DB
   logo?: string | null;
 }
 
@@ -99,11 +102,17 @@ interface AddAssetDialogProps {
     currency: string;
     priceDisplayUnit: PriceDisplayUnit;
   }) => void;
+  /** Exchange rate USD/ILS for value calculations */
+  exchangeRate?: number;
 }
+
+type ValueCurrency = 'ILS' | 'USD';
 
 type FlowStep = 'search' | 'quantity';
 
-export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogProps) {
+const DEFAULT_EXCHANGE_RATE = 3.65;
+
+export function AddAssetDialog({ isOpen, onClose, onAddAsset, exchangeRate = DEFAULT_EXCHANGE_RATE }: AddAssetDialogProps) {
   const [step, setStep] = useState<FlowStep>('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -114,9 +123,29 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
   const [quantityError, setQuantityError] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [priceDisplayUnit, setPriceDisplayUnit] = useState<PriceDisplayUnit>('ILS');
+  
+  // Value-based input states
+  const [value, setValue] = useState('');
+  const [valueCurrency, setValueCurrency] = useState<ValueCurrency>('ILS');
+  const [manualPrice, setManualPrice] = useState('');
+  const [manualPriceCurrency, setManualPriceCurrency] = useState<ValueCurrency>('ILS');
+  const [lastEditedField, setLastEditedField] = useState<'quantity' | 'value' | null>(null);
 
   const quantityInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Calculate effective price (from quote or manual input)
+  const effectivePriceILS = manualPrice && parseFloat(manualPrice) > 0
+    ? (manualPriceCurrency === 'ILS' 
+        ? parseFloat(manualPrice) 
+        : parseFloat(manualPrice) * exchangeRate)
+    : quoteData?.priceILS || selectedStock?.priceILS || 0;
+    
+  const effectivePriceUSD = manualPrice && parseFloat(manualPrice) > 0
+    ? (manualPriceCurrency === 'USD' 
+        ? parseFloat(manualPrice) 
+        : parseFloat(manualPrice) / exchangeRate)
+    : quoteData?.price || selectedStock?.price || 0;
 
   // Reset state when dialog opens/closes
   useEffect(() => {
@@ -129,8 +158,62 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
       setQuantity('');
       setQuantityError('');
       setPriceDisplayUnit('ILS');
+      setValue('');
+      setValueCurrency('ILS');
+      setManualPrice('');
+      setManualPriceCurrency('ILS');
+      setLastEditedField(null);
     }
   }, [isOpen]);
+
+  // Calculate value from quantity when quantity changes
+  useEffect(() => {
+    if (lastEditedField === 'quantity' && quantity && effectivePriceILS > 0) {
+      const qty = parseFloat(quantity);
+      if (!isNaN(qty) && qty > 0) {
+        let newValue: number;
+        if (valueCurrency === 'ILS') {
+          newValue = qty * effectivePriceILS;
+        } else {
+          newValue = qty * effectivePriceUSD;
+        }
+        setValue(newValue.toFixed(2));
+      }
+    }
+  }, [quantity, effectivePriceILS, effectivePriceUSD, valueCurrency, lastEditedField]);
+
+  // Calculate quantity from value when value changes
+  useEffect(() => {
+    if (lastEditedField === 'value' && value && effectivePriceILS > 0) {
+      const val = parseFloat(value);
+      if (!isNaN(val) && val > 0) {
+        let newQuantity: number;
+        if (valueCurrency === 'ILS') {
+          newQuantity = val / effectivePriceILS;
+        } else {
+          newQuantity = val / effectivePriceUSD;
+        }
+        // Round to 4 decimal places for quantity
+        setQuantity(newQuantity.toFixed(4).replace(/\.?0+$/, ''));
+      }
+    }
+  }, [value, effectivePriceILS, effectivePriceUSD, valueCurrency, lastEditedField]);
+
+  // Recalculate when currency changes
+  useEffect(() => {
+    if (effectivePriceILS > 0 && quantity) {
+      const qty = parseFloat(quantity);
+      if (!isNaN(qty) && qty > 0) {
+        let newValue: number;
+        if (valueCurrency === 'ILS') {
+          newValue = qty * effectivePriceILS;
+        } else {
+          newValue = qty * effectivePriceUSD;
+        }
+        setValue(newValue.toFixed(2));
+      }
+    }
+  }, [valueCurrency]);
 
   // Debounced search
   const handleSearch = useCallback(async (query: string) => {
@@ -230,6 +313,11 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
     setQuantity('');
     setQuantityError('');
     setPriceDisplayUnit('ILS');
+    setValue('');
+    setValueCurrency('ILS');
+    setManualPrice('');
+    setManualPriceCurrency('ILS');
+    setLastEditedField(null);
   };
 
   // Format currency
@@ -302,64 +390,83 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                           </Command.Empty>
                         )}
 
-                        {searchResults.map((result) => (
-                          <Command.Item
-                            key={result.symbol}
-                            value={result.symbol}
-                            onSelect={() => handleSelectStock(result)}
-                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-[#F7F7F8] transition-colors data-[selected=true]:bg-[#F7F7F8]"
-                          >
-                            {/* Logo / Flag Badge */}
-                            {(() => {
-                              const countryInfo = getCountryInfo(result.symbol);
-                              return (
-                                <>
-                                  <div className="w-10 h-10 rounded-xl bg-[#F7F7F8] flex items-center justify-center overflow-hidden flex-shrink-0 relative">
-                                    {result.logo ? (
-                                      <img
-                                        src={result.logo}
-                                        alt={result.symbol}
-                                        className="w-6 h-6 object-contain"
-                                        onError={(e) => {
-                                          (e.target as HTMLImageElement).style.display = 'none';
+                        {searchResults.map((result, index) => {
+                          const countryInfo = getCountryInfo(result.symbol);
+                          const displayName = result.nameHe || result.name;
+                          const isHebrew = !!result.nameHe;
+                          
+                          return (
+                            <motion.div
+                              key={result.symbol}
+                              initial={{ opacity: 0, y: isHebrew ? -10 : 0 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: isHebrew ? index * 0.05 : 0 }}
+                            >
+                              <Command.Item
+                                value={result.symbol}
+                                onSelect={() => handleSelectStock(result)}
+                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-[#F7F7F8] transition-colors data-[selected=true]:bg-[#F7F7F8]"
+                              >
+                                {/* Logo / Flag Badge */}
+                                <div className="w-10 h-10 rounded-xl bg-[#F7F7F8] flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+                                  {result.logo ? (
+                                    <img
+                                      src={result.logo}
+                                      alt={result.symbol}
+                                      className="w-6 h-6 object-contain"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                      }}
+                                    />
+                                  ) : (
+                                    <span className="text-lg">{countryInfo.flag}</span>
+                                  )}
+                                </div>
+
+                                {/* Info */}
+                                <div className={`flex-1 min-w-0 ${isHebrew ? 'text-right' : 'text-right'}`} dir={isHebrew ? 'rtl' : 'ltr'}>
+                                  <div className="flex items-center gap-2 justify-end">
+                                    <span className="font-semibold text-[#303150]">{result.symbol}</span>
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                                      countryInfo.isIsraeli
+                                        ? 'bg-[#C1DDFF] text-[#69ADFF]'
+                                        : 'bg-[#F7F7F8] text-[#7E7F90]'
+                                    }`}>
+                                      {countryInfo.label}
+                                    </span>
+                                    {/* Israeli enrichment badge */}
+                                    {result.isEnriched && (
+                                      <div
+                                        className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                                        style={{ 
+                                          backgroundColor: '#74ACEF',
+                                          color: '#FFFFFF',
                                         }}
-                                      />
-                                    ) : (
-                                      <span className="text-lg">{countryInfo.flag}</span>
+                                      >
+                                        🇮🇱
+                                      </div>
                                     )}
                                   </div>
+                                  <p className={`text-sm text-[#7E7F90] truncate ${isHebrew ? 'font-medium' : ''}`}>
+                                    {displayName}
+                                  </p>
+                                </div>
 
-                                  {/* Info */}
-                                  <div className="flex-1 min-w-0 text-right">
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-semibold text-[#303150]">{result.symbol}</span>
-                                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                                        countryInfo.isIsraeli
-                                          ? 'bg-[#C1DDFF] text-[#69ADFF]'
-                                          : 'bg-[#F7F7F8] text-[#7E7F90]'
-                                      }`}>
-                                        {countryInfo.label}
-                                      </span>
-                                    </div>
-                                    <p className="text-sm text-[#7E7F90] truncate">{result.name}</p>
+                                {/* Price */}
+                                {result.priceILS > 0 && (
+                                  <div className="text-left flex-shrink-0">
+                                    <p className="font-medium text-[#303150]">
+                                      ₪{result.priceILS.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </p>
+                                    <p className={`text-xs ${result.changePercent >= 0 ? 'text-[#0DBACC]' : 'text-[#F18AB5]'}`} dir="ltr">
+                                      {result.changePercent >= 0 ? '+' : ''}{result.changePercent.toFixed(2)}%
+                                    </p>
                                   </div>
-                                </>
-                              );
-                            })()}
-
-                            {/* Price */}
-                            {result.priceILS > 0 && (
-                              <div className="text-left flex-shrink-0">
-                                <p className="font-medium text-[#303150]">
-                                  ₪{result.priceILS.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                </p>
-                                <p className={`text-xs ${result.changePercent >= 0 ? 'text-[#0DBACC]' : 'text-[#F18AB5]'}`} dir="ltr">
-                                  {result.changePercent >= 0 ? '+' : ''}{result.changePercent.toFixed(2)}%
-                                </p>
-                              </div>
-                            )}
-                          </Command.Item>
-                        ))}
+                                )}
+                              </Command.Item>
+                            </motion.div>
+                          );
+                        })}
                       </Command.List>
 
                       {/* Helper */}
@@ -414,7 +521,9 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                                 {countryInfo.label}
                               </span>
                             </div>
-                            <p className="text-sm text-[#7E7F90] truncate">{selectedStock.name}</p>
+                            <p className={`text-sm text-[#7E7F90] truncate ${selectedStock.nameHe ? 'font-medium' : ''}`} dir={selectedStock.nameHe ? 'rtl' : 'ltr'}>
+                              {selectedStock.nameHe || selectedStock.name}
+                            </p>
                           </div>
                           {quoteData && (
                             <div className="text-left">
@@ -441,7 +550,7 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                     )}
 
                     {/* Quantity Input */}
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <label className="block text-sm font-medium text-[#303150] mb-2 text-right">
                         כמות יחידות
                       </label>
@@ -452,6 +561,7 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                         onChange={(e) => {
                           setQuantity(e.target.value);
                           setQuantityError('');
+                          setLastEditedField('quantity');
                         }}
                         placeholder="0"
                         className={`w-full px-4 py-3 text-lg text-right rounded-xl border transition-colors outline-none ${
@@ -467,6 +577,79 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                         <p className="mt-1 text-sm text-rose-500 text-right">{quantityError}</p>
                       )}
                     </div>
+
+                    {/* Divider */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="flex-1 h-px bg-[#E8E8ED]" />
+                      <span className="text-xs text-[#BDBDCB] font-medium">או</span>
+                      <div className="flex-1 h-px bg-[#E8E8ED]" />
+                    </div>
+
+                    {/* Value Input */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-[#303150] mb-2 text-right">
+                        שווי (₪)
+                      </label>
+                      <input
+                        type="number"
+                        value={value}
+                        onChange={(e) => {
+                          setValue(e.target.value);
+                          setQuantityError('');
+                          setLastEditedField('value');
+                        }}
+                        placeholder="0"
+                        className="w-full px-4 py-3 text-lg text-right rounded-xl border border-[#E8E8ED] focus:border-[#69ADFF] focus:ring-2 focus:ring-[#69ADFF]/20 transition-colors outline-none"
+                        min="0"
+                        step="0.01"
+                        dir="ltr"
+                      />
+                    </div>
+
+                    {/* Manual Price Input (when quote not available) */}
+                    {!quoteData && !selectedStock?.priceILS && (
+                      <div className="mb-4 p-3 bg-[#FFF9E6] border border-[#FFE0A3] rounded-xl">
+                        <label className="block text-sm font-medium text-[#303150] mb-2 text-right">
+                          מחיר ליחידה (לא זמין מהשוק)
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            value={manualPrice}
+                            onChange={(e) => setManualPrice(e.target.value)}
+                            placeholder="הזן מחיר"
+                            className="flex-1 px-4 py-2 text-right rounded-xl border border-[#E8E8ED] focus:border-[#69ADFF] focus:ring-2 focus:ring-[#69ADFF]/20 transition-colors outline-none"
+                            min="0"
+                            step="0.01"
+                            dir="ltr"
+                          />
+                          <div className="flex rounded-xl overflow-hidden border border-[#E8E8ED]">
+                            <button
+                              type="button"
+                              onClick={() => setManualPriceCurrency('ILS')}
+                              className={`px-3 py-2 text-sm font-medium transition-all ${
+                                manualPriceCurrency === 'ILS'
+                                  ? 'bg-[#69ADFF] text-white'
+                                  : 'bg-white text-[#303150] hover:bg-[#F7F7F8]'
+                              }`}
+                            >
+                              ₪
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setManualPriceCurrency('USD')}
+                              className={`px-3 py-2 text-sm font-medium transition-all ${
+                                manualPriceCurrency === 'USD'
+                                  ? 'bg-[#69ADFF] text-white'
+                                  : 'bg-white text-[#303150] hover:bg-[#F7F7F8]'
+                              }`}
+                            >
+                              $
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Price Display Unit Selector */}
                     <div className="mb-4">
@@ -511,12 +694,17 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset }: AddAssetDialogPr
                     </div>
 
                     {/* Live Price Helper */}
-                    {quoteData && (
+                    {effectivePriceILS > 0 && (
                       <p className="text-sm text-[#7E7F90] mb-4 text-right">
-                        מחיר אחרון: ₪{quoteData.priceILS.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        מחיר: ₪{effectivePriceILS.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         {quantity && parseFloat(quantity) > 0 && (
                           <span className="text-[#BDBDCB]">
-                            {' '}• שווי משוער: ₪{(quoteData.priceILS * parseFloat(quantity)).toLocaleString('he-IL', { maximumFractionDigits: 0 })}
+                            {' '}• שווי: ₪{(effectivePriceILS * parseFloat(quantity)).toLocaleString('he-IL', { maximumFractionDigits: 0 })}
+                          </span>
+                        )}
+                        {value && parseFloat(value) > 0 && quantity && parseFloat(quantity) > 0 && (
+                          <span className="text-[#BDBDCB]">
+                            {' '}• כמות: {parseFloat(quantity).toFixed(2)} יח'
                           </span>
                         )}
                       </p>

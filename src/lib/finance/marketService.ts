@@ -22,14 +22,63 @@ import type {
   RiskLevel,
 } from './types';
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 /**
  * Get USD to ILS exchange rate
  * Delegates to EOD provider (with caching and fallback)
  */
 export async function getUsdIlsRate(): Promise<number> {
   return eodProvider.getUsdIlsRate();
+}
+
+/**
+ * Sector name translations for normalizing sectors to Hebrew
+ * Used to group sectors consistently (e.g., "US Equity" and "מניות - ארה"ב" should be the same)
+ */
+const SECTOR_TRANSLATIONS: Record<string, string> = {
+  // GICS Sectors
+  'Technology': 'טכנולוגיה',
+  'Healthcare': 'בריאות',
+  'Financial Services': 'פיננסים',
+  'Financials': 'פיננסים',
+  'Finance': 'פיננסים',
+  'Consumer Cyclical': 'צריכה מחזורית',
+  'Consumer Defensive': 'צריכה בסיסית',
+  'Industrials': 'תעשייה',
+  'Energy': 'אנרגיה',
+  'Utilities': 'תשתיות',
+  'Real Estate': 'נדל"ן',
+  'Basic Materials': 'חומרי גלם',
+  'Communication Services': 'תקשורת',
+  // ETF Categories
+  'Large Blend': 'מניות גדולות',
+  'Large Growth': 'צמיחה גדולות',
+  'Large Value': 'ערך גדולות',
+  'Mid-Cap Blend': 'מניות בינוניות',
+  'Small Blend': 'מניות קטנות',
+  'Small Cap': 'מניות קטנות',
+  'Total Market': 'שוק כולל',
+  'Commodities': 'סחורות',
+  'Commodities Focused': 'סחורות',
+  'International': 'מניות - בינלאומי',
+  'Emerging Markets': 'שווקים מתפתחים',
+  'Bonds': 'אג"ח',
+  'Israel': 'ישראל',
+  'US Equity': 'מניות - ארה"ב',
+  'Growth': 'צמיחה',
+  'Unknown': 'אחר',
+  'Other': 'אחר',
+};
+
+/**
+ * Normalize sector to Hebrew for consistent grouping
+ * This ensures that "US Equity" and "מניות - ארה"ב" are grouped together
+ */
+function normalizeSectorToHebrew(sector: string, sectorHe?: string): string {
+  // If sectorHe is provided, use it
+  if (sectorHe) return sectorHe;
+  
+  // Translate sector to Hebrew using the dictionary
+  return SECTOR_TRANSLATIONS[sector] || sector;
 }
 
 /**
@@ -61,6 +110,7 @@ export async function searchSymbols(query: string): Promise<SearchResult[]> {
 /**
  * Enrich a single holding with market data
  * Fetches price + fundamentals in parallel from EOD
+ * Includes Hebrew enrichment if available
  */
 async function enrichHolding(
   holding: HybridHolding,
@@ -68,6 +118,7 @@ async function enrichHolding(
 ): Promise<EnrichedHolding | null> {
   try {
     // Get enriched quote (price + fundamentals in parallel)
+    // This already includes Hebrew enrichment from EOD provider
     const enrichedQuote = await eodProvider.getEnrichedQuote(holding.symbol);
 
     if (!enrichedQuote) {
@@ -94,6 +145,7 @@ async function enrichHolding(
       id: holding.id,
       symbol: holding.symbol,
       name: enrichedQuote.name,
+      nameHe: enrichedQuote.nameHe,
       quantity: holding.quantity,
       price,
       priceILS,
@@ -101,12 +153,14 @@ async function enrichHolding(
       valueILS,
       beta: enrichedQuote.beta,
       sector: enrichedQuote.sector,
+      sectorHe: enrichedQuote.sectorHe,
       currency,
       provider: 'EOD',
       priceDisplayUnit: holding.priceDisplayUnit || 'ILS',
       changePercent: enrichedQuote.changePercent,
       weight: 0, // Calculated later
       sparklineData,
+      isEnriched: enrichedQuote.isEnriched,
     };
   } catch (error) {
     console.error(`[MarketService] Error enriching ${holding.symbol}:`, error);
@@ -145,6 +199,9 @@ function getRiskLevel(beta: number): RiskLevel {
  * Enriches all holdings and calculates portfolio metrics
  */
 export async function analyzePortfolio(holdings: HybridHolding[]): Promise<PortfolioAnalysis> {
+  // Get exchange rate (with fallback - never fails)
+  const exchangeRate = await eodProvider.getUsdIlsRate();
+
   if (holdings.length === 0) {
     return {
       equity: 0,
@@ -156,24 +213,16 @@ export async function analyzePortfolio(holdings: HybridHolding[]): Promise<Portf
       sectorAllocation: [],
       holdings: [],
       riskLevel: 'moderate',
+      exchangeRate,
     };
   }
 
-  // Get exchange rate (with fallback - never fails)
-  const exchangeRate = await eodProvider.getUsdIlsRate();
-
-  // Enrich holdings sequentially with small delay to be nice to the API
-  const enrichedHoldings: EnrichedHolding[] = [];
-  for (const holding of holdings) {
-    const enriched = await enrichHolding(holding, exchangeRate);
-    if (enriched) {
-      enrichedHoldings.push(enriched);
-    }
-    // Small delay between holdings
-    if (holdings.indexOf(holding) < holdings.length - 1) {
-      await delay(150);
-    }
-  }
+  // Enrich all holdings in parallel for maximum performance
+  const enrichmentPromises = holdings.map(holding => enrichHolding(holding, exchangeRate));
+  const enrichmentResults = await Promise.all(enrichmentPromises);
+  
+  // Filter out failed enrichments
+  const enrichedHoldings = enrichmentResults.filter((h): h is EnrichedHolding => h !== null);
 
   if (enrichedHoldings.length === 0) {
     throw new Error('Failed to fetch data for any holdings');
@@ -196,15 +245,28 @@ export async function analyzePortfolio(holdings: HybridHolding[]): Promise<Portf
   const dailyChangePercent = totalEquityILS > 0 ? (dailyChangeILS / totalEquityILS) * 100 : 0;
 
   // Calculate sector allocation
-  const sectorMap = new Map<string, number>();
+  // Normalize all sectors to Hebrew for consistent grouping
+  // This ensures "US Equity" and "מניות - ארה"ב" are grouped together
+  const sectorMap = new Map<string, { sector: string; sectorHe: string; value: number }>();
   enrichedHoldings.forEach(h => {
-    const current = sectorMap.get(h.sector) ?? 0;
-    sectorMap.set(h.sector, current + h.valueILS);
+    // Normalize sector to Hebrew for consistent grouping
+    const normalizedSectorHe = normalizeSectorToHebrew(h.sector, h.sectorHe);
+    const existing = sectorMap.get(normalizedSectorHe);
+    if (existing) {
+      existing.value += h.valueILS;
+    } else {
+      sectorMap.set(normalizedSectorHe, {
+        sector: h.sector, // Keep original for reference
+        sectorHe: normalizedSectorHe, // Use normalized Hebrew name
+        value: h.valueILS,
+      });
+    }
   });
 
-  const sectorAllocation = Array.from(sectorMap.entries())
-    .map(([sector, value]) => ({
+  const sectorAllocation = Array.from(sectorMap.values())
+    .map(({ sector, sectorHe, value }) => ({
       sector,
+      sectorHe,
       value,
       percent: totalEquityILS > 0 ? (value / totalEquityILS) * 100 : 0,
     }))
@@ -220,6 +282,7 @@ export async function analyzePortfolio(holdings: HybridHolding[]): Promise<Portf
     sectorAllocation,
     holdings: enrichedHoldings.sort((a, b) => b.valueILS - a.valueILS),
     riskLevel: getRiskLevel(portfolioBeta),
+    exchangeRate,
   };
 }
 

@@ -22,6 +22,7 @@ import type {
   HistoricalPrice,
   AssetType,
 } from '../types';
+import { getEnrichment, enrichQuoteData } from '../enrichmentService';
 
 const EOD_API_TOKEN = process.env.EOD_API_TOKEN || '';
 const EOD_BASE_URL = 'https://eodhistoricaldata.com/api';
@@ -85,7 +86,7 @@ const RATE_CACHE_MS = 60 * 60 * 1000; // 1 hour
 
 // Cache for asset info (sector, name, type)
 const assetInfoCache = new Map<string, CachedAssetInfo>();
-const ASSET_INFO_CACHE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const ASSET_INFO_CACHE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // Cache for real-time prices
 const priceCache = new Map<string, { price: number; changePercent: number; timestamp: number }>();
@@ -202,7 +203,7 @@ function estimateSector(symbol: string, isIsraeli: boolean): { sector: string; t
     // Bonds
     { pattern: /^(BND|AGG|TLT|IEF|LQD|HYG|JNK|MUB|GOVT|SHY)$/i, sector: 'Bonds', type: 'ETF' },
     // S&P 500 / Total Market
-    { pattern: /^(SPY|VOO|IVV|VTI|ITOT|SCHB)$/i, sector: 'Large Blend', type: 'ETF' },
+    { pattern: /^(SPY|VOO|IVV|VTI|ITOT|SCHB)$/i, sector: 'US Equity', type: 'ETF' },
     // International
     { pattern: /^(VEA|VXUS|EFA|VWO|EEM|IEMG)$/i, sector: 'International', type: 'ETF' },
     // Small Cap
@@ -310,21 +311,36 @@ export class EODProvider implements MarketDataProvider {
   }
 
   /**
-   * Get asset info (sector, name, type) - estimated from symbol patterns
+   * Get asset info (sector, name, type) - checks enrichment first, then cache, then estimates
    * Beta is calculated separately by betaEngine
+   * IMPORTANT: Enrichment is checked BEFORE cache to ensure Hebrew names are always fresh
    */
-  getAssetInfo(symbol: string): CachedAssetInfo {
+  async getAssetInfo(symbol: string): Promise<CachedAssetInfo> {
     const normalizedSymbol = normalizeSymbol(symbol);
     const { isIsraeli } = detectAssetType(symbol);
     const now = Date.now();
 
-    // Check cache first
+    // Check enrichment first (always fresh from DB) - this ensures Hebrew names override cache
+    const enrichment = await getEnrichment(symbol);
+    if (enrichment) {
+      const result: CachedAssetInfo = {
+        sector: enrichment.sectorHe,
+        name: enrichment.nameHe,
+        type: enrichment.assetType,
+        timestamp: now,
+      };
+      // Update cache with enriched data (overwrites any stale cache)
+      assetInfoCache.set(normalizedSymbol, result);
+      return result;
+    }
+
+    // If no enrichment, check cache
     const cached = assetInfoCache.get(normalizedSymbol);
     if (cached && (now - cached.timestamp) < ASSET_INFO_CACHE_MS) {
       return cached;
     }
 
-    // Estimate sector from symbol pattern
+    // Fallback: Estimate sector from symbol pattern
     const { sector, type } = estimateSector(symbol, isIsraeli);
     const name = symbol.toUpperCase().split('.')[0];
 
@@ -403,6 +419,7 @@ export class EODProvider implements MarketDataProvider {
 
   /**
    * Get complete quote (price only, no beta)
+   * Checks enrichment service for Hebrew names and sectors
    */
   async getQuote(symbol: string): Promise<AssetData | null> {
     const normalizedSymbol = normalizeSymbol(symbol);
@@ -417,8 +434,11 @@ export class EODProvider implements MarketDataProvider {
       return null;
     }
 
-    // Get asset info (sector, name, type)
-    const assetInfo = this.getAssetInfo(symbol);
+    // Get asset info (sector, name, type) - checks enrichment first
+    const assetInfo = await this.getAssetInfo(symbol);
+
+    // Check enrichment service for Hebrew data
+    const enrichment = await getEnrichment(symbol);
 
     // Determine currency
     const currency: 'USD' | 'ILS' = isIsraeli ? 'ILS' : 'USD';
@@ -430,7 +450,7 @@ export class EODProvider implements MarketDataProvider {
       priceILS = priceData.price * exchangeRate;
     }
 
-    return {
+    const baseQuote: AssetData = {
       symbol: symbol.toUpperCase().split('.')[0], // Clean symbol for display
       name: assetInfo.name,
       price: priceData.price,
@@ -440,30 +460,49 @@ export class EODProvider implements MarketDataProvider {
       provider: 'EOD',
       type: isCrypto ? 'crypto' : mapEODType(assetInfo.type),
     };
+
+    // Enrich with Hebrew data if available
+    if (enrichment) {
+      return enrichQuoteData(baseQuote, enrichment) as AssetData;
+    }
+
+    return baseQuote;
   }
 
   /**
    * Get quote with beta and sector (enriched)
    * Beta is calculated from historical data using CAPM model
+   * Checks enrichment service for Hebrew names and sectors
+   * OPTIMIZED: All data fetched in parallel for maximum performance
    */
-  async getEnrichedQuote(symbol: string): Promise<(AssetData & { beta: number; sector: string }) | null> {
+  async getEnrichedQuote(symbol: string): Promise<(AssetData & { beta: number; sector: string; sectorHe?: string; nameHe?: string; isEnriched?: boolean }) | null> {
     // Import betaEngine dynamically to avoid circular dependency
     const { calculateBeta } = await import('../math/betaEngine');
 
-    const quote = await this.getQuote(symbol);
+    // Fetch all data in parallel for maximum performance
+    const [quote, assetInfo, betaResult, enrichment] = await Promise.all([
+      this.getQuote(symbol),
+      this.getAssetInfo(symbol),
+      calculateBeta(symbol),
+      getEnrichment(symbol),
+    ]);
+
     if (!quote) return null;
 
-    // Get asset info (sector) and calculate beta in parallel
-    const assetInfo = this.getAssetInfo(symbol);
-    const betaResult = await calculateBeta(symbol);
-
-    console.log(`[EOD] Enriched ${symbol}: Beta=${betaResult.beta} (${betaResult.source}), Sector=${assetInfo.sector}`);
-
-    return {
+    const enrichedQuote = {
       ...quote,
       beta: betaResult.beta,
       sector: assetInfo.sector,
+      ...(enrichment && {
+        sectorHe: enrichment.sectorHe,
+        nameHe: enrichment.nameHe,
+        isEnriched: true,
+      }),
     };
+
+    console.log(`[EOD] Enriched ${symbol}: Beta=${betaResult.beta} (${betaResult.source}), Sector=${enrichedQuote.sector}${enrichment ? ` (Hebrew: ${enrichment.sectorHe})` : ''}`);
+
+    return enrichedQuote;
   }
 
   /**

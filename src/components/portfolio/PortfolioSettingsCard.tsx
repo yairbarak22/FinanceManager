@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, RefreshCw, Settings } from 'lucide-react';
+import { RefreshCw, Settings, Download, Upload } from 'lucide-react';
 import { CurrencyToggle } from './CurrencyToggle';
 import { AddAssetButton } from './AddAssetButton';
 
@@ -30,6 +30,12 @@ interface PortfolioSettingsCardProps {
     currency: string;
     priceDisplayUnit: 'ILS' | 'ILS_AGOROT' | 'USD';
   }) => void;
+  /** Callback for importing portfolio data */
+  onImport?: () => void;
+  /** Callback for exporting portfolio data */
+  onExport?: () => void;
+  /** Callback for opening settings modal */
+  onOpenSettings?: () => void;
   /** Additional CSS classes */
   className?: string;
 }
@@ -46,74 +52,96 @@ export function PortfolioSettingsCard({
   loading,
   lastUpdated,
   onAddAsset,
+  onImport,
+  onExport,
+  onOpenSettings,
   className = '',
 }: PortfolioSettingsCardProps) {
   return (
     <div
-      className={`bg-[#FFFFFF] rounded-3xl p-6 h-full ${className}`}
+      className={`bg-[#FFFFFF] rounded-3xl p-6 h-full flex flex-col ${className}`}
       style={{
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
         fontFamily: 'var(--font-nunito), system-ui, sans-serif',
       }}
       dir="rtl"
     >
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: 'rgba(105, 173, 255, 0.1)' }}
-        >
-          <Settings className="w-5 h-5 text-[#69ADFF]" strokeWidth={1.75} />
-        </div>
+      {/* Header with Settings button */}
+      <div className="flex justify-between items-start mb-4">
         <div>
           <h3 className="text-lg font-semibold text-[#303150]">הגדרות תיק</h3>
-          <p className="text-xs text-[#BDBDCB]">ניהול והגדרות התיק</p>
+          <p className="text-xs text-[#BDBDCB]">ניהול התיק שלך</p>
         </div>
+        {onOpenSettings && (
+          <button
+            onClick={onOpenSettings}
+            className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-[#F7F7F8] transition-colors"
+            aria-label="הגדרות נוספות"
+          >
+            <Settings className="w-5 h-5 text-[#7E7F90]" strokeWidth={1.75} />
+          </button>
+        )}
       </div>
 
-      {/* Settings Content */}
-      <div className="space-y-4">
-        {/* Add Asset Button */}
-        <div className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-[#7E7F90]">הוספת נכס</span>
-          <AddAssetButton onAddAsset={onAddAsset} />
-        </div>
+      {/* Primary Action - Add Asset */}
+      <div className="mt-4 mb-4">
+        <AddAssetButton onAddAsset={onAddAsset} fullWidth exchangeRate={exchangeRate} />
+      </div>
 
-        {/* Currency Toggle */}
-        <div className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-[#7E7F90]">מטבע תצוגה</span>
-          <CurrencyToggle
-            value={currency}
-            onChange={onCurrencyChange}
-            exchangeRate={exchangeRate}
-            showRate={true}
+      {/* Secondary Actions Row - Import/Export */}
+      <div className="flex gap-3 mb-4">
+        <button
+          onClick={onImport}
+          disabled={!onImport}
+          className="flex-1 h-10 flex items-center justify-center gap-2 rounded-xl border border-[#E8E8ED] bg-[#FFFFFF] hover:bg-[#F7F7F8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium text-[#303150]"
+          style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+        >
+          <Download className="w-4 h-4 text-[#7E7F90]" strokeWidth={1.75} />
+          <span>ייבוא</span>
+        </button>
+        <button
+          onClick={onExport}
+          disabled={!onExport}
+          className="flex-1 h-10 flex items-center justify-center gap-2 rounded-xl border border-[#E8E8ED] bg-[#FFFFFF] hover:bg-[#F7F7F8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium text-[#303150]"
+          style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+        >
+          <Upload className="w-4 h-4 text-[#7E7F90]" strokeWidth={1.75} />
+          <span>ייצוא</span>
+        </button>
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-[#F7F7F8] my-4" />
+
+      {/* Currency Toggle */}
+      <div className="flex flex-col gap-2">
+        <span className="text-[0.8125rem] font-medium text-[#7E7F90]">מטבע תצוגה</span>
+        <CurrencyToggle
+          value={currency}
+          onChange={onCurrencyChange}
+          exchangeRate={exchangeRate}
+          showRate={true}
+        />
+      </div>
+
+      {/* Refresh Section - Docked to bottom */}
+      <div className="mt-auto pt-4 border-t border-[#F7F7F8]">
+        <button
+          onClick={onRefresh}
+          disabled={loading}
+          className="flex items-center justify-center gap-2 w-full h-10 rounded-xl border border-[#E8E8ED] bg-[#FFFFFF] hover:bg-[#F7F7F8] transition-colors disabled:opacity-50 text-sm font-medium text-[#303150]"
+          style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+        >
+          <RefreshCw
+            className={`w-4 h-4 text-[#7E7F90] ${loading ? 'animate-spin' : ''}`}
+            strokeWidth={1.75}
           />
-        </div>
-
-        {/* Refresh Button */}
-        <div className="flex flex-col gap-2">
-          <span className="text-xs font-medium text-[#7E7F90]">עדכון נתונים</span>
-          <button
-            onClick={onRefresh}
-            disabled={loading}
-            className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl border border-[#E8E8ED] bg-[#FFFFFF] hover:bg-[#F7F7F8] transition-colors disabled:opacity-50 text-sm font-medium text-[#303150]"
-            style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-          >
-            <RefreshCw
-              className={`w-4 h-4 text-[#7E7F90] ${loading ? 'animate-spin' : ''}`}
-              strokeWidth={1.75}
-            />
-            <span>רענן נתונים</span>
-          </button>
-        </div>
-
-        {/* Last Updated */}
+          <span>רענן נתונים</span>
+        </button>
         {lastUpdated && (
-          <div className="pt-3 border-t border-[#F7F7F8]">
-            <p className="text-xs text-[#BDBDCB] text-center">
-              עודכן לאחרונה: {lastUpdated.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
-            </p>
-          </div>
+          <p className="text-xs text-[#BDBDCB] text-center mt-2">
+            עודכן: {lastUpdated.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+          </p>
         )}
       </div>
     </div>
@@ -121,4 +149,3 @@ export function PortfolioSettingsCard({
 }
 
 export default PortfolioSettingsCard;
-

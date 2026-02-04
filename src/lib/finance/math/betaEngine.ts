@@ -320,24 +320,24 @@ export async function calculateBeta(symbol: string): Promise<{ beta: number; dat
 
 /**
  * Batch calculate betas for multiple symbols
- * Optimized: fetches benchmark once, then processes all assets
+ * OPTIMIZED: Fetches benchmark once, then processes all assets in parallel
  */
 export async function calculateBetasBatch(symbols: string[]): Promise<Map<string, { beta: number; dataPoints: number }>> {
-  const results = new Map<string, { beta: number; dataPoints: number }>();
-
-  // Pre-fetch benchmark
+  // Pre-fetch benchmark once
   await getBenchmarkReturns();
 
-  // Calculate betas (with small delay to be nice to API)
-  for (const symbol of symbols) {
+  // Calculate all betas in parallel for maximum performance
+  const betaPromises = symbols.map(async (symbol) => {
     const { beta, dataPoints } = await calculateBeta(symbol);
-    results.set(symbol, { beta, dataPoints });
+    return { symbol, beta, dataPoints };
+  });
 
-    // Small delay between API calls
-    if (symbols.indexOf(symbol) < symbols.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-  }
+  const betaResults = await Promise.all(betaPromises);
+
+  const results = new Map<string, { beta: number; dataPoints: number }>();
+  betaResults.forEach(({ symbol, beta, dataPoints }) => {
+    results.set(symbol, { beta, dataPoints });
+  });
 
   return results;
 }

@@ -395,3 +395,19 @@ model AuditLog {
   @@index([createdAt])
   @@index([entityType, entityId])
 }
+
+// ============================================
+// SECURITY ENRICHMENT - Hebrew names and sectors for Israeli securities
+// ============================================
+model SecurityEnrichment {
+  id          String   @id @default(cuid())
+  symbol      String   @unique // מפתח הצלבה ל-EOD (למשל: "1159250.TA")
+  nameHe      String   // השם הרשמי בעברית (למשל: "מגדל (4D) ת"א 125")
+  shortNameHe String?  // שם ידידותי לתצוגה בטבלאות צפופות
+  sectorHe    String   // סקטור מפורט בעברית (למשל: "מניות - תל אביב 125")
+  assetType   String   // סוג: ETF, Mutual Fund, Stock, Bond
+  updatedAt   DateTime @updatedAt
+
+  @@index([symbol])
+  @@index([nameHe]) // אופטימיזציה לחיפוש בעברית
+}

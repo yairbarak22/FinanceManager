@@ -1,7 +1,9 @@
 'use client';
 
+import React, { useMemo } from 'react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, Trash2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Trash2, Filter, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { SensitiveData } from '../common/SensitiveData';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 
@@ -11,11 +13,13 @@ interface Holding {
   id?: string;
   symbol: string;
   name: string;
+  nameHe?: string; // Hebrew name from enrichment
   quantity: number;
   priceILS: number;
   valueILS: number;
   beta: number;
   sector: string;
+  sectorHe?: string; // Hebrew sector from enrichment
   currency?: 'USD' | 'ILS';
   provider?: 'YAHOO' | 'EOD';
   priceDisplayUnit?: PriceDisplayUnit;
@@ -23,6 +27,7 @@ interface Holding {
   weight: number;
   targetAllocation?: number;
   sparklineData: number[];
+  isEnriched?: boolean; // Whether data was enriched from local DB
 }
 
 /**
@@ -74,12 +79,82 @@ function formatValueByUnit(
   }
 }
 
+/**
+ * Extract fund number from symbol for display
+ * Examples: IS-FF702.TA -> FF702, ISFF505.TA -> FF505, HRL-F11.TA -> F11, LUMI.TA -> LUMI
+ */
+function extractFundNumber(symbol: string): string {
+  // Remove exchange suffix (.TA, .US, etc.)
+  const baseSymbol = symbol.split('.')[0];
+  
+  // Try to extract fund number from patterns like IS-FF702, HRL-F11
+  const fundMatch = baseSymbol.match(/[-]?([A-Z]*F+\d+)$/i);
+  if (fundMatch) {
+    return fundMatch[1].toUpperCase();
+  }
+  
+  // For patterns like ISFF505 (no dash)
+  const inlineMatch = baseSymbol.match(/^[A-Z]{2,}(F+\d+)$/i);
+  if (inlineMatch) {
+    return inlineMatch[1].toUpperCase();
+  }
+  
+  // Default: return the base symbol
+  return baseSymbol;
+}
+
 interface HoldingsTableProps {
   holdings: Holding[];
   className?: string;
   maxHeight?: string;
   onEdit?: (holding: Holding) => void;
   onDelete?: (holding: Holding) => void;
+  /** Currently selected sector for filtering */
+  selectedSector?: string | null;
+  /** Callback to clear the sector filter */
+  onClearSectorFilter?: () => void;
+}
+
+// Sector translation map (same as in marketService.ts)
+const SECTOR_TRANSLATIONS: Record<string, string> = {
+  'US Equity': 'מניות - ארה"ב',
+  'International': 'מניות - בינלאומי',
+  'Technology': 'טכנולוגיה',
+  'Healthcare': 'בריאות',
+  'Financial Services': 'פיננסים',
+  'Financials': 'פיננסים',
+  'Finance': 'פיננסים',
+  'Consumer Cyclical': 'צריכה מחזורית',
+  'Consumer Defensive': 'צריכה בסיסית',
+  'Industrials': 'תעשייה',
+  'Energy': 'אנרגיה',
+  'Utilities': 'תשתיות',
+  'Real Estate': 'נדל"ן',
+  'Basic Materials': 'חומרי גלם',
+  'Communication Services': 'תקשורת',
+  'Large Blend': 'מניות גדולות',
+  'Large Growth': 'צמיחה גדולות',
+  'Large Value': 'ערך גדולות',
+  'Mid-Cap Blend': 'מניות בינוניות',
+  'Small Blend': 'מניות קטנות',
+  'Small Cap': 'מניות קטנות',
+  'Total Market': 'שוק כולל',
+  'Commodities': 'סחורות',
+  'Commodities Focused': 'סחורות',
+  'Emerging Markets': 'שווקים מתפתחים',
+  'Bonds': 'אג"ח',
+  'Israel': 'ישראל',
+  'Growth': 'צמיחה',
+  'Unknown': 'אחר',
+  'Other': 'אחר',
+};
+
+/**
+ * Normalize sector name to Hebrew
+ */
+function normalizeSectorToHebrew(sector: string, sectorHe?: string): string {
+  if (sectorHe) return sectorHe;
+  return SECTOR_TRANSLATIONS[sector] || sector;
 }
 
 /**
@@ -228,7 +303,25 @@ function HoldingDeleteButton({
  * A clean Apple-style table with sparkline charts
  * Following Neto Design System - Apple Design Philosophy
  */
-export function HoldingsTable({ holdings, className = '', maxHeight, onEdit, onDelete }: HoldingsTableProps) {
+export function HoldingsTable({ 
+  holdings, 
+  className = '', 
+  maxHeight, 
+  onEdit, 
+  onDelete,
+  selectedSector,
+  onClearSectorFilter,
+}: HoldingsTableProps) {
+  // Filter holdings by selected sector
+  const filteredHoldings = useMemo(() => {
+    if (!selectedSector) return holdings;
+    
+    return holdings.filter(holding => {
+      const holdingSectorHe = normalizeSectorToHebrew(holding.sector, holding.sectorHe);
+      return holdingSectorHe === selectedSector;
+    });
+  }, [holdings, selectedSector]);
+
   if (holdings.length === 0) {
     return (
       <div
@@ -249,44 +342,93 @@ export function HoldingsTable({ holdings, className = '', maxHeight, onEdit, onD
       style={{
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
         fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-        ...(maxHeight ? { maxHeight } : {}),
+        height: maxHeight || '35rem',
+        minHeight: maxHeight || '35rem',
       }}
       dir="rtl"
     >
       {/* Header */}
-      <div className="px-6 py-4 border-b border-[#F7F7F8] flex items-center justify-between flex-shrink-0">
-        <h3 className="text-lg font-semibold text-[#303150]">אחזקות</h3>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-[#BDBDCB]">{holdings.length} נכסים</span>
+      <div className="px-6 py-4 border-b border-[#F7F7F8] flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-[#303150]">אחזקות</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[#BDBDCB]">
+              {selectedSector ? `${filteredHoldings.length} מתוך ${holdings.length}` : `${holdings.length} נכסים`}
+            </span>
+          </div>
         </div>
+        
+        {/* Sector Filter Chip */}
+        <AnimatePresence>
+          {selectedSector && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, y: 0, height: 'auto', marginTop: 12 }}
+              exit={{ opacity: 0, y: -10, height: 0, marginTop: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="overflow-hidden"
+            >
+              <div
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl"
+                style={{
+                  backgroundColor: '#F7F7F8',
+                  border: '1px solid #69ADFF',
+                }}
+              >
+                <Filter className="w-3.5 h-3.5" style={{ color: '#69ADFF' }} strokeWidth={2} />
+                <span
+                  className="text-sm font-medium"
+                  style={{
+                    fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    color: '#303150',
+                  }}
+                >
+                  {selectedSector}
+                </span>
+                {onClearSectorFilter && (
+                  <button
+                    onClick={onClearSectorFilter}
+                    className="p-0.5 rounded-md hover:bg-[#E8E8ED] transition-colors"
+                    style={{ color: '#7E7F90' }}
+                    aria-label="בטל סינון סקטור"
+                  >
+                    <X className="w-4 h-4" strokeWidth={2} />
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Table - Scrollable container with Ghost scrollbar */}
-      <div className="overflow-x-auto overflow-y-auto flex-1 scrollbar-ghost">
-        <table className="w-full">
+      {/* Table - Vertical scroll only, no horizontal scroll */}
+      <div className="overflow-y-auto flex-1 scrollbar-ghost">
+        <table className="w-full" style={{ tableLayout: 'fixed' }}>
+          {/* Column widths for fixed table layout */}
+          <colgroup>{onEdit && <col style={{ width: '4px' }} />}<col style={{ width: '35%' }} /><col className="hidden lg:table-column" style={{ width: '70px' }} /><col style={{ width: '80px' }} /><col className="hidden md:table-column" style={{ width: '60px' }} /><col style={{ width: '110px' }} /><col style={{ width: '110px' }} />{onDelete && <col style={{ width: '40px' }} />}</colgroup>
           <thead>
             <tr className="text-xs text-[#BDBDCB] border-b border-[#F7F7F8]">
               {/* Empty header cell for edge indicator */}
               {onEdit && <th className="w-0 p-0"></th>}
               <th
-                className="text-right font-medium px-6 py-3"
+                className="text-right font-medium px-4 py-2"
                 style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
               >
                 נייר ערך
               </th>
               <th
-                className="text-center font-medium px-3 py-3"
+                className="hidden lg:table-cell text-center font-medium px-2 py-2"
                 style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
               >
                 7 ימים
               </th>
               <th
-                className="text-center font-medium px-3 py-3"
+                className="text-center font-medium px-2 py-2"
                 style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
               >
                 שינוי
               </th>
-              <th className="text-center font-medium px-3 py-3">
+              <th className="hidden md:table-cell text-center font-medium px-2 py-2">
                 <div className="flex items-center justify-center gap-1">
                   <span style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
                     Beta
@@ -297,7 +439,7 @@ export function HoldingsTable({ holdings, className = '', maxHeight, onEdit, onD
                   />
                 </div>
               </th>
-              <th className="text-center font-medium px-3 py-3">
+              <th className="text-center font-medium px-2 py-2">
                 <div className="flex items-center justify-center gap-1">
                   <span style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
                     אלוקציה
@@ -309,16 +451,16 @@ export function HoldingsTable({ holdings, className = '', maxHeight, onEdit, onD
                 </div>
               </th>
               <th
-                className="text-start font-medium px-6 py-3"
+                className="text-start font-medium px-4 py-2"
                 style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
               >
                 שווי
               </th>
-              {onDelete && <th className="w-12"></th>}
+              {onDelete && <th className="w-10"></th>}
             </tr>
           </thead>
           <tbody>
-            {holdings.map((holding, index) => (
+            {filteredHoldings.map((holding, index) => (
               <tr
                 key={holding.id || holding.symbol}
                 onClick={onEdit ? () => onEdit(holding) : undefined}
@@ -355,42 +497,52 @@ export function HoldingsTable({ holdings, className = '', maxHeight, onEdit, onD
                   </td>
                 )}
 
-                {/* Symbol & Name */}
-                <td className="px-6 py-4">
-                  <div>
+                {/* Symbol & Name - Hebrew name as title, fund number + sector as description */}
+                <td className="px-4 py-3">
+                  <div className="text-right">
+                    {/* Title: Hebrew name if enriched, otherwise English name */}
                     <SensitiveData
                       as="p"
-                      className="text-sm font-bold text-[#303150]"
+                      className="text-sm font-bold text-[#303150] truncate"
                       style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                      title={holding.nameHe || holding.name}
                     >
-                      {holding.symbol}
+                      {holding.nameHe || holding.name}
                     </SensitiveData>
+                    {/* Description: Fund number + sector for enriched, symbol for non-enriched */}
                     <SensitiveData
                       as="p"
-                      className="text-xs text-[#BDBDCB] truncate max-w-[10rem]"
+                      className="text-xs text-[#BDBDCB] truncate"
                       style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
                     >
-                      {holding.name}
+                      {holding.isEnriched ? (
+                        <>
+                          {extractFundNumber(holding.symbol)}
+                          {holding.sectorHe && <span className="text-[#7E7F90]"> • {holding.sectorHe}</span>}
+                        </>
+                      ) : (
+                        holding.symbol
+                      )}
                     </SensitiveData>
                   </div>
                 </td>
 
-                {/* Sparkline */}
-                <td className="px-3 py-4">
+                {/* Sparkline - hidden on small screens */}
+                <td className="hidden lg:table-cell px-2 py-3">
                   <div className="flex justify-center">
                     <Sparkline data={holding.sparklineData} isPositive={holding.changePercent >= 0} />
                   </div>
                 </td>
 
                 {/* Change */}
-                <td className="px-3 py-4">
+                <td className="px-2 py-3">
                   <div className="flex justify-center">
                     <ChangeIndicator change={holding.changePercent} />
                   </div>
                 </td>
 
-                {/* Beta */}
-                <td className="px-3 py-4 text-center">
+                {/* Beta - hidden on small screens */}
+                <td className="hidden md:table-cell px-2 py-3 text-center">
                   <span
                     className={`text-sm font-semibold ${
                       holding.beta < 0.8
@@ -406,14 +558,14 @@ export function HoldingsTable({ holdings, className = '', maxHeight, onEdit, onD
                 </td>
 
                 {/* Allocation */}
-                <td className="px-3 py-4">
+                <td className="px-2 py-3">
                   <div className="flex justify-center">
                     <AllocationBar weight={holding.weight} targetAllocation={holding.targetAllocation} />
                   </div>
                 </td>
 
                 {/* Value */}
-                <td className="px-6 py-4 text-start">
+                <td className="px-4 py-3 text-start">
                   <SensitiveData
                     as="p"
                     className="text-sm font-bold text-[#303150]"
@@ -423,16 +575,16 @@ export function HoldingsTable({ holdings, className = '', maxHeight, onEdit, onD
                   </SensitiveData>
                   <SensitiveData
                     as="p"
-                    className="text-xs text-[#BDBDCB]"
+                    className="text-xs text-[#BDBDCB] truncate"
                     style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
                   >
-                    {holding.quantity.toLocaleString()} יח׳ × {formatPriceByUnit(holding.priceILS, holding.priceDisplayUnit)}
+                    {holding.quantity.toLocaleString()} יח׳
                   </SensitiveData>
                 </td>
 
                 {/* Actions */}
                 {onDelete && (
-                  <td className="px-3 py-4">
+                  <td className="px-2 py-3">
                     <div className="flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <HoldingDeleteButton holding={holding} onDelete={onDelete} />
                     </div>
