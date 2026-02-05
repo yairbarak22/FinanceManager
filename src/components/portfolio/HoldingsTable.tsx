@@ -366,7 +366,7 @@ export function HoldingsTable({
             <span className="text-xs text-[#BDBDCB]">
               {selectedSector 
                 ? `${filteredHoldings.length} מתוך ${holdings.length}` 
-                : `${holdings.length + (cashBalance && cashBalance > 0 ? 1 : 0)} נכסים`}
+                : `${holdings.length + (onEditCash ? 1 : 0)} נכסים`}
             </span>
           </div>
         </div>
@@ -606,8 +606,8 @@ export function HoldingsTable({
               </tr>
             ))}
             
-            {/* Cash Row - Always shown at the end if cashBalance exists */}
-            {cashBalance !== undefined && cashBalance > 0 && (
+            {/* Cash Row - Always shown at the end when edit is available */}
+            {onEditCash && (
               <tr
                 onClick={onEditCash}
                 onKeyDown={
@@ -700,7 +700,7 @@ export function HoldingsTable({
                     className="text-sm font-bold text-[#303150]"
                     style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
                   >
-                    {cashBalance.toLocaleString('he-IL', {
+                    {(cashBalance ?? 0).toLocaleString('he-IL', {
                       style: 'currency',
                       currency: 'ILS',
                       maximumFractionDigits: 0,

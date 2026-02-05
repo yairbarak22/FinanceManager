@@ -57,6 +57,9 @@ const SECTOR_NAMES: Record<string, string> = {
   'Growth': 'צמיחה',
   'Unknown': 'אחר',
   'Other': 'אחר',
+  // Cash
+  'Cash': 'מזומן',
+  'מזומן': 'מזומן',
 };
 
 // Modern color palette - Design System colors
@@ -102,6 +105,9 @@ const SECTOR_COLORS: Record<string, string> = {
   'סחורות': '#eab308',
   'סחורות - זהב': '#eab308',
   'אג"ח': '#8b5cf6',
+  // Cash
+  'Cash': '#0DBACC',
+  'מזומן': '#0DBACC',
 };
 
 /**

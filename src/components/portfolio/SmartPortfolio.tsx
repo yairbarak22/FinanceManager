@@ -1004,7 +1004,7 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
               onDelete={(holding) => setDeletingHolding(holding)}
               selectedSector={selectedSector}
               onClearSectorFilter={handleClearSectorFilter}
-              cashBalance={data.cashBalance}
+              cashBalance={data.cashBalance ?? 0}
               cashWeight={data.cashWeight}
               onEditCash={() => setIsEditingCash(true)}
               className="h-full"

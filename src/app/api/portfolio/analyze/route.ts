@@ -99,12 +99,30 @@ export async function POST(request: Request) {
     const totalEquityILS = analysis.equityILS + cashBalance;
     const cashWeight = totalEquityILS > 0 ? (cashBalance / totalEquityILS) * 100 : 0;
 
+    // Recalculate sector allocation percentages to include cash in total
+    // and add cash as its own sector
+    const sectorAllocationWithCash = analysis.sectorAllocation.map(s => ({
+      ...s,
+      percent: totalEquityILS > 0 ? (s.value / totalEquityILS) * 100 : 0,
+    }));
+
+    // Add cash as a sector if there's any cash balance
+    if (cashBalance > 0) {
+      sectorAllocationWithCash.push({
+        sector: 'Cash',
+        sectorHe: 'מזומן',
+        value: cashBalance,
+        percent: cashWeight,
+      });
+    }
+
     return NextResponse.json({
       ...analysis,
       equity: analysis.equity + cashBalance,
       equityILS: totalEquityILS,
       cashBalance,
       cashWeight,
+      sectorAllocation: sectorAllocationWithCash,
     });
   } catch (error) {
     console.error('Error analyzing portfolio (POST):', error);
@@ -205,6 +223,23 @@ export async function GET() {
     
     const cashWeight = totalEquityILS > 0 ? (cashBalance / totalEquityILS) * 100 : 0;
 
+    // Recalculate sector allocation percentages to include cash in total
+    // and add cash as its own sector
+    const sectorAllocationWithCash = analysis.sectorAllocation.map(s => ({
+      ...s,
+      percent: totalEquityILS > 0 ? (s.value / totalEquityILS) * 100 : 0,
+    }));
+
+    // Add cash as a sector if there's any cash balance
+    if (cashBalance > 0) {
+      sectorAllocationWithCash.push({
+        sector: 'Cash',
+        sectorHe: 'מזומן',
+        value: cashBalance,
+        percent: cashWeight,
+      });
+    }
+
     return NextResponse.json({
       ...analysis,
       equity: analysis.equity + cashBalance, // Assuming cash is in ILS
@@ -212,6 +247,7 @@ export async function GET() {
       cashBalance,
       cashWeight,
       holdings: holdingsWithCashWeight,
+      sectorAllocation: sectorAllocationWithCash,
     });
   } catch (error) {
     console.error('Error analyzing portfolio (GET):', error);
