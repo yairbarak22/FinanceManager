@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { initializePrivacyMasking } from '@/lib/smartlook';
 
 const SMARTLOOK_PROJECT_KEY = 'ff3850f57f63db3eeb1e38ed64c7c1d592664267';
 const SMARTLOOK_REGION = 'eu';
@@ -11,6 +12,7 @@ const SMARTLOOK_REGION = 'eu';
  * Features:
  * - Respects cookie consent (only loads if consent given)
  * - Automatically masks all form inputs for privacy
+ * - Masks user profile images (Google OAuth) for privacy
  * - EU region for GDPR compliance
  */
 export default function Smartlook() {
@@ -49,6 +51,13 @@ export default function Smartlook() {
       emails: true,     // Mask email addresses
       numbers: true,    // Mask numbers (financial data)
     });
+
+    // PRIVACY: Apply masking for user profile images
+    // This ensures Google profile pictures are hidden in recordings
+    // Uses retry mechanism in case Smartlook script isn't fully loaded yet
+    setTimeout(() => {
+      initializePrivacyMasking(3, 500);
+    }, 100);
 
     setIsLoaded(true);
     console.log('[Smartlook] Recording started');

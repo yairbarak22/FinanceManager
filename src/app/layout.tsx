@@ -131,6 +131,23 @@ export default function RootLayout({
               
               // PRIVACY: Disable IP consent tracking
               smartlook('consentIP', false);
+              
+              // PRIVACY: Mask user profile images (Google OAuth profile pictures)
+              // Apply masking for all images marked with data-sl="mask" and Google profile images
+              setTimeout(function() {
+                if (typeof window.smartlook === 'function') {
+                  // Mask images explicitly marked for privacy
+                  smartlook('mask', 'img[data-sl="mask"]');
+                  // Mask Google profile images
+                  smartlook('mask', 'img[src*="googleusercontent.com"]');
+                  smartlook('mask', 'img[src*="lh3.googleusercontent.com"]');
+                  // Mask common avatar/profile images
+                  smartlook('mask', 'img[alt*="profile"]');
+                  smartlook('mask', 'img[alt*="avatar"]');
+                  smartlook('mask', 'img[alt*="User"]');
+                  console.debug('[Smartlook] Profile image masking applied');
+                }
+              }, 500);
             `,
           }}
         />
