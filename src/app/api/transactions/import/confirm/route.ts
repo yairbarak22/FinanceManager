@@ -1,6 +1,7 @@
 /**
  * Confirm Transaction Import API
  * שומר עסקאות לאחר אישור המשתמש (כולל עסקאות שעברו Review)
+ * כולל בדיקת כפילויות והתראה למשתמש
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -17,8 +18,20 @@ interface TransactionToSave {
   isManualCategory?: boolean; // If the user manually set this category
 }
 
+// Duplicate transaction info
+interface DuplicateInfo {
+  transaction: TransactionToSave;
+  existing: {
+    id: string;
+    date: string;
+    amount: number;
+    description: string;
+  };
+}
+
 interface ConfirmRequest {
   transactions: TransactionToSave[];
+  skipDuplicateCheck?: boolean; // If true, save despite duplicates
 }
 
 export async function POST(request: NextRequest) {
@@ -27,7 +40,7 @@ export async function POST(request: NextRequest) {
     if (error) return error;
 
     const body: ConfirmRequest = await request.json();
-    const { transactions } = body;
+    const { transactions, skipDuplicateCheck = false } = body;
 
     if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
       return NextResponse.json(
@@ -44,6 +57,64 @@ export async function POST(request: NextRequest) {
           { error: `עסקה ${i + 1}: חסרים שדות חובה` },
           { status: 400 }
         );
+      }
+    }
+
+    // ============================================
+    // CHECK FOR DUPLICATES
+    // ============================================
+    if (!skipDuplicateCheck) {
+      const duplicates: DuplicateInfo[] = [];
+      
+      // Check each transaction for duplicates
+      for (const t of transactions) {
+        const transactionDate = new Date(t.date);
+        const startOfDay = new Date(transactionDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(transactionDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        
+        const existing = await prisma.transaction.findFirst({
+          where: {
+            userId,
+            type: t.type,
+            amount: t.amount,
+            description: t.merchantName,
+            date: {
+              gte: startOfDay,
+              lte: endOfDay,
+            },
+          },
+          select: {
+            id: true,
+            date: true,
+            amount: true,
+            description: true,
+          },
+        });
+        
+        if (existing) {
+          duplicates.push({
+            transaction: t,
+            existing: {
+              id: existing.id,
+              date: existing.date.toISOString(),
+              amount: existing.amount,
+              description: existing.description,
+            },
+          });
+        }
+      }
+      
+      // If duplicates found, return them without saving
+      if (duplicates.length > 0) {
+        return NextResponse.json({
+          success: false,
+          hasDuplicates: true,
+          duplicates,
+          duplicateCount: duplicates.length,
+          totalCount: transactions.length,
+        });
       }
     }
 

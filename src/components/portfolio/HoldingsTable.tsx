@@ -305,6 +305,238 @@ function HoldingDeleteButton({
 }
 
 /**
+ * Mobile Card Component for holdings
+ * Displays holding data in a vertical card layout optimized for mobile
+ */
+function HoldingCard({
+  holding,
+  onEdit,
+  onDelete,
+}: {
+  holding: Holding;
+  onEdit?: (holding: Holding) => void;
+  onDelete?: (holding: Holding) => void;
+}) {
+  return (
+    <div
+      onClick={onEdit ? () => onEdit(holding) : undefined}
+      onKeyDown={
+        onEdit
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onEdit(holding);
+              }
+            }
+          : undefined
+      }
+      role={onEdit ? 'button' : undefined}
+      tabIndex={onEdit ? 0 : undefined}
+      aria-label={onEdit ? `ערוך אחזקה: ${holding.symbol}` : undefined}
+      className={`
+        bg-white rounded-2xl p-4 space-y-3
+        ${onEdit ? 'cursor-pointer active:scale-[0.98] transition-transform' : ''}
+      `}
+      style={{ 
+        border: '1px solid #F7F7F8',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+      }}
+    >
+      {/* Header: Name and Value */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          {/* Title: Hebrew name if enriched, otherwise English name */}
+          <SensitiveData
+            as="p"
+            className="font-bold text-[#303150] leading-tight"
+            style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+          >
+            {holding.nameHe || holding.name}
+          </SensitiveData>
+          {/* Description: Fund number + sector for enriched, symbol for non-enriched */}
+          <SensitiveData
+            as="p"
+            className="text-xs text-[#BDBDCB] mt-0.5"
+            style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+          >
+            {holding.isEnriched ? (
+              <>
+                {extractFundNumber(holding.symbol)}
+                {holding.sectorHe && <span className="text-[#7E7F90]"> • {holding.sectorHe}</span>}
+              </>
+            ) : (
+              holding.symbol
+            )}
+          </SensitiveData>
+        </div>
+        {/* Value */}
+        <div className="text-left flex-shrink-0">
+          <SensitiveData
+            as="p"
+            className="font-bold text-[#303150]"
+            style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+          >
+            {formatValueByUnit(holding.valueILS, holding.priceDisplayUnit)}
+          </SensitiveData>
+          <SensitiveData
+            as="p"
+            className="text-xs text-[#BDBDCB]"
+            style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+          >
+            {holding.quantity.toLocaleString()} יח׳
+          </SensitiveData>
+        </div>
+      </div>
+
+      {/* Stats Row: Change, Allocation */}
+      <div className="flex items-center justify-between gap-4 pt-2 border-t border-[#F7F7F8]">
+        {/* Change */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#7E7F90]">שינוי:</span>
+          <ChangeIndicator change={holding.changePercent} />
+        </div>
+        
+        {/* Allocation */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#7E7F90]">אלוקציה:</span>
+          <AllocationBar weight={holding.weight} targetAllocation={holding.targetAllocation} />
+        </div>
+      </div>
+
+      {/* Actions Row (if delete is available) */}
+      {onDelete && (
+        <div className="flex justify-end gap-2 pt-2 border-t border-[#F7F7F8]">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(holding);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#F18AB5] hover:bg-[#FFC0DB]/20 transition-colors"
+            aria-label={`מחיקת ${holding.symbol}`}
+          >
+            <Trash2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <span>מחיקה</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Mobile Cash Card Component
+ * Displays cash balance in a card layout for mobile
+ */
+function CashCard({
+  cashBalance,
+  cashWeight,
+  onEditCash,
+}: {
+  cashBalance: number;
+  cashWeight?: number;
+  onEditCash?: () => void;
+}) {
+  return (
+    <div
+      onClick={onEditCash}
+      onKeyDown={
+        onEditCash
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onEditCash();
+              }
+            }
+          : undefined
+      }
+      role={onEditCash ? 'button' : undefined}
+      tabIndex={onEditCash ? 0 : undefined}
+      aria-label="ערוך מזומן בתיק"
+      className={`
+        bg-white rounded-2xl p-4 space-y-3
+        ${onEditCash ? 'cursor-pointer active:scale-[0.98] transition-transform' : ''}
+      `}
+      style={{ 
+        border: '1px solid #E8E8ED',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+        background: 'rgba(247, 247, 248, 0.5)',
+      }}
+    >
+      {/* Header: Name and Value */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div 
+            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(13, 186, 204, 0.1)' }}
+          >
+            <Banknote className="w-4 h-4 text-[#0DBACC]" strokeWidth={1.75} />
+          </div>
+          <div>
+            <p
+              className="font-bold text-[#303150]"
+              style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+            >
+              מזומן בתיק
+            </p>
+            <p
+              className="text-xs text-[#BDBDCB]"
+              style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+            >
+              נזילות
+            </p>
+          </div>
+        </div>
+        {/* Value */}
+        <div className="text-left flex-shrink-0">
+          <SensitiveData
+            as="p"
+            className="font-bold text-[#303150]"
+            style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+          >
+            {cashBalance.toLocaleString('he-IL', {
+              style: 'currency',
+              currency: 'ILS',
+              maximumFractionDigits: 0,
+            })}
+          </SensitiveData>
+          <p
+            className="text-xs text-[#BDBDCB]"
+            style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+          >
+            שקלים
+          </p>
+        </div>
+      </div>
+
+      {/* Stats Row: Change (0%), Allocation */}
+      <div className="flex items-center justify-between gap-4 pt-2 border-t border-[#F7F7F8]">
+        {/* Change */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#7E7F90]">שינוי:</span>
+          <ChangeIndicator change={0} />
+        </div>
+        
+        {/* Allocation */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#7E7F90]">אלוקציה:</span>
+          <AllocationBar weight={cashWeight || 0} />
+        </div>
+      </div>
+
+      {/* Edit hint */}
+      {onEditCash && (
+        <div className="flex justify-end pt-2 border-t border-[#F7F7F8]">
+          <div className="flex items-center gap-1.5 text-xs text-[#7E7F90]">
+            <Pencil className="w-3.5 h-3.5" strokeWidth={1.75} />
+            <span>לחץ לעריכה</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
  * HoldingsTable Component
  * A clean Apple-style table with sparkline charts
  * Following Neto Design System - Apple Design Philosophy
@@ -414,11 +646,41 @@ export function HoldingsTable({
         </AnimatePresence>
       </div>
 
-      {/* Table - Vertical scroll only, no horizontal scroll */}
-      <div className="overflow-y-auto flex-1 scrollbar-ghost">
+      {/* Mobile: Card View */}
+      <div className="md:hidden overflow-y-auto flex-1 scrollbar-ghost p-4 space-y-3">
+        {filteredHoldings.map((holding) => (
+          <HoldingCard
+            key={holding.id || holding.symbol}
+            holding={holding}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        ))}
+        
+        {/* Cash Card - shown at the end when edit is available */}
+        {onEditCash && (
+          <CashCard
+            cashBalance={cashBalance ?? 0}
+            cashWeight={cashWeight}
+            onEditCash={onEditCash}
+          />
+        )}
+      </div>
+
+      {/* Desktop: Table View */}
+      <div className="hidden md:block overflow-y-auto flex-1 scrollbar-ghost">
         <table className="w-full" style={{ tableLayout: 'fixed' }}>
           {/* Column widths for fixed table layout */}
-          <colgroup>{onEdit && <col style={{ width: '4px' }} />}<col style={{ width: '35%' }} /><col className="hidden lg:table-column" style={{ width: '70px' }} /><col style={{ width: '80px' }} /><col className="hidden md:table-column" style={{ width: '60px' }} /><col style={{ width: '110px' }} /><col style={{ width: '110px' }} />{onDelete && <col style={{ width: '40px' }} />}</colgroup>
+          <colgroup>
+            {onEdit && <col style={{ width: '4px' }} />}
+            <col style={{ width: '35%' }} />
+            <col className="hidden lg:table-column" style={{ width: '70px' }} />
+            <col style={{ width: '80px' }} />
+            <col className="hidden lg:table-column" style={{ width: '60px' }} />
+            <col style={{ width: '110px' }} />
+            <col style={{ width: '110px' }} />
+            {onDelete && <col style={{ width: '40px' }} />}
+          </colgroup>
           <thead>
             <tr className="text-xs text-[#BDBDCB] border-b border-[#F7F7F8]">
               {/* Empty header cell for edge indicator */}
@@ -441,7 +703,7 @@ export function HoldingsTable({
               >
                 שינוי
               </th>
-              <th className="hidden md:table-cell text-center font-medium px-2 py-2">
+              <th className="hidden lg:table-cell text-center font-medium px-2 py-2">
                 <div className="flex items-center justify-center gap-1">
                   <span style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
                     Beta
@@ -555,7 +817,7 @@ export function HoldingsTable({
                 </td>
 
                 {/* Beta - hidden on small screens */}
-                <td className="hidden md:table-cell px-2 py-3 text-center">
+                <td className="hidden lg:table-cell px-2 py-3 text-center">
                   <span
                     className={`text-sm font-semibold ${
                       holding.beta < 0.8
@@ -670,7 +932,7 @@ export function HoldingsTable({
                 </td>
 
                 {/* Beta - N/A for cash */}
-                <td className="hidden md:table-cell px-2 py-3 text-center">
+                <td className="hidden lg:table-cell px-2 py-3 text-center">
                   <span
                     className="text-sm text-[#BDBDCB]"
                     style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}

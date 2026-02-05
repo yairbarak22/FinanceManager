@@ -16,6 +16,8 @@ import {
   HelpCircle,
   ChevronDown,
   Check,
+  CheckSquare,
+  Square,
 } from 'lucide-react';
 import { formatCurrency, apiFetch } from '@/lib/utils';
 import { expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
@@ -39,7 +41,7 @@ interface ParsedTransaction {
 }
 
 // Import phases
-type ImportPhase = 'idle' | 'parsing' | 'classifying' | 'review' | 'saving' | 'done' | 'error';
+type ImportPhase = 'idle' | 'parsing' | 'classifying' | 'review' | 'duplicates' | 'saving' | 'done' | 'error';
 
 // Stats from API
 interface ImportStats {
@@ -48,6 +50,23 @@ interface ImportStats {
   aiClassified: number;
   needsReview: number;
   parseErrors: number;
+}
+
+// Duplicate transaction info from API
+interface DuplicateInfo {
+  transaction: {
+    merchantName: string;
+    amount: number;
+    date: string;
+    type: 'income' | 'expense';
+    category: string;
+  };
+  existing: {
+    id: string;
+    date: string;
+    amount: number;
+    description: string;
+  };
 }
 
 // Helper function to translate technical errors to user-friendly messages
@@ -401,6 +420,20 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
   const [errors, setErrors] = useState<string[]>([]);
   const [savedCount, setSavedCount] = useState(0);
 
+  // Duplicate detection
+  const [duplicates, setDuplicates] = useState<DuplicateInfo[]>([]);
+  const [pendingTransactions, setPendingTransactions] = useState<Array<{
+    merchantName: string;
+    amount: number;
+    date: string;
+    type: 'income' | 'expense';
+    category: string;
+    isManualCategory: boolean;
+  }>>([]);
+  
+  // Selected duplicates for import (indices of duplicates to include)
+  const [selectedDuplicateIndices, setSelectedDuplicateIndices] = useState<Set<number>>(new Set());
+
   // Manual category selections for review items
   const [reviewCategories, setReviewCategories] = useState<Record<number, string>>({});
 
@@ -447,7 +480,36 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
     setSavedCount(0);
     setReviewCategories({});
     setOpenDropdown(null);
+    setDuplicates([]);
+    setPendingTransactions([]);
+    setSelectedDuplicateIndices(new Set());
   };
+
+  // Duplicate selection helper functions
+  const toggleDuplicateSelection = (index: number) => {
+    setSelectedDuplicateIndices(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllDuplicates = () => {
+    setSelectedDuplicateIndices(new Set(duplicates.map((_, idx) => idx)));
+  };
+
+  const deselectAllDuplicates = () => {
+    setSelectedDuplicateIndices(new Set());
+  };
+
+  const isAllDuplicatesSelected = duplicates.length > 0 && selectedDuplicateIndices.size === duplicates.length;
+  const selectedDuplicatesCount = selectedDuplicateIndices.size;
+  const nonDuplicateCount = pendingTransactions.length - duplicates.length;
+  const totalToImport = selectedDuplicatesCount + nonDuplicateCount;
 
   const handleClose = () => {
     setFile(null);
@@ -504,7 +566,8 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
   // Save transactions (both auto-classified and manually reviewed)
   const saveTransactions = async (
     classified: ParsedTransaction[],
-    reviewed: ParsedTransaction[]
+    reviewed: ParsedTransaction[],
+    skipDuplicateCheck = false
   ) => {
     setPhase('saving');
 
@@ -532,7 +595,80 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
       const res = await apiFetch('/api/transactions/import/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transactions: toSave }),
+        body: JSON.stringify({ transactions: toSave, skipDuplicateCheck }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setPhase('error');
+        setErrors([data.error || 'שגיאה בשמירת העסקאות']);
+        return;
+      }
+
+      // Check if duplicates were found
+      if (data.hasDuplicates && !skipDuplicateCheck) {
+        const duplicatesList = data.duplicates || [];
+        setDuplicates(duplicatesList);
+        setPendingTransactions(toSave);
+        // Initialize with all duplicates selected (user can deselect ones they don't want)
+        setSelectedDuplicateIndices(new Set(duplicatesList.map((_: DuplicateInfo, idx: number) => idx)));
+        setPhase('duplicates');
+        return;
+      }
+
+      setSavedCount(data.count || 0);
+      setPhase('done');
+      onSuccess();
+    } catch {
+      setPhase('error');
+      setErrors(['שגיאה בשמירת העסקאות']);
+    }
+  };
+
+  // Save transactions despite duplicates (user confirmed)
+  const saveTransactionsDespiteDuplicates = async () => {
+    // Build a set of duplicate transaction keys for quick lookup
+    const duplicateKeys = new Set(
+      duplicates.map(dup => 
+        `${dup.transaction.merchantName}|${dup.transaction.amount}|${dup.transaction.date}|${dup.transaction.type}`
+      )
+    );
+    
+    // Build a set of selected duplicate transaction keys
+    const selectedDuplicateKeys = new Set(
+      Array.from(selectedDuplicateIndices).map(idx => {
+        const dup = duplicates[idx];
+        return `${dup.transaction.merchantName}|${dup.transaction.amount}|${dup.transaction.date}|${dup.transaction.type}`;
+      })
+    );
+    
+    // Filter transactions: include non-duplicates + selected duplicates
+    const transactionsToSave = pendingTransactions.filter(t => {
+      const key = `${t.merchantName}|${t.amount}|${t.date}|${t.type}`;
+      const isDuplicate = duplicateKeys.has(key);
+      
+      if (isDuplicate) {
+        // Only include if selected
+        return selectedDuplicateKeys.has(key);
+      }
+      // Non-duplicate - always include
+      return true;
+    });
+    
+    if (transactionsToSave.length === 0) {
+      setPhase('error');
+      setErrors(['לא נבחרו עסקאות לייבוא']);
+      return;
+    }
+
+    setPhase('saving');
+
+    try {
+      const res = await apiFetch('/api/transactions/import/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transactions: transactionsToSave, skipDuplicateCheck: true }),
       });
 
       const data = await res.json();
@@ -728,12 +864,15 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                   border: '1px solid rgba(105, 173, 255, 0.15)',
                 }}
               >
-                <p className="text-sm font-medium mb-1" style={{ color: '#69ADFF' }}>ייבוא מכל בנק או חברת אשראי</p>
+                <p className="text-sm font-medium mb-1" style={{ color: '#69ADFF' }}>ייבוא עסקאות מכל בנק או חברת אשראי</p>
                 <p className="text-xs" style={{ color: '#69ADFF' }}>
                   ניתן להעלות קבצי Excel מבנק לאומי, פועלים, דיסקונט, ישראכרט, מקס ועוד.
                 </p>
                 <p className="text-xs mt-1" style={{ color: '#69ADFF' }}>
                   המערכת תזהה אוטומטית את מבנה הקובץ ותסווג את העסקאות.
+                </p>
+                <p className="text-xs mt-2 font-medium" style={{ color: '#F59E0B' }}>
+                  ⚠️ מיועד לייבוא פירוט אשראי (הוצאות בלבד). לא מיועד לפירוט עו״ש שיש בו גם הכנסות וגם הוצאות.
                 </p>
                 <p className="text-xs mt-2 font-medium" style={{ color: '#F18AB5' }}>
                   💡 לפרטיות מומלץ למחוק עמודות עם מידע אישי (מספר כרטיס, יתרה) לפני ההעלאה.
@@ -872,6 +1011,144 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                   </div>
                 </>
               )}
+            </div>
+          )}
+
+          {/* Duplicates warning */}
+          {phase === 'duplicates' && (
+            <div className="space-y-4">
+              <div 
+                className="rounded-xl p-4"
+                style={{
+                  backgroundColor: 'rgba(255, 193, 7, 0.08)',
+                  border: '1px solid rgba(255, 193, 7, 0.3)',
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#F59E0B' }} />
+                  <div>
+                    <p className="font-medium" style={{ color: '#D97706' }}>
+                      נמצאו {duplicates.length} עסקאות כפולות
+                    </p>
+                    <p className="text-sm mt-1" style={{ color: '#D97706', opacity: 0.9 }}>
+                      עסקאות אלו כבר קיימות במערכת עם אותו תאריך, סכום ושם עסק. 
+                      בחר אילו עסקאות להמשיך איתן בייבוא:
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Select all / Deselect all button */}
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={isAllDuplicatesSelected ? deselectAllDuplicates : selectAllDuplicates}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                  style={{
+                    backgroundColor: isAllDuplicatesSelected ? 'rgba(105, 173, 255, 0.1)' : '#F7F7F8',
+                    color: isAllDuplicatesSelected ? '#69ADFF' : '#7E7F90',
+                  }}
+                >
+                  {isAllDuplicatesSelected ? (
+                    <>
+                      <CheckSquare className="w-4 h-4" />
+                      בטל הכל
+                    </>
+                  ) : (
+                    <>
+                      <Square className="w-4 h-4" />
+                      בחר הכל
+                    </>
+                  )}
+                </button>
+                <span className="text-sm" style={{ color: '#7E7F90' }}>
+                  {selectedDuplicatesCount} מתוך {duplicates.length} נבחרו
+                </span>
+              </div>
+
+              {/* List of duplicate transactions */}
+              <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #F7F7F8' }}>
+                <div className="max-h-64 overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead style={{ backgroundColor: '#F7F7F8' }} className="sticky top-0">
+                      <tr>
+                        <th className="w-12 px-3 py-3"></th>
+                        <th className="text-right px-4 py-3 font-medium" style={{ color: '#7E7F90' }}>עסק</th>
+                        <th className="text-right px-4 py-3 font-medium" style={{ color: '#7E7F90' }}>סכום</th>
+                        <th className="text-right px-4 py-3 font-medium" style={{ color: '#7E7F90' }}>תאריך</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {duplicates.map((dup, idx) => {
+                        const isSelected = selectedDuplicateIndices.has(idx);
+                        return (
+                          <tr 
+                            key={idx} 
+                            onClick={() => toggleDuplicateSelection(idx)}
+                            className="cursor-pointer transition-colors"
+                            style={{ 
+                              borderBottom: '1px solid #F7F7F8',
+                              backgroundColor: isSelected ? 'rgba(105, 173, 255, 0.05)' : 'transparent',
+                            }}
+                          >
+                            <td className="px-3 py-3">
+                              <div 
+                                className={cn(
+                                  'w-6 h-6 rounded flex items-center justify-center transition-colors',
+                                  isSelected ? 'bg-[#69ADFF]' : 'bg-white border-2 border-[#E8E8ED]'
+                                )}
+                              >
+                                {isSelected && <Check className="w-4 h-4 text-white" />}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <SensitiveData className="font-medium" style={{ color: '#303150' }}>
+                                {dup.transaction.merchantName}
+                              </SensitiveData>
+                            </td>
+                            <td className="px-4 py-3">
+                              <SensitiveData 
+                                className="font-medium"
+                                style={{ color: dup.transaction.type === 'income' ? '#0DBACC' : '#F18AB5' }}
+                                dir="ltr"
+                              >
+                                {`${dup.transaction.type === 'income' ? '+' : '-'}${formatCurrency(dup.transaction.amount)}`}
+                              </SensitiveData>
+                            </td>
+                            <td className="px-4 py-3" style={{ color: '#7E7F90' }}>
+                              {new Date(dup.transaction.date).toLocaleDateString('he-IL')}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Status summary */}
+              <div 
+                className="rounded-xl p-3 text-center"
+                style={{ backgroundColor: '#F7F7F8' }}
+              >
+                <p className="text-sm font-medium" style={{ color: '#303150' }}>
+                  {totalToImport > 0 ? (
+                    <>
+                      סה״כ <span style={{ color: '#69ADFF' }}>{totalToImport}</span> עסקאות ייובאו
+                      {selectedDuplicatesCount > 0 && (
+                        <span style={{ color: '#F59E0B' }}> (כולל {selectedDuplicatesCount} כפולות)</span>
+                      )}
+                    </>
+                  ) : (
+                    <span style={{ color: '#F18AB5' }}>לא נבחרו עסקאות לייבוא</span>
+                  )}
+                </p>
+                {nonDuplicateCount > 0 && (
+                  <p className="text-xs mt-1" style={{ color: '#7E7F90' }}>
+                    {nonDuplicateCount} עסקאות ייובאו ללא בעיה
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
@@ -1016,6 +1293,21 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
             >
               <Brain className="w-4 h-4" />
               שמור ולמד
+            </button>
+          )}
+
+          {phase === 'duplicates' && (
+            <button
+              onClick={saveTransactionsDespiteDuplicates}
+              disabled={totalToImport === 0}
+              className="btn-primary flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ 
+                backgroundColor: totalToImport > 0 ? '#F59E0B' : undefined, 
+                borderColor: totalToImport > 0 ? '#F59E0B' : undefined,
+              }}
+            >
+              <CheckCircle className="w-4 h-4" />
+              {totalToImport > 0 ? `ייבא ${totalToImport} עסקאות` : 'בחר עסקאות לייבוא'}
             </button>
           )}
 

@@ -84,6 +84,7 @@ model Transaction {
   @@index([userId])
   @@index([userId, date]) // Composite index for date filtering queries
   @@index([userId, category]) // Composite for category summaries in dashboard
+  @@index([userId, date, type, amount]) // Composite for duplicate detection in import
 }
 
 model RecurringTransaction {
