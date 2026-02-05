@@ -9,14 +9,14 @@ import {
   Home, 
   GraduationCap, 
   Umbrella, 
-  PiggyBank,
+  Wallet,
   Shield,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import type { FinancialGoal, UpdateGoalInput } from '@/lib/api/goals';
 
 const GOAL_CATEGORIES = [
-  { id: 'saving', label: 'חיסכון כללי', icon: PiggyBank },
+  { id: 'saving', label: 'חיסכון כללי', icon: Wallet },
   { id: 'home', label: 'דירה / בית', icon: Home },
   { id: 'car', label: 'רכב', icon: Car },
   { id: 'travel', label: 'נסיעות', icon: Plane },

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, Home, Shield, X, CheckCircle2, AlertCircle, PiggyBank, Umbrella, Flame, Heart, Target, Calculator, Percent, Brain, CreditCard, TrendingDown, Compass } from 'lucide-react';
+import { TrendingUp, Home, Shield, X, CheckCircle2, AlertCircle, Wallet, Umbrella, Flame, Heart, Target, Calculator, Percent, Brain, CreditCard, TrendingDown, Compass } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 // ============================================
@@ -187,7 +187,7 @@ function PensionTaxesContent() {
 
       <div className="bg-[#B4F1F1]/30 rounded-3xl p-5 border border-[#B4F1F1]">
         <h4 className="font-bold text-[#303150] flex items-center gap-2 mb-4">
-          <PiggyBank className="w-5 h-5 text-[#0DBACC]" />
+          <Wallet className="w-5 h-5 text-[#0DBACC]" />
           הטבות המס בקרן השתלמות
         </h4>
         <div className="grid md:grid-cols-2 gap-4">

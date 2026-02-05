@@ -7,7 +7,7 @@ import {
   Home, 
   GraduationCap, 
   Umbrella, 
-  PiggyBank,
+  Wallet,
   Shield,
   Plus,
   TrendingUp,
@@ -27,7 +27,7 @@ import Card from '@/components/ui/Card';
 import GoalCreationInfoModal from './GoalCreationInfoModal';
 
 const GOAL_CATEGORIES = [
-  { id: 'saving', label: 'חיסכון כללי', icon: PiggyBank },
+  { id: 'saving', label: 'חיסכון כללי', icon: Wallet },
   { id: 'home', label: 'דירה / בית', icon: Home },
   { id: 'car', label: 'רכב', icon: Car },
   { id: 'travel', label: 'נסיעות', icon: Plane },
@@ -266,7 +266,7 @@ export default function GoalSimulator({ onCreateGoal, isCreating, onSuccess }: G
   };
   
   const selectedCategory = GOAL_CATEGORIES.find(c => c.id === category);
-  const CategoryIcon = selectedCategory?.icon || PiggyBank;
+  const CategoryIcon = selectedCategory?.icon || Wallet;
 
   return (
     <Card className="p-6 lg:p-8">

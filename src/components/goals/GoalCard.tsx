@@ -6,7 +6,7 @@ import {
   Home, 
   GraduationCap, 
   Umbrella, 
-  PiggyBank,
+  Wallet,
   Shield,
   Trash2,
   RefreshCw,
@@ -29,7 +29,7 @@ const GOAL_ICONS: Record<string, React.ElementType> = {
   home: Home,
   education: GraduationCap,
   vacation: Umbrella,
-  saving: PiggyBank,
+  saving: Wallet,
   emergency: Shield,
 };
 
@@ -40,7 +40,7 @@ interface GoalCardProps {
 }
 
 export default function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
-  const Icon = GOAL_ICONS[goal.category] || PiggyBank;
+  const Icon = GOAL_ICONS[goal.category] || Wallet;
   const progress = calculateProgressPercentage(goal.currentAmount, goal.targetAmount);
   const requiredMonthly = calculateMonthlyContribution(
     goal.targetAmount, 
