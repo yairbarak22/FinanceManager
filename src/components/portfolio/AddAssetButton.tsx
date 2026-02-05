@@ -27,6 +27,7 @@ export function AddAssetButton({ onAddAsset, fullWidth = false, exchangeRate }: 
   return (
     <>
       <button
+        data-add-asset-trigger
         onClick={() => setIsOpen(true)}
         className={`
           h-12 rounded-xl bg-[#69ADFF] text-white px-5

@@ -5,6 +5,7 @@ import { RefreshCw, Wallet, AlertCircle, X, Loader2, Banknote, Plus, TrendingUp 
 import { motion } from 'framer-motion';
 import { HoldingsTable } from './HoldingsTable';
 import { AddAssetButton } from './AddAssetButton';
+import { AddAssetDialog } from './AddAssetDialog';
 import { PortfolioSummaryHero } from './PortfolioSummaryHero';
 import { SmartInsightsPanel } from './SmartInsightsPanel';
 import { PortfolioSettingsCard } from './PortfolioSettingsCard';
@@ -615,7 +616,12 @@ function DeleteConfirmModal({
 /**
  * Premium Empty State
  */
-function EmptyState({ onAddAsset }: { onAddAsset: (data: Parameters<typeof AddAssetButton>[0]['onAddAsset'] extends (data: infer T) => void ? T : never) => void }) {
+function EmptyState({ onAddAsset, exchangeRate }: { 
+  onAddAsset: (data: Parameters<typeof AddAssetButton>[0]['onAddAsset'] extends (data: infer T) => void ? T : never) => void;
+  exchangeRate: number;
+}) {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   return (
     <div
       className="min-h-[60vh] flex items-center justify-center"
@@ -652,25 +658,24 @@ function EmptyState({ onAddAsset }: { onAddAsset: (data: Parameters<typeof AddAs
           ))}
         </div>
 
-        {/* CTA Button */}
+        {/* CTA Button - Opens dialog directly */}
         <button
-          onClick={() => {
-            // Trigger the AddAssetButton programmatically
-            const addBtn = document.querySelector('[data-add-asset-trigger]') as HTMLButtonElement;
-            addBtn?.click();
-          }}
+          onClick={() => setIsDialogOpen(true)}
           className="flex items-center gap-2 px-6 py-3 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-all active:scale-95 font-medium shadow-lg shadow-[#69ADFF]/25"
           style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
         >
           <Plus className="w-5 h-5" strokeWidth={2} />
           <span>הוסף נכס ראשון</span>
         </button>
-
-        {/* Hidden AddAssetButton for dialog */}
-        <div className="hidden">
-          <AddAssetButton onAddAsset={onAddAsset} exchangeRate={DEFAULT_EXCHANGE_RATE} />
-        </div>
       </div>
+
+      {/* Add Asset Dialog */}
+      <AddAssetDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onAddAsset={onAddAsset}
+        exchangeRate={exchangeRate}
+      />
     </div>
   );
 }
@@ -929,11 +934,7 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
   if (!data || data.holdings.length === 0) {
     return (
       <div className={className}>
-        <EmptyState onAddAsset={handleAddAsset} />
-        {/* Visible AddAssetButton for empty state */}
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-          <AddAssetButton onAddAsset={handleAddAsset} exchangeRate={exchangeRate} />
-        </div>
+        <EmptyState onAddAsset={handleAddAsset} exchangeRate={exchangeRate} />
       </div>
     );
   }
