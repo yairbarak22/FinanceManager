@@ -208,7 +208,7 @@ export default function FIRECalc({ className = '', showHeader = false }: FIRECal
                   </defs>
                   <XAxis 
                     dataKey="year" 
-                    padding={{ left: 10, right: 10 }}
+                    padding={{ left: 30, right: 10 }}
                     axisLine={false}
                     tickLine={false}
                     tick={{ fill: '#7E7F90', fontSize: 11 }}
