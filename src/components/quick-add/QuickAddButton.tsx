@@ -1,13 +1,87 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, useAnimation } from 'framer-motion';
 import { useModal } from '@/context/ModalContext';
 
 export default function QuickAddButton() {
-  const { openModal } = useModal();
+  const { openModal, isModalOpen } = useModal();
   const [isHovered, setIsHovered] = useState(false);
+  const controls = useAnimation();
+  const isHoveredRef = useRef(false);
+  const isMountedRef = useRef(true);
+
+  // Check if quick-add modal is open
+  const isQuickAddOpen = isModalOpen('quick-add');
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    isHoveredRef.current = isHovered;
+  }, [isHovered]);
+
+  // Initialize button appearance
+  useEffect(() => {
+    if (!isQuickAddOpen) {
+      controls.start({ scale: 1, rotate: 0 });
+    }
+  }, [isQuickAddOpen, controls]);
+
+  // Wiggle animation interval - more subtle than mobile
+  useEffect(() => {
+    isMountedRef.current = true;
+    
+    const performWiggle = async () => {
+      if (!isMountedRef.current || isHoveredRef.current || isQuickAddOpen) return;
+      
+      try {
+        // Subtle wiggle animation for desktop
+        await controls.start({
+          scale: [1, 1.05, 0.98, 1.02, 1],
+          rotate: [0, -2, 2, -1, 0],
+          transition: {
+            duration: 0.5,
+            ease: 'easeInOut',
+          },
+        });
+      } catch {
+        // Animation was interrupted, ignore
+      }
+    };
+
+    // Start wiggle after 5 seconds, then repeat every 5.5 seconds (0.5s animation + 5s delay)
+    const initialTimeout = setTimeout(() => {
+      performWiggle();
+    }, 5000);
+
+    const intervalId = setInterval(() => {
+      performWiggle();
+    }, 5500);
+
+    return () => {
+      isMountedRef.current = false;
+      clearTimeout(initialTimeout);
+      clearInterval(intervalId);
+      controls.stop();
+    };
+  }, [controls, isQuickAddOpen]);
+
+  // Handle hover state changes
+  useEffect(() => {
+    if (isHovered) {
+      controls.start({
+        scale: 1.03,
+        rotate: 0,
+        transition: { type: 'spring', stiffness: 400, damping: 25 },
+      });
+    } else {
+      controls.start({
+        scale: 1,
+        rotate: 0,
+        transition: { type: 'spring', stiffness: 400, damping: 25 },
+      });
+    }
+  }, [isHovered, controls]);
 
   const handleClick = () => {
     openModal('quick-add');
@@ -19,13 +93,8 @@ export default function QuickAddButton() {
       onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      whileHover={{ scale: 1.03 }}
+      animate={controls}
       whileTap={{ scale: 0.97 }}
-      transition={{
-        type: 'spring',
-        stiffness: 400,
-        damping: 25,
-      }}
       className="btn-primary hidden lg:flex focus:outline-none focus:ring-2 focus:ring-offset-2"
       style={{
         background: isHovered 
