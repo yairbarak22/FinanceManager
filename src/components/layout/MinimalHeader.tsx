@@ -15,12 +15,10 @@ import {
   PanelRightOpen,
   Accessibility,
   Menu,
-  Plus,
 } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { useAccessibility } from '@/context/AccessibilityContext';
 import { useSidebar } from '@/context/SidebarContext';
-import { useModal } from '@/context/ModalContext';
 import MonthFilter from '@/components/MonthFilter';
 import { SensitiveData } from '@/components/common/SensitiveData';
 
@@ -53,7 +51,6 @@ export default function MinimalHeader({
   const { startTour } = useOnboarding();
   const { openAccessibility } = useAccessibility();
   const { isCollapsed, toggleSidebar, openMobileSidebar } = useSidebar();
-  const { openModal } = useModal();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -111,22 +108,6 @@ export default function MinimalHeader({
 
           {/* Left: Month Filter & User Menu & Hamburger (Mobile) */}
           <div className="flex items-center gap-2">
-            {/* Quick Add Button - Desktop */}
-            <button
-              type="button"
-              onClick={() => openModal('quick-add')}
-              className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all shadow-sm hover:shadow-md"
-              style={{
-                backgroundColor: '#69ADFF',
-                color: '#FFFFFF',
-                fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-              }}
-              aria-label="הוספה מהירה"
-            >
-              <Plus className="w-4 h-4" strokeWidth={2.5} />
-              <span className="text-sm">הוספה מהירה</span>
-            </button>
-
             {/* Month Filter */}
             {showMonthFilter && (
               <>

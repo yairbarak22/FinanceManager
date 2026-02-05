@@ -73,7 +73,7 @@ export default function AppLayout({
         </main>
       </div>
 
-      {/* Quick Add FAB - Mobile only */}
+      {/* Quick Add FAB - All devices */}
       <QuickAddFab />
     </div>
   );
