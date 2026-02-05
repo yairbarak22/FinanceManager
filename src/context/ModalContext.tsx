@@ -10,6 +10,7 @@ type ModalType =
   | 'liability'
   | 'recurring'
   | 'ai-chat'
+  | 'quick-add'
   | null;
 
 interface ModalState {

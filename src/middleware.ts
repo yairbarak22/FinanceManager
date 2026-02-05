@@ -4,6 +4,9 @@ import { getToken } from 'next-auth/jwt';
 import { config as appConfig } from './lib/config';
 import { logAuditEvent, AuditAction, getRequestInfo } from './lib/auditLog';
 
+// Cookie name for signup source tracking
+const SIGNUP_SOURCE_COOKIE = 'signup_source';
+
 function isAdmin(email: string | null | undefined): boolean {
   if (!email) return false;
   return appConfig.adminEmails.includes(email.toLowerCase());
@@ -17,6 +20,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Capture signup source from URL parameters and set cookie
+  const source = request.nextUrl.searchParams.get('source') || request.nextUrl.searchParams.get('utm_source');
+  let response: NextResponse | null = null;
+  
+  if (source && !request.cookies.get(SIGNUP_SOURCE_COOKIE)) {
+    // Will set cookie after determining the response
+  }
+
   // Get the token
   const token = await getToken({
     req: request,
@@ -25,14 +36,34 @@ export async function middleware(request: NextRequest) {
 
   // If trying to access login page while authenticated, redirect to home
   if (pathname === '/login' && token) {
-    return NextResponse.redirect(new URL('/', request.url));
+    response = NextResponse.redirect(new URL('/', request.url));
+    if (source) {
+      response.cookies.set(SIGNUP_SOURCE_COOKIE, source, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        sameSite: 'lax',
+      });
+    }
+    return response;
   }
 
   // If trying to access protected route without token, redirect to login
   if (!token) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('callbackUrl', request.url);
-    return NextResponse.redirect(loginUrl);
+    // Preserve source parameter in callback URL
+    if (source) {
+      loginUrl.searchParams.set('source', source);
+    }
+    response = NextResponse.redirect(loginUrl);
+    if (source) {
+      response.cookies.set(SIGNUP_SOURCE_COOKIE, source, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        sameSite: 'lax',
+      });
+    }
+    return response;
   }
 
   // SECURITY: CSRF Protection for API routes
@@ -97,7 +128,17 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  // Set signup source cookie if present in URL
+  response = NextResponse.next();
+  if (source && !request.cookies.get(SIGNUP_SOURCE_COOKIE)) {
+    response.cookies.set(SIGNUP_SOURCE_COOKIE, source, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      sameSite: 'lax',
+    });
+  }
+
+  return response;
 }
 
 // Protect all routes except:

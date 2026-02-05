@@ -25,6 +25,7 @@ import ImportModal from '@/components/modals/ImportModal';
 import DocumentsModal from '@/components/modals/DocumentsModal';
 import ProfileModal from '@/components/ProfileModal';
 import AccountSettings from '@/components/AccountSettings';
+import { QuickAddModal } from '@/components/quick-add';
 import {
   Transaction,
   RecurringTransaction,
@@ -943,6 +944,48 @@ export default function DashboardPage() {
       <AccountSettings
         isOpen={isModalOpen('accountSettings')}
         onClose={closeModal}
+      />
+
+      <QuickAddModal
+        expenseCategories={expenseCats}
+        incomeCategories={incomeCats}
+        assetCategories={assetCats}
+        liabilityCategories={liabilityCats}
+        onSaveTransaction={async (data) => {
+          await handleAddTransaction({
+            type: data.type,
+            amount: data.amount,
+            category: data.category,
+            description: data.description,
+            date: data.date,
+          });
+        }}
+        onSaveAsset={async (data) => {
+          await handleAddAsset({
+            name: data.name,
+            category: data.category,
+            value: data.value,
+          });
+        }}
+        onSaveLiability={async (data) => {
+          // Calculate loan term based on total amount and monthly payment
+          const loanTermMonths = data.monthlyPayment > 0 
+            ? Math.ceil(data.totalAmount / data.monthlyPayment)
+            : 12;
+          
+          await handleAddLiability({
+            name: data.name,
+            type: data.type,
+            totalAmount: data.totalAmount,
+            monthlyPayment: data.monthlyPayment,
+            interestRate: data.interestRate ?? 0,
+            startDate: data.startDate,
+            loanTermMonths,
+            loanMethod: 'spitzer',
+            hasInterestRebate: false,
+          });
+        }}
+        onAddCategory={addCustomCategory}
       />
 
       <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />

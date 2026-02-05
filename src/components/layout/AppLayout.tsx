@@ -1,8 +1,11 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import MinimalHeader from './MinimalHeader';
+import { QuickAddFab } from '@/components/quick-add';
+import { useModal } from '@/context/ModalContext';
+import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -31,6 +34,15 @@ export default function AppLayout({
   onOpenAccountSettings,
   showMonthFilter = true,
 }: AppLayoutProps) {
+  const { openModal, isModalOpen } = useModal();
+
+  // Keyboard shortcut: C or + to open Quick Add modal
+  useKeyboardShortcut({
+    key: ['c', '+'],
+    callback: () => openModal('quick-add'),
+    disabled: isModalOpen('quick-add'),
+  });
+
   return (
     <div className="flex min-h-screen bg-[#F5F5F7]">
       {/* Sidebar - Desktop + Mobile (hamburger menu) */}
@@ -60,6 +72,9 @@ export default function AppLayout({
           {children}
         </main>
       </div>
+
+      {/* Quick Add FAB - Mobile only */}
+      <QuickAddFab />
     </div>
   );
 }

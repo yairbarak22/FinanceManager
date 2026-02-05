@@ -16,6 +16,7 @@ model User {
   image                 String?
   hasSeenOnboarding     Boolean                @default(false)
   hasProAccess          Boolean                @default(false) // Pro calculator access (unlocked via referral)
+  signupSource          String?                // Signup source tracking (e.g., "prog", "facebook", "google_ads")
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   accounts              Account[]

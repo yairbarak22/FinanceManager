@@ -1,10 +1,36 @@
 import { NextAuthOptions } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import GoogleProvider from 'next-auth/providers/google';
+import { cookies } from 'next/headers';
 import { prisma } from './prisma';
 import { config } from './config';
 import { logAuditEvent, AuditAction } from './auditLog';
 import { processCalculatorInvites } from './calculatorInvites';
+
+// Cookie name for signup source tracking
+const SIGNUP_SOURCE_COOKIE = 'signup_source';
+
+/**
+ * Mark user's signup source from cookie
+ * Called when a new user is created to record their signup source (e.g., "prog")
+ */
+async function markUserSignupSource(userId: string): Promise<void> {
+  try {
+    const cookieStore = await cookies();
+    const signupSourceCookie = cookieStore.get(SIGNUP_SOURCE_COOKIE);
+    
+    if (signupSourceCookie?.value) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { signupSource: signupSourceCookie.value },
+      });
+      console.log(`[Auth] Marked user ${userId} with signup source: ${signupSourceCookie.value}`);
+    }
+  } catch (error) {
+    console.error('[Auth] Failed to mark signup source:', error);
+    // Don't block user creation if this fails
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as NextAuthOptions['adapter'],
@@ -38,6 +64,16 @@ export const authOptions: NextAuthOptions = {
           await processCalculatorInvites(user.email);
         } catch (error) {
           console.error('[Auth] Failed to process calculator invites:', error);
+          // Don't block user creation if this fails
+        }
+      }
+      
+      // Mark signup source from cookie (e.g., "prog" for users from prog.co.il)
+      if (user?.id) {
+        try {
+          await markUserSignupSource(user.id);
+        } catch (error) {
+          console.error('[Auth] Failed to mark signup source:', error);
           // Don't block user creation if this fails
         }
       }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import { CategoryInfo, customCategoryToInfo } from '@/lib/categories';
 import { apiFetch } from '@/lib/utils';
 
@@ -33,6 +34,7 @@ interface GoalForCategory {
 }
 
 export function useCategories() {
+  const { data: session, status } = useSession();
   const [customCategories, setCustomCategories] = useState<CustomCategoriesData>({
     expense: [],
     income: [],
@@ -44,6 +46,20 @@ export function useCategories() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchCategories = useCallback(async () => {
+    // Don't fetch if user is not authenticated
+    if (status === 'unauthenticated' || !session) {
+      setCustomCategories({
+        expense: [],
+        income: [],
+        asset: [],
+        liability: [],
+      });
+      setGoalCategories(new Set());
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       // Fetch both categories and goals in parallel
       const [categoriesResponse, goalsResponse] = await Promise.all([
@@ -51,14 +67,26 @@ export function useCategories() {
         apiFetch('/api/goals'),
       ]);
       
-      if (!categoriesResponse.ok) throw new Error('Failed to fetch categories');
+      if (!categoriesResponse.ok) {
+        throw new Error(`Failed to fetch categories: ${categoriesResponse.status}`);
+      }
+      
+      // Check content-type before parsing JSON
+      const contentType = categoriesResponse.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Invalid response format from categories API');
+      }
+      
       const categoriesData = await categoriesResponse.json();
       
       // Extract goal category names
       let goalCategoryNames = new Set<string>();
       if (goalsResponse.ok) {
-        const goalsData: GoalForCategory[] = await goalsResponse.json();
-        goalCategoryNames = new Set(goalsData.map(g => g.category || g.name));
+        const goalsContentType = goalsResponse.headers.get('content-type');
+        if (goalsContentType && goalsContentType.includes('application/json')) {
+          const goalsData: GoalForCategory[] = await goalsResponse.json();
+          goalCategoryNames = new Set(goalsData.map(g => g.category || g.name));
+        }
       }
       
       setGoalCategories(goalCategoryNames);
@@ -87,7 +115,7 @@ export function useCategories() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [session, status]);
 
   useEffect(() => {
     fetchCategories();

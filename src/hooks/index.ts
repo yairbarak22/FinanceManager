@@ -5,4 +5,6 @@ export * from './useLiabilities';
 export * from './useRecurring';
 export * from './usePortfolio';
 export * from './useGoals';
+export * from './useKeyboardShortcut';
+export * from './useMostUsedCategories';
 

@@ -2,14 +2,32 @@
 
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { Medal, Rocket, Eye, PieChart } from 'lucide-react';
 import LegalModal from '@/components/modals/LegalModal';
+
+// Cookie name for signup source tracking
+const SIGNUP_SOURCE_COOKIE = 'signup_source';
 
 function LoginContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
   const callbackUrl = searchParams.get('callbackUrl') || '/';
+
+  // Capture signup source from URL and store in cookie
+  useEffect(() => {
+    try {
+      const source = searchParams.get('source') || searchParams.get('utm_source');
+      if (source) {
+        // Set cookie with 7 days expiry using max-age (more reliable than expires)
+        const maxAge = 60 * 60 * 24 * 7; // 7 days in seconds
+        document.cookie = `${SIGNUP_SOURCE_COOKIE}=${encodeURIComponent(source)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+      }
+    } catch (error) {
+      // Silently ignore cookie errors (can happen in some browser contexts)
+      console.debug('[Login] Could not set signup source cookie:', error);
+    }
+  }, [searchParams]);
 
   // Legal modal state
   const [legalModal, setLegalModal] = useState<{ isOpen: boolean; type: 'terms' | 'privacy' }>({
