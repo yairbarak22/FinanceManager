@@ -149,7 +149,7 @@ export function PortfolioSummaryHero({
 
   return (
     <div
-      className={`rounded-[20px] p-6 relative overflow-hidden ${className}`}
+      className={`rounded-[20px] p-6 relative overflow-hidden h-full flex flex-col ${className}`}
       style={{
         background: '#FFFFFF',
         boxShadow: '0 8px 32px rgba(13, 186, 204, 0.12), 0 4px 16px rgba(105, 173, 255, 0.08)',

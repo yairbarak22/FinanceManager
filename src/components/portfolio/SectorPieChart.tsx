@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { useState, useMemo } from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { PieChart as PieChartIcon } from 'lucide-react';
 import { SensitiveData } from '../common/SensitiveData';
-import InfoTooltip from '@/components/ui/InfoTooltip';
 
 interface SectorAllocation {
   sector: string;
@@ -106,70 +105,20 @@ const SECTOR_COLORS: Record<string, string> = {
 };
 
 /**
- * Custom tooltip for pie chart
+ * Format currency for display
  */
-interface CustomTooltipProps {
-  active?: boolean;
-  payload?: Array<{
-    payload: {
-      name: string;
-      displayName?: string;
-      value: number;
-      percent: number;
-      color: string;
-    };
-  }>;
+function formatCurrency(value: number): string {
+  return value.toLocaleString('he-IL', {
+    style: 'currency',
+    currency: 'ILS',
+    maximumFractionDigits: 0,
+  });
 }
-
-const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
-  if (!active || !payload || !payload.length) return null;
-
-  const data = payload[0].payload;
-  const hebrewName = data.displayName || SECTOR_NAMES[data.name] || data.name;
-
-  return (
-    <div
-      className="bg-[#303150]/95 backdrop-blur-sm text-white px-4 py-3 rounded-xl border border-[#7E7F90]/30"
-      style={{
-        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
-      }}
-      dir="rtl"
-    >
-      <div className="flex items-center gap-2 mb-2">
-        <div
-          className="w-3 h-3 rounded-full"
-          style={{ backgroundColor: data.color }}
-        />
-        <SensitiveData as="span" className="font-semibold text-sm">
-          {hebrewName}
-        </SensitiveData>
-      </div>
-      <div className="text-xs space-y-1">
-        <div className="flex justify-between gap-4">
-          <span className="text-[#BDBDCB]">שווי:</span>
-          <SensitiveData as="span" className="font-medium">
-            {data.value.toLocaleString('he-IL', {
-              style: 'currency',
-              currency: 'ILS',
-              maximumFractionDigits: 0,
-            })}
-          </SensitiveData>
-        </div>
-        <div className="flex justify-between gap-4">
-          <span className="text-[#BDBDCB]">אחוז:</span>
-          <SensitiveData as="span" className="font-medium">
-            {data.percent.toFixed(1)}%
-          </SensitiveData>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 /**
  * SectorPieChart - Minimalist pie chart for sector diversification
  * Following Neto Design System - Apple Design Philosophy
+ * Matching ExpensesPieChart design
  */
 export function SectorPieChart({
   sectorAllocation,
@@ -177,190 +126,249 @@ export function SectorPieChart({
   onSectorClick,
   selectedSector,
 }: SectorPieChartProps) {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  // Hover state - using sector ID (displayName) instead of index
+  const [hoveredSectorId, setHoveredSectorId] = useState<string | null>(null);
   
-  // Check if any sector is selected
+  // Check if any sector is selected (for dimming non-selected items)
   const hasSelection = selectedSector !== null && selectedSector !== undefined;
+
+  // Prepare data with colors and calculate total
+  const { chartData, totalValue } = useMemo(() => {
+    const data = sectorAllocation.map((s) => {
+      const displayName = s.sectorHe || SECTOR_NAMES[s.sector] || s.sector;
+      return {
+        id: displayName, // Use displayName as unique ID
+        name: s.sector,
+        displayName,
+        value: s.value,
+        percent: s.percent,
+        color: SECTOR_COLORS[displayName] || SECTOR_COLORS[s.sector] || SECTOR_COLORS['Unknown'],
+      };
+    });
+    
+    const total = data.reduce((sum, item) => sum + item.value, 0);
+    
+    return { chartData: data, totalValue: total };
+  }, [sectorAllocation]);
+
+  // Card wrapper styles
+  const cardStyles = {
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08), 0 0 20px rgba(105, 173, 255, 0.1)',
+    fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+  };
 
   // Empty state
   if (sectorAllocation.length === 0) {
     return (
-      <div
-        className={`bg-[#FFFFFF] rounded-3xl p-6 text-center ${className}`}
-        style={{
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-          fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-        }}
+      <div 
+        className={`bg-[#FFFFFF] rounded-3xl p-6 ${className}`}
+        style={cardStyles}
+        dir="rtl"
       >
-        <div className="w-12 h-12 bg-[#F7F7F8] rounded-xl mx-auto mb-3 flex items-center justify-center">
-          <PieChartIcon className="w-6 h-6 text-[#BDBDCB]" strokeWidth={1.75} />
+        <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
+          <div 
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+            style={{ background: 'rgba(105, 173, 255, 0.1)' }}
+          >
+            <PieChartIcon className="w-8 h-8" style={{ color: '#69ADFF' }} strokeWidth={1.5} />
+          </div>
+          <p 
+            className="text-sm mb-1"
+            style={{ color: '#7E7F90' }}
+          >
+            אין נתוני סקטורים
+          </p>
+          <p 
+            className="text-xs"
+            style={{ color: '#BDBDCB' }}
+          >
+            הוסף נכסים לתיק כדי לראות את הפילוח
+          </p>
         </div>
-        <p className="text-[#7E7F90] font-medium text-sm">אין נתוני סקטורים</p>
-        <p className="text-[#BDBDCB] text-xs mt-1">הוסף נכסים לתיק</p>
       </div>
     );
   }
 
-  // Prepare data with colors
-  // Use Hebrew sector name if available, otherwise translate
-  const chartData = sectorAllocation.map((s) => {
-    const displayName = s.sectorHe || SECTOR_NAMES[s.sector] || s.sector;
-    // Check if this sector is selected (compare with displayName which is the Hebrew name)
-    const isSelected = selectedSector === displayName;
-    return {
-      name: s.sector, // Keep original for color mapping
-      displayName, // Hebrew name for display
-      value: s.value,
-      percent: s.percent,
-      color: SECTOR_COLORS[displayName] || SECTOR_COLORS[s.sector] || SECTOR_COLORS['Unknown'],
-      isSelected,
-    };
-  });
-
   return (
-    <div
-      className={`bg-[#FFFFFF] rounded-3xl p-6 ${className}`}
-      style={{
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-      }}
+    <div 
+      className={`bg-[#FFFFFF] rounded-3xl p-6 flex flex-col ${className}`}
+      style={cardStyles}
       dir="rtl"
     >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #69ADFF 0%, #9F7FE0 100%)' }}
+      {/* Hybrid Layout: Header/Summary on Left, Chart on Right */}
+      <div className="flex items-start gap-4 mb-6">
+        {/* Left Side: Title & Summary */}
+        <div className="flex-1">
+          <h3 
+            className="text-sm font-medium mb-2"
+            style={{ color: '#7E7F90' }}
           >
-            <PieChartIcon className="w-4 h-4 text-white" strokeWidth={1.75} />
-          </div>
-          <span className="text-sm font-semibold text-[#303150]">פיזור סקטוריאלי</span>
+            פיזור סקטוריאלי
+          </h3>
+          <SensitiveData 
+            as="p" 
+            className="text-3xl font-bold mb-1"
+            style={{ color: '#1D1D35' }}
+          >
+            {formatCurrency(totalValue)}
+          </SensitiveData>
+          <p 
+            className="text-xs"
+            style={{ color: '#7E7F90' }}
+          >
+            סה"כ שווי
+          </p>
         </div>
-        <InfoTooltip
-          content="פיזור ההשקעות שלך לפי סקטורים כלכליים. פיזור טוב מפחית סיכון."
-          side="top"
-        />
+
+        {/* Right Side: Donut Chart */}
+        <div className="relative w-32 h-32 flex-shrink-0" aria-hidden="true">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                innerRadius={40}
+                outerRadius={55}
+                paddingAngle={2}
+                dataKey="value"
+                strokeWidth={0}
+              >
+                {chartData.map((entry) => {
+                  const isSelected = selectedSector === entry.id;
+                  const isHovered = hoveredSectorId === entry.id;
+                  const isDimmed = hasSelection && !isSelected;
+                  
+                  return (
+                    <Cell
+                      key={entry.id}
+                      fill={entry.color}
+                      style={{
+                        filter: (isHovered || isSelected)
+                          ? `drop-shadow(0 0 8px ${entry.color}66)` 
+                          : 'none',
+                        transform: isSelected 
+                          ? 'scale(1.12)' 
+                          : isHovered 
+                            ? 'scale(1.07)' 
+                            : 'scale(1)',
+                        opacity: isDimmed ? 0.4 : 1,
+                        transformOrigin: 'center',
+                        transition: 'all 250ms ease-out',
+                        cursor: onSectorClick ? 'pointer' : 'default',
+                      }}
+                      onClick={() => onSectorClick?.(entry.id)}
+                      onMouseEnter={() => setHoveredSectorId(entry.id)}
+                      onMouseLeave={() => setHoveredSectorId(null)}
+                    />
+                  );
+                })}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
-      {/* Pie Chart */}
-      <div className="h-[14rem]">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              innerRadius={50}
-              outerRadius={75}
-              paddingAngle={2}
-              dataKey="value"
-              onMouseEnter={(_, index) => setHoveredIndex(index)}
-              onMouseLeave={() => setHoveredIndex(null)}
-            >
-              {chartData.map((entry, index) => {
-              const isHovered = hoveredIndex === index;
-              const isActive = entry.isSelected || isHovered;
-              const isDimmed = hasSelection && !entry.isSelected && !isHovered;
-              
-              return (
-                <Cell
-                  key={entry.name}
-                  fill={entry.color}
-                  style={{
-                    transform: isActive ? 'scale(1.08)' : 'scale(1)',
-                    transformOrigin: 'center',
-                    transition: 'all 200ms ease-out',
-                    cursor: onSectorClick ? 'pointer' : 'default',
-                    filter: isActive
-                      ? `drop-shadow(0 0 10px ${entry.color}88)`
-                      : 'none',
-                    opacity: isDimmed ? 0.4 : 1,
-                  }}
-                  onClick={() => onSectorClick?.(entry.displayName)}
-                />
-              );
-            })}
-            </Pie>
-            <Tooltip content={<CustomTooltip />} />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Legend */}
-      <div className="mt-4 space-y-1">
-        {chartData.slice(0, 5).map((item, index) => {
-          const isHovered = hoveredIndex === index;
-          const isActive = item.isSelected || isHovered;
-          const isDimmed = hasSelection && !item.isSelected && !isHovered;
+      {/* Legend - Right-aligned text, left-aligned percentages, with scrolling */}
+      <div 
+        className="flex-1 flex flex-col mt-5 px-2 overflow-y-auto max-h-[250px]"
+        onMouseLeave={() => setHoveredSectorId(null)}
+      >
+        {chartData.map((item) => {
+          const isHovered = hoveredSectorId === item.id;
+          const isSelected = selectedSector === item.id;
+          const isActive = isHovered || isSelected;
+          const isDimmed = hasSelection && !isSelected && !isHovered;
           
           return (
             <div
-              key={item.name}
-              role={onSectorClick ? 'button' : undefined}
-              tabIndex={onSectorClick ? 0 : undefined}
-              className="flex items-center justify-between text-xs py-1.5 px-2 -mx-2 rounded-lg"
-              onMouseEnter={() => setHoveredIndex(index)}
-              onMouseLeave={() => setHoveredIndex(null)}
-              onClick={() => onSectorClick?.(item.displayName)}
+              key={item.id}
+              role="button"
+              tabIndex={0}
+              className="flex items-center justify-between py-2 rounded-lg px-2 -mx-2"
+              style={{
+                opacity: isDimmed ? 0.4 : 1,
+                backgroundColor: isSelected ? `${item.color}15` : 'transparent',
+                boxShadow: isSelected ? `inset 0 0 0 1px ${item.color}40` : 'none',
+                cursor: onSectorClick ? 'pointer' : 'default',
+                transition: 'all 250ms ease-out',
+              }}
+              onClick={() => onSectorClick?.(item.id)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  onSectorClick?.(item.displayName);
+                  onSectorClick?.(item.id);
                 }
               }}
-              style={{
-                opacity: isDimmed ? 0.4 : 1,
-                backgroundColor: item.isSelected ? `${item.color}15` : isHovered ? '#F7F7F8' : 'transparent',
-                boxShadow: item.isSelected ? `inset 0 0 0 1px ${item.color}40` : 'none',
-                cursor: onSectorClick ? 'pointer' : 'default',
-                transition: 'all 200ms ease-out',
-              }}
+              onMouseEnter={() => setHoveredSectorId(item.id)}
+              onMouseLeave={() => setHoveredSectorId(null)}
             >
-              <div className="flex items-center gap-2">
+              {/* Left Side: Colored Dot + Name */}
+              <div className="flex items-center gap-2 pr-4">
                 <div
                   className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                   style={{ 
                     backgroundColor: item.color,
                     transform: isActive ? 'scale(1.3)' : 'scale(1)',
                     boxShadow: isActive ? `0 0 6px ${item.color}66` : 'none',
-                    transition: 'all 200ms ease-out',
+                    transition: 'all 250ms ease-out',
                   }}
                 />
                 <SensitiveData 
-                  as="span" 
-                  className="font-medium"
-                  style={{
+                  as="span"
+                  className="text-right"
+                  style={{ 
                     color: isActive ? '#303150' : '#7E7F90',
-                    fontWeight: isActive ? 700 : 500,
-                    transition: 'all 200ms ease-out',
+                    fontWeight: isActive ? 700 : 400,
+                    fontSize: isActive ? '16px' : '14px',
+                    transition: 'all 250ms ease-out',
                   }}
                 >
-                  {item.displayName || SECTOR_NAMES[item.name] || item.name}
+                  {item.displayName}
                 </SensitiveData>
               </div>
-              <SensitiveData 
-                as="span" 
-                style={{
-                  color: isActive ? '#303150' : '#BDBDCB',
-                  fontWeight: isActive ? 600 : 400,
-                  transition: 'all 200ms ease-out',
-                }}
-              >
-                {item.percent.toFixed(0)}%
-              </SensitiveData>
+              
+              {/* Right Side: Amount (slides in) + Percentage */}
+              <div className="flex items-center gap-2 pl-4">
+                {/* Amount - slides in from left, pushes percentage right */}
+                <SensitiveData 
+                  as="span"
+                  style={{ 
+                    color: '#303150',
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    opacity: isActive ? 1 : 0,
+                    maxWidth: isActive ? '120px' : '0px',
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                    transform: isActive ? 'translateX(0)' : 'translateX(-12px)',
+                    transition: 'all 250ms ease-out',
+                  }}
+                >
+                  {formatCurrency(item.value)}
+                </SensitiveData>
+                
+                {/* Percentage */}
+                <SensitiveData 
+                  as="span"
+                  className="text-left"
+                  style={{ 
+                    color: isActive ? '#303150' : '#7E7F90',
+                    fontWeight: isActive ? 700 : 400,
+                    fontSize: isActive ? '16px' : '14px',
+                    minWidth: '40px',
+                    transition: 'all 250ms ease-out',
+                  }}
+                >
+                  {item.percent.toFixed(0)}%
+                </SensitiveData>
+              </div>
             </div>
           );
         })}
-        {chartData.length > 5 && (
-          <p className="text-xs text-[#BDBDCB] text-center pt-1">
-            +{chartData.length - 5} סקטורים נוספים
-          </p>
-        )}
       </div>
     </div>
   );
 }
 
 export default SectorPieChart;
-

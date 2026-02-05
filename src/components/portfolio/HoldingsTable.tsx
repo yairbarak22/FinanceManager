@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, Minus, Trash2, Filter, X } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Trash2, Filter, X, Banknote, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SensitiveData } from '../common/SensitiveData';
 import InfoTooltip from '@/components/ui/InfoTooltip';
@@ -113,6 +113,12 @@ interface HoldingsTableProps {
   selectedSector?: string | null;
   /** Callback to clear the sector filter */
   onClearSectorFilter?: () => void;
+  /** Cash balance in portfolio */
+  cashBalance?: number;
+  /** Cash weight percentage in portfolio */
+  cashWeight?: number;
+  /** Callback to edit cash balance */
+  onEditCash?: () => void;
 }
 
 // Sector translation map (same as in marketService.ts)
@@ -311,6 +317,9 @@ export function HoldingsTable({
   onDelete,
   selectedSector,
   onClearSectorFilter,
+  cashBalance,
+  cashWeight,
+  onEditCash,
 }: HoldingsTableProps) {
   // Filter holdings by selected sector
   const filteredHoldings = useMemo(() => {
@@ -336,14 +345,16 @@ export function HoldingsTable({
     );
   }
 
+  // Check if className includes flex-1 or h-full to use flex/full height instead of fixed height
+  const useFlexHeight = className.includes('flex-1') || className.includes('h-full');
+  
   return (
     <div
       className={`bg-[#FFFFFF] rounded-3xl overflow-hidden flex flex-col ${className}`}
       style={{
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
         fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-        height: maxHeight || '35rem',
-        minHeight: maxHeight || '35rem',
+        ...(useFlexHeight ? {} : { height: maxHeight || '35rem', minHeight: maxHeight || '35rem' }),
       }}
       dir="rtl"
     >
@@ -353,7 +364,9 @@ export function HoldingsTable({
           <h3 className="text-lg font-semibold text-[#303150]">אחזקות</h3>
           <div className="flex items-center gap-2">
             <span className="text-xs text-[#BDBDCB]">
-              {selectedSector ? `${filteredHoldings.length} מתוך ${holdings.length}` : `${holdings.length} נכסים`}
+              {selectedSector 
+                ? `${filteredHoldings.length} מתוך ${holdings.length}` 
+                : `${holdings.length + (cashBalance && cashBalance > 0 ? 1 : 0)} נכסים`}
             </span>
           </div>
         </div>
@@ -592,6 +605,136 @@ export function HoldingsTable({
                 )}
               </tr>
             ))}
+            
+            {/* Cash Row - Always shown at the end if cashBalance exists */}
+            {cashBalance !== undefined && cashBalance > 0 && (
+              <tr
+                onClick={onEditCash}
+                onKeyDown={
+                  onEditCash
+                    ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onEditCash();
+                        }
+                      }
+                    : undefined
+                }
+                role={onEditCash ? 'button' : undefined}
+                tabIndex={onEditCash ? 0 : undefined}
+                aria-label={onEditCash ? 'ערוך מזומן בתיק' : undefined}
+                className={`
+                  group relative transition-all duration-200 border-t-2 border-[#E8E8ED]
+                  ${onEditCash ? 'hover:bg-[#F7F7F8] cursor-pointer' : ''}
+                `}
+                style={{ backgroundColor: 'rgba(247, 247, 248, 0.3)' }}
+              >
+                {/* Edge Indicator */}
+                {onEdit && (
+                  <td className="w-0 p-0 relative">
+                    <div className="absolute right-0 top-3 bottom-3 w-0.5 bg-[#0DBACC] opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full" />
+                  </td>
+                )}
+
+                {/* Cash Name with Icon */}
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3 text-right">
+                    <div 
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ background: 'rgba(13, 186, 204, 0.1)' }}
+                    >
+                      <Banknote className="w-4 h-4 text-[#0DBACC]" strokeWidth={1.75} />
+                    </div>
+                    <div>
+                      <p
+                        className="text-sm font-bold text-[#303150]"
+                        style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                      >
+                        מזומן בתיק
+                      </p>
+                      <p
+                        className="text-xs text-[#BDBDCB]"
+                        style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                      >
+                        נזילות
+                      </p>
+                    </div>
+                  </div>
+                </td>
+
+                {/* Sparkline - empty for cash */}
+                <td className="hidden lg:table-cell px-2 py-3">
+                  <div className="flex justify-center">
+                    <span className="text-sm text-[#BDBDCB]">—</span>
+                  </div>
+                </td>
+
+                {/* Change - 0% for cash */}
+                <td className="px-2 py-3">
+                  <div className="flex justify-center">
+                    <ChangeIndicator change={0} />
+                  </div>
+                </td>
+
+                {/* Beta - N/A for cash */}
+                <td className="hidden md:table-cell px-2 py-3 text-center">
+                  <span
+                    className="text-sm text-[#BDBDCB]"
+                    style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                  >
+                    —
+                  </span>
+                </td>
+
+                {/* Allocation */}
+                <td className="px-2 py-3">
+                  <div className="flex justify-center">
+                    <AllocationBar weight={cashWeight || 0} />
+                  </div>
+                </td>
+
+                {/* Value */}
+                <td className="px-4 py-3 text-start">
+                  <SensitiveData
+                    as="p"
+                    className="text-sm font-bold text-[#303150]"
+                    style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                  >
+                    {cashBalance.toLocaleString('he-IL', {
+                      style: 'currency',
+                      currency: 'ILS',
+                      maximumFractionDigits: 0,
+                    })}
+                  </SensitiveData>
+                  <p
+                    className="text-xs text-[#BDBDCB]"
+                    style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                  >
+                    שקלים
+                  </p>
+                </td>
+
+                {/* Edit Action */}
+                {onDelete && (
+                  <td className="px-2 py-3">
+                    <div className="flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      {onEditCash && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditCash();
+                          }}
+                          className="p-2 rounded-lg bg-transparent hover:bg-[#E6F7FF] transition-all duration-200"
+                          aria-label="ערוך מזומן"
+                        >
+                          <Pencil className="w-4 h-4 text-[#7E7F90] hover:text-[#0DBACC]" strokeWidth={1.75} />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                )}
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, Wallet, AlertCircle, X, Loader2, Banknote, Pencil, Plus, TrendingUp } from 'lucide-react';
+import { RefreshCw, Wallet, AlertCircle, X, Loader2, Banknote, Plus, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { HoldingsTable } from './HoldingsTable';
 import { AddAssetButton } from './AddAssetButton';
@@ -955,7 +955,7 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Portfolio Summary Hero - 8 cols */}
-          <div className="lg:col-span-8">
+          <div className="lg:col-span-8 h-full">
             <PortfolioSummaryHero
               totalValue={data.equityILS}
               dailyChangeILS={data.dailyChangeILS}
@@ -970,7 +970,7 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
           </div>
 
           {/* Portfolio Settings Card - 4 cols */}
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-4 h-full">
             <PortfolioSettingsCard
               currency={currency}
               onCurrencyChange={setCurrency}
@@ -995,75 +995,27 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
           subtitle="פירוט האחזקות, ניתוח סיכונים ותובנות"
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Right Column (8 cols) - Holdings Table + Cash */}
-          <div className="lg:col-span-8 space-y-6">
-            {/* Holdings Table - Fixed max height with internal scroll */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6" style={{ height: '700px' }}>
+          {/* Right Column (8 cols) - Holdings Table (includes cash as last row) */}
+          <div className="lg:col-span-8 h-full">
             <HoldingsTable
               holdings={data.holdings}
               onEdit={(holding) => setEditingHolding(holding)}
               onDelete={(holding) => setDeletingHolding(holding)}
-              maxHeight="35rem"
               selectedSector={selectedSector}
               onClearSectorFilter={handleClearSectorFilter}
+              cashBalance={data.cashBalance}
+              cashWeight={data.cashWeight}
+              onEditCash={() => setIsEditingCash(true)}
+              className="h-full"
             />
-
-            {/* Cash Balance Card */}
-            <div
-              className="bg-[#FFFFFF] rounded-3xl p-6"
-              style={{ boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)' }}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center"
-                    style={{ background: 'rgba(13, 186, 204, 0.1)' }}
-                  >
-                    <Banknote className="w-6 h-6 text-[#0DBACC]" strokeWidth={1.75} />
-                  </div>
-                  <div>
-                    <p className="text-[0.8125rem] font-medium text-[#7E7F90]">מזומן בתיק</p>
-                    <p className="text-xl font-bold text-[#303150]">
-                      {(data.cashBalance ?? 0).toLocaleString('he-IL', {
-                        style: 'currency',
-                        currency: 'ILS',
-                        maximumFractionDigits: 0,
-                      })}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  {data.cashWeight !== undefined && data.cashWeight > 0 && (
-                    <div className="text-left">
-                      <p className="text-xs text-[#BDBDCB]">אחוז מהתיק</p>
-                      <p className="text-sm font-medium text-[#7E7F90]">{data.cashWeight.toFixed(1)}%</p>
-                    </div>
-                  )}
-                  <button
-                    onClick={() => setIsEditingCash(true)}
-                    className="p-2.5 rounded-xl border border-[#E8E8ED] bg-[#FFFFFF] hover:bg-[#F7F7F8] transition-colors"
-                  >
-                    <Pencil className="w-4 h-4 text-[#7E7F90]" strokeWidth={1.75} />
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Left Column (4 cols) - Smart Insights Panel */}
-          <div className="lg:col-span-4" style={{ minHeight: '700px' }}>
+          <div className="lg:col-span-4 h-full">
             <SmartInsightsPanel
               beta={data.beta}
               sectorAllocation={data.sectorAllocation}
-              diversificationScore={data.diversificationScore}
-              holdings={data.holdings.map((h) => ({
-                symbol: h.symbol,
-                name: h.name,
-                sector: h.sector,
-                weight: h.weight,
-                beta: h.beta,
-              }))}
-              riskLevel={data.riskLevel}
               onSectorClick={handleSectorClick}
               selectedSector={selectedSector}
             />
