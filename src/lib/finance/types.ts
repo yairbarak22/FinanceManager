@@ -122,6 +122,7 @@ export interface PortfolioAnalysis {
 
 export interface SectorAllocation {
   sector: string;
+  sectorHe?: string;
   value: number;
   percent: number;
 }
