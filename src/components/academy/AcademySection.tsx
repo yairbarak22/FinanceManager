@@ -2,13 +2,12 @@
 
 import Card from '@/components/ui/Card';
 import AcademyGrid from './AcademyGrid';
-import CompoundInterest from './CompoundInterest';
 
 /**
  * AcademySection - Financial Education Hub
  * 
  * Renders within the main dashboard (like investments tab)
- * Contains: Topic Grid and Calculator
+ * Contains: Topic Grid
  */
 export default function AcademySection() {
   return (
@@ -22,11 +21,6 @@ export default function AcademySection() {
       {/* Topics Grid */}
       <Card padding="md">
         <AcademyGrid />
-      </Card>
-
-      {/* Compound Interest Calculator */}
-      <Card padding="md">
-        <CompoundInterest />
       </Card>
 
       {/* Disclaimer */}
