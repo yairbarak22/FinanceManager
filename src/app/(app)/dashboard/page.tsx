@@ -648,6 +648,7 @@ export default function DashboardPage() {
       currentMonth={currentMonth}
       onOpenProfile={() => openModal('profile')}
       onOpenAccountSettings={() => openModal('accountSettings')}
+      showQuickAddFab={true}
       showMonthFilter={true}
     >
       {/* Loading State */}

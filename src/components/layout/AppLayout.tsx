@@ -19,6 +19,7 @@ interface AppLayoutProps {
   onOpenProfile?: () => void;
   onOpenAccountSettings?: () => void;
   showMonthFilter?: boolean;
+  showQuickAddFab?: boolean;
 }
 
 export default function AppLayout({
@@ -33,6 +34,7 @@ export default function AppLayout({
   onOpenProfile,
   onOpenAccountSettings,
   showMonthFilter = true,
+  showQuickAddFab = false,
 }: AppLayoutProps) {
   const { openModal, isModalOpen } = useModal();
 
@@ -73,8 +75,8 @@ export default function AppLayout({
         </main>
       </div>
 
-      {/* Quick Add FAB - All devices */}
-      <QuickAddFab />
+      {/* Quick Add FAB - Only show if enabled */}
+      {showQuickAddFab && <QuickAddFab />}
     </div>
   );
 }
