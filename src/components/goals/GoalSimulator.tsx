@@ -340,7 +340,7 @@ export default function GoalSimulator({ onCreateGoal, isCreating, onSuccess }: G
               value={currentAmount || ''}
               onChange={(e) => setCurrentAmount(Math.min(Number(e.target.value), targetAmount))}
               placeholder="0"
-              className="w-full py-3 pl-8 pr-20 rounded-xl border transition-colors focus:outline-none focus:ring-2 focus:ring-[#69ADFF] tabular-nums"
+              className="w-full py-3 pl-8 pr-4 rounded-xl border transition-colors focus:outline-none focus:ring-2 focus:ring-[#69ADFF] tabular-nums hide-spinner"
               style={{ 
                 borderColor: '#E8E8ED',
                 color: '#303150',
