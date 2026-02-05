@@ -610,23 +610,16 @@ export function HoldingsTable({
             {onEditCash && (
               <tr
                 onClick={onEditCash}
-                onKeyDown={
-                  onEditCash
-                    ? (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          onEditCash();
-                        }
-                      }
-                    : undefined
-                }
-                role={onEditCash ? 'button' : undefined}
-                tabIndex={onEditCash ? 0 : undefined}
-                aria-label={onEditCash ? 'ערוך מזומן בתיק' : undefined}
-                className={`
-                  group relative transition-all duration-200 border-t-2 border-[#E8E8ED]
-                  ${onEditCash ? 'hover:bg-[#F7F7F8] cursor-pointer' : ''}
-                `}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onEditCash();
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-label="ערוך מזומן בתיק"
+                className="group relative transition-all duration-200 border-t-2 border-[#E8E8ED] hover:bg-[#F7F7F8] cursor-pointer"
                 style={{ backgroundColor: 'rgba(247, 247, 248, 0.3)' }}
               >
                 {/* Edge Indicator */}
