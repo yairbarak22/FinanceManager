@@ -4,6 +4,7 @@ import GoogleProvider from 'next-auth/providers/google';
 import { prisma } from './prisma';
 import { config } from './config';
 import { logAuditEvent, AuditAction } from './auditLog';
+import { processCalculatorInvites } from './calculatorInvites';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as NextAuthOptions['adapter'],
@@ -27,6 +28,18 @@ export const authOptions: NextAuthOptions = {
           action: AuditAction.LOGIN,
           metadata: { provider: 'google' },
         });
+      }
+    },
+    async createUser({ user }) {
+      // Process calculator invites when a new user signs up
+      // This unlocks pro access for the user who invited them
+      if (user?.email) {
+        try {
+          await processCalculatorInvites(user.email);
+        } catch (error) {
+          console.error('[Auth] Failed to process calculator invites:', error);
+          // Don't block user creation if this fails
+        }
       }
     },
   },

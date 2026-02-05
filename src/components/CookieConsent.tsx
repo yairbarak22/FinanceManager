@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Cookie, X } from 'lucide-react';
+import { Cookie } from 'lucide-react';
 
 export default function CookieConsent() {
   const [showBanner, setShowBanner] = useState(false);
@@ -21,11 +21,6 @@ export default function CookieConsent() {
     setShowBanner(false);
     // Dispatch event to trigger analytics loading
     window.dispatchEvent(new Event('analytics-consent-change'));
-  };
-
-  const handleDecline = () => {
-    localStorage.setItem('analytics-consent', 'false');
-    setShowBanner(false);
   };
 
   if (!showBanner) return null;
@@ -49,28 +44,13 @@ export default function CookieConsent() {
               לא נשלח נתונים פיננסיים אישיים - רק מידע סטטיסטי על השימוש באפליקציה.
             </p>
           </div>
-
-          {/* Close button for mobile */}
-          <button
-            onClick={handleDecline}
-            className="md:hidden p-1 rounded-lg hover:bg-slate-100 transition-colors"
-            aria-label="סגור"
-          >
-            <X className="w-5 h-5 text-slate-400" />
-          </button>
         </div>
 
-        {/* Buttons */}
-        <div className="flex items-center justify-end gap-3 mt-4">
-          <button
-            onClick={handleDecline}
-            className="hidden md:block px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
-          >
-            לא תודה
-          </button>
+        {/* Button */}
+        <div className="flex items-center justify-center mt-4">
           <button
             onClick={handleAccept}
-            className="px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+            className="w-full px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
           >
             אישור
           </button>
@@ -79,4 +59,3 @@ export default function CookieConsent() {
     </div>
   );
 }
-

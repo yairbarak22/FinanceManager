@@ -16,6 +16,7 @@ import {
   Sparkles,
   LogOut,
   Target,
+  Calculator,
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -74,11 +75,15 @@ const navItems: NavItem[] = [
   },
   { 
     id: 'help', 
-    label: 'ידע פיננסי', 
+    label: 'מידע פיננסי', 
     path: '/help', 
     icon: BookOpen,
-    iconBg: 'bg-indigo-100',
-    iconColor: 'text-indigo-600',
+    iconBg: 'bg-[#E3D6FF]',
+    iconColor: 'text-[#9F7FE0]',
+    subItems: [
+      { id: 'general-knowledge', label: 'ידע כללי', path: '/help', icon: BookOpen },
+      { id: 'calculators', label: 'מחשבונים', path: '/calculators', icon: Calculator },
+    ],
   },
   { 
     id: 'contact', 
@@ -97,7 +102,7 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
   const { isCollapsed, isMobileOpen, closeMobileSidebar } = useSidebar();
   const { startTour } = useOnboarding();
   const [expandedMenu, setExpandedMenu] = useState<string | null>(
-    pathname.startsWith('/help') ? 'help' : null
+    pathname.startsWith('/help') || pathname.startsWith('/calculators') ? 'help' : null
   );
   const [mounted, setMounted] = useState(false);
 

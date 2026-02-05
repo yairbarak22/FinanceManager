@@ -1,9 +1,9 @@
 'use client';
 
-import { GoogleAnalytics } from '@next/third-parties/google';
+import Script from 'next/script';
 import { useEffect, useState } from 'react';
 
-const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+const GA_MEASUREMENT_ID = 'G-RBSC0M8FV3';
 
 export default function Analytics() {
   const [consentGiven, setConsentGiven] = useState<boolean | null>(null);
@@ -30,11 +30,30 @@ export default function Analytics() {
     return () => window.removeEventListener('analytics-consent-change', handleConsentChange);
   }, []);
 
-  // Don't load analytics if no consent or no ID
-  if (!consentGiven || !GA_MEASUREMENT_ID) {
+  // Don't load analytics if no consent
+  if (!consentGiven) {
     return null;
   }
 
-  return <GoogleAnalytics gaId={GA_MEASUREMENT_ID} />;
+  return (
+    <>
+      {/* Google tag (gtag.js) */}
+      <Script
+        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+        strategy="afterInteractive"
+      />
+      <Script
+        id="google-analytics"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}');
+          `,
+        }}
+      />
+    </>
+  );
 }
-

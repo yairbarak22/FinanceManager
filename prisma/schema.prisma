@@ -15,6 +15,7 @@ model User {
   emailVerified         DateTime?
   image                 String?
   hasSeenOnboarding     Boolean                @default(false)
+  hasProAccess          Boolean                @default(false) // Pro calculator access (unlocked via referral)
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   accounts              Account[]
@@ -31,6 +32,7 @@ model User {
   profile               UserProfile?
   sharedAccountMembers  SharedAccountMember[]
   merchantMappings      MerchantCategoryMap[]
+  calculatorInvites     CalculatorInvite[]     // Invites sent by this user
 }
 
 model Account {
@@ -326,6 +328,32 @@ model AccountInvite {
 
   @@index([sharedAccountId])
   @@index([token])
+}
+
+// ============================================
+// CALCULATOR INVITES - Viral unlock mechanism
+// ============================================
+enum CalcInviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+}
+
+model CalculatorInvite {
+  id            String           @id @default(cuid())
+  inviterId     String                              // User who sent the invite
+  inviteeEmail  String                              // Email of invited friend
+  token         String           @unique @default(cuid())
+  status        CalcInviteStatus @default(PENDING)  // PENDING | ACCEPTED | EXPIRED
+  createdAt     DateTime         @default(now())
+  expiresAt     DateTime                            // 30 days validity
+  acceptedAt    DateTime?                           // When friend signed up
+  inviter       User             @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+
+  @@index([inviterId])
+  @@index([inviteeEmail])
+  @@index([token])
+  @@index([status])
 }
 
 // ============================================

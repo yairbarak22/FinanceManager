@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Pencil } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
 interface SliderProps {
@@ -13,6 +14,7 @@ interface SliderProps {
   formatValue?: (value: number) => string;
   suffix?: string;
   prefix?: string;
+  editable?: boolean;
 }
 
 export default function Slider({
@@ -25,18 +27,101 @@ export default function Slider({
   formatValue,
   suffix = '',
   prefix = '',
+  editable = true,
 }: SliderProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingValue, setEditingValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const percentage = ((value - min) / (max - min)) * 100;
 
   const displayValue = formatValue 
     ? formatValue(value) 
     : `${prefix}${value.toLocaleString('he-IL')}${suffix}`;
 
+  // Focus input when editing starts
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const handleEditClick = () => {
+    if (!editable) return;
+    setEditingValue(value.toString());
+    setIsEditing(true);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    if (/^-?\d*\.?\d*$/.test(newValue) || newValue === '') {
+      setEditingValue(newValue);
+    }
+  };
+
+  const saveEditValue = () => {
+    let newValue = parseFloat(editingValue) || 0;
+    // Apply min/max constraints
+    if (newValue < min) newValue = min;
+    if (newValue > max) newValue = max;
+    onChange(newValue);
+    setIsEditing(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      saveEditValue();
+    } else if (e.key === 'Escape') {
+      setIsEditing(false);
+    }
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium text-slate-700">{label}</label>
-        <span className="text-lg font-bold text-slate-900 tabular-nums">{displayValue}</span>
+        <label className="text-sm font-medium text-[#7E7F90]">{label}</label>
+        {isEditing ? (
+          <div className="relative">
+            {suffix && (
+              <span 
+                className="absolute left-2 top-1/2 -translate-y-1/2 text-sm font-medium text-[#7E7F90]"
+              >
+                {suffix}
+              </span>
+            )}
+            <input
+              ref={inputRef}
+              type="text"
+              inputMode="numeric"
+              value={editingValue}
+              onChange={handleInputChange}
+              onBlur={saveEditValue}
+              onKeyDown={handleKeyDown}
+              className="w-32 py-1 pl-6 pr-2 text-lg font-bold tabular-nums rounded-lg border-2 text-left focus:outline-none"
+              style={{ 
+                borderColor: '#69ADFF',
+                color: '#303150',
+                direction: 'ltr',
+              }}
+            />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleEditClick}
+            className={`group text-lg font-bold text-[#303150] tabular-nums px-2 py-1 rounded-lg transition-all flex items-center gap-1 ${
+              editable ? 'hover:bg-[#F7F7F8] cursor-pointer' : ''
+            }`}
+            title={editable ? 'לחץ לעריכה ידנית' : undefined}
+            disabled={!editable}
+          >
+            {displayValue}
+            {editable && (
+              <Pencil className="w-3 h-3 text-[#BDBDCB] opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+            )}
+          </button>
+        )}
       </div>
       
       <div className="relative">
@@ -47,14 +132,14 @@ export default function Slider({
           step={step}
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full h-2 bg-slate-200 rounded-full appearance-none cursor-pointer
+          className="w-full h-2 bg-[#E8E8ED] rounded-full appearance-none cursor-pointer
             [&::-webkit-slider-thumb]:appearance-none
             [&::-webkit-slider-thumb]:w-5
             [&::-webkit-slider-thumb]:h-5
             [&::-webkit-slider-thumb]:rounded-full
             [&::-webkit-slider-thumb]:bg-white
             [&::-webkit-slider-thumb]:border-2
-            [&::-webkit-slider-thumb]:border-indigo-500
+            [&::-webkit-slider-thumb]:border-[#69ADFF]
             [&::-webkit-slider-thumb]:shadow-md
             [&::-webkit-slider-thumb]:cursor-pointer
             [&::-webkit-slider-thumb]:transition-all
@@ -65,15 +150,15 @@ export default function Slider({
             [&::-moz-range-thumb]:rounded-full
             [&::-moz-range-thumb]:bg-white
             [&::-moz-range-thumb]:border-2
-            [&::-moz-range-thumb]:border-indigo-500
+            [&::-moz-range-thumb]:border-[#69ADFF]
             [&::-moz-range-thumb]:shadow-md
             [&::-moz-range-thumb]:cursor-pointer
             focus:outline-none
             focus-visible:ring-2
-            focus-visible:ring-indigo-500
+            focus-visible:ring-[#69ADFF]
             focus-visible:ring-offset-2"
           style={{
-            background: `linear-gradient(to left, #6366f1 0%, #6366f1 ${percentage}%, #e2e8f0 ${percentage}%, #e2e8f0 100%)`,
+            background: `linear-gradient(to left, #69ADFF 0%, #69ADFF ${percentage}%, #E8E8ED ${percentage}%, #E8E8ED 100%)`,
           }}
           aria-label={label}
           aria-valuemin={min}
@@ -82,7 +167,7 @@ export default function Slider({
         />
       </div>
       
-      <div className="flex justify-between text-xs text-slate-400">
+      <div className="flex justify-between text-xs text-[#BDBDCB]">
         <span>{formatValue ? formatValue(min) : `${prefix}${min.toLocaleString('he-IL')}${suffix}`}</span>
         <span>{formatValue ? formatValue(max) : `${prefix}${max.toLocaleString('he-IL')}${suffix}`}</span>
       </div>

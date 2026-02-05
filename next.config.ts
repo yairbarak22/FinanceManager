@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://accounts.google.com https://api.openai.com https://*.vercel-storage.com https://*.smartlook.com https://*.smartlook.cloud wss://*.smartlook.com wss://*.smartlook.cloud",
+              "connect-src 'self' https://accounts.google.com https://api.openai.com https://*.vercel-storage.com https://*.smartlook.com https://*.smartlook.cloud wss://*.smartlook.com wss://*.smartlook.cloud https://www.google-analytics.com https://analytics.google.com",
               "frame-src 'self' https://accounts.google.com",
               "frame-ancestors 'none'",
               "form-action 'self'",
