@@ -13,6 +13,56 @@ interface FIRECalcProps {
   showHeader?: boolean;
 }
 
+// Custom Tooltip component for clean design
+interface TooltipPayload {
+  dataKey: string;
+  value: number;
+  color: string;
+  name: string;
+}
+
+const CustomTooltip = ({ 
+  active, 
+  payload, 
+  label 
+}: { 
+  active?: boolean; 
+  payload?: TooltipPayload[]; 
+  label?: string | number;
+}) => {
+  if (!active || !payload || !payload.length) return null;
+  
+  const nameMap: Record<string, string> = {
+    savings: 'הון מצטבר',
+    fireTarget: 'יעד FIRE',
+  };
+  
+  return (
+    <div 
+      className="bg-white px-4 py-3 rounded-2xl border-0"
+      style={{ 
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+      }}
+      dir="rtl"
+    >
+      <p className="font-semibold mb-2 text-sm text-[#303150]">
+        שנה {label}
+      </p>
+      {payload.map((entry, index) => (
+        <div key={index} className="flex items-center gap-2 text-sm py-0.5">
+          <div 
+            className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
+            style={{ backgroundColor: entry.color }} 
+          />
+          <span className="text-[#7E7F90]">{nameMap[entry.dataKey] || entry.name}:</span>
+          <span className="font-medium text-[#303150]">{formatCurrency(entry.value)}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export default function FIRECalc({ className = '', showHeader = false }: FIRECalcProps) {
   // Calculator inputs
   const [monthlyExpenses, setMonthlyExpenses] = useState(12000);
@@ -36,6 +86,15 @@ export default function FIRECalc({ className = '', showHeader = false }: FIRECal
         fireTarget: row.fireNumber,
       }));
   }, [fireData]);
+
+  // Calculate Y-axis domain with padding
+  const yAxisDomain = useMemo(() => {
+    const maxValue = Math.max(
+      fireData.fireNumber,
+      ...chartData.map(d => d.savings)
+    );
+    return [0, Math.ceil(maxValue * 1.1)];
+  }, [chartData, fireData.fireNumber]);
 
   // Determine status
   const isFIREAchievable = fireData.yearsToFIRE < 100;
@@ -140,7 +199,7 @@ export default function FIRECalc({ className = '', showHeader = false }: FIRECal
           <div className="bg-[#F7F7F8] rounded-3xl p-4">
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
+                <AreaChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
                   <defs>
                     <linearGradient id="savingsGradientFIRE" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#FFB84D" stopOpacity={0.4} />
@@ -149,34 +208,24 @@ export default function FIRECalc({ className = '', showHeader = false }: FIRECal
                   </defs>
                   <XAxis 
                     dataKey="year" 
+                    padding={{ left: 10, right: 10 }}
                     axisLine={false}
                     tickLine={false}
                     tick={{ fill: '#7E7F90', fontSize: 11 }}
                   />
                   <YAxis 
+                    domain={yAxisDomain}
+                    allowDataOverflow={false}
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#7E7F90', fontSize: 11 }}
+                    tick={{ fill: '#7E7F90', fontSize: 10, dx: -3 }}
                     tickFormatter={(value) => {
                       if (value >= 1000000) return `₪${(value / 1000000).toFixed(1)}M`;
                       return `₪${(value / 1000).toFixed(0)}K`;
                     }}
-                    width={55}
+                    width={60}
                   />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #E8E8ED',
-                      borderRadius: '12px',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                      direction: 'rtl',
-                    }}
-                    formatter={(value: number, name: string) => [
-                      formatCurrency(value),
-                      name === 'savings' ? 'הון מצטבר' : 'יעד FIRE'
-                    ]}
-                    labelFormatter={(label) => `שנה ${label}`}
-                  />
+                  <Tooltip content={<CustomTooltip />} />
                   {/* FIRE target line */}
                   <ReferenceLine 
                     y={fireData.fireNumber} 

@@ -78,7 +78,7 @@ export default function Slider({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium text-[#7E7F90]">{label}</label>
         {isEditing ? (

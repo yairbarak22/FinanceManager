@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Building2, TrendingDown, Sparkles, ArrowDownRight } from 'lucide-react';
 import { CurrencySlider, PercentageSlider, YearsSlider } from '@/components/ui/Slider';
 import { formatCurrency } from '@/lib/utils';
@@ -12,6 +12,57 @@ interface MortgageCalcProps {
   className?: string;
   showHeader?: boolean;
 }
+
+// Custom Tooltip component for clean design
+interface TooltipPayload {
+  dataKey: string;
+  value: number;
+  color: string;
+  name: string;
+}
+
+const CustomTooltip = ({ 
+  active, 
+  payload, 
+  label 
+}: { 
+  active?: boolean; 
+  payload?: TooltipPayload[]; 
+  label?: string | number;
+}) => {
+  if (!active || !payload || !payload.length) return null;
+  
+  const nameMap: Record<string, string> = {
+    principal: 'קרן',
+    interest: 'ריבית',
+    balance: 'יתרה',
+  };
+  
+  return (
+    <div 
+      className="bg-white px-4 py-3 rounded-2xl border-0"
+      style={{ 
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+      }}
+      dir="rtl"
+    >
+      <p className="font-semibold mb-2 text-sm text-[#303150]">
+        שנה {label}
+      </p>
+      {payload.map((entry, index) => (
+        <div key={index} className="flex items-center gap-2 text-sm py-0.5">
+          <div 
+            className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
+            style={{ backgroundColor: entry.color }} 
+          />
+          <span className="text-[#7E7F90]">{nameMap[entry.dataKey] || entry.name}:</span>
+          <span className="font-medium text-[#303150]">{formatCurrency(entry.value)}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 export default function MortgageCalc({ className = '', showHeader = false }: MortgageCalcProps) {
   // Calculator inputs
@@ -34,6 +85,14 @@ export default function MortgageCalc({ className = '', showHeader = false }: Mor
       balance: row.balance,
     }));
   }, [mortgageData]);
+
+  // Calculate Y-axis domain with padding
+  const yAxisDomain = useMemo(() => {
+    const maxValue = Math.max(
+      ...chartData.map(d => d.principal + d.interest)
+    );
+    return [0, Math.ceil(maxValue * 1.1)];
+  }, [chartData]);
 
   const interestPercentage = mortgageData.totalPayment > 0
     ? Math.round((mortgageData.totalInterest / mortgageData.totalPayment) * 100)
@@ -127,7 +186,7 @@ export default function MortgageCalc({ className = '', showHeader = false }: Mor
           <div className="bg-[#F7F7F8] rounded-3xl p-4">
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
+                <AreaChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
                   <defs>
                     <linearGradient id="principalGradientMortgage" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#9F7FE0" stopOpacity={0.4} />
@@ -140,31 +199,21 @@ export default function MortgageCalc({ className = '', showHeader = false }: Mor
                   </defs>
                   <XAxis 
                     dataKey="year" 
+                    padding={{ left: 30, right: 10 }}
                     axisLine={false}
                     tickLine={false}
                     tick={{ fill: '#7E7F90', fontSize: 11 }}
                   />
                   <YAxis 
+                    domain={yAxisDomain}
+                    allowDataOverflow={false}
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: '#7E7F90', fontSize: 11 }}
+                    tick={{ fill: '#7E7F90', fontSize: 10, dx: -3 }}
                     tickFormatter={(value) => `₪${(value / 1000).toFixed(0)}K`}
-                    width={55}
+                    width={60}
                   />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'white',
-                      border: '1px solid #E8E8ED',
-                      borderRadius: '12px',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                      direction: 'rtl',
-                    }}
-                    formatter={(value: number, name: string) => [
-                      formatCurrency(value),
-                      name === 'principal' ? 'קרן' : name === 'interest' ? 'ריבית' : 'יתרה'
-                    ]}
-                    labelFormatter={(label) => `שנה ${label}`}
-                  />
+                  <Tooltip content={<CustomTooltip />} />
                   <Area
                     type="monotone"
                     dataKey="principal"
