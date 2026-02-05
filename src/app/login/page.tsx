@@ -27,17 +27,15 @@ function LoginContent() {
         overflow: 'hidden',
       }}
     >
-      {/* Tech Grid Pattern Overlay - REMOVED */}
-
       {/* Ambient Glow Effects */}
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         <div
           style={{
             position: 'absolute',
-            top: '-150px',
-            right: '-150px',
-            width: '500px',
-            height: '500px',
+            top: '-9.375rem',
+            right: '-9.375rem',
+            width: '31.25rem',
+            height: '31.25rem',
             borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 60%)',
           }}
@@ -45,10 +43,10 @@ function LoginContent() {
         <div
           style={{
             position: 'absolute',
-            bottom: '-150px',
-            left: '-150px',
-            width: '600px',
-            height: '600px',
+            bottom: '-9.375rem',
+            left: '-9.375rem',
+            width: '37.5rem',
+            height: '37.5rem',
             borderRadius: '50%',
             background: 'radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 60%)',
           }}
@@ -65,18 +63,23 @@ function LoginContent() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '48px 24px',
+          padding: 'clamp(1.5rem, 5vw, 3rem) clamp(1rem, 4vw, 1.5rem)',
         }}
       >
         {/* Hero Headline */}
         <h2
           style={{
-            fontSize: '32px',
+            fontSize: 'clamp(1.25rem, 4vw, 2rem)',
             fontWeight: 500,
             color: '#1D1D1F',
             textAlign: 'center',
-            marginBottom: '40px',
+            marginBottom: 'clamp(1.5rem, 4vw, 2.5rem)',
             fontFamily: 'var(--font-heebo)',
+            lineHeight: 1.4,
+            wordBreak: 'keep-all',
+            overflowWrap: 'break-word',
+            maxWidth: '100%',
+            padding: '0 0.5rem',
           }}
         >
           העתיד הכלכלי שלך מתחיל כאן.
@@ -85,10 +88,10 @@ function LoginContent() {
         {/* Glassmorphism Card */}
         <div
           style={{
-            maxWidth: '480px',
+            maxWidth: 'min(30rem, 92vw)',
             width: '100%',
-            padding: '48px',
-            borderRadius: '32px',
+            padding: 'clamp(1.5rem, 5vw, 3rem)',
+            borderRadius: 'clamp(1.5rem, 4vw, 2rem)',
             direction: 'rtl',
 
             // Glassmorphism Effect - Frosted glass on warm background
@@ -98,7 +101,7 @@ function LoginContent() {
 
             // Border & Shadow - Rim light effect
             border: '1px solid rgba(255, 255, 255, 0.5)',
-            boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 1.25rem 2.5rem -0.625rem rgba(0, 0, 0, 0.1)',
           }}
         >
           {/* Logo - NETO */}
@@ -107,23 +110,23 @@ function LoginContent() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '0px',
-              marginBottom: '32px',
+              gap: '0',
+              marginBottom: 'clamp(1.5rem, 4vw, 2rem)',
             }}
           >
             <PieChart
               style={{
-                width: '50px',
-                height: '50px',
+                width: 'clamp(2.5rem, 6vw, 3.125rem)',
+                height: 'clamp(2.5rem, 6vw, 3.125rem)',
                 color: '#2B4699',
-                marginTop: '0px',
-                marginLeft: '-2px',
+                marginTop: '0',
+                marginLeft: '-0.125rem',
               }}
               strokeWidth={3}
             />
             <span
               style={{
-                fontSize: '48px',
+                fontSize: 'clamp(2.5rem, 7vw, 3rem)',
                 fontWeight: 900,
                 color: '#1D1D1F',
                 letterSpacing: '-0.02em',
@@ -132,19 +135,20 @@ function LoginContent() {
             >
               NET
             </span>
-
           </div>
 
           {/* Main Headline */}
           <h1
             style={{
-              fontSize: '28px',
+              fontSize: 'clamp(1.25rem, 4vw, 1.75rem)',
               fontWeight: 600,
               color: '#1D1D1F',
               textAlign: 'center',
-              marginBottom: '32px',
-              lineHeight: 1.3,
+              marginBottom: 'clamp(1.5rem, 4vw, 2rem)',
+              lineHeight: 1.4,
               fontFamily: 'var(--font-heebo), sans-serif',
+              wordBreak: 'keep-all',
+              overflowWrap: 'break-word',
             }}
           >
             ניהול הון חכם
@@ -154,15 +158,23 @@ function LoginContent() {
           {error && (
             <div
               style={{
-                marginBottom: '24px',
-                padding: '16px',
+                marginBottom: '1.5rem',
+                padding: 'clamp(0.75rem, 2vw, 1rem)',
                 backgroundColor: 'rgba(254, 242, 242, 0.9)',
                 border: '1px solid rgba(254, 202, 202, 0.9)',
-                borderRadius: '16px',
+                borderRadius: '1rem',
                 textAlign: 'center',
               }}
             >
-              <p style={{ color: '#DC2626', fontSize: '14px', fontWeight: 500, fontFamily: 'var(--font-heebo)' }}>
+              <p style={{ 
+                color: '#DC2626', 
+                fontSize: 'clamp(0.8125rem, 2vw, 0.875rem)', 
+                fontWeight: 500, 
+                fontFamily: 'var(--font-heebo)',
+                lineHeight: 1.5,
+                wordBreak: 'keep-all',
+                overflowWrap: 'break-word',
+              }}>
                 {error === 'OAuthAccountNotLinked'
                   ? 'כתובת האימייל כבר קיימת במערכת עם ספק אחר'
                   : 'שגיאה בהתחברות. נסה שוב.'}
@@ -171,34 +183,37 @@ function LoginContent() {
           )}
 
           {/* Features List */}
-          <div style={{ marginBottom: '32px' }}>
+          <div style={{ marginBottom: 'clamp(1.5rem, 4vw, 2rem)' }}>
             {/* Feature 1 */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                marginBottom: '16px',
-                flexDirection: 'row-reverse', // Icon on right, text on left
+                gap: 'clamp(0.625rem, 2vw, 0.75rem)',
+                marginBottom: 'clamp(0.75rem, 2vw, 1rem)',
+                flexDirection: 'row-reverse',
               }}
             >
-
               <span
                 style={{
-                  fontSize: '16px',
+                  fontSize: 'clamp(0.875rem, 2.5vw, 1rem)',
                   color: '#1D1D1F',
                   fontWeight: 500,
                   fontFamily: 'var(--font-heebo), sans-serif',
                   flex: 1,
+                  minWidth: 0,
                   textAlign: 'right',
+                  lineHeight: 1.5,
+                  wordBreak: 'keep-all',
+                  overflowWrap: 'break-word',
                 }}
               >
                 מקסום זכויות והטבות בעזרת AI
               </span>
               <div
                 style={{
-                  width: '40px',
-                  height: '40px',
+                  width: 'clamp(2.25rem, 5vw, 2.5rem)',
+                  height: 'clamp(2.25rem, 5vw, 2.5rem)',
                   borderRadius: '50%',
                   backgroundColor: 'transparent',
                   border: '2px solid #1D1D1F',
@@ -208,38 +223,40 @@ function LoginContent() {
                   flexShrink: 0,
                 }}
               >
-                <Medal style={{ width: '20px', height: '20px', color: '#1D1D1F', strokeWidth: 1.5 }} />
+                <Medal style={{ width: '1.25rem', height: '1.25rem', color: '#1D1D1F', strokeWidth: 1.5 }} />
               </div>
             </div>
-
 
             {/* Feature 2 */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                marginBottom: '16px',
-                flexDirection: 'row-reverse', // Icon on right, text on left
+                gap: 'clamp(0.625rem, 2vw, 0.75rem)',
+                marginBottom: 'clamp(0.75rem, 2vw, 1rem)',
+                flexDirection: 'row-reverse',
               }}
             >
-
               <span
                 style={{
-                  fontSize: '16px',
+                  fontSize: 'clamp(0.875rem, 2.5vw, 1rem)',
                   color: '#1D1D1F',
                   fontWeight: 500,
                   fontFamily: 'var(--font-heebo), sans-serif',
                   flex: 1,
+                  minWidth: 0,
                   textAlign: 'right',
+                  lineHeight: 1.5,
+                  wordBreak: 'keep-all',
+                  overflowWrap: 'break-word',
                 }}
               >
                 השקעות וצמיחה פיננסית
               </span>
               <div
                 style={{
-                  width: '40px',
-                  height: '40px',
+                  width: 'clamp(2.25rem, 5vw, 2.5rem)',
+                  height: 'clamp(2.25rem, 5vw, 2.5rem)',
                   borderRadius: '50%',
                   backgroundColor: 'transparent',
                   border: '2px solid #1D1D1F',
@@ -249,7 +266,7 @@ function LoginContent() {
                   flexShrink: 0,
                 }}
               >
-                <Rocket style={{ width: '20px', height: '20px', color: '#1D1D1F', strokeWidth: 1.5 }} />
+                <Rocket style={{ width: '1.25rem', height: '1.25rem', color: '#1D1D1F', strokeWidth: 1.5 }} />
               </div>
             </div>
 
@@ -258,28 +275,31 @@ function LoginContent() {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                marginBottom: '16px',
-                flexDirection: 'row-reverse', // Icon on right, text on left
+                gap: 'clamp(0.625rem, 2vw, 0.75rem)',
+                marginBottom: 'clamp(0.75rem, 2vw, 1rem)',
+                flexDirection: 'row-reverse',
               }}
             >
-
               <span
                 style={{
-                  fontSize: '16px',
+                  fontSize: 'clamp(0.875rem, 2.5vw, 1rem)',
                   color: '#1D1D1F',
                   fontWeight: 500,
                   fontFamily: 'var(--font-heebo), sans-serif',
                   flex: 1,
+                  minWidth: 0,
                   textAlign: 'right',
+                  lineHeight: 1.5,
+                  wordBreak: 'keep-all',
+                  overflowWrap: 'break-word',
                 }}
               >
                 שקיפות ותמונת מצב מלאה של ההון העצמי שלך
               </span>
               <div
                 style={{
-                  width: '40px',
-                  height: '40px',
+                  width: 'clamp(2.25rem, 5vw, 2.5rem)',
+                  height: 'clamp(2.25rem, 5vw, 2.5rem)',
                   borderRadius: '50%',
                   backgroundColor: 'transparent',
                   border: '2px solid #1D1D1F',
@@ -289,7 +309,7 @@ function LoginContent() {
                   flexShrink: 0,
                 }}
               >
-                <Eye style={{ width: '20px', height: '20px', color: '#1D1D1F', strokeWidth: 1.5 }} />
+                <Eye style={{ width: '1.25rem', height: '1.25rem', color: '#1D1D1F', strokeWidth: 1.5 }} />
               </div>
             </div>
           </div>
@@ -299,35 +319,38 @@ function LoginContent() {
             onClick={() => signIn('google', { callbackUrl })}
             style={{
               width: '100%',
-              padding: '16px 24px',
-              borderRadius: '14px',
+              padding: 'clamp(0.875rem, 2.5vw, 1rem) clamp(1rem, 3vw, 1.5rem)',
+              borderRadius: '0.875rem',
               border: 'none',
               cursor: 'pointer',
               background: '#2B4699',
               color: 'white',
-              fontSize: '16px',
+              fontSize: 'clamp(0.875rem, 2.5vw, 1rem)',
               fontWeight: 600,
               fontFamily: 'var(--font-heebo), sans-serif',
-              boxShadow: '0 4px 12px rgba(43, 70, 153, 0.3)',
+              boxShadow: '0 0.25rem 0.75rem rgba(43, 70, 153, 0.3)',
               transition: 'all 0.2s ease',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '12px',
+              gap: 'clamp(0.5rem, 2vw, 0.75rem)',
+              lineHeight: 1.4,
+              wordBreak: 'keep-all',
+              overflowWrap: 'break-word',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = '#1f3a7a';
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(43, 70, 153, 0.4)';
+              e.currentTarget.style.boxShadow = '0 0.375rem 1rem rgba(43, 70, 153, 0.4)';
               e.currentTarget.style.transform = 'translateY(-1px)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = '#2B4699';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(43, 70, 153, 0.3)';
+              e.currentTarget.style.boxShadow = '0 0.25rem 0.75rem rgba(43, 70, 153, 0.3)';
               e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
             <span>התחל עכשיו עם Google</span>
-            <svg style={{ width: '24px', height: '24px' }} viewBox="0 0 24 24">
+            <svg style={{ width: 'clamp(1.25rem, 3vw, 1.5rem)', height: 'clamp(1.25rem, 3vw, 1.5rem)', flexShrink: 0 }} viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -348,15 +371,17 @@ function LoginContent() {
           </button>
 
           {/* Legal Disclaimer & Privacy */}
-          <div style={{ marginTop: '24px', textAlign: 'center' }}>
+          <div style={{ marginTop: 'clamp(1rem, 3vw, 1.5rem)', textAlign: 'center' }}>
             {/* Terms of Service Agreement */}
             <p
               style={{
-                fontSize: '13px',
+                fontSize: 'clamp(0.75rem, 2vw, 0.8125rem)',
                 color: '#86868b',
                 lineHeight: 1.6,
-                marginBottom: '12px',
+                marginBottom: '0.75rem',
                 fontFamily: 'var(--font-heebo), sans-serif',
+                wordBreak: 'keep-all',
+                overflowWrap: 'break-word',
               }}
             >
               בהתחברות, את/ה מסכימ/ה ל
@@ -367,7 +392,7 @@ function LoginContent() {
                   textDecoration: 'none',
                   fontWeight: 600,
                   cursor: 'pointer',
-                  fontSize: '13px',
+                  fontSize: 'inherit',
                   fontFamily: 'var(--font-heebo), sans-serif',
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
@@ -383,7 +408,7 @@ function LoginContent() {
                   textDecoration: 'none',
                   fontWeight: 600,
                   cursor: 'pointer',
-                  fontSize: '13px',
+                  fontSize: 'inherit',
                   fontFamily: 'var(--font-heebo), sans-serif',
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
@@ -400,7 +425,8 @@ function LoginContent() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '6px',
+                gap: '0.375rem',
+                flexWrap: 'wrap',
               }}
             >
               {/* Lock Icon */}
@@ -413,6 +439,7 @@ function LoginContent() {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                style={{ flexShrink: 0 }}
               >
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
@@ -421,10 +448,13 @@ function LoginContent() {
               {/* Privacy Text */}
               <span
                 style={{
-                  fontSize: '12px',
+                  fontSize: 'clamp(0.6875rem, 1.8vw, 0.75rem)',
                   color: '#86868b',
                   fontWeight: 500,
                   fontFamily: 'var(--font-heebo), sans-serif',
+                  lineHeight: 1.5,
+                  wordBreak: 'keep-all',
+                  overflowWrap: 'break-word',
                 }}
               >
                 המידע שלך מאובטח ומוצפן מקצה לקצה
@@ -433,93 +463,6 @@ function LoginContent() {
           </div>
         </div>
       </div>
-
-      {/* Mobile Responsive Styles */}
-      <style jsx>{`
-        @media (max-width: 768px) {
-          h2 {
-            font-size: 24px !important;
-          }
-
-          div[style*='maxWidth: \\'480px\\''] {
-            padding: 32px !important;
-          }
-
-          h1 {
-            font-size: 22px !important;
-          }
-
-          span[style*='fontSize: \\'16px\\''] {
-            font-size: 15px !important;
-          }
-
-          div[style*='width: \\'40px\\''] {
-            width: 36px !important;
-            height: 36px !important;
-          }
-
-          button {
-            padding: 14px 20px !important;
-          }
-        }
-
-        @media (max-width: 640px) {
-          h2 {
-            font-size: 20px !important;
-            margin-bottom: 32px !important;
-          }
-
-          div[style*='backdropFilter'] {
-            backdrop-filter: blur(15px) !important;
-            -webkit-backdrop-filter: blur(15px) !important;
-          }
-        }
-
-        @media (max-width: 480px) {
-          /* Extra small screens - more aggressive spacing */
-          div[style*='maxWidth: \\'480px\\''] {
-            padding: 24px !important;
-            margin: 0 16px !important;
-          }
-
-          div[style*='padding: \\'48px 24px\\''] {
-            padding: 24px 16px !important;
-          }
-
-          h2 {
-            font-size: 18px !important;
-            margin-bottom: 24px !important;
-          }
-
-          h1 {
-            font-size: 20px !important;
-            margin-bottom: 24px !important;
-          }
-
-          span[style*='fontSize: \\'16px\\''] {
-            font-size: 14px !important;
-            line-height: 1.4 !important;
-          }
-
-          p[style*='fontSize: \\'13px\\''] {
-            font-size: 13px !important;
-            line-height: 1.5 !important;
-          }
-
-          span[style*='fontSize: \\'12px\\''] {
-            font-size: 13px !important;
-          }
-
-          div[style*='marginBottom: \\'16px\\''] {
-            margin-bottom: 12px !important;
-          }
-
-          button {
-            padding: 12px 16px !important;
-            font-size: 15px !important;
-          }
-        }
-      `}</style>
 
       {/* Legal Modal */}
       <LegalModal
@@ -541,14 +484,14 @@ export default function LoginPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(180deg, #0a1628 0%, #0f1b2e 50%, #1a2332 100%)',
+            background: 'linear-gradient(180deg, #F5F9FE 0%, #F0F6FD 50%, #CCE4F5 100%)',
           }}
         >
           <div
             style={{
-              width: '48px',
-              height: '48px',
-              border: '4px solid #6366F1',
+              width: '3rem',
+              height: '3rem',
+              border: '0.25rem solid #2B4699',
               borderTopColor: 'transparent',
               borderRadius: '50%',
               animation: 'spin 1s linear infinite',
