@@ -10,10 +10,16 @@ export async function GET() {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { hasSeenOnboarding: true },
+      select: { 
+        hasSeenOnboarding: true,
+        signupSource: true 
+      },
     });
 
-    return NextResponse.json({ hasSeenOnboarding: user?.hasSeenOnboarding ?? false });
+    return NextResponse.json({ 
+      hasSeenOnboarding: user?.hasSeenOnboarding ?? false,
+      signupSource: user?.signupSource ?? null
+    });
   } catch (error) {
     console.error('Error fetching onboarding status:', error);
     return NextResponse.json({ error: 'Failed to fetch onboarding status' }, { status: 500 });

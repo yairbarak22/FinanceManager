@@ -5,6 +5,7 @@ import { Bot, SkipForward, Check } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { useAutopilot } from '@/hooks/useAutopilot';
 import OnboardingWizard from './OnboardingWizard';
+import HarediOnboardingWizard from './HarediOnboardingWizard';
 import SmartGhostCursor from './SmartGhostCursor';
 import MagicFrame from './MagicFrame';
 import AddToHomeScreenModal from '../modals/AddToHomeScreenModal';
@@ -20,7 +21,7 @@ import AddToHomeScreenModal from '../modals/AddToHomeScreenModal';
  * - Backdrop blur during autopilot to keep user focused
  */
 export default function OnboardingLayer() {
-  const { cursorTarget, cursorLabel, isCursorClicking, isTourActive, isWizardOpen, isAutopilotInModal, skipAutopilotAndAdd, showSuccessNotification, successNotificationMessage, isAddToHomeScreenModalOpen, closeAddToHomeScreenModal } = useOnboarding();
+  const { cursorTarget, cursorLabel, isCursorClicking, isTourActive, isWizardOpen, isAutopilotInModal, skipAutopilotAndAdd, showSuccessNotification, successNotificationMessage, isAddToHomeScreenModalOpen, closeAddToHomeScreenModal, isHarediUser } = useOnboarding();
   const { abortAutopilot } = useAutopilot();
 
   // Show magic frame when autopilot is running (tour active but wizard closed)
@@ -103,8 +104,8 @@ export default function OnboardingLayer() {
         )}
       </AnimatePresence>
 
-      {/* Wizard Modal */}
-      <OnboardingWizard />
+      {/* Wizard Modal - render appropriate wizard based on user type */}
+      {isHarediUser ? <HarediOnboardingWizard /> : <OnboardingWizard />}
 
       {/* Ghost Cursor - only show when tour is active and wizard is closed */}
       {isAutopilotRunning && cursorTarget && (

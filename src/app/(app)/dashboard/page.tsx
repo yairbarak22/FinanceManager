@@ -122,7 +122,7 @@ export default function DashboardPage() {
   const toast = useToast();
 
   // Onboarding
-  const { startTour } = useOnboarding();
+  const { startTour, startHarediTour } = useOnboarding();
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
   const { status: sessionStatus } = useSession();
 
@@ -252,7 +252,12 @@ export default function DashboardPage() {
         if (res.ok) {
           const data = await res.json();
           if (!data.hasSeenOnboarding) {
-            startTour();
+            // Check if user is Haredi (signupSource === 'prog')
+            if (data.signupSource === 'prog') {
+              startHarediTour();
+            } else {
+              startTour();
+            }
           }
         }
       } catch (error) {
@@ -263,7 +268,7 @@ export default function DashboardPage() {
     };
 
     checkOnboarding();
-  }, [sessionStatus, isLoading, hasCheckedOnboarding, startTour]);
+  }, [sessionStatus, isLoading, hasCheckedOnboarding, startTour, startHarediTour]);
 
   // Calculate recurring totals
   const fixedIncome = recurringTransactions

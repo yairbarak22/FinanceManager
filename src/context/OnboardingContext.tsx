@@ -54,6 +54,8 @@ interface OnboardingState {
   currentStepIndex: number;
   /** Data collected from wizard inputs */
   wizardData: WizardData;
+  /** Whether this is a Haredi user (signupSource === 'prog') */
+  isHarediUser: boolean;
 
   // Add to Home Screen Modal State
   /** Whether the add to home screen modal is open */
@@ -67,6 +69,8 @@ interface OnboardingActions {
   // Tour Actions
   /** Start the onboarding tour */
   startTour: () => void;
+  /** Start the Haredi onboarding tour */
+  startHarediTour: () => void;
   /** End the onboarding tour */
   endTour: () => void;
   /** Go to a specific tour step */
@@ -147,6 +151,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [currentStepIndex, setCurrentStepIndexState] = useState(0);
   const [wizardData, setWizardDataState] = useState<WizardData>({});
+  const [isHarediUser, setIsHarediUser] = useState(false);
 
   // Success Notification State
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
@@ -167,6 +172,18 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     setCurrentTourStep('welcome');
     setIsWizardOpen(true);
     setCurrentStepIndexState(0);
+    setIsHarediUser(false);
+  }, []);
+
+  /**
+   * Start the Haredi onboarding tour
+   */
+  const startHarediTour = useCallback(() => {
+    setIsTourActive(true);
+    setCurrentTourStep('welcome');
+    setIsWizardOpen(true);
+    setCurrentStepIndexState(0);
+    setIsHarediUser(true);
   }, []);
 
   /**
@@ -555,6 +572,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     isWizardOpen,
     currentStepIndex,
     wizardData,
+    isHarediUser,
     // Add to Home Screen Modal State
     isAddToHomeScreenModalOpen,
     // Notification State
@@ -562,6 +580,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     successNotificationMessage,
     // Tour Actions
     startTour,
+    startHarediTour,
     endTour,
     goToTourStep,
     moveCursorToElement,
