@@ -2,13 +2,14 @@
 
 import { useCallback } from 'react';
 import { isSmartlookAvailable, trackSmartlookEvent } from '@/lib/smartlook';
+import { isMixpanelAvailable, trackMixpanelEvent, resetMixpanel } from '@/lib/mixpanel';
 
 // Check if gtag is available
 function isGtagAvailable(): boolean {
   return typeof window !== 'undefined' && typeof window.gtag === 'function';
 }
 
-// Generic event tracking function - sends to both GA and Smartlook
+// Generic event tracking function - sends to GA, Smartlook, and Mixpanel
 function trackEvent(eventName: string, params?: Record<string, unknown>) {
   // Track in Google Analytics
   if (isGtagAvailable()) {
@@ -29,6 +30,11 @@ function trackEvent(eventName: string, params?: Record<string, unknown>) {
       }
     }
     trackSmartlookEvent(eventName, smartlookParams);
+  }
+
+  // Track in Mixpanel
+  if (isMixpanelAvailable()) {
+    trackMixpanelEvent(eventName, params);
   }
 }
 
@@ -115,11 +121,13 @@ export function useAnalytics() {
 
   // Auth events
   const trackLogin = useCallback(() => {
-    trackEvent('login', { method: 'google' });
+    trackEvent('Sign In', { login_method: 'google', success: true });
   }, []);
 
   const trackLogout = useCallback(() => {
     trackEvent('logout');
+    // Reset Mixpanel identity on logout
+    resetMixpanel();
   }, []);
 
   // AI events

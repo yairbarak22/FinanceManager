@@ -1,65 +1,61 @@
 /**
  * Haredi Onboarding Steps Configuration
  * הגדרת השלבים של תהליך ה-Onboarding לקהל החרדי
+ *
+ * 6 שלבים:
+ * 1. הסבר ראשוני (info, לא ניתן לסגור)
+ * 2. הוספת נכס אחד (form)
+ * 3. הוספת הלוואה אחת (form)
+ * 4. הוספת הכנסה קבועה + הוצאה לדוגמה (form, מסך כפול)
+ * 5. הוספת יעד פיננסי (form)
+ * 6. משימות להמשך (tasks)
  */
 
-import { OnboardingStep, StepField } from './stepsConfig';
+import { OnboardingStep } from './stepsConfig';
 
 /**
  * Steps of the Haredi Onboarding Wizard
- * מבנה שלבים שונה לקהל החרדי - פשוט יותר, מותאם לקהל
  */
 export const harediOnboardingSteps: OnboardingStep[] = [
+  // ====================================
+  // שלב 1: הסבר ראשוני (לא ניתן לסגור)
+  // ====================================
   {
-    id: 'welcome',
-    title: 'ברוכים הבאים!',
-    description: 'בוא נתחיל להגדיר את המערכת שלך. תוכל להזין את הנתונים שלך בצורה מהירה ופשוטה, או להתחיל מיד עם נתוני דמה שתוכל לערוך בהמשך.',
+    id: 'haredi-intro',
+    title: 'ברוכים הבאים למערכת לניהול פיננסי למשפחה החרדית',
+    description: 'המערכת היחידה שתעזור לך לנהל את הכספים בצורה חכמה ומסודרת',
     icon: 'sparkles',
     autopilotTargetId: '',
-    stepType: 'choice',
+    stepType: 'info',
+    isClosable: false,
     fields: [],
-  },
-  {
-    id: 'profile',
-    title: 'קצת עליך',
-    description: 'נתחיל בהכרות קצרה. המידע הזה יעזור לנו להתאים את ההמלצות הפיננסיות עבורך.',
-    icon: 'user',
-    autopilotTargetId: 'nav-profile-btn',
-    fields: [
+    infoSections: [
       {
-        key: 'ageRange',
-        label: 'טווח גילאים',
-        type: 'select',
-        required: true,
-        options: [
-          { value: '18-25', label: '18-25' },
-          { value: '26-35', label: '26-35' },
-          { value: '36-45', label: '36-45' },
-          { value: '46-55', label: '46-55' },
-          { value: '56-65', label: '56-65' },
-          { value: '65+', label: '65+' },
-        ],
+        title: 'א. מיפוי מצב פיננסי משפחתי',
+        content: 'הוצאות, הכנסות, נכסים והלוואות - נמפה הכל כדי לדעת בדיוק איפה אתם עומדים.',
       },
       {
-        key: 'employmentType',
-        label: 'סוג תעסוקה',
-        type: 'select',
-        required: true,
-        options: [
-          { value: 'employee', label: 'שכיר' },
-          { value: 'self_employed', label: 'עצמאי' },
-          { value: 'both', label: 'שכיר + עצמאי' },
-          { value: 'student', label: 'סטודנט' },
-        ],
+        title: 'ב. הגדרת יעדים פיננסיים',
+        content: 'יעד ברור = תכנית ברורה. נגדיר כמה צריך לחסוך כל חודש כדי להגיע ליעד.',
+      },
+      {
+        title: 'ג. פתיחת תיק מסחר עצמאי וכשר',
+        content: 'נסביר איך להשקיע בצורה עצמאית וכשרה, בפיקוח רבני ובלי עמלות מיותרות.',
       },
     ],
   },
+
+  // ====================================
+  // שלב 2: הוספת נכס אחד
+  // ====================================
   {
-    id: 'assets',
-    title: 'הנכסים שלך',
-    description: 'נכסים הם כל מה ששווה כסף ושייך לך: חסכונות בבנק, השקעות, נדל"ן, רכב ועוד. בוא נוסיף ביחד את הנכס הראשון שלך!',
+    id: 'haredi-asset',
+    title: 'בואו נתחיל עם הנכס הראשון שלך',
+    description:
+      'נכסים הם כל מה ששווה כסף ושייך לך: חסכונות בבנק, השקעות, נדל"ן, רכב ועוד',
     icon: 'trending-up',
     autopilotTargetId: 'btn-add-asset',
+    stepType: 'form',
     fields: [
       {
         key: 'assetCategory',
@@ -85,13 +81,66 @@ export const harediOnboardingSteps: OnboardingStep[] = [
       },
     ],
   },
+
+  // ====================================
+  // שלב 3: הוספת הלוואה אחת
+  // ====================================
   {
-    id: 'income',
-    title: 'הכנסות חודשיות',
-    description: 'עסקאות קבועות הן דברים שחוזרים כל חודש: משכורת, חשבונות, שכירות ועוד. מיפוי שלהם יאפשר לנו לחשב כמה כסף נשאר לך כל חודש להשקיע או לחסוך. בוא נוסיף את המשכורת שלך או הכנסה קבועה אחרת!',
+    id: 'haredi-liability',
+    title: 'הלוואות והתחייבויות',
+    description:
+      'הלוואות הן חובות קבועים כמו משכנתא או הלוואות - חשוב לדעת כמה אתה חייב כדי לחשב את השווי הנקי שלך',
+    icon: 'credit-card',
+    autopilotTargetId: 'btn-add-liability',
+    stepType: 'form',
+    fields: [
+      {
+        key: 'liabilityType',
+        label: 'סוג ההלוואה',
+        type: 'select',
+        required: true,
+        useDynamicOptions: true,
+      },
+      {
+        key: 'liabilityAmount',
+        label: 'סכום ההלוואה',
+        type: 'currency',
+        required: true,
+        placeholder: '500,000',
+        helperText: 'הסכום שנותר לתשלום',
+      },
+      {
+        key: 'liabilityInterest',
+        label: 'ריבית שנתית (%)',
+        type: 'number',
+        required: true,
+        placeholder: '4.5',
+        helperText: 'אחוז הריבית השנתית',
+      },
+      {
+        key: 'liabilityTerm',
+        label: 'תקופה (חודשים)',
+        type: 'number',
+        required: true,
+        placeholder: '240',
+        helperText: 'מספר החודשים שנותרו',
+      },
+    ],
+  },
+
+  // ====================================
+  // שלב 4: הכנסה קבועה + הוצאה לדוגמה (מסך כפול)
+  // ====================================
+  {
+    id: 'haredi-income-expense',
+    title: 'הכנסות והוצאות חודשיות',
+    description:
+      'כדי להבין כמה כסף נשאר לך כל חודש, צריך לדעת כמה נכנס וכמה יוצא. בואו נוסיף את המשכורת שלך והוצאה אחת לדוגמה',
     icon: 'wallet',
     autopilotTargetId: 'btn-add-recurring',
+    stepType: 'form',
     fields: [
+      // --- שדות הכנסה ---
       {
         key: 'incomeCategory',
         label: 'סוג הכנסה',
@@ -114,15 +163,7 @@ export const harediOnboardingSteps: OnboardingStep[] = [
         placeholder: '15,000',
         helperText: 'הסכום שנכנס כל חודש',
       },
-    ],
-  },
-  {
-    id: 'expenses',
-    title: 'הוצאות שוטפות',
-    description: 'כאן תעקוב אחרי כל ההוצאות של היום יום. המערכת מחלקת את ההוצאות לקטגוריות כדי שתדע בדיוק על מה אתה מוציא את הכסף שלך. בוא נוסיף את ההוצאה הראשונה שלך!',
-    icon: 'trending-down',
-    autopilotTargetId: 'btn-global-add',
-    fields: [
+      // --- שדות הוצאה ---
       {
         key: 'expenseName',
         label: 'שם ההוצאה',
@@ -145,6 +186,72 @@ export const harediOnboardingSteps: OnboardingStep[] = [
         placeholder: '150',
         helperText: 'כמה עלתה ההוצאה?',
       },
+    ],
+  },
+
+  // ====================================
+  // שלב 5: הוספת יעד פיננסי
+  // ====================================
+  {
+    id: 'haredi-goal',
+    title: 'בואו נגדיר יעד פיננסי',
+    description:
+      'יעדים עוזרים לנו לדעת כמה צריך לחסוך כל חודש. בואו נגדיר יעד ראשון - למשל חיסכון לילדים, קניית דירה, או כל יעד אחר שחשוב לך',
+    icon: 'target',
+    autopilotTargetId: '',
+    stepType: 'form',
+    fields: [
+      {
+        key: 'goalName',
+        label: 'שם היעד',
+        type: 'text',
+        required: true,
+        placeholder: 'לדוגמה: חיסכון לילדים, קניית דירה',
+      },
+      {
+        key: 'goalTargetAmount',
+        label: 'סכום היעד',
+        type: 'currency',
+        required: true,
+        placeholder: '100,000',
+        helperText: 'כמה רוצים לחסוך',
+      },
+      {
+        key: 'goalDeadline',
+        label: 'תאריך יעד',
+        type: 'date',
+        required: true,
+        helperText: 'מתי רוצים להגיע ליעד',
+      },
+      {
+        key: 'goalCurrentAmount',
+        label: 'סכום נוכחי (אופציונלי)',
+        type: 'currency',
+        required: false,
+        placeholder: '0',
+        helperText: 'כמה כבר נחסך עד כה',
+      },
+    ],
+  },
+
+  // ====================================
+  // שלב 6: משימות להמשך
+  // ====================================
+  {
+    id: 'haredi-tasks',
+    title: 'מעולה! מה הלאה?',
+    description: 'סיימת את ההגדרה הבסיסית. הנה מה שכדאי לעשות הלאה:',
+    icon: 'sparkles',
+    autopilotTargetId: '',
+    stepType: 'tasks',
+    fields: [],
+    tasks: [
+      'הוספת נכסים נוספים (אם יש)',
+      'הוספת הלוואות נוספות (אם יש)',
+      'הוספת כל ההכנסות החודשיות הקבועות',
+      'מעקב אחרי הוצאות יומיומיות',
+      'הגדרת יעדים נוספים',
+      'פתיחת תיק מסחר עצמאי וכשר',
     ],
   },
 ];
@@ -184,4 +291,3 @@ export function getHarediPreviousStep(currentStepId: string): OnboardingStep | n
   }
   return harediOnboardingSteps[currentIndex - 1];
 }
-

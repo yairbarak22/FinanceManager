@@ -2,11 +2,14 @@
 
 import Script from 'next/script';
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { initMixpanel, identifyUser } from '@/lib/mixpanel';
 
 const GA_MEASUREMENT_ID = 'G-RBSC0M8FV3';
 
 export default function Analytics() {
   const [consentGiven, setConsentGiven] = useState<boolean | null>(null);
+  const { data: session } = useSession();
 
   useEffect(() => {
     // Check if user has given consent
@@ -30,30 +33,45 @@ export default function Analytics() {
     return () => window.removeEventListener('analytics-consent-change', handleConsentChange);
   }, []);
 
-  // Don't load analytics if no consent
-  if (!consentGiven) {
-    return null;
-  }
+  // Initialize Mixpanel immediately (the loaded callback inside initMixpanel
+  // handles firing a test event once the SDK is truly ready)
+  useEffect(() => {
+    initMixpanel();
+  }, []);
+
+  // Identify user in Mixpanel when session is available
+  useEffect(() => {
+    if (session?.user?.id) {
+      identifyUser(session.user.id, {
+        name: session.user.name,
+        email: session.user.email,
+      });
+    }
+  }, [session]);
 
   return (
     <>
-      {/* Google tag (gtag.js) */}
-      <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-        strategy="afterInteractive"
-      />
-      <Script
-        id="google-analytics"
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: `
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}');
-          `,
-        }}
-      />
+      {/* Google Analytics - only loads with consent */}
+      {consentGiven && (
+        <>
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+            strategy="afterInteractive"
+          />
+          <Script
+            id="google-analytics"
+            strategy="afterInteractive"
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_MEASUREMENT_ID}');
+              `,
+            }}
+          />
+        </>
+      )}
     </>
   );
 }

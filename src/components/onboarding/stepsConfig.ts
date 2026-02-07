@@ -3,10 +3,10 @@
  * הגדרת השלבים של תהליך ה-Onboarding
  */
 
-export type FieldType = 'text' | 'number' | 'select' | 'currency' | 'feature-demos';
+export type FieldType = 'text' | 'number' | 'select' | 'currency' | 'feature-demos' | 'date';
 
-/** Step type - regular form step or choice step */
-export type StepType = 'form' | 'choice';
+/** Step type - regular form step, choice step, info (non-closable explanation), or tasks (checklist) */
+export type StepType = 'form' | 'choice' | 'info' | 'tasks';
 
 export interface StepField {
   key: string;
@@ -33,9 +33,15 @@ export interface OnboardingStep {
   description: string;
   fields: StepField[];
   autopilotTargetId: string;
-  icon: 'user' | 'wallet' | 'credit-card' | 'trending-up' | 'trending-down' | 'sparkles';
+  icon: 'user' | 'wallet' | 'credit-card' | 'trending-up' | 'trending-down' | 'sparkles' | 'target';
   /** Step type - defaults to 'form' */
   stepType?: StepType;
+  /** Whether the modal can be closed (X button / backdrop click). Defaults to true. */
+  isClosable?: boolean;
+  /** Task list items for 'tasks' step type */
+  tasks?: string[];
+  /** Structured content sections for 'info' step type */
+  infoSections?: { title: string; content: string }[];
 }
 
 /**

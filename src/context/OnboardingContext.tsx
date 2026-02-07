@@ -267,11 +267,13 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
       console.error('[Onboarding] Failed to mark onboarding as complete after all retries');
     }
 
-    // Open the "Add to Home Screen" modal after a short delay
-    setTimeout(() => {
-      setIsAddToHomeScreenModalOpen(true);
-    }, 500);
-  }, []);
+    // Open the "Add to Home Screen" modal after a short delay (not for Haredi users)
+    if (!isHarediUser) {
+      setTimeout(() => {
+        setIsAddToHomeScreenModalOpen(true);
+      }, 500);
+    }
+  }, [isHarediUser]);
 
   /**
    * Go to a specific tour step

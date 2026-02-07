@@ -9,20 +9,17 @@ import {
   CreditCard,
   TrendingUp,
   TrendingDown,
-  Wand2,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
   X,
   Sparkles,
   Check,
-  Bot,
-  Upload,
-  Play,
+  Target,
   Loader2,
+  CircleCheck,
 } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
-import { useAutopilot } from '@/hooks/useAutopilot';
 import { useCategories } from '@/hooks/useCategories';
 import {
   assetCategories as defaultAssetCategories,
@@ -54,6 +51,7 @@ const stepIcons = {
   'trending-up': TrendingUp,
   'trending-down': TrendingDown,
   'sparkles': Sparkles,
+  'target': Target,
 };
 
 /**
@@ -185,6 +183,7 @@ function StyledSelect({ value, onChange, options, placeholder = 'בחר...' }: S
 
 /**
  * HarediOnboardingWizard - Apple-style onboarding modal for Haredi users
+ * Supports step types: info (non-closable), form, tasks
  */
 export default function HarediOnboardingWizard() {
   const {
@@ -193,12 +192,8 @@ export default function HarediOnboardingWizard() {
     currentStepIndex,
     setWizardData,
     setCurrentStepIndex,
-    startAutopilot,
-    closeWizard,
     endTour,
   } = useOnboarding();
-
-  const { runAutopilotSequence, runFeatureDemo } = useAutopilot();
 
   // Get custom categories from hook
   const { getCustomByType } = useCategories();
@@ -222,6 +217,12 @@ export default function HarediOnboardingWizard() {
     return [...defaultOptions, ...customOptions];
   }, [getCustomByType]);
 
+  const liabilityTypeOptions = useMemo(() => {
+    const defaultOptions = categoriesToOptions(defaultLiabilityTypes);
+    const customOptions = categoriesToOptions(getCustomByType('liability'));
+    return [...defaultOptions, ...customOptions];
+  }, [getCustomByType]);
+
   /**
    * Get dynamic options for category fields
    */
@@ -233,15 +234,14 @@ export default function HarediOnboardingWizard() {
         return incomeCategoryOptions;
       case 'expenseCategory':
         return expenseCategoryOptions;
+      case 'liabilityType':
+        return liabilityTypeOptions;
       default:
         return null;
     }
-  }, [assetCategoryOptions, incomeCategoryOptions, expenseCategoryOptions]);
+  }, [assetCategoryOptions, incomeCategoryOptions, expenseCategoryOptions, liabilityTypeOptions]);
 
   const [direction, setDirection] = useState(0);
-
-  // Track last saved profile data to detect changes
-  const [lastSavedProfileData, setLastSavedProfileData] = useState<Record<string, string> | null>(null);
 
   // Success notification state
   const [showSuccess, setShowSuccess] = useState(false);
@@ -250,9 +250,6 @@ export default function HarediOnboardingWizard() {
   // Loading state for save button
   const [isSaving, setIsSaving] = useState(false);
 
-  // Loading state for demo data
-  const [isLoadingDemoData, setIsLoadingDemoData] = useState(false);
-
   // Refs for scrolling
   const contentScrollRef = useRef<HTMLDivElement>(null);
   const fieldRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -260,6 +257,9 @@ export default function HarediOnboardingWizard() {
   const currentStep = harediOnboardingSteps[currentStepIndex];
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === harediOnboardingSteps.length - 1;
+
+  // Whether current step can be closed
+  const isClosable = currentStep?.isClosable !== false;
 
   // Scroll to top when step changes and clear field refs
   useEffect(() => {
@@ -320,31 +320,15 @@ export default function HarediOnboardingWizard() {
   }, [currentStepIndex, isFirstStep, setCurrentStepIndex]);
 
   /**
-   * Check if profile data has changed from last saved
-   */
-  const hasProfileDataChanged = useMemo((): boolean => {
-    // If never saved, any data is a change
-    if (!lastSavedProfileData) return true;
-
-    const profileFields = ['ageRange', 'employmentType'];
-    for (const key of profileFields) {
-      if (wizardData[key] !== lastSavedProfileData[key]) {
-        return true;
-      }
-    }
-    return false;
-  }, [wizardData, lastSavedProfileData]);
-
-  /**
    * Check if all required fields for current step are filled
    */
   const areRequiredFieldsFilled = useCallback((): boolean => {
     const step = harediOnboardingSteps[currentStepIndex];
     if (!step) return false;
 
-    // For profile step, also check if data has changed
-    if (step.id === 'profile' && !hasProfileDataChanged) {
-      return false;
+    // Info and tasks steps have no fields to validate
+    if (step.stepType === 'info' || step.stepType === 'tasks') {
+      return true;
     }
 
     // Get visible fields
@@ -364,23 +348,7 @@ export default function HarediOnboardingWizard() {
     }
 
     return true;
-  }, [currentStepIndex, wizardData, hasProfileDataChanged]);
-
-  const handleShowMe = useCallback(async () => {
-    console.log('[HarediOnboarding] Starting autopilot for step:', currentStep.id);
-    startAutopilot(currentStep.id, wizardData);
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const result = await runAutopilotSequence(currentStep.id, wizardData);
-    console.log('[HarediOnboarding] Autopilot result:', result);
-
-    // Save profile data after successful autopilot for profile step
-    if (currentStep.id === 'profile' && result.success) {
-      setLastSavedProfileData({
-        ageRange: wizardData.ageRange || '',
-        employmentType: wizardData.employmentType || '',
-      });
-    }
-  }, [currentStep, wizardData, startAutopilot, runAutopilotSequence]);
+  }, [currentStepIndex, wizardData]);
 
   /**
    * Handle direct add - save data via API without simulation
@@ -390,8 +358,6 @@ export default function HarediOnboardingWizard() {
     setIsSaving(true);
     
     try {
-      let response: Response | null = null;
-      
       const showSuccessNotification = (message: string) => {
         setSuccessMessage(message);
         setShowSuccess(true);
@@ -400,32 +366,8 @@ export default function HarediOnboardingWizard() {
         window.dispatchEvent(new CustomEvent('onboarding-data-added'));
       };
 
-      if (stepId === 'profile') {
-        response = await fetch('/api/profile', {
-          method: 'PUT',
-          headers: { 
-            'Content-Type': 'application/json',
-            'X-CSRF-Protection': '1',
-          },
-          body: JSON.stringify({
-            ageRange: wizardData.ageRange || '26-35',
-            employmentType: wizardData.employmentType || 'employee',
-            hasChildren: false,
-            childrenCount: 0,
-          }),
-        });
-        
-        if (response.ok) {
-          setLastSavedProfileData({
-            ageRange: wizardData.ageRange || '26-35',
-            employmentType: wizardData.employmentType || 'employee',
-          });
-          showSuccessNotification('הפרופיל עודכן בהצלחה!');
-        } else {
-          console.error('[HarediOnboarding] Profile update failed:', response.status);
-        }
-      } else if (stepId === 'assets') {
-        response = await fetch('/api/assets', {
+      if (stepId === 'haredi-asset') {
+        const response = await fetch('/api/assets', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
@@ -440,8 +382,33 @@ export default function HarediOnboardingWizard() {
         } else {
           console.error('[HarediOnboarding] Asset add failed:', response.status);
         }
-      } else if (stepId === 'income') {
-        response = await fetch('/api/recurring', {
+      } else if (stepId === 'haredi-liability') {
+        // Get liability name from selected type
+        const liabilityType = wizardData.liabilityType || 'loan';
+        const liabilityCategory = defaultLiabilityTypes.find(c => c.id === liabilityType);
+        const liabilityName = liabilityCategory?.nameHe || 'הלוואה';
+
+        const response = await fetch('/api/liabilities', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
+          body: JSON.stringify({
+            name: liabilityName,
+            type: liabilityType,
+            totalAmount: parseFloat((wizardData.liabilityAmount || '100000').replace(/,/g, '')),
+            monthlyPayment: 1000,
+            interestRate: parseFloat(wizardData.liabilityInterest || '5'),
+            loanTermMonths: parseInt(wizardData.liabilityTerm || '120'),
+          }),
+        });
+
+        if (response.ok) {
+          showSuccessNotification('ההלוואה נוספה בהצלחה!');
+        } else {
+          console.error('[HarediOnboarding] Liability add failed:', response.status);
+        }
+      } else if (stepId === 'haredi-income-expense') {
+        // Two API calls: income (recurring) + expense (transaction)
+        const incomeResponse = await fetch('/api/recurring', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
@@ -451,14 +418,8 @@ export default function HarediOnboardingWizard() {
             amount: parseFloat((wizardData.incomeAmount || '10000').replace(/,/g, '')),
           }),
         });
-        
-        if (response.ok) {
-          showSuccessNotification('ההכנסה נוספה בהצלחה!');
-        } else {
-          console.error('[HarediOnboarding] Income add failed:', response.status);
-        }
-      } else if (stepId === 'expenses') {
-        response = await fetch('/api/transactions', {
+
+        const expenseResponse = await fetch('/api/transactions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
@@ -469,11 +430,33 @@ export default function HarediOnboardingWizard() {
             date: new Date().toISOString(),
           }),
         });
-        
-        if (response.ok) {
-          showSuccessNotification('ההוצאה נוספה בהצלחה!');
+
+        if (incomeResponse.ok && expenseResponse.ok) {
+          showSuccessNotification('ההכנסה וההוצאה נוספו בהצלחה!');
         } else {
-          console.error('[HarediOnboarding] Expense add failed:', response.status);
+          if (!incomeResponse.ok) console.error('[HarediOnboarding] Income add failed:', incomeResponse.status);
+          if (!expenseResponse.ok) console.error('[HarediOnboarding] Expense add failed:', expenseResponse.status);
+          // Show partial success if at least one succeeded
+          if (incomeResponse.ok || expenseResponse.ok) {
+            showSuccessNotification(incomeResponse.ok ? 'ההכנסה נוספה בהצלחה!' : 'ההוצאה נוספה בהצלחה!');
+          }
+        }
+      } else if (stepId === 'haredi-goal') {
+        const response = await fetch('/api/goals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
+          body: JSON.stringify({
+            name: wizardData.goalName || 'יעד חדש',
+            targetAmount: parseFloat((wizardData.goalTargetAmount || '100000').replace(/,/g, '')),
+            deadline: wizardData.goalDeadline || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+            currentAmount: parseFloat((wizardData.goalCurrentAmount || '0').replace(/,/g, '')) || 0,
+          }),
+        });
+
+        if (response.ok) {
+          showSuccessNotification('היעד נוסף בהצלחה!');
+        } else {
+          console.error('[HarediOnboarding] Goal add failed:', response.status);
         }
       }
       
@@ -487,106 +470,13 @@ export default function HarediOnboardingWizard() {
     // Wait for success notification to show, then continue
     await new Promise(resolve => setTimeout(resolve, 1500));
     goToNextStep();
-  }, [currentStep, wizardData, goToNextStep, setLastSavedProfileData]);
-
-  /**
-   * Handle feature demo button click
-   */
-  const handleFeatureDemoClick = useCallback(async (demoId: string) => {
-    console.log('[HarediOnboarding] Starting feature demo:', demoId);
-    // Close the wizard first so user can see the demo
-    closeWizard();
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const result = await runFeatureDemo(demoId);
-    console.log('[HarediOnboarding] Feature demo result:', result);
-  }, [closeWizard, runFeatureDemo]);
-
-  /**
-   * Handle demo data button click - creates sample data for the user
-   */
-  const handleLoadDemoData = useCallback(async () => {
-    setIsLoadingDemoData(true);
-    
-    try {
-      const response = await fetch('/api/onboarding/demo-data', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Protection': '1',
-        },
-      });
-
-      if (response.ok) {
-        setSuccessMessage('נתוני הדמה נוספו בהצלחה!');
-        setShowSuccess(true);
-        
-        // Dispatch event to trigger dashboard data refresh
-        window.dispatchEvent(new CustomEvent('onboarding-data-added'));
-        
-        // Wait for notification to show, then close wizard
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        endTour();
-      } else {
-        console.error('[HarediOnboarding] Failed to load demo data:', response.status);
-        setSuccessMessage('שגיאה בטעינת נתוני הדמה');
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 2000);
-      }
-    } catch (error) {
-      console.error('[HarediOnboarding] Error loading demo data:', error);
-      setSuccessMessage('שגיאה בטעינת נתוני הדמה');
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 2000);
-    } finally {
-      setIsLoadingDemoData(false);
-    }
-  }, [endTour]);
-
-  /**
-   * Get icon component for feature demos
-   */
-  const getFeatureIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'sparkles': return Sparkles;
-      case 'bot': return Bot;
-      case 'upload': return Upload;
-      default: return Sparkles;
-    }
-  };
+  }, [currentStep, wizardData, goToNextStep]);
 
   /**
    * Render a form field
    */
   const renderField = (field: StepField) => {
     const value = wizardData[field.key] || '';
-
-    // Feature demo card
-    if (field.type === 'feature-demos') {
-      const FeatureIcon = getFeatureIcon(field.featureIcon || 'sparkles');
-      return (
-        <div
-          key={field.key}
-          className="bg-[#F7F7F8] rounded-xl p-4 border border-[#F7F7F8] hover:border-[#69ADFF] transition-all"
-        >
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-[#C1DDFF] rounded-xl flex items-center justify-center flex-shrink-0">
-              <FeatureIcon className="w-5 h-5 text-[#69ADFF]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-[#303150] text-sm">{field.label}</h4>
-              <p className="text-xs text-[#7E7F90] mt-1 leading-relaxed">{field.helperText}</p>
-              <button
-                onClick={() => field.demoId && handleFeatureDemoClick(field.demoId)}
-                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#69ADFF] text-white text-xs font-medium rounded-lg hover:bg-[#5A9EE6] transition-colors"
-              >
-                <Play className="w-3.5 h-3.5" />
-                הראה לי
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-    }
 
     if (field.type === 'select') {
       // Use dynamic options for category fields, fallback to field.options for other selects
@@ -613,6 +503,33 @@ export default function HarediOnboardingWizard() {
       );
     }
 
+    if (field.type === 'date') {
+      return (
+        <div
+          key={field.key}
+          ref={(el) => { if (el) fieldRefs.current.set(field.key, el); }}
+          className="space-y-2"
+        >
+          <label className="block text-sm font-medium text-[#303150]">
+            {field.label}
+            {field.required && <span className="text-rose-500 mr-1">*</span>}
+          </label>
+          <input
+            type="date"
+            value={value}
+            onChange={(e) => handleFieldChange(field.key, e.target.value)}
+            className="w-full px-4 py-3 bg-white border border-[#E8E8ED] rounded-xl text-[#303150] text-sm
+                       hover:border-[#69ADFF] hover:bg-[#F7F7F8]
+                       focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent
+                       transition-all duration-200"
+          />
+          {field.helperText && (
+            <p className="text-xs text-[#7E7F90]">{field.helperText}</p>
+          )}
+        </div>
+      );
+    }
+
     if (field.type === 'currency' || field.type === 'number') {
       return (
         <div 
@@ -630,7 +547,7 @@ export default function HarediOnboardingWizard() {
               inputMode="numeric"
               value={value}
               onChange={(e) => {
-                const cleaned = e.target.value.replace(/[^\d,]/g, '');
+                const cleaned = e.target.value.replace(/[^\d,.]/g, '');
                 handleFieldChange(field.key, cleaned);
               }}
               placeholder={field.placeholder}
@@ -683,81 +600,171 @@ export default function HarediOnboardingWizard() {
     );
   };
 
+  /**
+   * Render the INFO step content (non-closable intro)
+   */
+  const renderInfoStep = (step: OnboardingStep) => {
+    const Icon = stepIcons[step.icon as keyof typeof stepIcons] || Sparkles;
+
+    return (
+      <motion.div
+        key={step.id}
+        initial={{ opacity: 0, x: direction * 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: direction * -50 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="space-y-5"
+      >
+        {/* Step Header */}
+        <div className="text-center space-y-3">
+          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-[#C1DDFF] to-[#69ADFF] rounded-3xl flex items-center justify-center shadow-sm">
+            <Icon className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-xl font-bold text-[#303150]">{step.title}</h2>
+          <p className="text-[#7E7F90] text-sm max-w-sm mx-auto leading-relaxed">
+            {step.description}
+          </p>
+        </div>
+
+        {/* Info Sections */}
+        {step.infoSections && (
+          <div className="space-y-4">
+            {step.infoSections.map((section, index) => (
+              <div
+                key={index}
+                className="bg-[#F7F7F8] rounded-xl p-4 border border-[#F7F7F8]"
+              >
+                <h3 className="font-semibold text-[#303150] text-sm mb-2">
+                  {section.title}
+                </h3>
+                <p className="text-xs text-[#7E7F90] leading-relaxed">
+                  {section.content}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
+    );
+  };
 
   /**
-   * Render step content
+   * Render the TASKS step content (checklist)
    */
-  const renderStepContent = (step: OnboardingStep) => {
-    const Icon = stepIcons[step.icon as keyof typeof stepIcons];
-    const visibleFields = getVisibleFields(step);
+  const renderTasksStep = (step: OnboardingStep) => {
+    const Icon = stepIcons[step.icon as keyof typeof stepIcons] || Sparkles;
 
-    // Special rendering for welcome/choice step
-    if (step.stepType === 'choice') {
-      return (
-        <motion.div
-          key={step.id}
-          initial={{ opacity: 0, x: direction * 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: direction * -50 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="flex flex-col h-full"
-        >
-          {/* Step Header */}
-          <div className="text-center space-y-3">
-            <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[#C1DDFF] to-[#69ADFF] rounded-3xl flex items-center justify-center shadow-lg">
-              <Icon className="w-10 h-10 text-white" />
+    return (
+      <motion.div
+        key={step.id}
+        initial={{ opacity: 0, x: direction * 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: direction * -50 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="space-y-6"
+      >
+        {/* Step Header */}
+        <div className="text-center space-y-3">
+          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-[#C1DDFF] to-[#69ADFF] rounded-3xl flex items-center justify-center shadow-sm">
+            <Icon className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-[#303150]">{step.title}</h2>
+          <p className="text-[#7E7F90] text-sm max-w-sm mx-auto leading-relaxed">
+            {step.description}
+          </p>
+        </div>
+
+        {/* Task Checklist */}
+        {step.tasks && (
+          <div className="space-y-3">
+            {step.tasks.map((task, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-3 bg-[#F7F7F8] rounded-xl px-4 py-3 border border-[#F7F7F8]"
+              >
+                <CircleCheck className="w-5 h-5 text-[#0DBACC] flex-shrink-0" />
+                <span className="text-sm text-[#303150]">{task}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
+    );
+  };
+
+  /**
+   * Render the dual INCOME + EXPENSE form step
+   */
+  const renderDualFormStep = (step: OnboardingStep) => {
+    const Icon = stepIcons[step.icon as keyof typeof stepIcons] || Wallet;
+    const fields = step.fields;
+
+    // Split fields into income (first 3) and expense (last 3) groups
+    const incomeFields = fields.filter(f => f.key.startsWith('income'));
+    const expenseFields = fields.filter(f => f.key.startsWith('expense'));
+
+    return (
+      <motion.div
+        key={step.id}
+        initial={{ opacity: 0, x: direction * 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: direction * -50 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="space-y-5"
+      >
+        {/* Step Header */}
+        <div className="text-center space-y-3">
+          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-[#C1DDFF] to-[#69ADFF] rounded-3xl flex items-center justify-center shadow-sm">
+            <Icon className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-xl font-bold text-[#303150]">{step.title}</h2>
+          <p className="text-[#7E7F90] text-sm max-w-sm mx-auto leading-relaxed">
+            {step.description}
+          </p>
+        </div>
+
+        {/* Income Section */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-[#0DBACC]/10 rounded-lg flex items-center justify-center">
+              <TrendingUp className="w-3.5 h-3.5 text-[#0DBACC]" />
             </div>
-            <h2 className="text-2xl font-bold text-[#303150]">{step.title}</h2>
-            <p className="text-[#7E7F90] text-sm max-w-sm mx-auto leading-relaxed">
-              {step.description}
-            </p>
+            <h3 className="font-semibold text-[#303150] text-sm">הכנסה קבועה</h3>
           </div>
-
-          {/* Spacer to push buttons to bottom */}
-          <div className="flex-1" />
-
-          {/* Choice Buttons - at bottom */}
-          <div className="space-y-3 pb-4">
-            {/* Manual Data Entry Button */}
-            <motion.button
-              onClick={goToNextStep}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              className="w-full py-3 px-4 bg-gradient-to-r from-[#69ADFF] to-[#74ACEF] text-white font-medium rounded-xl
-                         shadow-md shadow-[#69ADFF]/20 hover:shadow-lg hover:shadow-[#69ADFF]/25
-                         flex flex-col items-center gap-1.5 transition-all duration-200"
-            >
-              <div className="flex flex-row-reverse items-center gap-2">
-                <Wand2 className="w-4 h-4" />
-                <span className="text-sm">התחל להזין נתונים</span>
-              </div>
-              <span className="text-xs opacity-80">תהליך מהיר ופשוט</span>
-            </motion.button>
-
-            {/* Demo Data Button */}
-            <motion.button
-              onClick={handleLoadDemoData}
-              disabled={isLoadingDemoData}
-              whileHover={!isLoadingDemoData ? { scale: 1.01 } : {}}
-              whileTap={!isLoadingDemoData ? { scale: 0.99 } : {}}
-              className="w-full py-3 px-4 bg-white border border-[#E8E8ED] text-[#303150] font-medium rounded-xl
-                         hover:border-[#69ADFF] hover:bg-[#F7F7F8]
-                         flex flex-col items-center gap-1.5 transition-all duration-200"
-            >
-              <div className="flex flex-row-reverse items-center gap-2">
-                {isLoadingDemoData ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Play className="w-4 h-4" />
-                )}
-                <span className="text-sm">{isLoadingDemoData ? 'טוען נתוני דמה...' : 'התחל עכשיו עם נתוני דמה'}</span>
-              </div>
-              <span className="text-xs text-[#7E7F90]">ניתן לערוך בהמשך</span>
-            </motion.button>
+          <div className="space-y-3">
+            {incomeFields.map(renderField)}
           </div>
-        </motion.div>
-      );
-    }
+        </div>
+
+        {/* Visual Separator */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-[#E8E8ED]" />
+          <span className="text-xs text-[#BDBDCB] font-medium">+</span>
+          <div className="flex-1 h-px bg-[#E8E8ED]" />
+        </div>
+
+        {/* Expense Section */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-rose-50 rounded-lg flex items-center justify-center">
+              <TrendingDown className="w-3.5 h-3.5 text-rose-400" />
+            </div>
+            <h3 className="font-semibold text-[#303150] text-sm">הוצאה לדוגמה</h3>
+          </div>
+          <div className="space-y-3">
+            {expenseFields.map(renderField)}
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
+  /**
+   * Render regular FORM step content
+   */
+  const renderFormStep = (step: OnboardingStep) => {
+    const Icon = stepIcons[step.icon as keyof typeof stepIcons] || Sparkles;
+    const visibleFields = getVisibleFields(step);
 
     return (
       <motion.div
@@ -782,6 +789,179 @@ export default function HarediOnboardingWizard() {
         {/* Form Fields */}
         <div className="space-y-4">{visibleFields.map(renderField)}</div>
       </motion.div>
+    );
+  };
+
+  /**
+   * Render step content - dispatches to the correct renderer based on step type
+   */
+  const renderStepContent = (step: OnboardingStep) => {
+    if (step.stepType === 'info') {
+      return renderInfoStep(step);
+    }
+
+    if (step.stepType === 'tasks') {
+      return renderTasksStep(step);
+    }
+
+    // Dual form for income+expense step
+    if (step.id === 'haredi-income-expense') {
+      return renderDualFormStep(step);
+    }
+
+    // Default form step
+    return renderFormStep(step);
+  };
+
+  /**
+   * Render the footer based on step type
+   */
+  const renderFooter = () => {
+    const stepType = currentStep.stepType;
+
+    // INFO step: single "הבנתי, בואו נתחיל" button
+    if (stepType === 'info') {
+      return (
+        <div className="flex-shrink-0 px-8 pb-6 pt-4 border-t border-[#F7F7F8] space-y-3">
+          <motion.button
+            onClick={goToNextStep}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="w-full py-4 px-6 bg-gradient-to-r from-[#69ADFF] to-[#74ACEF] text-white font-semibold rounded-xl
+                       shadow-lg shadow-[#69ADFF]/25 hover:shadow-xl hover:shadow-[#69ADFF]/30
+                       flex items-center justify-center gap-2 transition-all duration-200"
+          >
+            <span>הבנתי, בואו נתחיל</span>
+            <ChevronLeft className="w-5 h-5" />
+          </motion.button>
+        </div>
+      );
+    }
+
+    // TASKS step: "סיימתי! בואו נתחיל" button
+    if (stepType === 'tasks') {
+      return (
+        <div className="flex-shrink-0 px-8 pb-6 pt-4 border-t border-[#F7F7F8] space-y-3">
+          <motion.button
+            onClick={endTour}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="w-full py-4 px-6 bg-gradient-to-r from-[#0DBACC] to-[#0DBACC] text-white font-semibold rounded-xl
+                       shadow-lg shadow-[#0DBACC]/25 hover:shadow-xl hover:shadow-[#0DBACC]/30
+                       flex items-center justify-center gap-2 transition-all duration-200"
+          >
+            <Check className="w-5 h-5" />
+            <span>סיימתי! בואו נתחיל</span>
+            <Sparkles className="w-4 h-4 opacity-70" />
+          </motion.button>
+
+          {/* Navigation */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={goToPreviousStep}
+              className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-[#7E7F90] hover:text-[#303150] hover:bg-[#F7F7F8] rounded-xl transition-all"
+            >
+              <ChevronRight className="w-4 h-4" />
+              הקודם
+            </button>
+
+            {/* Progress Dots */}
+            <div className="flex items-center gap-2">
+              {harediOnboardingSteps.map((_, index) => (
+                <motion.div
+                  key={index}
+                  initial={false}
+                  animate={{
+                    scale: index === currentStepIndex ? 1.2 : 1,
+                    backgroundColor:
+                      index === currentStepIndex
+                        ? '#69ADFF'
+                        : index < currentStepIndex
+                        ? '#0DBACC'
+                        : '#BDBDCB',
+                  }}
+                  className="w-2 h-2 rounded-full"
+                />
+              ))}
+            </div>
+
+            <div className="w-[72px]" /> {/* Spacer for alignment */}
+          </div>
+        </div>
+      );
+    }
+
+    // Regular FORM steps: save button + navigation
+    return (
+      <div className="flex-shrink-0 px-8 pb-6 pt-4 border-t border-[#F7F7F8] space-y-3">
+        {/* Add button */}
+        <motion.button
+          onClick={handleAddDirectly}
+          disabled={!areRequiredFieldsFilled() || isSaving}
+          whileHover={areRequiredFieldsFilled() && !isSaving ? { scale: 1.02 } : {}}
+          whileTap={areRequiredFieldsFilled() && !isSaving ? { scale: 0.98 } : {}}
+          className={`w-full py-4 px-6 font-semibold rounded-xl
+                     flex items-center justify-center gap-2 transition-all duration-200
+                     ${areRequiredFieldsFilled() && !isSaving
+                       ? 'bg-gradient-to-r from-[#69ADFF] to-[#74ACEF] text-white shadow-lg shadow-[#69ADFF]/25 hover:shadow-xl hover:shadow-[#69ADFF]/30 cursor-pointer'
+                       : 'bg-[#F7F7F8] text-[#BDBDCB] cursor-not-allowed'
+                     }`}
+        >
+          <span>לחץ כאן כדי להוסיף עכשיו</span>
+          {isSaving ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Check className="w-5 h-5" />
+          )}
+        </motion.button>
+
+        {/* Navigation */}
+        <div className="flex items-center justify-between">
+          {/* Back Button */}
+          <button
+            onClick={goToPreviousStep}
+            disabled={isFirstStep}
+            className={`flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-xl transition-all
+              ${
+                isFirstStep
+                  ? 'text-[#BDBDCB] cursor-not-allowed'
+                  : 'text-[#7E7F90] hover:text-[#303150] hover:bg-[#F7F7F8]'
+              }`}
+          >
+            <ChevronRight className="w-4 h-4" />
+            הקודם
+          </button>
+
+          {/* Progress Dots */}
+          <div className="flex items-center gap-2">
+            {harediOnboardingSteps.map((_, index) => (
+              <motion.div
+                key={index}
+                initial={false}
+                animate={{
+                  scale: index === currentStepIndex ? 1.2 : 1,
+                  backgroundColor:
+                    index === currentStepIndex
+                      ? '#69ADFF'
+                      : index < currentStepIndex
+                      ? '#0DBACC'
+                      : '#BDBDCB',
+                }}
+                className="w-2 h-2 rounded-full"
+              />
+            ))}
+          </div>
+
+          {/* Skip Button */}
+          <button
+            onClick={isLastStep ? endTour : goToNextStep}
+            className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-[#7E7F90] hover:text-[#303150] hover:bg-[#F7F7F8] rounded-xl transition-all"
+          >
+            {isLastStep ? 'סיום' : 'דלג'}
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
     );
   };
 
@@ -812,138 +992,51 @@ export default function HarediOnboardingWizard() {
       <AnimatePresence>
         {isWizardOpen && (
           <>
-            {/* Backdrop */}
+            {/* Backdrop - only closable if step allows it */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
-              onClick={endTour}
+              onClick={isClosable ? endTour : undefined}
             />
 
             {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
-          >
-            <div
-              className="relative w-full max-w-md h-[600px] bg-white rounded-3xl shadow-2xl border border-[#F7F7F8] pointer-events-auto flex flex-col overflow-hidden"
-              dir="rtl"
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
             >
-              {/* Close Button */}
-              <button
-                onClick={endTour}
-                className="absolute top-4 left-4 p-2 text-[#7E7F90] hover:text-[#303150] hover:bg-[#F7F7F8] rounded-xl transition-all z-10"
+              <div
+                className="relative w-full max-w-md h-[600px] bg-white rounded-3xl shadow-2xl border border-[#F7F7F8] pointer-events-auto flex flex-col overflow-hidden"
+                dir="rtl"
               >
-                <X className="w-5 h-5" />
-              </button>
-
-              {/* Content - Scrollable */}
-              <div ref={contentScrollRef} className={`flex-1 overflow-y-auto p-8 pt-12 ${currentStep.id === 'welcome' ? 'flex flex-col' : ''}`}>
-                <AnimatePresence mode="wait" initial={false}>
-                  {renderStepContent(currentStep)}
-                </AnimatePresence>
-              </div>
-
-              {/* Footer - Fixed at bottom (hidden on welcome/choice step) */}
-              {currentStep.id !== 'welcome' && (
-              <div className="flex-shrink-0 px-8 pb-6 pt-4 border-t border-[#F7F7F8] space-y-3">
-                {/* Add button */}
-                <motion.button
-                  onClick={handleAddDirectly}
-                  disabled={!areRequiredFieldsFilled() || isSaving}
-                  whileHover={areRequiredFieldsFilled() && !isSaving ? { scale: 1.02 } : {}}
-                  whileTap={areRequiredFieldsFilled() && !isSaving ? { scale: 0.98 } : {}}
-                  className={`w-full py-4 px-6 font-semibold rounded-xl
-                             flex items-center justify-center gap-2 transition-all duration-200
-                             ${areRequiredFieldsFilled() && !isSaving
-                               ? 'bg-gradient-to-r from-[#69ADFF] to-[#74ACEF] text-white shadow-lg shadow-[#69ADFF]/25 hover:shadow-xl hover:shadow-[#69ADFF]/30 cursor-pointer'
-                               : 'bg-[#F7F7F8] text-[#BDBDCB] cursor-not-allowed'
-                             }`}
-                >
-                  <span>לחץ כאן כדי להוסיף עכשיו</span>
-                  {isSaving ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Check className="w-5 h-5" />
-                  )}
-                </motion.button>
-
-                {/* Finish Button - only on last step */}
-                {isLastStep && (
-                  <motion.button
+                {/* Close Button - hidden on non-closable steps */}
+                {isClosable && (
+                  <button
                     onClick={endTour}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full py-4 px-6 bg-gradient-to-r from-[#0DBACC] to-[#0DBACC] text-white font-semibold rounded-xl
-                               shadow-lg shadow-[#0DBACC]/25 hover:shadow-xl hover:shadow-[#0DBACC]/30
-                               flex items-center justify-center gap-2 transition-all duration-200"
+                    className="absolute top-4 left-4 p-2 text-[#7E7F90] hover:text-[#303150] hover:bg-[#F7F7F8] rounded-xl transition-all z-10"
                   >
-                    <Check className="w-5 h-5" />
-                    <span>סיימתי! בואו נתחיל</span>
-                    <Sparkles className="w-4 h-4 opacity-70" />
-                  </motion.button>
+                    <X className="w-5 h-5" />
+                  </button>
                 )}
 
-                {/* Navigation - hidden on welcome step */}
-                {currentStep.id !== 'welcome' && (
-                  <div className="flex items-center justify-between">
-                    {/* Back Button */}
-                    <button
-                      onClick={goToPreviousStep}
-                      disabled={isFirstStep}
-                      className={`flex items-center gap-1 px-4 py-2 text-sm font-medium rounded-xl transition-all
-                        ${
-                          isFirstStep
-                            ? 'text-[#BDBDCB] cursor-not-allowed'
-                            : 'text-[#7E7F90] hover:text-[#303150] hover:bg-[#F7F7F8]'
-                        }`}
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                      הקודם
-                    </button>
+                {/* Content - Scrollable */}
+                <div ref={contentScrollRef} className="flex-1 overflow-y-auto p-8 pt-12">
+                  <AnimatePresence mode="wait" initial={false}>
+                    {renderStepContent(currentStep)}
+                  </AnimatePresence>
+                </div>
 
-                    {/* Progress Dots */}
-                    <div className="flex items-center gap-2">
-                      {harediOnboardingSteps.map((_, index) => (
-                        <motion.div
-                          key={index}
-                          initial={false}
-                          animate={{
-                            scale: index === currentStepIndex ? 1.2 : 1,
-                            backgroundColor:
-                              index === currentStepIndex
-                                ? '#69ADFF'
-                                : index < currentStepIndex
-                                ? '#0DBACC'
-                                : '#BDBDCB',
-                          }}
-                          className="w-2 h-2 rounded-full"
-                        />
-                      ))}
-                    </div>
-
-                    {/* Next/Skip Button */}
-                    <button
-                      onClick={isLastStep ? endTour : goToNextStep}
-                      className="flex items-center gap-1 px-4 py-2 text-sm font-medium text-[#7E7F90] hover:text-[#303150] hover:bg-[#F7F7F8] rounded-xl transition-all"
-                    >
-                      {isLastStep ? 'סיום' : 'דלג'}
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
+                {/* Footer */}
+                {renderFooter()}
               </div>
-              )}
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 }
-
