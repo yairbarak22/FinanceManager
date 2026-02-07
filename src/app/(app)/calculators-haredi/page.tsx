@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout';
-import { CompoundInterestCalc, LockedCalculatorsGrid } from '@/components/calculators';
+import { LockedCalculatorsGrid } from '@/components/calculators';
+import { GmachVsInvestmentCalc } from '@/components/calculators/haredi';
 import { useMonth } from '@/context/MonthContext';
 import { useModal } from '@/context/ModalContext';
 import ProfileModal from '@/components/ProfileModal';
@@ -16,7 +17,7 @@ interface AccessStatus {
   acceptedInvites: number;
 }
 
-export default function CalculatorsPage() {
+export default function HarediCalculatorsPage() {
   const {
     selectedMonth,
     setSelectedMonth,
@@ -24,32 +25,36 @@ export default function CalculatorsPage() {
     monthsWithData,
     currentMonth,
   } = useMonth();
-  
+
   const { openModal, isModalOpen, closeModal } = useModal();
   const router = useRouter();
-  
+
   // Access state
   const [accessStatus, setAccessStatus] = useState<AccessStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [isVerifyingUser, setIsVerifyingUser] = useState(true);
 
-  // Redirect Haredi users to their dedicated calculators page
+  // Verify user is Haredi (signupSource === 'prog')
   useEffect(() => {
-    const checkSignupSource = async () => {
+    const verifyUser = async () => {
       try {
-        const res = await fetch('/api/user/onboarding');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.signupSource === 'prog') {
-            router.replace('/calculators-haredi');
+        const response = await fetch('/api/user/onboarding');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.signupSource !== 'prog') {
+            router.replace('/calculators');
             return;
           }
         }
-      } catch {
-        // silently ignore
+      } catch (error) {
+        console.error('Failed to verify user:', error);
+      } finally {
+        setIsVerifyingUser(false);
       }
     };
-    checkSignupSource();
+
+    verifyUser();
   }, [router]);
 
   // Fetch access status from API
@@ -75,12 +80,33 @@ export default function CalculatorsPage() {
 
   // Handler for when an invite is sent
   const handleInviteSent = () => {
-    // Refresh access status to update pending count
     fetchAccessStatus();
   };
 
   const isUnlocked = accessStatus?.hasAccess ?? false;
   const pendingInvites = accessStatus?.pendingInvites ?? 0;
+
+  // Show loading while verifying user
+  if (isVerifyingUser) {
+    return (
+      <AppLayout
+        pageTitle="מחשבונים פיננסיים"
+        pageSubtitle="כלים חכמים לתכנון העתיד הפיננסי שלך"
+        selectedMonth={selectedMonth}
+        onMonthChange={setSelectedMonth}
+        allMonths={allMonths}
+        monthsWithData={monthsWithData}
+        currentMonth={currentMonth}
+        onOpenProfile={() => openModal('profile')}
+        onOpenAccountSettings={() => openModal('accountSettings')}
+        showMonthFilter={false}
+      >
+        <div className="flex justify-center py-24">
+          <div className="w-8 h-8 border-2 border-[#69ADFF] border-t-transparent rounded-full animate-spin" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout
@@ -106,7 +132,7 @@ export default function CalculatorsPage() {
           <p className="text-[#7E7F90]">כלים חכמים לתכנון העתיד הפיננסי שלך</p>
         </motion.div>
 
-        {/* Always Open: Compound Interest Calculator */}
+        {/* Main Calculator: Gmach vs Investment */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -114,10 +140,10 @@ export default function CalculatorsPage() {
           className="space-y-6"
         >
           <div>
-            <h2 className="text-xl font-bold text-[#303150] mb-1">מחשבון ריבית דריבית</h2>
-            <p className="text-sm text-[#7E7F90]">גלה כמה הכסף שלך יכול לצמוח עם הזמן</p>
+            <h2 className="text-xl font-bold text-[#303150] mb-1">מחשבון השתדלות</h2>
+            <p className="text-sm text-[#7E7F90]">חשב מסלול השתדלות — גמ״ח מול השקעה כשרה</p>
           </div>
-          <CompoundInterestCalc />
+          <GmachVsInvestmentCalc />
         </motion.section>
 
         {/* Pro Calculators Section */}
@@ -137,7 +163,7 @@ export default function CalculatorsPage() {
               )}
             </h2>
             <p className="text-sm text-[#7E7F90]">
-              {isUnlocked 
+              {isUnlocked
                 ? 'כל הכלים פתוחים עבורך. תהנה!'
                 : pendingInvites > 0
                   ? `יש לך ${pendingInvites} הזמנות ממתינות. הגישה תיפתח כשחבר יירשם.`
@@ -148,13 +174,13 @@ export default function CalculatorsPage() {
 
           {/* Only render locked grid after mount and loading complete */}
           {mounted && !isLoading && (
-            <LockedCalculatorsGrid 
-              isUnlocked={isUnlocked} 
+            <LockedCalculatorsGrid
+              isUnlocked={isUnlocked}
               onInviteSent={handleInviteSent}
               pendingInvites={pendingInvites}
             />
           )}
-          
+
           {/* Loading state */}
           {isLoading && (
             <div className="flex justify-center py-12">
@@ -168,7 +194,7 @@ export default function CalculatorsPage() {
           המידע הוא לצורכי לימוד בלבד ואינו מהווה ייעוץ פיננסי. מומלץ להתייעץ עם מומחה לפני קבלת החלטות.
         </p>
       </div>
-      
+
       {/* Modals */}
       <ProfileModal
         isOpen={isModalOpen('profile')}
@@ -181,3 +207,4 @@ export default function CalculatorsPage() {
     </AppLayout>
   );
 }
+

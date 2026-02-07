@@ -82,7 +82,7 @@ const navItems: NavItem[] = [
     iconColor: 'text-[#9F7FE0]',
     subItems: [
       { id: 'general-knowledge', label: 'ידע כללי', path: '/help', icon: BookOpen },
-      { id: 'calculators', label: 'מחשבונים', path: '/calculators', icon: Calculator },
+      { id: 'calculators', label: 'מחשבונים', path: '/calculators', icon: Calculator }, // path overridden dynamically for Haredi users
     ],
   },
   { 
@@ -104,7 +104,31 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
   const [expandedMenu, setExpandedMenu] = useState<string | null>(
     pathname.startsWith('/help') || pathname.startsWith('/calculators') ? 'help' : null
   );
+
+  // Keep submenu expanded when on calculators-haredi page
+  useEffect(() => {
+    if (pathname.startsWith('/calculators-haredi') && expandedMenu !== 'help') {
+      setExpandedMenu('help');
+    }
+  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
   const [mounted, setMounted] = useState(false);
+  const [isHarediUser, setIsHarediUser] = useState(false);
+
+  // Fetch signupSource to determine if user is Haredi
+  useEffect(() => {
+    const checkSignupSource = async () => {
+      try {
+        const res = await fetch('/api/user/onboarding');
+        if (res.ok) {
+          const data = await res.json();
+          setIsHarediUser(data.signupSource === 'prog');
+        }
+      } catch {
+        // silently ignore
+      }
+    };
+    checkSignupSource();
+  }, []);
 
   // For portal mounting
   useEffect(() => {
@@ -129,6 +153,8 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
   const isItemActive = (item: NavItem) => {
     if (item.path === '/dashboard' && pathname === '/') return true;
     if (item.subItems) {
+      // Also match calculators-haredi under the help/calculators parent
+      if (item.id === 'help' && pathname.startsWith('/calculators-haredi')) return true;
       return pathname.startsWith(item.path.split('?')[0]);
     }
     return pathname === item.path;
@@ -273,13 +299,18 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
                       <div className="pr-6 pt-1 pb-2 space-y-0.5">
                         {item.subItems?.map((subItem) => {
                           const SubIcon = subItem.icon;
-                          const isSubActive = pathname + (typeof window !== 'undefined' ? window.location.search : '') === subItem.path;
+                          // Override calculators path for Haredi users
+                          const resolvedPath = subItem.id === 'calculators' && isHarediUser
+                            ? '/calculators-haredi'
+                            : subItem.path;
+                          const isSubActive = pathname === resolvedPath || 
+                            (subItem.id === 'calculators' && (pathname === '/calculators' || pathname === '/calculators-haredi'));
                           
                           return (
                             <button
                               key={subItem.id}
                               type="button"
-                              onClick={() => handleNavigate(subItem.path)}
+                              onClick={() => handleNavigate(resolvedPath)}
                               className={`
                                 w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg
                                 transition-all duration-150 cursor-pointer
