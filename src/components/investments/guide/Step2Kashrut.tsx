@@ -101,51 +101,71 @@ export default function Step2Kashrut({ onInView }: Step2KashrutProps) {
             <h3 className="text-sm font-bold text-[#303150]">הכשרות</h3>
           </div>
 
-          {/* Loan vs Partnership */}
+          {/* What makes index funds kosher? */}
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 bg-[#FFF8E1] rounded-xl flex items-center justify-center flex-shrink-0">
               <Handshake className="w-6 h-6 text-[#E9A800]" />
             </div>
             <div className="space-y-2 flex-1">
-              <h4 className="text-sm font-semibold text-[#303150]">ההבדל בין הלוואה לשותפות</h4>
-              <div className="space-y-3">
-                <div className="bg-[#F18AB5]/10 rounded-xl p-3 border border-[#F18AB5]/20">
-                  <p className="text-xs font-medium text-[#F18AB5] mb-0.5">הלוואה (בעייתי)</p>
-                  <p className="text-sm text-[#7E7F90]">
-                    בגמ״ח או בפיקדון בבנק – אתם <span className="font-medium text-[#303150]">מלווים כסף</span>. 
-                    זו בעיית ריבית.
-                  </p>
-                </div>
-                <div className="bg-[#0DBACC]/10 rounded-xl p-3 border border-[#0DBACC]/20">
-                  <p className="text-xs font-medium text-[#0DBACC] mb-0.5">שותפות (מותר)</p>
-                  <p className="text-sm text-[#7E7F90]">
-                    במדד S&P 500 – אתם <span className="font-medium text-[#303150]">קונים בעלות (מניות) בחברות</span>. 
-                    זו עסקה, לא הלוואה.
-                  </p>
-                </div>
-              </div>
+              <h4 className="text-sm font-semibold text-[#303150]">מה הופך קרנות מחקות מדד לכשרות?</h4>
+              <p className="text-sm text-[#7E7F90] leading-relaxed">
+                קניית מניות היא <span className="font-medium text-[#303150]">קניית בעלות חלקית בחברה – לא הלוואה</span>. 
+                כשאתם קונים מניה של אפל או גוגל, אתם שותפים בעסק. 
+                הרווח שלכם מגיע מצמיחת ערך העסק – לא מריבית על הלוואה. 
+                לכן, עצם קניית מניות היא עסקה כשרה לחלוטין.
+              </p>
             </div>
           </div>
 
           {/* Divider */}
           <div className="border-t border-[#F7F7F8]" />
 
-          {/* Accordion - Heter Iska */}
-          <Accordion title="מה עושים עם חברות שיש להן ריבית?">
+          {/* Accordion - Heter Iska for bonds/interest within the fund */}
+          <Accordion title="מה לגבי אגרות חוב וחברות שמלוות כסף?">
             <div className="space-y-3">
               <p>
-                קרנות הסל הישראליות (כמו <span className="font-medium text-[#303150]">הראל</span> ו<span className="font-medium text-[#303150]">קסם</span>) 
-                מפוקחות הלכתית ומחזיקות ב<span className="font-medium text-[#0DBACC]">היתר עסקה למהדרין</span>.
+                חלק מהחברות במדד S&P 500 עוסקות בהלוואות (בנקים, חברות אשראי). 
+                בנוסף, חלק מהקרנות מחזיקות באגרות חוב. 
+                כאן נכנס <span className="font-medium text-[#0DBACC]">היתר עסקה</span> לתמונה.
               </p>
               <p>
-                ההיתר מכשיר את כל הרווחים כעסק לכל דבר – לא כריבית. 
-                זה כמו להיות שותף עסקי בחברה, לא מלווה כסף.
+                קרנות הסל הישראליות המחקות את המדד (כמו <span className="font-medium text-[#303150]">הראל</span>, <span className="font-medium text-[#303150]">קסם</span>, <span className="font-medium text-[#303150]">תכלית</span> ו<span className="font-medium text-[#303150]">מגדל</span>) 
+                פועלות תחת <span className="font-medium text-[#0DBACC]">היתר עסקה למהדרין</span> – 
+                מנגנון הלכתי מוכר ומקובל על גדולי הפוסקים, 
+                שמגדיר את מערכת היחסים כ<span className="font-medium text-[#303150]">שותפות עסקית</span> ולא כהלוואה בריבית.
               </p>
               <div className="bg-[#FFF8E1] rounded-xl p-3 mt-2">
                 <p className="text-xs text-[#7E7F90]">
                   <span className="font-medium text-[#E9A800]">היתר עסקה</span> – 
-                  מנגנון הלכתי שהופך את מערכת היחסים מ&quot;מלווה-לווה&quot; ל&quot;שותפים עסקיים&quot;. 
-                  בדומה למסחר רגיל שהותר ע&quot;י גדולי הפוסקים.
+                  שטר הלכתי שמגדיר שהכסף שניתן אינו הלוואה אלא השקעה משותפת בעסק. 
+                  הרווחים הם חלק היחסי של המשקיע ברווחי העסק, ולא ריבית. 
+                  המנגנון מקובל על הפוסקים כבר מאות שנים ומשמש גם בבנקים ובחברות ביטוח בישראל.
+                </p>
+              </div>
+            </div>
+          </Accordion>
+
+          {/* Accordion - Which funds are kosher? */}
+          <Accordion title="אילו קרנות מחקות מדד כשרות למהדרין?">
+            <div className="space-y-3">
+              <p>
+                <span className="font-medium text-[#303150]">קרנות מחקות מדד ישראליות</span> – 
+                קרנות הסל הנסחרות בבורסה בתל אביב שמחקות את S&P 500 
+                פועלות תחת פיקוח רשות ני&quot;ע הישראלית 
+                ומחזיקות בהיתר עסקה. 
+                זה כולל קרנות של הראל, קסם, תכלית, מגדל ועוד.
+              </p>
+              <p>
+                <span className="font-medium text-[#303150]">מה חשוב לבדוק?</span>{' '}
+                לפני רכישה, ודאו שהקרן מחזיקה ב<span className="font-medium text-[#0DBACC]">היתר עסקה בתוקף</span>. 
+                ברוב המקרים, הדבר מצוין באתר חברת הקרן. 
+                ההיתר מכסה את כל מרכיבי הקרן – כולל חברות פיננסיות ומכשירים שעשויים לכלול מרכיב של הלוואה.
+              </p>
+              <div className="bg-[#FFF8E1] rounded-xl p-3 mt-2">
+                <p className="text-xs text-[#7E7F90]">
+                  <span className="font-medium text-[#E9A800]">שימו לב:</span>{' '}
+                  קרנות מחקות מדד אמריקאיות (כמו VOO או SPY) אינן מחזיקות בהיתר עסקה. 
+                  לכן, עדיף לרכוש קרנות ישראליות שמחקות את אותו מדד ופועלות תחת פיקוח הלכתי.
                 </p>
               </div>
             </div>
@@ -177,12 +197,20 @@ export default function Step2Kashrut({ onInView }: Step2KashrutProps) {
               <ShieldCheck className="w-6 h-6 text-[#0DBACC]" />
             </div>
             <div className="space-y-2 flex-1">
-              <h4 className="text-sm font-semibold text-[#303150]">חותמת הביטחון</h4>
-              <p className="text-sm text-[#7E7F90] leading-relaxed">
-                המסלולים שאנחנו מציעים מפוקחים ומאושרים הלכתית.
-              </p>
+              <h4 className="text-sm font-semibold text-[#303150]">סיכום: למה זה כשר?</h4>
+              <div className="space-y-1.5">
+                <p className="text-sm text-[#7E7F90] leading-relaxed">
+                  <span className="font-medium text-[#303150]">1.</span> קניית מניות = בעלות בעסק, לא הלוואה בריבית.
+                </p>
+                <p className="text-sm text-[#7E7F90] leading-relaxed">
+                  <span className="font-medium text-[#303150]">2.</span> קרנות ישראליות מחזיקות בהיתר עסקה למהדרין שמכסה את כל מרכיבי הקרן.
+                </p>
+                <p className="text-sm text-[#7E7F90] leading-relaxed">
+                  <span className="font-medium text-[#303150]">3.</span> הקרנות מפוקחות גם הלכתית וגם רגולטורית (רשות ני&quot;ע).
+                </p>
+              </div>
               {/* Certification badges */}
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap mt-2">
                 <span className="text-[10px] font-medium text-[#0DBACC] bg-[#E6F9F9] px-3 py-1.5 rounded-lg border border-[#0DBACC]/20">
                   היתר עסקה מהודר
                 </span>

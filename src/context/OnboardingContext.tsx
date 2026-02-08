@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { liabilityTypes as defaultLiabilityTypes } from '@/lib/categories';
+import { trackMixpanelEvent } from '@/lib/mixpanel';
 
 /**
  * Onboarding Tour Steps
@@ -173,6 +174,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     setIsWizardOpen(true);
     setCurrentStepIndexState(0);
     setIsHarediUser(false);
+    trackMixpanelEvent('Onboarding Started', { user_type: 'regular' });
   }, []);
 
   /**
@@ -184,6 +186,7 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     setIsWizardOpen(true);
     setCurrentStepIndexState(0);
     setIsHarediUser(true);
+    trackMixpanelEvent('Onboarding Started', { user_type: 'haredi' });
   }, []);
 
   /**
@@ -266,6 +269,9 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     if (!success) {
       console.error('[Onboarding] Failed to mark onboarding as complete after all retries');
     }
+
+    // Track Onboarding Completed event
+    trackMixpanelEvent('Onboarding Completed', { user_type: isHarediUser ? 'haredi' : 'regular' });
 
     // Open the "Add to Home Screen" modal after a short delay (not for Haredi users)
     if (!isHarediUser) {

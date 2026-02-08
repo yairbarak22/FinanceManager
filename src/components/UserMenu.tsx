@@ -5,6 +5,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { LogOut, User, ChevronDown, UserCog, Users, Sparkles } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { SensitiveData } from './common/SensitiveData';
+import { trackMixpanelEvent, resetMixpanel } from '@/lib/mixpanel';
 
 interface UserMenuProps {
   onOpenProfile?: () => void;
@@ -116,6 +117,8 @@ export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserM
             <button
               onClick={() => {
                 setIsOpen(false);
+                trackMixpanelEvent('logout');
+                resetMixpanel();
                 signOut({ callbackUrl: '/login' });
               }}
               className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"

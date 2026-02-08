@@ -146,12 +146,78 @@ export function useAnalytics() {
   }, []);
 
   // Onboarding events
-  const trackOnboardingStep = useCallback((step: string) => {
-    trackEvent('onboarding_step', { step_name: step });
+  const trackOnboardingStarted = useCallback((userType: 'regular' | 'haredi') => {
+    trackEvent('Onboarding Started', { user_type: userType });
   }, []);
 
-  const trackOnboardingComplete = useCallback(() => {
-    trackEvent('onboarding_complete');
+  const trackOnboardingStep = useCallback((stepId: string, stepName: string, stepIndex: number) => {
+    trackEvent('Onboarding Step Viewed', { step_id: stepId, step_name: stepName, step_index: stepIndex });
+  }, []);
+
+  const trackOnboardingStepCompleted = useCallback((stepId: string, stepName: string, stepIndex: number, dataEntered: boolean) => {
+    trackEvent('Onboarding Step Completed', { step_id: stepId, step_name: stepName, step_index: stepIndex, data_entered: dataEntered });
+  }, []);
+
+  const trackOnboardingComplete = useCallback((totalSteps?: number) => {
+    trackEvent('Onboarding Completed', { total_steps: totalSteps });
+  }, []);
+
+  // Sign Up event (for the funnel)
+  const trackSignUp = useCallback((method: string = 'google') => {
+    trackEvent('Sign Up', { signup_method: method });
+  }, []);
+
+  // Goal events
+  const trackGoalPageViewed = useCallback(() => {
+    trackEvent('Goal Page Viewed');
+  }, []);
+
+  const trackGoalFormOpened = useCallback((source: string) => {
+    trackEvent('Goal Form Opened', { source });
+  }, []);
+
+  const trackGoalSimulatorUsed = useCallback((targetAmount: number, timeInMonths: number, interestRate: number) => {
+    trackEvent('Goal Simulator Used', { target_amount: targetAmount, time_in_months: timeInMonths, interest_rate: interestRate });
+  }, []);
+
+  const trackGoalCreated = useCallback((goalName: string, category: string, targetAmount: number, currentAmount: number, deadline: string, investInPortfolio: boolean) => {
+    trackEvent('Goal Created', { goal_name: goalName, category, target_amount: targetAmount, current_amount: currentAmount, deadline, invest_in_portfolio: investInPortfolio });
+  }, []);
+
+  const trackGoalUpdated = useCallback((goalId: string, goalName: string, category: string, targetAmount: number, currentAmount: number, deadline: string) => {
+    trackEvent('Goal Updated', { goal_id: goalId, goal_name: goalName, category, target_amount: targetAmount, current_amount: currentAmount, deadline });
+  }, []);
+
+  const trackGoalDeleted = useCallback((goalId: string, goalName: string) => {
+    trackEvent('Goal Deleted', { goal_id: goalId, goal_name: goalName });
+  }, []);
+
+  // Calculator events
+  const trackCalculatorOpened = useCallback((calculatorName: string) => {
+    trackEvent('Calculator Opened', { calculator_name: calculatorName });
+  }, []);
+
+  const trackCalculatorUsed = useCallback((calculatorName: string, parameters?: Record<string, unknown>) => {
+    trackEvent('Calculator Used', { calculator_name: calculatorName, ...parameters });
+  }, []);
+
+  // Investment events
+  const trackInvestmentGuideViewed = useCallback(() => {
+    trackEvent('Investment Guide Viewed', { guide_type: 'passive_investing' });
+  }, []);
+
+  const trackInvestmentPortfolioViewed = useCallback(() => {
+    trackEvent('Investment Portfolio Viewed');
+  }, []);
+
+  // IBI Button - CRITICAL for funnel
+  const trackIBIButtonClicked = useCallback((goalCount: number) => {
+    trackEvent('IBI Button Clicked', { source: 'investment_guide', guide_step: 4, goal_count: goalCount });
+  }, []);
+
+  // Transaction edit
+  const trackEditTransaction = useCallback(() => {
+    trackEvent('Transaction Edited');
   }, []);
 
   return {
@@ -160,6 +226,7 @@ export function useAnalytics() {
     // Transactions
     trackAddTransaction,
     trackDeleteTransaction,
+    trackEditTransaction,
     // Assets
     trackAddAsset,
     trackDeleteAsset,
@@ -179,10 +246,27 @@ export function useAnalytics() {
     // Auth
     trackLogin,
     trackLogout,
+    trackSignUp,
     // AI
     trackAIChat,
     // Onboarding
+    trackOnboardingStarted,
     trackOnboardingStep,
+    trackOnboardingStepCompleted,
     trackOnboardingComplete,
+    // Goals
+    trackGoalPageViewed,
+    trackGoalFormOpened,
+    trackGoalSimulatorUsed,
+    trackGoalCreated,
+    trackGoalUpdated,
+    trackGoalDeleted,
+    // Calculators
+    trackCalculatorOpened,
+    trackCalculatorUsed,
+    // Investments
+    trackInvestmentGuideViewed,
+    trackInvestmentPortfolioViewed,
+    trackIBIButtonClicked,
   };
 }

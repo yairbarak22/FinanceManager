@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSession, signOut } from 'next-auth/react';
+import { trackMixpanelEvent, resetMixpanel } from '@/lib/mixpanel';
 import {
   PieChart,
   LogOut,
@@ -303,6 +304,8 @@ export default function HeaderBar({
                         role="menuitem"
                         onClick={() => {
                           setIsUserMenuOpen(false);
+                          trackMixpanelEvent('logout');
+                          resetMixpanel();
                           signOut({ callbackUrl: '/login' });
                         }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
@@ -473,6 +476,8 @@ export default function HeaderBar({
                 type="button"
                 onClick={() => {
                   setIsMobileMenuOpen(false);
+                  trackMixpanelEvent('logout');
+                  resetMixpanel();
                   signOut({ callbackUrl: '/login' });
                 }}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 transition-all"

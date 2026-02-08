@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { TreePine, Globe, BarChart3, Info } from 'lucide-react';
+import { ShoppingCart, Globe, BarChart3, Info } from 'lucide-react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -105,17 +105,35 @@ function InfoTooltip({ text }: { text: string }) {
 // Custom Chart Tooltip
 // ============================================================================
 
+// Current value of S&P 500 (2025)
+const SP500_CURRENT_VALUE = SP500_FULL_DATA[SP500_FULL_DATA.length - 1].value;
+
 function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
   if (!active || !payload?.length) return null;
 
-  const dataPoint = SP500_FULL_DATA.find(d => d.year === Number(label));
+  const yearValue = payload[0].value;
+  const year = Number(label);
+  const dataPoint = SP500_FULL_DATA.find(d => d.year === year);
+
+  // Calculate how much 1,000 ILS invested at that year would be worth today
+  const returnValue = yearValue > 0
+    ? Math.round((SP500_CURRENT_VALUE / yearValue) * 1000)
+    : 0;
 
   return (
-    <div className="bg-[#303150] text-white text-xs p-3 rounded-xl shadow-lg" dir="rtl">
+    <div className="bg-[#303150] text-white text-xs p-3 rounded-xl shadow-lg min-w-[200px]" dir="rtl">
       <p className="font-semibold">{label}</p>
-      <p className="text-[#0DBACC] mt-0.5">{payload[0].value.toLocaleString()} נקודות</p>
+      <p className="text-[#0DBACC] mt-0.5">{yearValue.toLocaleString()} נקודות</p>
       {dataPoint?.event && (
         <p className="text-[#F18AB5] mt-0.5 text-[10px]">{dataPoint.event}</p>
+      )}
+      {year < 2025 && returnValue > 0 && (
+        <div className="mt-2 pt-2 border-t border-white/20">
+          <p className="text-[10px] text-white/70">אם השקעתם 1,000 ש&quot;ח ב-{year}:</p>
+          <p className="text-sm font-bold text-[#0DBACC] mt-0.5">
+            היום זה שווה {returnValue.toLocaleString()} ש&quot;ח
+          </p>
+        </div>
       )}
     </div>
   );
@@ -170,23 +188,32 @@ export default function Step1Logic({ onInView }: Step1LogicProps) {
         </div>
       </div>
 
-      {/* Analogy Card */}
+      {/* Logic Card */}
       <Card className="overflow-hidden">
         <div className="p-6 space-y-5" dir="rtl">
-          {/* Tree Analogy */}
+          {/* The Logic - Direct Explanation */}
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 bg-[#E6F9F9] rounded-xl flex items-center justify-center flex-shrink-0">
-              <TreePine className="w-6 h-6 text-[#0DBACC]" />
+              <ShoppingCart className="w-6 h-6 text-[#0DBACC]" />
             </div>
             <div className="space-y-2">
               <h3 className="text-sm font-semibold text-[#303150]">ההיגיון</h3>
               <p className="text-sm text-[#7E7F90] leading-relaxed">
-                אנחנו לא מנסים לנחש איזה עלה יפול מחר (מסחר יומי / הימורים).
-                <br />
-                <span className="text-[#303150] font-medium">
-                  אנחנו קונים את היער כולו ונותנים לו לצמוח 20 שנה.
-                </span>
+                אנחנו <span className="text-[#303150] font-medium">לא מנחשים איזו חברה תצליח</span> ואיזו תיכשל. 
+                במקום זה, אנחנו קונים חלק קטן <span className="text-[#303150] font-medium">בכל 500 החברות הגדולות בעולם בבת אחת</span> – 
+                דרך קרן שמחקה את מדד S&P 500.
               </p>
+              <div className="bg-[#F7F7F8] rounded-xl p-3 space-y-1.5">
+                <p className="text-xs text-[#7E7F90]">
+                  <span className="font-semibold text-[#303150]">למה זה עובד?</span>{' '}
+                  הכלכלה העולמית צומחת באופן עקבי כבר מאות שנים. חברות בודדות יכולות לקרוס, 
+                  אבל כשמחזיקים את כל 500 החברות המובילות – הצמיחה הכוללת מובטחת לאורך זמן.
+                </p>
+                <p className="text-xs text-[#7E7F90]">
+                  <span className="font-semibold text-[#303150]">ואם חברה אחת נופלת?</span>{' '}
+                  היא פשוט מוחלפת בחברה חזקה יותר. המדד תמיד מעדכן את עצמו ושומר על 500 החברות הטובות ביותר.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -238,7 +265,7 @@ export default function Step1Logic({ onInView }: Step1LogicProps) {
           {/* Chart */}
           <div className="h-56 lg:h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, bottom: 5, left: 10 }}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, bottom: 5, left: 5 }}>
                 <defs>
                   <linearGradient id="sp500Gradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#0DBACC" stopOpacity={0.3} />
@@ -292,22 +319,24 @@ export default function Step1Logic({ onInView }: Step1LogicProps) {
             <label className="text-xs font-medium text-[#7E7F90]">
               מה קרה ב-90 השנים האחרונות?
             </label>
-            <input
-              type="range"
-              min={1940}
-              max={2025}
-              step={1}
-              value={sliderYear}
-              onChange={(e) => setSliderYear(Number(e.target.value))}
-              className="w-full h-1.5 bg-[#E8E8ED] rounded-full appearance-none cursor-pointer
-                         [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
-                         [&::-webkit-slider-thumb]:bg-[#0DBACC] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md
-                         [&::-webkit-slider-thumb]:cursor-pointer"
-            />
-            <div className="flex justify-between text-[10px] text-[#BDBDCB]">
-              <span>1940</span>
-              <span className="text-xs font-semibold text-[#0DBACC]">{sliderYear}</span>
-              <span>2025</span>
+            <div dir="ltr">
+              <input
+                type="range"
+                min={1940}
+                max={2025}
+                step={1}
+                value={sliderYear}
+                onChange={(e) => setSliderYear(Number(e.target.value))}
+                className="w-full h-1.5 bg-[#E8E8ED] rounded-full appearance-none cursor-pointer
+                           [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5
+                           [&::-webkit-slider-thumb]:bg-[#0DBACC] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md
+                           [&::-webkit-slider-thumb]:cursor-pointer"
+              />
+              <div className="flex justify-between text-[10px] text-[#BDBDCB] mt-1">
+                <span>1940</span>
+                <span className="text-xs font-semibold text-[#0DBACC]">{sliderYear}</span>
+                <span>2025</span>
+              </div>
             </div>
           </div>
 

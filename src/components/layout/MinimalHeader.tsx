@@ -21,6 +21,7 @@ import { useAccessibility } from '@/context/AccessibilityContext';
 import { useSidebar } from '@/context/SidebarContext';
 import MonthFilter from '@/components/MonthFilter';
 import { SensitiveData } from '@/components/common/SensitiveData';
+import { trackMixpanelEvent, resetMixpanel } from '@/lib/mixpanel';
 
 interface MinimalHeaderProps {
   pageTitle: string;
@@ -239,7 +240,7 @@ export default function MinimalHeader({
                     <div className="border-t border-slate-100 py-1">
                       <button
                         type="button"
-                        onClick={() => signOut({ callbackUrl: '/login' })}
+                        onClick={() => { trackMixpanelEvent('logout'); resetMixpanel(); signOut({ callbackUrl: '/login' }); }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-rose-500 hover:bg-rose-50 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />

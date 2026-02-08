@@ -10,12 +10,43 @@ export default function QuickAddFab() {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [isHarediWithDock, setIsHarediWithDock] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const controls = useAnimation();
   const isHoveredRef = useRef(false);
   const isMountedRef = useRef(true);
 
   // Check if quick-add modal is open
   const isQuickAddOpen = isModalOpen('quick-add');
+
+  // Check if user is Haredi with active progress dock
+  useEffect(() => {
+    const checkHarediDock = async () => {
+      try {
+        const res = await fetch('/api/user/onboarding');
+        if (res.ok) {
+          const data = await res.json();
+          setIsHarediWithDock(
+            data.signupSource === 'prog' &&
+            data.hasSeenOnboarding === true
+          );
+        }
+      } catch {
+        setIsHarediWithDock(false);
+      }
+    };
+    checkHarediDock();
+  }, []);
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -108,8 +139,8 @@ export default function QuickAddFab() {
     openModal('quick-add');
   };
 
-  // Don't show FAB when modal is open
-  const shouldShow = isVisible && !isQuickAddOpen;
+  // Don't show FAB when modal is open or on mobile when Haredi dock is active
+  const shouldShow = isVisible && !isQuickAddOpen && !(isMobile && isHarediWithDock);
 
   return (
     <AnimatePresence>

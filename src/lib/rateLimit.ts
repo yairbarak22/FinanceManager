@@ -45,6 +45,9 @@ export const RATE_LIMITS = {
   // Contact form per user - additional limit
   contactUser: { maxRequests: 10, windowSeconds: 300 } as RateLimitConfig,
 
+  // Investment guide email per user - strict (sends email to user)
+  guideUser: { maxRequests: 3, windowSeconds: 3600 } as RateLimitConfig,
+
   // Admin endpoints - strict limits to prevent abuse if credentials compromised
   admin: { maxRequests: 30, windowSeconds: 60 } as RateLimitConfig,
 };

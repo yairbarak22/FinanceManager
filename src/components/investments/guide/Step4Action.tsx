@@ -1,9 +1,12 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { ArrowLeft, MessageCircle, Check, X as XIcon } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Check, Loader2 } from 'lucide-react';
 import Card from '@/components/ui/Card';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { apiFetch } from '@/lib/utils';
+import ContactModal from './ContactModal';
 
 // ============================================================================
 // Types
@@ -14,64 +17,15 @@ interface Step4ActionProps {
 }
 
 // ============================================================================
-// Comparison Row
-// ============================================================================
-
-interface ComparisonRowProps {
-  label: string;
-  gmach: string;
-  gmachType: 'negative' | 'neutral';
-  sp500: string;
-  sp500Type: 'positive' | 'neutral';
-  delay: number;
-  isInView: boolean;
-}
-
-function ComparisonRow({ label, gmach, gmachType, sp500, sp500Type, delay, isInView }: ComparisonRowProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.4, delay }}
-      className="grid grid-cols-3 gap-3 items-center"
-    >
-      {/* Label */}
-      <div className="text-sm font-medium text-[#303150]">{label}</div>
-
-      {/* Gmach */}
-      <div className={`text-center rounded-xl p-2.5 text-xs font-medium ${
-        gmachType === 'negative'
-          ? 'bg-[#F18AB5]/10 text-[#F18AB5]'
-          : 'bg-[#F7F7F8] text-[#7E7F90]'
-      }`}>
-        <div className="flex items-center justify-center gap-1">
-          {gmachType === 'negative' && <XIcon className="w-3 h-3" />}
-          <span>{gmach}</span>
-        </div>
-      </div>
-
-      {/* S&P 500 */}
-      <div className={`text-center rounded-xl p-2.5 text-xs font-medium ${
-        sp500Type === 'positive'
-          ? 'bg-[#0DBACC]/10 text-[#0DBACC]'
-          : 'bg-[#F7F7F8] text-[#7E7F90]'
-      }`}>
-        <div className="flex items-center justify-center gap-1">
-          {sp500Type === 'positive' && <Check className="w-3 h-3" />}
-          <span>{sp500}</span>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// ============================================================================
 // Main Component
 // ============================================================================
 
 export default function Step4Action({ onInView }: Step4ActionProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: false, amount: 0.3 });
+  const analytics = useAnalytics();
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [guideStatus, setGuideStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle');
 
   // Trigger onInView when section comes into view (must be in useEffect to avoid setState during render)
   useEffect(() => {
@@ -79,6 +33,34 @@ export default function Step4Action({ onInView }: Step4ActionProps) {
       onInView();
     }
   }, [isInView, onInView]);
+
+  const handleRequestGuide = async () => {
+    if (guideStatus === 'loading' || guideStatus === 'sent') return;
+
+    setGuideStatus('loading');
+    analytics.trackIBIButtonClicked(0);
+
+    try {
+      const res = await apiFetch('/api/investments/send-guide', {
+        method: 'POST',
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        if (res.status === 401) {
+          // User not logged in - redirect to login
+          window.location.href = '/login';
+          return;
+        }
+        throw new Error(data.error || 'Failed');
+      }
+
+      setGuideStatus('sent');
+    } catch {
+      setGuideStatus('error');
+      setTimeout(() => setGuideStatus('idle'), 3000);
+    }
+  };
 
   return (
     <motion.div
@@ -95,60 +77,70 @@ export default function Step4Action({ onInView }: Step4ActionProps) {
         </div>
         <div>
           <h2 className="text-lg lg:text-xl font-bold text-[#303150]">השורה התחתונה</h2>
-          <p className="text-xs text-[#7E7F90]">סיכום והנעה לפעולה</p>
         </div>
       </div>
 
-      {/* Comparison Table */}
+      {/* Summary Card */}
       <Card className="overflow-hidden">
         <div className="p-6 space-y-5" dir="rtl">
-          <h3 className="text-sm font-bold text-[#303150]">גמ״ח מול תיק מסחר עצמאי כשר</h3>
+          <h3 className="text-sm font-bold text-[#303150]">מה למדנו?</h3>
 
-          {/* Table Header */}
-          <div className="grid grid-cols-3 gap-3 items-center pb-3 border-b border-[#F7F7F8]">
-            <div className="text-xs text-[#BDBDCB]">קריטריון</div>
-            <div className="text-center text-xs font-medium text-[#7E7F90]">גמ״ח</div>
-            <div className="text-center text-xs font-medium text-[#0DBACC]">תיק מסחר כשר</div>
-          </div>
-
-          {/* Rows */}
           <div className="space-y-3">
-            <ComparisonRow
-              label="מאמץ"
-              gmach="גבוה"
-              gmachType="negative"
-              sp500="אפסי"
-              sp500Type="positive"
-              delay={0.1}
-              isInView={isInView}
-            />
-            <ComparisonRow
-              label="תנודתיות"
-              gmach="שחיקת ערך ודאית"
-              gmachType="negative"
-              sp500="זמנית, רווח לטווח ארוך"
-              sp500Type="positive"
-              delay={0.2}
-              isInView={isInView}
-            />
-            <ComparisonRow
-              label="כשרות"
-              gmach="דורש בדיקה"
-              gmachType="neutral"
-              sp500="היתר עסקה מהודר"
-              sp500Type="positive"
-              delay={0.3}
-              isInView={isInView}
-            />
-            <ComparisonRow
-              label="תוצאה אחרי 20 שנה"
-              gmach="חוב שצריך להחזיר"
-              gmachType="negative"
-              sp500="נכס ביד, 0 חובות"
-              sp500Type="positive"
-              delay={0.4}
-              isInView={isInView}
-            />
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="flex items-start gap-3"
+            >
+              <div className="w-6 h-6 bg-[#0DBACC]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Check className="w-3.5 h-3.5 text-[#0DBACC]" />
+              </div>
+              <p className="text-sm text-[#7E7F90]">
+                <span className="font-medium text-[#303150]">השקעה פסיבית</span> – קונים חלק בכל 500 החברות הגדולות בעולם ונותנים לכלכלה לעבוד בשבילנו.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="flex items-start gap-3"
+            >
+              <div className="w-6 h-6 bg-[#0DBACC]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Check className="w-3.5 h-3.5 text-[#0DBACC]" />
+              </div>
+              <p className="text-sm text-[#7E7F90]">
+                <span className="font-medium text-[#303150]">ריבית דריבית</span> – הרווחים מייצרים רווחים נוספים, ולאורך 20 שנה האפקט הזה עצום.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.4, delay: 0.3 }}
+              className="flex items-start gap-3"
+            >
+              <div className="w-6 h-6 bg-[#0DBACC]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Check className="w-3.5 h-3.5 text-[#0DBACC]" />
+              </div>
+              <p className="text-sm text-[#7E7F90]">
+                <span className="font-medium text-[#303150]">כשר למהדרין</span> – קרנות ישראליות מחקות מדד פועלות תחת היתר עסקה ופיקוח הלכתי.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={isInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.4, delay: 0.4 }}
+              className="flex items-start gap-3"
+            >
+              <div className="w-6 h-6 bg-[#0DBACC]/10 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Check className="w-3.5 h-3.5 text-[#0DBACC]" />
+              </div>
+              <p className="text-sm text-[#7E7F90]">
+                <span className="font-medium text-[#303150]">מאמץ אפסי</span> – מגדירים הוראת קבע פעם אחת, ומכאן הכל עובד לבד.
+              </p>
+            </motion.div>
           </div>
         </div>
       </Card>
@@ -159,7 +151,7 @@ export default function Step4Action({ onInView }: Step4ActionProps) {
           <div className="space-y-2">
             <h3 className="text-lg font-bold">מוכנים להתחיל?</h3>
             <p className="text-sm text-white/80 leading-relaxed">
-              ראיתם את ההבדל. הגיע הזמן לפעול. 
+              הגיע הזמן לפעול. 
               פתיחת חשבון לוקחת 10 דקות ואפשר להתחיל גם עם 300 ש&quot;ח בחודש.
             </p>
           </div>
@@ -167,22 +159,37 @@ export default function Step4Action({ onInView }: Step4ActionProps) {
           <div className="flex flex-col sm:flex-row gap-3">
             {/* Primary CTA */}
             <button
-              onClick={() => {
-                // Placeholder - link to IBI or account opening
-                window.open('https://www.ibi.co.il', '_blank');
-              }}
+              onClick={handleRequestGuide}
+              disabled={guideStatus === 'loading' || guideStatus === 'sent'}
               className="flex items-center justify-center gap-2 bg-white text-[#0DBACC] px-6 py-3 rounded-xl font-semibold text-sm
-                         hover:bg-white/90 transition-all duration-200 shadow-lg shadow-black/10 cursor-pointer"
+                         hover:bg-white/90 transition-all duration-200 shadow-lg shadow-black/10 cursor-pointer
+                         disabled:opacity-80 disabled:cursor-not-allowed"
             >
-              <span>הבנתי, בוא נפתח חשבון השתדלות</span>
-              <ArrowLeft className="w-4 h-4" />
+              {guideStatus === 'loading' ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>שולח...</span>
+                </>
+              ) : guideStatus === 'sent' ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>המדריך נשלח למייל שלך!</span>
+                </>
+              ) : guideStatus === 'error' ? (
+                <span>שגיאה, נסו שוב</span>
+              ) : (
+                <>
+                  <span>לחץ כאן וקבל בחינם מדריך מפורט צעד אחרי צעד לפתיחת חשבון</span>
+                  <ArrowLeft className="w-4 h-4" />
+                </>
+              )}
             </button>
 
             {/* Secondary CTA */}
             <button
               onClick={() => {
-                // Placeholder - WhatsApp link
-                window.open('https://wa.me/972000000000?text=שלום, אני מעוניין במידע נוסף על פתיחת תיק מסחר כשר', '_blank');
+                analytics.trackIBIButtonClicked(0);
+                setIsContactModalOpen(true);
               }}
               className="flex items-center justify-center gap-2 bg-white/20 text-white px-6 py-3 rounded-xl font-medium text-sm
                          hover:bg-white/30 transition-all duration-200 border border-white/30 cursor-pointer"
@@ -194,27 +201,11 @@ export default function Step4Action({ onInView }: Step4ActionProps) {
         </div>
       </Card>
 
-      {/* Glossary */}
-      <Card className="overflow-hidden">
-        <div className="p-5 space-y-3" dir="rtl">
-          <h4 className="text-xs font-bold text-[#303150]">מילון מונחים</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <div className="text-xs text-[#7E7F90]">
-              <span className="font-medium text-[#303150]">תשואה</span> = הרווח שההשקעה מייצרת
-            </div>
-            <div className="text-xs text-[#7E7F90]">
-              <span className="font-medium text-[#303150]">תנודתיות</span> = גלים בים – הספינה מתנדנדת אבל מגיעה ליעד
-            </div>
-            <div className="text-xs text-[#7E7F90]">
-              <span className="font-medium text-[#303150]">סל החברות הגדולות</span> = מדד S&P 500
-            </div>
-            <div className="text-xs text-[#7E7F90]">
-              <span className="font-medium text-[#303150]">היתר עסקה</span> = הכשר הלכתי להשקעות
-            </div>
-          </div>
-        </div>
-      </Card>
+      {/* Contact Modal */}
+      <ContactModal
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
+      />
     </motion.div>
   );
 }
-

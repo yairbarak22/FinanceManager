@@ -3,6 +3,14 @@
 import { useRef, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { Lightbulb, Sprout, TrendingUp, Armchair } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from 'recharts';
 import Card from '@/components/ui/Card';
 
 // ============================================================================
@@ -14,42 +22,50 @@ interface StepBackgroundProps {
 }
 
 // ============================================================================
-// Visual: Compound Interest Growth
+// Compound Interest Chart Data
 // ============================================================================
 
-function CompoundGrowthVisual() {
-  const bars = [
-    { year: 1, height: 20, deposit: 12000, total: 12000 },
-    { year: 5, height: 35, deposit: 60000, total: 73000 },
-    { year: 10, height: 55, deposit: 120000, total: 185000 },
-    { year: 15, height: 75, deposit: 180000, total: 370000 },
-    { year: 20, height: 100, deposit: 240000, total: 680000 },
-  ];
+function generateCompoundData() {
+  const monthlyDeposit = 1000;
+  const annualRate = 0.09;
+  const monthlyRate = annualRate / 12;
+  const data: { year: number; deposit: number; total: number; growth: number }[] = [];
+
+  for (let year = 0; year <= 20; year++) {
+    const months = year * 12;
+    const deposit = monthlyDeposit * months;
+    const growthFactor = Math.pow(1 + monthlyRate, months);
+    const total = monthlyRate > 0
+      ? monthlyDeposit * ((growthFactor - 1) / monthlyRate)
+      : deposit;
+    data.push({
+      year,
+      deposit: Math.round(deposit),
+      total: Math.round(total),
+      growth: Math.round(total - deposit),
+    });
+  }
+  return data;
+}
+
+const COMPOUND_DATA = generateCompoundData();
+
+// ============================================================================
+// Chart Tooltip
+// ============================================================================
+
+function CompoundTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ dataKey: string; value: number }>; label?: number }) {
+  if (!active || !payload?.length) return null;
+  const deposit = payload.find(p => p.dataKey === 'deposit')?.value ?? 0;
+  const total = payload.find(p => p.dataKey === 'total')?.value ?? 0;
+  const growth = total - deposit;
 
   return (
-    <div className="flex items-end justify-around gap-2 h-36 px-4">
-      {bars.map((bar, i) => (
-        <div key={bar.year} className="flex flex-col items-center gap-1 flex-1">
-          <motion.div
-            initial={{ height: 0 }}
-            animate={{ height: `${bar.height}%` }}
-            transition={{ duration: 0.6, delay: i * 0.15 }}
-            className="w-full max-w-10 rounded-t-lg relative overflow-hidden"
-          >
-            {/* Deposit portion */}
-            <div
-              className="absolute bottom-0 w-full bg-[#69ADFF]/40"
-              style={{ height: `${(bar.deposit / bar.total) * 100}%` }}
-            />
-            {/* Growth portion */}
-            <div
-              className="absolute top-0 w-full bg-[#0DBACC]"
-              style={{ height: `${((bar.total - bar.deposit) / bar.total) * 100}%` }}
-            />
-          </motion.div>
-          <span className="text-[10px] text-[#7E7F90] font-medium">שנה {bar.year}</span>
-        </div>
-      ))}
+    <div className="bg-[#303150] text-white text-xs p-3 rounded-xl shadow-lg" dir="rtl">
+      <p className="font-semibold">שנה {label}</p>
+      <p className="mt-1"><span className="text-[#69ADFF]">הפקדות:</span> {deposit.toLocaleString()} ש&quot;ח</p>
+      <p><span className="text-[#0DBACC]">רווחים:</span> {growth.toLocaleString()} ש&quot;ח</p>
+      <p className="font-semibold mt-1 border-t border-white/20 pt-1">סה&quot;כ: {total.toLocaleString()} ש&quot;ח</p>
     </div>
   );
 }
@@ -97,13 +113,17 @@ export default function StepBackground({ onInView }: StepBackgroundProps) {
             <div className="space-y-2 flex-1">
               <h3 className="text-sm font-bold text-[#303150]">מה זה השקעה?</h3>
               <p className="text-sm text-[#7E7F90] leading-relaxed">
-                השקעה זה פשוט לשים כסף בצד <span className="font-medium text-[#303150]">כדי שהוא יגדל עם הזמן</span>. 
-                במקום שהכסף ישב בארון ויאבד מערכו (בגלל יוקר המחיה שעולה כל שנה), 
-                אנחנו שמים אותו במקום שבו הוא יכול לעבוד בשבילנו.
+                השקעה היא <span className="font-medium text-[#303150]">הקצאת הון לנכסים שצפויים לגדול בערכם לאורך זמן</span>. 
+                במקום שהכסף ישב בעו&quot;ש ויאבד מכוח הקנייה שלו בגלל האינפלציה (כ-3% בשנה), 
+                אנחנו מפנים אותו לעסקים פעילים שמייצרים ערך כלכלי אמיתי.
               </p>
-              <div className="bg-[#F7F7F8] rounded-xl p-3">
+              <div className="bg-[#F7F7F8] rounded-xl p-3 space-y-1.5">
                 <p className="text-xs text-[#7E7F90]">
-                  <span className="font-semibold text-[#303150]">דוגמה פשוטה:</span> אם קניתם דירה לפני 20 שנה ב-300,000 ש&quot;ח, היום היא שווה הרבה יותר. הדירה לא השתנתה – הערך שלה גדל. זו השקעה.
+                  <span className="font-semibold text-[#303150]">בפועל:</span> כשאתם קונים מניה של חברה, אתם רוכשים בעלות חלקית בעסק אמיתי – 
+                  עסק שמוכר מוצרים, מעסיק עובדים ומייצר רווחים. ככל שהעסק גדל, הבעלות שלכם שווה יותר.
+                </p>
+                <p className="text-xs text-[#7E7F90]">
+                  <span className="font-semibold text-[#303150]">ההבדל מחיסכון:</span> חיסכון שומר על הכסף. השקעה גורמת לכסף לעבוד ולייצר תשואה – הכסף מרוויח כסף נוסף.
                 </p>
               </div>
             </div>
@@ -142,25 +162,74 @@ export default function StepBackground({ onInView }: StepBackgroundProps) {
             </div>
           </div>
 
-          {/* Visual */}
+          {/* Visual - Compound Interest Chart */}
           <div className="bg-[#F7F7F8] rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium text-[#303150]">1,000 ש&quot;ח בחודש × 9% תשואה שנתית</p>
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1">
-                  <div className="w-2.5 h-2.5 rounded-sm bg-[#69ADFF]/40" />
+                  <div className="w-2.5 h-2.5 rounded-sm bg-[#69ADFF]" />
                   <span className="text-[10px] text-[#7E7F90]">הפקדות</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <div className="w-2.5 h-2.5 rounded-sm bg-[#0DBACC]" />
-                  <span className="text-[10px] text-[#7E7F90]">רווחים מצטברים</span>
+                  <span className="text-[10px] text-[#7E7F90]">סה&quot;כ (כולל רווחים)</span>
                 </div>
               </div>
             </div>
-            <CompoundGrowthVisual />
+            <div className="h-44">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={COMPOUND_DATA} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+                  <defs>
+                    <linearGradient id="depositGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#69ADFF" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#69ADFF" stopOpacity={0.05} />
+                    </linearGradient>
+                    <linearGradient id="totalGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0DBACC" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#0DBACC" stopOpacity={0.05} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="year"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#7E7F90', fontSize: 10 }}
+                    tickFormatter={(v) => `שנה ${v}`}
+                    interval={4}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#7E7F90', fontSize: 10 }}
+                    tickFormatter={(v) => `₪${(v / 1000).toFixed(0)}K`}
+                    width={50}
+                  />
+                  <Tooltip content={<CompoundTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="total"
+                    stroke="#0DBACC"
+                    strokeWidth={2}
+                    fill="url(#totalGradient)"
+                    dot={false}
+                    activeDot={{ r: 4, fill: '#0DBACC', stroke: '#fff', strokeWidth: 2 }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="deposit"
+                    stroke="#69ADFF"
+                    strokeWidth={2}
+                    fill="url(#depositGradient)"
+                    dot={false}
+                    activeDot={{ r: 4, fill: '#69ADFF', stroke: '#fff', strokeWidth: 2 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
             <p className="text-[10px] text-[#BDBDCB] text-center">
-              אחרי 20 שנה: הפקדתם 240,000 ש&quot;ח, אבל יש לכם ~680,000 ש&quot;ח. 
-              <span className="text-[#0DBACC] font-medium"> הרווחים המצטברים גדולים יותר מהסכום שהפקדתם!</span>
+              אחרי 20 שנה: הפקדתם 240,000 ש&quot;ח, אבל יש לכם ~670,000 ש&quot;ח. 
+              <span className="text-[#0DBACC] font-medium"> הפער בין שני הקווים הוא הרווח הטהור – וככל שעובר זמן, הוא גדל מהר יותר.</span>
             </p>
           </div>
 
@@ -206,11 +275,30 @@ export default function StepBackground({ onInView }: StepBackgroundProps) {
                   </p>
                 </div>
               </div>
-              <p className="text-sm text-[#7E7F90] leading-relaxed">
-                <span className="font-medium text-[#303150]">למה פסיבי עדיף?</span> 
-                {' '}מחקרים הוכיחו שלאורך 20 שנה, השקעה פסיבית מנצחת את רוב המשקיעים המקצועיים. 
-                פשוט כי אף אחד לא יודע לנחש את העתיד – אבל העולם כולו ממשיך לצמוח.
-              </p>
+
+              <div className="border-t border-[#F7F7F8] pt-3 space-y-3">
+                <p className="text-sm font-medium text-[#303150]">למה פסיבי עדיף?</p>
+                <div className="space-y-2">
+                  <div className="bg-[#F7F7F8] rounded-xl p-3">
+                    <p className="text-xs text-[#7E7F90]">
+                      <span className="font-semibold text-[#303150]">92% מהמנהלים המקצועיים מפסידים למדד.</span>{' '}
+                      לפי דוח SPIVA של S&P Global, לאורך 15 שנה רוב מנהלי הקרנות האקטיביות בארה&quot;ב לא הצליחו להכות את מדד S&P 500. אם המקצוענים לא מצליחים – למה לנסות?
+                    </p>
+                  </div>
+                  <div className="bg-[#F7F7F8] rounded-xl p-3">
+                    <p className="text-xs text-[#7E7F90]">
+                      <span className="font-semibold text-[#303150]">עלויות נמוכות משמעותית.</span>{' '}
+                      דמי ניהול של קרן מחקה מדד: 0.1%-0.3%. קרן אקטיבית: 1%-2%. ההפרש הזה לאורך 20 שנה יכול להגיע למאות אלפי שקלים.
+                    </p>
+                  </div>
+                  <div className="bg-[#F7F7F8] rounded-xl p-3">
+                    <p className="text-xs text-[#7E7F90]">
+                      <span className="font-semibold text-[#303150]">פיזור מקסימלי, סיכון מינימלי.</span>{' '}
+                      במקום לשים את כל הכסף על חברה אחת או שתיים, אתם מפוזרים על 500 חברות מכל התחומים – טכנולוגיה, בריאות, צריכה, אנרגיה. אם חברה אחת נופלת, האחרות מאזנות.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

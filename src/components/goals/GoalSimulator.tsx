@@ -25,6 +25,7 @@ import {
 } from '@/lib/goalCalculations';
 import Card from '@/components/ui/Card';
 import GoalCreationInfoModal from './GoalCreationInfoModal';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 const GOAL_CATEGORIES = [
   { id: 'saving', label: 'חיסכון כללי', icon: Wallet },
@@ -53,6 +54,7 @@ interface GoalSimulatorProps {
 }
 
 export default function GoalSimulator({ onCreateGoal, isCreating, onSuccess }: GoalSimulatorProps) {
+  const analytics = useAnalytics();
   const [name, setName] = useState('');
   const [targetAmount, setTargetAmount] = useState(200000);
   const [currentAmount, setCurrentAmount] = useState(0);
@@ -135,6 +137,10 @@ export default function GoalSimulator({ onCreateGoal, isCreating, onSuccess }: G
     if (!name.trim()) return;
     if (category === 'custom' && !customCategory.trim()) return;
     
+    // Track simulator used
+    analytics.trackGoalSimulatorUsed(targetAmount, effectiveMonths, investInPortfolio ? expectedInterestRate : 0);
+    analytics.trackGoalFormOpened('simulator');
+    
     // Show info modal first
     setShowInfoModal(true);
   };
@@ -155,6 +161,16 @@ export default function GoalSimulator({ onCreateGoal, isCreating, onSuccess }: G
         investInPortfolio,
         expectedInterestRate: investInPortfolio ? expectedInterestRate : undefined,
       });
+      
+      // Track goal created
+      analytics.trackGoalCreated(
+        name.trim(),
+        finalCategory,
+        targetAmount,
+        currentAmount,
+        deadline,
+        investInPortfolio,
+      );
       
       // Close modal and reset form on success
       setShowInfoModal(false);

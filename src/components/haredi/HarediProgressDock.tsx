@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, Check, Lock, ArrowLeft } from 'lucide-react';
 import { useHarediProgress, StepStatus } from '@/hooks/useHarediProgress';
@@ -131,6 +131,7 @@ function StepIcon({ step }: { step: { status: StepStatus; icon: React.ComponentT
 
 export default function HarediProgressDock() {
   const router = useRouter();
+  const pathname = usePathname();
   const {
     steps,
     currentStep,
@@ -149,7 +150,51 @@ export default function HarediProgressDock() {
   const [isHarediUser, setIsHarediUser] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const [dockCenterX, setDockCenterX] = useState(0);
+  const [pendingQuickAdd, setPendingQuickAdd] = useState(false);
   const dockRef = useRef<HTMLDivElement>(null);
+
+  // ---- Detect mobile/desktop and compute center of main content area ----
+  useLayoutEffect(() => {
+    const updatePosition = () => {
+      // Use rAF to ensure layout has completed before reading DOM measurements
+      requestAnimationFrame(() => {
+        setIsMobile(window.innerWidth < 768);
+
+        const mainContent = document.getElementById('main-content-area');
+        if (mainContent) {
+          const rect = mainContent.getBoundingClientRect();
+          setDockCenterX(rect.left + rect.width / 2);
+        } else {
+          // Fallback: center of viewport
+          setDockCenterX(window.innerWidth / 2);
+        }
+      });
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('load', updatePosition);
+
+    // Watch for sidebar collapse/expand animation to re-calc position
+    const observer = new MutationObserver(updatePosition);
+    const sidebar = document.querySelector('aside[aria-label="ניווט ראשי"]');
+    if (sidebar) {
+      observer.observe(sidebar, {
+        attributes: true,
+        attributeFilter: ['style', 'class'],
+        childList: false,
+        subtree: false,
+      });
+    }
+
+    return () => {
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('load', updatePosition);
+      observer.disconnect();
+    };
+  }, []);
 
   // ---- Check if user is Haredi and has completed onboarding ----
   useEffect(() => {
@@ -201,8 +246,13 @@ export default function HarediProgressDock() {
     setIsExpanded(false);
     switch (stepId) {
       case 1:
-        // Step 1: Open quick-add modal
-        openModal('quick-add');
+        // Step 1: Navigate to dashboard first if needed, then open quick-add modal
+        if (pathname === '/dashboard') {
+          openModal('quick-add');
+        } else {
+          setPendingQuickAdd(true);
+          router.push('/dashboard');
+        }
         break;
       case 2:
         // Step 2: Navigate to goals page
@@ -213,7 +263,15 @@ export default function HarediProgressDock() {
         router.push('/investments/guide');
         break;
     }
-  }, [openModal, router]);
+  }, [openModal, router, pathname]);
+
+  // ---- Open quick-add modal after navigating to dashboard ----
+  useEffect(() => {
+    if (pathname === '/dashboard' && pendingQuickAdd) {
+      openModal('quick-add');
+      setPendingQuickAdd(false);
+    }
+  }, [pathname, pendingQuickAdd, openModal]);
 
   // ---- Should we render at all? ----
   if (!isHarediUser || !hasSeenOnboarding) {
@@ -240,9 +298,12 @@ export default function HarediProgressDock() {
             exit={{ y: 80, opacity: 0 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
             className="fixed z-50
-              bottom-20 md:bottom-6
-              left-1/2 -translate-x-1/2
               w-[calc(100%-2rem)] max-w-[600px]"
+            style={{
+              bottom: isMobile ? 'calc(4rem + env(safe-area-inset-bottom))' : '1.5rem',
+              left: `${dockCenterX}px`,
+              transform: 'translateX(-50%)',
+            }}
           >
             <div
               className="rounded-3xl bg-white/95 backdrop-blur-sm overflow-hidden"

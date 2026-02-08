@@ -25,6 +25,7 @@ import { useSidebar } from '@/context/SidebarContext';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { createPortal } from 'react-dom';
 import { SensitiveData } from '@/components/common/SensitiveData';
+import { trackMixpanelEvent, resetMixpanel } from '@/lib/mixpanel';
 
 interface SubNavItem {
   id: string;
@@ -401,7 +402,7 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
             </button>
             <button
               type="button"
-              onClick={() => signOut({ callbackUrl: '/login' })}
+              onClick={() => { trackMixpanelEvent('logout'); resetMixpanel(); signOut({ callbackUrl: '/login' }); }}
               className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-rose-500 hover:bg-rose-50 transition-colors"
             >
               <LogOut className="w-4 h-4" />

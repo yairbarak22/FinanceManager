@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useCategories } from '@/hooks/useCategories';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import {
   X,
   Upload,
@@ -408,6 +409,7 @@ function TransactionCard({
 }
 
 export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalProps) {
+  const analytics = useAnalytics();
   const [file, setFile] = useState<File | null>(null);
   const [phase, setPhase] = useState<ImportPhase>('idle');
   const [isDragging, setIsDragging] = useState(false);
@@ -619,10 +621,12 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
 
       setSavedCount(data.count || 0);
       setPhase('done');
+      analytics.trackImport(data.count || toSave.length, true);
       onSuccess();
     } catch {
       setPhase('error');
       setErrors(['שגיאה בשמירת העסקאות']);
+      analytics.trackImport(0, false);
     }
   };
 

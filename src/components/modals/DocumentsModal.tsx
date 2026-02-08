@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Document } from '@/lib/types';
 import { apiFetch } from '@/lib/utils';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface DocumentsModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export default function DocumentsModal({
   entityId,
   entityName,
 }: DocumentsModalProps) {
+  const analytics = useAnalytics();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -94,6 +96,7 @@ export default function DocumentsModal({
 
     await fetchDocuments();
     setIsUploading(false);
+    analytics.trackDocumentUpload(entityType);
   };
 
   const handleDelete = async (docId: string) => {

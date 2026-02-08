@@ -1,9 +1,11 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { AppLayout } from '@/components/layout';
 import { SmartPortfolio } from '@/components/portfolio';
 import { useMonth } from '@/context/MonthContext';
 import { useModal } from '@/context/ModalContext';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import ProfileModal from '@/components/ProfileModal';
 import AccountSettings from '@/components/AccountSettings';
 
@@ -17,6 +19,16 @@ export default function InvestmentsPage() {
   } = useMonth();
   
   const { openModal, isModalOpen, closeModal } = useModal();
+  const analytics = useAnalytics();
+  const hasTrackedPageView = useRef(false);
+
+  // Track portfolio page view on mount
+  useEffect(() => {
+    if (!hasTrackedPageView.current) {
+      analytics.trackInvestmentPortfolioViewed();
+      hasTrackedPageView.current = true;
+    }
+  }, [analytics]);
 
   return (
     <AppLayout

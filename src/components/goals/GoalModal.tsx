@@ -13,6 +13,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import type { FinancialGoal, UpdateGoalInput } from '@/lib/api/goals';
 
 const GOAL_CATEGORIES = [
@@ -46,6 +47,7 @@ export default function GoalModal({
   const [deadline, setDeadline] = useState('');
   const [category, setCategory] = useState('saving');
   const [mounted, setMounted] = useState(false);
+  const analytics = useAnalytics();
 
   useEffect(() => {
     setMounted(true);
@@ -73,6 +75,9 @@ export default function GoalModal({
       category,
       icon: category,
     });
+
+    // Track goal updated
+    analytics.trackGoalUpdated(goal.id, name, category, targetAmount, currentAmount, deadline);
   };
 
   if (!mounted || !isOpen) return null;

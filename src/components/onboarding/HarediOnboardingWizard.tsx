@@ -30,6 +30,7 @@ import {
 } from '@/lib/categories';
 import { OnboardingStep, StepField } from './stepsConfig';
 import { harediOnboardingSteps } from './harediStepsConfig';
+import { trackMixpanelEvent } from '@/lib/mixpanel';
 
 /**
  * Convert CategoryInfo array to options format for select dropdowns
@@ -268,6 +269,16 @@ export default function HarediOnboardingWizard() {
     }
     // Clear field refs when step changes
     fieldRefs.current.clear();
+    
+    // Track step viewed event
+    const step = harediOnboardingSteps[currentStepIndex];
+    if (step) {
+      trackMixpanelEvent('Onboarding Step Viewed', {
+        step_id: step.id,
+        step_name: step.title,
+        step_index: currentStepIndex,
+      });
+    }
   }, [currentStepIndex]);
 
   /**
@@ -461,6 +472,14 @@ export default function HarediOnboardingWizard() {
       }
       
       console.log('[HarediOnboarding] Direct add completed for step:', stepId);
+      
+      // Track step completed event
+      trackMixpanelEvent('Onboarding Step Completed', {
+        step_id: stepId,
+        step_name: currentStep.title,
+        step_index: currentStepIndex,
+        data_entered: true,
+      });
     } catch (error) {
       console.error('[HarediOnboarding] Direct add error:', error);
     } finally {

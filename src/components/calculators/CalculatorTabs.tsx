@@ -18,6 +18,7 @@ import FIRECalc from './FIRECalc';
 import MortgageCalc from './MortgageCalc';
 import EmergencyFundCalc from './EmergencyFundCalc';
 import EducationFundCalc from './EducationFundCalc';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface CalculatorTab {
   id: string;
@@ -84,6 +85,7 @@ interface CalculatorTabsProps {
 }
 
 export default function CalculatorTabs({ className = '' }: CalculatorTabsProps) {
+  const analytics = useAnalytics();
   const [activeTab, setActiveTab] = useState(CALCULATOR_TABS[0].id);
 
   const activeCalculator = CALCULATOR_TABS.find(tab => tab.id === activeTab);
@@ -101,7 +103,10 @@ export default function CalculatorTabs({ className = '' }: CalculatorTabsProps) 
             return (
               <motion.button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  analytics.trackCalculatorOpened(tab.id);
+                }}
                 className={`
                   relative flex items-center gap-2 px-4 py-2.5 rounded-xl
                   transition-colors duration-200 text-sm font-medium

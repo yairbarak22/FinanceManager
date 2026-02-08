@@ -6,6 +6,7 @@ import { X, TrendingDown, Building2, CreditCard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useModal } from '@/context/ModalContext';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import TransactionQuickForm from './TransactionQuickForm';
 import AssetQuickForm from './AssetQuickForm';
 import LiabilityQuickForm from './LiabilityQuickForm';
@@ -79,6 +80,7 @@ export default function QuickAddModal({
   onAddCategory,
 }: QuickAddModalProps) {
   const { isModalOpen, closeModal } = useModal();
+  const analytics = useAnalytics();
   const isOpen = isModalOpen('quick-add');
   const [activeTab, setActiveTab] = useState<TabType>('transaction');
   
@@ -224,7 +226,10 @@ export default function QuickAddModal({
                       role="tab"
                       aria-selected={isActive}
                       aria-controls={`${tab.id}-panel`}
-                      onClick={() => setActiveTab(tab.id)}
+                      onClick={() => {
+                        setActiveTab(tab.id);
+                        analytics.trackTabChange(`quick-add-${tab.id}`);
+                      }}
                       className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg font-medium text-sm transition-all"
                       style={{
                         backgroundColor: isActive ? '#FFFFFF' : 'transparent',

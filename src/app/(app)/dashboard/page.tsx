@@ -252,6 +252,8 @@ export default function DashboardPage() {
         if (res.ok) {
           const data = await res.json();
           if (!data.hasSeenOnboarding) {
+            // Track Sign Up event for new users entering onboarding
+            analytics.trackSignUp('google');
             // Check if user is Haredi (signupSource === 'prog')
             if (data.signupSource === 'prog') {
               startHarediTour();
@@ -480,6 +482,7 @@ export default function DashboardPage() {
       }
 
       await fetchData();
+      analytics.trackEditTransaction();
 
       // Show appropriate toast message
       if (responseData.updatedTransactionsCount > 0) {

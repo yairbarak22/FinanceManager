@@ -32,6 +32,7 @@ import {
   CategoryInfo,
 } from '@/lib/categories';
 import { onboardingSteps, OnboardingStep, StepField } from './stepsConfig';
+import { trackMixpanelEvent } from '@/lib/mixpanel';
 
 /**
  * Convert CategoryInfo array to options format for select dropdowns
@@ -277,6 +278,16 @@ export default function OnboardingWizard() {
     }
     // Clear field refs when step changes
     fieldRefs.current.clear();
+
+    // Track step viewed event
+    const step = onboardingSteps[currentStepIndex];
+    if (step) {
+      trackMixpanelEvent('Onboarding Step Viewed', {
+        step_id: step.id,
+        step_name: step.title,
+        step_index: currentStepIndex,
+      });
+    }
   }, [currentStepIndex]);
 
   /**
@@ -544,6 +555,14 @@ export default function OnboardingWizard() {
       }
       
       console.log('[Onboarding] Direct add completed for step:', stepId);
+      
+      // Track step completed event
+      trackMixpanelEvent('Onboarding Step Completed', {
+        step_id: stepId,
+        step_name: currentStep.title,
+        step_index: currentStepIndex,
+        data_entered: true,
+      });
     } catch (error) {
       console.error('[Onboarding] Direct add error:', error);
     } finally {

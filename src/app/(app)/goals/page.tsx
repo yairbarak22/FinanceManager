@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Target, Loader2 } from 'lucide-react';
 import { useGoals, useCreateGoal, useUpdateGoal, useDeleteGoal } from '@/hooks/useGoals';
 import { GoalSimulator, GoalCard, GoalModal } from '@/components/goals';
@@ -14,6 +14,7 @@ import ToastContainer from '@/components/ui/Toast';
 import { useMonth } from '@/context/MonthContext';
 import { useModal } from '@/context/ModalContext';
 import { useToast } from '@/hooks/useToast';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import type { FinancialGoal, UpdateGoalInput } from '@/lib/api/goals';
 
 export default function GoalsPage() {
@@ -21,6 +22,8 @@ export default function GoalsPage() {
   const createGoal = useCreateGoal();
   const updateGoal = useUpdateGoal();
   const deleteGoal = useDeleteGoal();
+  const analytics = useAnalytics();
+  const hasTrackedPageView = useRef(false);
   
   const {
     selectedMonth,
@@ -36,6 +39,14 @@ export default function GoalsPage() {
   const [editingGoal, setEditingGoal] = useState<FinancialGoal | null>(null);
   const [deletingGoal, setDeletingGoal] = useState<FinancialGoal | null>(null);
 
+  // Track page view on mount
+  useEffect(() => {
+    if (!hasTrackedPageView.current) {
+      analytics.trackGoalPageViewed();
+      hasTrackedPageView.current = true;
+    }
+  }, [analytics]);
+
   const handleCreateGoal = async (goalData: {
     name: string;
     targetAmount: number;
@@ -45,15 +56,35 @@ export default function GoalsPage() {
     icon: string;
   }) => {
     await createGoal.mutateAsync(goalData);
+    // Track goal created
+    analytics.trackGoalCreated(
+      goalData.name,
+      goalData.category,
+      goalData.targetAmount,
+      goalData.currentAmount,
+      goalData.deadline,
+      false, // investInPortfolio - default from basic create
+    );
   };
 
   const handleEditGoal = async (goal: UpdateGoalInput) => {
     await updateGoal.mutateAsync(goal);
+    // Track goal updated
+    analytics.trackGoalUpdated(
+      goal.id,
+      goal.name || '',
+      goal.category || '',
+      goal.targetAmount || 0,
+      goal.currentAmount || 0,
+      goal.deadline || '',
+    );
     setEditingGoal(null);
   };
 
   const handleDeleteGoal = async () => {
     if (!deletingGoal) return;
+    // Track goal deleted
+    analytics.trackGoalDeleted(deletingGoal.id, deletingGoal.name);
     await deleteGoal.mutateAsync(deletingGoal.id);
     setDeletingGoal(null);
   };
@@ -114,7 +145,10 @@ export default function GoalsPage() {
                 <GoalCard
                   key={goal.id}
                   goal={goal}
-                  onEdit={setEditingGoal}
+                  onEdit={(g) => {
+                    setEditingGoal(g);
+                    analytics.trackGoalFormOpened('edit');
+                  }}
                   onDelete={setDeletingGoal}
                 />
               ))}

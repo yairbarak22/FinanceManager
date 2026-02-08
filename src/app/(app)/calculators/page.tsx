@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout';
 import { CompoundInterestCalc, LockedCalculatorsGrid } from '@/components/calculators';
 import { useMonth } from '@/context/MonthContext';
 import { useModal } from '@/context/ModalContext';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import ProfileModal from '@/components/ProfileModal';
 import AccountSettings from '@/components/AccountSettings';
 import { motion } from 'framer-motion';
@@ -27,6 +28,16 @@ export default function CalculatorsPage() {
   
   const { openModal, isModalOpen, closeModal } = useModal();
   const router = useRouter();
+  const analytics = useAnalytics();
+  const hasTrackedPageView = useRef(false);
+  
+  // Track page view on mount
+  useEffect(() => {
+    if (!hasTrackedPageView.current) {
+      analytics.trackCalculatorOpened('calculators-page');
+      hasTrackedPageView.current = true;
+    }
+  }, [analytics]);
   
   // Access state
   const [accessStatus, setAccessStatus] = useState<AccessStatus | null>(null);

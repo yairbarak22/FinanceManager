@@ -7,6 +7,7 @@ import { ChevronsDown } from 'lucide-react';
 import { AppLayout } from '@/components/layout';
 import { useMonth } from '@/context/MonthContext';
 import { useModal } from '@/context/ModalContext';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import ProfileModal from '@/components/ProfileModal';
 import AccountSettings from '@/components/AccountSettings';
 import {
@@ -54,6 +55,8 @@ export default function InvestmentGuidePage() {
   } = useMonth();
 
   const { openModal, isModalOpen, closeModal } = useModal();
+  const analytics = useAnalytics();
+  const hasTrackedPageView = useRef(false);
 
   const [isVerifyingUser, setIsVerifyingUser] = useState(true);
   const [isHarediUser, setIsHarediUser] = useState(false);
@@ -77,6 +80,11 @@ export default function InvestmentGuidePage() {
             setIsHarediUser(true);
             // Mark guide as visited for the progress dock (Step 3 completion)
             localStorage.setItem('haredi-visited-guide', 'true');
+            // Track investment guide viewed
+            if (!hasTrackedPageView.current) {
+              analytics.trackInvestmentGuideViewed();
+              hasTrackedPageView.current = true;
+            }
           } else {
             router.replace('/investments');
             return;
