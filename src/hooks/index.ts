@@ -4,6 +4,7 @@ export * from './useAssets';
 export * from './useLiabilities';
 export * from './useRecurring';
 export * from './usePortfolio';
+export * from './useHoldings';
 export * from './useGoals';
 export * from './useKeyboardShortcut';
 export * from './useMostUsedCategories';

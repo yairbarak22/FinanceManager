@@ -75,6 +75,8 @@ export default function InvestmentGuidePage() {
           const data = await response.json();
           if (data.signupSource === 'prog') {
             setIsHarediUser(true);
+            // Mark guide as visited for the progress dock (Step 3 completion)
+            localStorage.setItem('haredi-visited-guide', 'true');
           } else {
             router.replace('/investments');
             return;

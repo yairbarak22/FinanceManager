@@ -212,3 +212,80 @@ Edge Case Handling: Implement "Edge Fades" (gradient masks) and "Partial Peeks" 
 CSS Variables: Prefer using CSS variables (var(--text-primary), var(--text-secondary)) when available in globals.css, otherwise use direct hex values (#303150, #7E7F90).
 
 Class Usage: Use utility classes from globals.css (.btn-primary, .input, .card) when available, otherwise implement styles directly following these guidelines.
+
+14. Floating Elements
+Position: Use position fixed with z-index 50 for floating UI (same level as QuickAddFab). Modals use z-index 9999.
+
+Shadow: Use shadow-[0_4px_20px_rgba(0,0,0,0.08)] (identical to card elevation).
+
+Backdrop: Use backdrop-blur-sm with bg-white/95 for expanded floating panels (glassmorphism).
+
+Spacing from edges: Minimum 1rem (16px) from all viewport edges.
+
+Max width: 22rem (352px) for floating panels to avoid dominating the screen.
+
+Responsive padding: px-4 on mobile, px-6 on desktop.
+
+Enter animation: slideUp + fadeIn, 300ms ease-out.
+
+Exit animation: slideDown + fadeOut, 200ms ease-in.
+
+Hover: scale 1.02 with transition 200ms.
+
+15. Progress Indicators
+Circular Progress:
+- Size: 2.5rem (40px) for compact views, 3.5rem (56px) for expanded views
+- Stroke width: 4px
+- Track color: #E8E8ED (Light Gray)
+- Completed fill: #0DBACC (Turquoise)
+- In-progress fill: #69ADFF (Dodger Blue)
+- Animation: stroke-dasharray transition 800ms ease-out
+- Pulse: scale 1.05 to 1.1 every 2 seconds when updating
+
+Linear Progress:
+- Height: 0.25rem (4px)
+- Border radius: rounded-full
+- Colors: same as circular
+- Animation: width transition 500ms ease-out
+
+16. Micro-Interactions
+Button Hover:
+- Scale: 1.02 to 1.05
+- Glow: shadow-lg using the button color
+- Transition: 200ms ease-out
+- Active state: scale 0.98
+
+Card Hover:
+- Scale: 1.01 to 1.02
+- Shadow: elevate from shadow-sm to shadow-md
+- Transition: 200ms ease-out
+
+Icon Animation:
+- Rotation: plus/minus 5deg on hover
+- Scale: 1.1 on click
+- Transition: 150ms ease-out
+
+Progress Update:
+- Pulse: scale 1.1 then back to 1.0 over 300ms
+- Color flash: opacity 0.8 to 1.0 over 200ms
+
+17. Celebration Animations
+Confetti:
+- Particle count: 20 to 30 colored particles
+- Colors: #0DBACC, #69ADFF, #F18AB5, #E9A800
+- Duration: 2000ms
+- Easing: ease-out
+- Spread: 360deg from origin point
+
+Success Checkmark:
+- SVG path animation using stroke-dasharray and stroke-dashoffset
+- Duration: 600ms
+- Easing: ease-out
+- Scale sequence: 0 to 1.2 to 1.0
+
+Toast Notification:
+- Position: top-center, z-index 10000
+- Background: #0DBACC with opacity 0.95
+- Animation: slide down + fade in over 300ms
+- Auto-dismiss: 3000ms
+- Shadow: shadow-xl

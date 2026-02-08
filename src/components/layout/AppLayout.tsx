@@ -4,6 +4,7 @@ import { ReactNode, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import MinimalHeader from './MinimalHeader';
 import { QuickAddFab } from '@/components/quick-add';
+import { HarediProgressDock } from '@/components/haredi';
 import { useModal } from '@/context/ModalContext';
 import { useKeyboardShortcut } from '@/hooks/useKeyboardShortcut';
 
@@ -77,6 +78,9 @@ export default function AppLayout({
 
       {/* Quick Add FAB - Only show if enabled */}
       {showQuickAddFab && <QuickAddFab />}
+
+      {/* Haredi Progress Dock - self-manages visibility */}
+      <HarediProgressDock />
     </div>
   );
 }
