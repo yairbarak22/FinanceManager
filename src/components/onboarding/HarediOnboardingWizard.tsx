@@ -18,6 +18,8 @@ import {
   Target,
   Loader2,
   CircleCheck,
+  Wand2,
+  Play,
 } from 'lucide-react';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { useCategories } from '@/hooks/useCategories';
@@ -251,6 +253,9 @@ export default function HarediOnboardingWizard() {
   // Loading state for save button
   const [isSaving, setIsSaving] = useState(false);
 
+  // Loading state for demo data
+  const [isLoadingDemoData, setIsLoadingDemoData] = useState(false);
+
   // Refs for scrolling
   const contentScrollRef = useRef<HTMLDivElement>(null);
   const fieldRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -337,8 +342,8 @@ export default function HarediOnboardingWizard() {
     const step = harediOnboardingSteps[currentStepIndex];
     if (!step) return false;
 
-    // Info and tasks steps have no fields to validate
-    if (step.stepType === 'info' || step.stepType === 'tasks') {
+    // Info, choice, and tasks steps have no fields to validate
+    if (step.stepType === 'info' || step.stepType === 'choice' || step.stepType === 'tasks') {
       return true;
     }
 
@@ -490,6 +495,47 @@ export default function HarediOnboardingWizard() {
     await new Promise(resolve => setTimeout(resolve, 1500));
     goToNextStep();
   }, [currentStep, wizardData, goToNextStep]);
+
+  /**
+   * Handle demo data button click - creates sample data for the user
+   */
+  const handleLoadDemoData = useCallback(async () => {
+    setIsLoadingDemoData(true);
+    
+    try {
+      const response = await fetch('/api/onboarding/demo-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Protection': '1',
+        },
+      });
+
+      if (response.ok) {
+        setSuccessMessage('נתוני הדמה נוספו בהצלחה!');
+        setShowSuccess(true);
+        
+        // Dispatch event to trigger dashboard data refresh
+        window.dispatchEvent(new CustomEvent('onboarding-data-added'));
+        
+        // Wait for notification to show, then close wizard
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        endTour();
+      } else {
+        console.error('[HarediOnboarding] Failed to load demo data:', response.status);
+        setSuccessMessage('שגיאה בטעינת נתוני הדמה');
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+      }
+    } catch (error) {
+      console.error('[HarediOnboarding] Error loading demo data:', error);
+      setSuccessMessage('שגיאה בטעינת נתוני הדמה');
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
+    } finally {
+      setIsLoadingDemoData(false);
+    }
+  }, [endTour]);
 
   /**
    * Render a form field
@@ -668,6 +714,103 @@ export default function HarediOnboardingWizard() {
   };
 
   /**
+   * Render the CHOICE step content (intro with demo data option)
+   * Designed to be clean, focused and visually appealing
+   */
+  const renderChoiceStep = (step: OnboardingStep) => {
+    const Icon = stepIcons[step.icon as keyof typeof stepIcons] || Sparkles;
+
+    return (
+      <motion.div
+        key={step.id}
+        initial={{ opacity: 0, x: direction * 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: direction * -50 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="flex flex-col h-full"
+      >
+        {/* Header — large icon + title + description */}
+        <div className="text-center space-y-4 mb-6">
+          <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[#C1DDFF] to-[#69ADFF] rounded-3xl flex items-center justify-center shadow-lg">
+            <Icon className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-2xl font-bold text-[#303150]">{step.title}</h2>
+          <p className="text-[#7E7F90] text-sm max-w-xs mx-auto leading-relaxed">
+            {step.description}
+          </p>
+        </div>
+
+        {/* Info Sections — compact cards */}
+        {step.infoSections && (
+          <div className="space-y-2 mb-6">
+            {step.infoSections.map((section, index) => (
+              <div
+                key={index}
+                className="flex items-start gap-3 px-4 py-3 bg-[#F7F7F8] rounded-xl"
+              >
+                <div className="w-6 h-6 bg-[#69ADFF]/15 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Check className="w-3.5 h-3.5 text-[#69ADFF]" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-[#303150] text-[13px]">
+                    {section.title}
+                  </h3>
+                  <p className="text-xs text-[#7E7F90] leading-relaxed mt-0.5">
+                    {section.content}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Spacer to push buttons to bottom */}
+        <div className="flex-1" />
+
+        {/* Choice Buttons */}
+        <div className="space-y-3 pb-4">
+          {/* Manual Data Entry Button — primary */}
+          <motion.button
+            onClick={goToNextStep}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            className="w-full py-3.5 px-4 bg-gradient-to-r from-[#69ADFF] to-[#74ACEF] text-white font-semibold rounded-xl
+                       shadow-md shadow-[#69ADFF]/20 hover:shadow-lg hover:shadow-[#69ADFF]/25
+                       flex flex-col items-center gap-1 transition-all duration-200"
+          >
+            <div className="flex flex-row-reverse items-center gap-2">
+              <Wand2 className="w-4 h-4" />
+              <span className="text-sm">התחל להזין נתונים</span>
+            </div>
+            <span className="text-xs opacity-80">תהליך מהיר ופשוט (כ-3 דקות)</span>
+          </motion.button>
+
+          {/* Demo Data Button — secondary */}
+          <motion.button
+            onClick={handleLoadDemoData}
+            disabled={isLoadingDemoData}
+            whileHover={!isLoadingDemoData ? { scale: 1.01 } : {}}
+            whileTap={!isLoadingDemoData ? { scale: 0.99 } : {}}
+            className="w-full py-3 px-4 bg-white border border-[#E8E8ED] text-[#303150] font-medium rounded-xl
+                       hover:border-[#69ADFF] hover:bg-[#F7F7F8]
+                       flex flex-col items-center gap-1 transition-all duration-200"
+          >
+            <div className="flex flex-row-reverse items-center gap-2">
+              {isLoadingDemoData ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4" />
+              )}
+              <span className="text-sm">{isLoadingDemoData ? 'טוען נתוני דמה...' : 'התחל עכשיו עם נתוני דמה'}</span>
+            </div>
+            <span className="text-xs text-[#7E7F90]">ניתן לערוך בהמשך</span>
+          </motion.button>
+        </div>
+      </motion.div>
+    );
+  };
+
+  /**
    * Render the TASKS step content (checklist)
    */
   const renderTasksStep = (step: OnboardingStep) => {
@@ -815,6 +958,10 @@ export default function HarediOnboardingWizard() {
    * Render step content - dispatches to the correct renderer based on step type
    */
   const renderStepContent = (step: OnboardingStep) => {
+    if (step.stepType === 'choice') {
+      return renderChoiceStep(step);
+    }
+
     if (step.stepType === 'info') {
       return renderInfoStep(step);
     }
@@ -837,6 +984,11 @@ export default function HarediOnboardingWizard() {
    */
   const renderFooter = () => {
     const stepType = currentStep.stepType;
+
+    // CHOICE step: buttons are rendered inside the step content — no footer needed
+    if (stepType === 'choice') {
+      return null;
+    }
 
     // INFO step: single "הבנתי, בואו נתחיל" button
     if (stepType === 'info') {

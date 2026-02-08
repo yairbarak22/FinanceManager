@@ -205,6 +205,41 @@ export default function HarediProgressDock() {
     checkUser();
   }, []);
 
+  // ---- Listen for onboarding-completed event to show immediately ----
+  useEffect(() => {
+    const handleOnboardingCompleted = () => {
+      setHasSeenOnboarding(true);
+      setIsHarediUser(true);
+      // Always start collapsed — user opens it manually
+      setIsExpanded(false);
+    };
+
+    window.addEventListener('onboarding-completed', handleOnboardingCompleted);
+    return () => window.removeEventListener('onboarding-completed', handleOnboardingCompleted);
+  }, []);
+
+  // ---- Re-check onboarding status when navigating between pages ----
+  useEffect(() => {
+    // Only re-check if we haven't seen onboarding yet
+    if (hasSeenOnboarding) return;
+
+    const recheck = async () => {
+      try {
+        const res = await fetch('/api/user/onboarding');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.signupSource === 'prog' && data.hasSeenOnboarding === true) {
+            setIsHarediUser(true);
+            setHasSeenOnboarding(true);
+          }
+        }
+      } catch {
+        // silently ignore
+      }
+    };
+    recheck();
+  }, [pathname, hasSeenOnboarding]);
+
   // ---- Smart scroll visibility (same pattern as QuickAddFab) ----
   const handleScroll = useCallback(() => {
     const currentScrollY = window.scrollY;
@@ -226,10 +261,13 @@ export default function HarediProgressDock() {
   // ---- Hide when modal is open ----
   const isModalCurrentlyOpen = modalState.type !== null;
 
-  // ---- Auto-expand on celebration ----
+  // ---- Auto-expand on celebration (only when a progress step is completed, not on initial load) ----
   useEffect(() => {
     if (justCompletedStep) {
+      // Briefly expand to show the celebration, then collapse after a delay
       setIsExpanded(true);
+      const timer = setTimeout(() => setIsExpanded(false), 4000);
+      return () => clearTimeout(timer);
     }
   }, [justCompletedStep]);
 

@@ -273,6 +273,9 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     // Track Onboarding Completed event
     trackMixpanelEvent('Onboarding Completed', { user_type: isHarediUser ? 'haredi' : 'regular' });
 
+    // Dispatch custom event so HarediProgressDock can pick it up immediately
+    window.dispatchEvent(new CustomEvent('onboarding-completed'));
+
     // Open the "Add to Home Screen" modal after a short delay (not for Haredi users)
     if (!isHarediUser) {
       setTimeout(() => {
