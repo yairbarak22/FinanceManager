@@ -151,34 +151,27 @@ export default function HarediProgressDock() {
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
-  const [dockCenterX, setDockCenterX] = useState(0);
+  const [sidebarWidth, setSidebarWidth] = useState(0);
   const [pendingQuickAdd, setPendingQuickAdd] = useState(false);
   const dockRef = useRef<HTMLDivElement>(null);
 
-  // ---- Detect mobile/desktop and compute center of main content area ----
+  // ---- Detect mobile/desktop and read sidebar width ----
   useLayoutEffect(() => {
-    const updatePosition = () => {
-      // Use rAF to ensure layout has completed before reading DOM measurements
-      requestAnimationFrame(() => {
-        setIsMobile(window.innerWidth < 768);
-
-        const mainContent = document.getElementById('main-content-area');
-        if (mainContent) {
-          const rect = mainContent.getBoundingClientRect();
-          setDockCenterX(rect.left + rect.width / 2);
-        } else {
-          // Fallback: center of viewport
-          setDockCenterX(window.innerWidth / 2);
-        }
-      });
+    const updateLayout = () => {
+      setIsMobile(window.innerWidth < 768);
+      const sidebar = document.querySelector('aside[aria-label="ניווט ראשי"]');
+      if (sidebar && window.innerWidth >= 1024) {
+        setSidebarWidth(sidebar.getBoundingClientRect().width);
+      } else {
+        setSidebarWidth(0);
+      }
     };
 
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    window.addEventListener('load', updatePosition);
+    updateLayout();
+    window.addEventListener('resize', updateLayout);
 
-    // Watch for sidebar collapse/expand animation to re-calc position
-    const observer = new MutationObserver(updatePosition);
+    // Watch for sidebar collapse/expand animation to re-calc width
+    const observer = new MutationObserver(updateLayout);
     const sidebar = document.querySelector('aside[aria-label="ניווט ראשי"]');
     if (sidebar) {
       observer.observe(sidebar, {
@@ -190,8 +183,7 @@ export default function HarediProgressDock() {
     }
 
     return () => {
-      window.removeEventListener('resize', updatePosition);
-      window.removeEventListener('load', updatePosition);
+      window.removeEventListener('resize', updateLayout);
       observer.disconnect();
     };
   }, []);
@@ -291,24 +283,24 @@ export default function HarediProgressDock() {
 
       <AnimatePresence>
         {shouldShow && (
-          <motion.div
-            ref={dockRef}
-            initial={{ y: 80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 80, opacity: 0 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="fixed z-50
-              w-[calc(100%-2rem)] max-w-[600px]"
+          <div
+            className="fixed z-50 left-0 right-0 pointer-events-none px-4"
             style={{
               bottom: isMobile ? 'calc(4rem + env(safe-area-inset-bottom))' : '1.5rem',
-              left: `${dockCenterX}px`,
-              transform: 'translateX(-50%)',
+              paddingRight: sidebarWidth > 0 ? `calc(${sidebarWidth}px + 1rem)` : undefined,
             }}
           >
-            <div
-              className="rounded-3xl bg-white/95 backdrop-blur-sm overflow-hidden"
+            <motion.div
+              ref={dockRef}
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="mx-auto max-w-[600px] pointer-events-auto
+                rounded-3xl bg-white/95 backdrop-blur-sm overflow-hidden
+                border border-[#F7F7F8]"
               style={{
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
               }}
             >
               {/* ======== Collapsed bar (div, not button, to avoid nesting) ======== */}
@@ -454,8 +446,8 @@ export default function HarediProgressDock() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
-          </motion.div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </>
