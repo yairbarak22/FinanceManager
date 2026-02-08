@@ -17,6 +17,7 @@ import {
   LogOut,
   Target,
   Calculator,
+  GraduationCap,
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -47,53 +48,61 @@ interface SidebarProps {
   onOpenAccountSettings?: () => void;
 }
 
-// All icons in blue shades
-const navItems: NavItem[] = [
-  { 
-    id: 'dashboard', 
-    label: 'דשבורד', 
-    path: '/dashboard', 
-    icon: Home,
-    iconBg: 'bg-blue-100',
-    iconColor: 'text-blue-600',
-  },
-  { 
-    id: 'investments', 
-    label: 'תיק מסחר עצמאי', 
-    path: '/investments', 
-    icon: TrendingUp,
-    iconBg: 'bg-sky-100',
-    iconColor: 'text-sky-600',
-  },
-  { 
-    id: 'goals', 
-    label: 'יעדים', 
-    path: '/goals', 
-    icon: Target,
-    iconBg: 'bg-purple-100',
-    iconColor: 'text-purple-600',
-  },
-  { 
-    id: 'help', 
-    label: 'מידע פיננסי', 
-    path: '/help', 
-    icon: BookOpen,
-    iconBg: 'bg-[#E3D6FF]',
-    iconColor: 'text-[#9F7FE0]',
-    subItems: [
-      { id: 'general-knowledge', label: 'ידע כללי', path: '/help', icon: BookOpen },
-      { id: 'calculators', label: 'מחשבונים', path: '/calculators', icon: Calculator }, // path overridden dynamically for Haredi users
-    ],
-  },
-  { 
-    id: 'contact', 
-    label: 'צור קשר', 
-    path: '/contact', 
-    icon: Mail,
-    iconBg: 'bg-cyan-100',
-    iconColor: 'text-cyan-600',
-  },
-];
+// Build nav items (investments submenu is dynamic based on Haredi user status)
+function buildNavItems(isHaredi: boolean): NavItem[] {
+  return [
+    { 
+      id: 'dashboard', 
+      label: 'דשבורד', 
+      path: '/dashboard', 
+      icon: Home,
+      iconBg: 'bg-blue-100',
+      iconColor: 'text-blue-600',
+    },
+    { 
+      id: 'investments', 
+      label: 'תיק מסחר עצמאי', 
+      path: '/investments', 
+      icon: TrendingUp,
+      iconBg: 'bg-sky-100',
+      iconColor: 'text-sky-600',
+      ...(isHaredi ? {
+        subItems: [
+          { id: 'investments-guide', label: 'הדרכה', path: '/investments/guide', icon: GraduationCap },
+          { id: 'investments-portfolio', label: 'תיק מסחר עצמאי', path: '/investments', icon: TrendingUp },
+        ],
+      } : {}),
+    },
+    { 
+      id: 'goals', 
+      label: 'יעדים', 
+      path: '/goals', 
+      icon: Target,
+      iconBg: 'bg-purple-100',
+      iconColor: 'text-purple-600',
+    },
+    { 
+      id: 'help', 
+      label: 'מידע פיננסי', 
+      path: '/help', 
+      icon: BookOpen,
+      iconBg: 'bg-[#E3D6FF]',
+      iconColor: 'text-[#9F7FE0]',
+      subItems: [
+        { id: 'general-knowledge', label: 'ידע כללי', path: '/help', icon: BookOpen },
+        { id: 'calculators', label: 'מחשבונים', path: '/calculators', icon: Calculator }, // path overridden dynamically for Haredi users
+      ],
+    },
+    { 
+      id: 'contact', 
+      label: 'צור קשר', 
+      path: '/contact', 
+      icon: Mail,
+      iconBg: 'bg-cyan-100',
+      iconColor: 'text-cyan-600',
+    },
+  ];
+}
 
 export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: SidebarProps = {}) {
   const pathname = usePathname();
@@ -102,13 +111,20 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
   const { isCollapsed, isMobileOpen, closeMobileSidebar } = useSidebar();
   const { startTour } = useOnboarding();
   const [expandedMenu, setExpandedMenu] = useState<string | null>(
-    pathname.startsWith('/help') || pathname.startsWith('/calculators') ? 'help' : null
+    pathname.startsWith('/help') || pathname.startsWith('/calculators')
+      ? 'help'
+      : pathname.startsWith('/investments')
+        ? 'investments'
+        : null
   );
 
-  // Keep submenu expanded when on calculators-haredi page
+  // Keep submenus expanded on relevant pages
   useEffect(() => {
-    if (pathname.startsWith('/calculators-haredi') && expandedMenu !== 'help') {
+    if ((pathname.startsWith('/calculators-haredi') || pathname.startsWith('/calculators') || pathname.startsWith('/help')) && expandedMenu !== 'help') {
       setExpandedMenu('help');
+    }
+    if (pathname.startsWith('/investments') && expandedMenu !== 'investments') {
+      setExpandedMenu('investments');
     }
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
   const [mounted, setMounted] = useState(false);
@@ -150,11 +166,16 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
     setExpandedMenu(expandedMenu === itemId ? null : itemId);
   };
 
+  // Build nav items dynamically
+  const navItems = buildNavItems(isHarediUser);
+
   const isItemActive = (item: NavItem) => {
     if (item.path === '/dashboard' && pathname === '/') return true;
     if (item.subItems) {
       // Also match calculators-haredi under the help/calculators parent
       if (item.id === 'help' && pathname.startsWith('/calculators-haredi')) return true;
+      // Match investments sub-routes
+      if (item.id === 'investments' && pathname.startsWith('/investments')) return true;
       return pathname.startsWith(item.path.split('?')[0]);
     }
     return pathname === item.path;
@@ -304,7 +325,9 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
                             ? '/calculators-haredi'
                             : subItem.path;
                           const isSubActive = pathname === resolvedPath || 
-                            (subItem.id === 'calculators' && (pathname === '/calculators' || pathname === '/calculators-haredi'));
+                            (subItem.id === 'calculators' && (pathname === '/calculators' || pathname === '/calculators-haredi')) ||
+                            (subItem.id === 'investments-guide' && pathname === '/investments/guide') ||
+                            (subItem.id === 'investments-portfolio' && pathname === '/investments');
                           
                           return (
                             <button

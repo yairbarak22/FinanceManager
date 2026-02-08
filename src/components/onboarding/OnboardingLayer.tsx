@@ -105,7 +105,8 @@ export default function OnboardingLayer() {
       </AnimatePresence>
 
       {/* Wizard Modal - render appropriate wizard based on user type */}
-      {isHarediUser ? <HarediOnboardingWizard /> : <OnboardingWizard />}
+      {/* Only mount wizard when open to avoid unnecessary useCategories() calls */}
+      {isWizardOpen && (isHarediUser ? <HarediOnboardingWizard /> : <OnboardingWizard />)}
 
       {/* Ghost Cursor - only show when tour is active and wizard is closed */}
       {isAutopilotRunning && cursorTarget && (

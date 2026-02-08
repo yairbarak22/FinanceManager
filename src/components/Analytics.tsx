@@ -9,7 +9,7 @@ const GA_MEASUREMENT_ID = 'G-RBSC0M8FV3';
 
 export default function Analytics() {
   const [consentGiven, setConsentGiven] = useState<boolean | null>(null);
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     // Check if user has given consent
@@ -39,15 +39,17 @@ export default function Analytics() {
     initMixpanel();
   }, []);
 
-  // Identify user in Mixpanel when session is available
+  // Identify user in Mixpanel when session is fully loaded (status === 'authenticated').
+  // identifyUser() internally queues the call if the SDK isn't ready yet,
+  // so this works regardless of Mixpanel init timing.
   useEffect(() => {
-    if (session?.user?.id) {
+    if (status === 'authenticated' && session?.user?.id) {
       identifyUser(session.user.id, {
         name: session.user.name,
         email: session.user.email,
       });
     }
-  }, [session]);
+  }, [status, session]);
 
   return (
     <>

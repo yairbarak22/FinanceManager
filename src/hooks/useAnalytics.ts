@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import { isSmartlookAvailable, trackSmartlookEvent } from '@/lib/smartlook';
-import { isMixpanelAvailable, trackMixpanelEvent, resetMixpanel } from '@/lib/mixpanel';
+import { isMixpanelAvailable, trackMixpanelEvent, resetMixpanel, identifyUser } from '@/lib/mixpanel';
 
 // Check if gtag is available
 function isGtagAvailable(): boolean {
@@ -39,6 +40,8 @@ function trackEvent(eventName: string, params?: Record<string, unknown>) {
 }
 
 export function useAnalytics() {
+  const { data: session } = useSession();
+
   // Page view tracking
   const trackPageView = useCallback((pageTitle: string) => {
     trackEvent('page_view', { page_title: pageTitle });
@@ -121,8 +124,15 @@ export function useAnalytics() {
 
   // Auth events
   const trackLogin = useCallback(() => {
+    // Identify user in Mixpanel before sending the Sign In event
+    if (session?.user?.id) {
+      identifyUser(session.user.id, {
+        name: session.user.name,
+        email: session.user.email,
+      });
+    }
     trackEvent('Sign In', { login_method: 'google', success: true });
-  }, []);
+  }, [session]);
 
   const trackLogout = useCallback(() => {
     trackEvent('logout');
