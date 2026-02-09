@@ -201,7 +201,7 @@ function LoginContent() {
               overflowWrap: 'break-word',
             }}
           >
-            {isHarediUser ? '3 צעדים פשוטים, ומתחילים לעשות סדר' : 'ניהול הון חכם'}
+            {isHarediUser ? '3 צעדים פשוטים' : 'ניהול הון חכם'}
           </h1>
 
           {/* Error Message */}
