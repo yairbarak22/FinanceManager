@@ -27,7 +27,7 @@ export default function CookieConsent() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100] p-4 animate-slide-up">
-      <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-xl border border-gray-100 p-5">
+      <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] border border-[#F7F7F8] p-5">
         <div className="flex items-start gap-4">
           {/* Cookie Icon */}
           <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
@@ -36,10 +36,10 @@ export default function CookieConsent() {
 
           {/* Content */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-slate-900 mb-1">
+            <h3 className="font-bold text-[#303150] font-[var(--font-nunito)] mb-1">
               אנחנו משתמשים בעוגיות
             </h3>
-            <p className="text-sm text-slate-500 leading-relaxed">
+            <p className="text-sm text-[#7E7F90] font-[var(--font-nunito)] leading-relaxed">
               אנחנו משתמשים בעוגיות כדי לשפר את חווית השימוש ולנתח את השימוש באתר.
               לא נשלח נתונים פיננסיים אישיים - רק מידע סטטיסטי על השימוש באפליקציה.
             </p>
@@ -47,10 +47,10 @@ export default function CookieConsent() {
         </div>
 
         {/* Button */}
-        <div className="flex items-center justify-center mt-4">
+        <div className="flex items-center justify-end mt-4">
           <button
             onClick={handleAccept}
-            className="w-full px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+            className="px-5 py-2.5 bg-[#69ADFF] hover:bg-[#5A9EE6] text-white text-sm font-medium font-[var(--font-nunito)] rounded-xl transition-all shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
           >
             אישור
           </button>
