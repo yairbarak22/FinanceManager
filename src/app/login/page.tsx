@@ -2,9 +2,10 @@
 
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { Medal, Rocket, Eye, PieChart } from 'lucide-react';
 import LegalModal from '@/components/modals/LegalModal';
+import { trackMixpanelEvent, onMixpanelReady } from '@/lib/mixpanel';
 
 // Cookie name for signup source tracking
 const SIGNUP_SOURCE_COOKIE = 'signup_source';
@@ -28,6 +29,25 @@ function LoginContent() {
       console.debug('[Login] Could not set signup source cookie:', error);
     }
   }, [searchParams]);
+
+  // Track "Login Page Viewed" event once
+  const hasTrackedRef = useRef(false);
+  useEffect(() => {
+    if (hasTrackedRef.current) return;
+    hasTrackedRef.current = true;
+
+    const source = searchParams.get('source') || undefined;
+    const utmSource = searchParams.get('utm_source') || undefined;
+
+    onMixpanelReady(() => {
+      trackMixpanelEvent('Login Page Viewed', {
+        has_error: !!error,
+        callback_url: callbackUrl,
+        ...(source && { source }),
+        ...(utmSource && { utm_source: utmSource }),
+      });
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Legal modal state
   const [legalModal, setLegalModal] = useState<{ isOpen: boolean; type: 'terms' | 'privacy' }>({

@@ -162,6 +162,11 @@ export function useAnalytics() {
     trackEvent('Onboarding Completed', { total_steps: totalSteps });
   }, []);
 
+  // Login page view (for login → signup funnel)
+  const trackLoginPageViewed = useCallback((properties?: { has_error?: boolean; callback_url?: string; source?: string; utm_source?: string }) => {
+    trackEvent('Login Page Viewed', properties);
+  }, []);
+
   // Sign Up event (for the funnel)
   const trackSignUp = useCallback((method: string = 'google') => {
     trackEvent('Sign Up', { signup_method: method });
@@ -246,6 +251,7 @@ export function useAnalytics() {
     // Auth
     trackLogin,
     trackLogout,
+    trackLoginPageViewed,
     trackSignUp,
     // AI
     trackAIChat,
