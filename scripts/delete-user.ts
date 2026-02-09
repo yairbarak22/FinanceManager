@@ -22,7 +22,7 @@ const prisma = new PrismaClient();
 // ============================================================
 // SAFETY: Hardcoded email — change this to the user you want to delete
 // ============================================================
-const TARGET_EMAIL = 'yyr8272@gmail.com';
+const TARGET_EMAIL = 'oran8585@gmail.com';
 
 async function main() {
   console.log('='.repeat(60));
