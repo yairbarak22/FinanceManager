@@ -49,6 +49,18 @@ function LoginContent() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Detect Haredi user (source=prog) from URL params or cookie
+  const isHarediUser = (() => {
+    const source = searchParams.get('source');
+    const utmSource = searchParams.get('utm_source');
+    if (source === 'prog' || utmSource === 'prog') return true;
+    if (typeof document !== 'undefined') {
+      const cookie = document.cookie.split(';').find(c => c.trim().startsWith('signup_source='));
+      if (cookie && cookie.includes('prog')) return true;
+    }
+    return false;
+  })();
+
   // Legal modal state
   const [legalModal, setLegalModal] = useState<{ isOpen: boolean; type: 'terms' | 'privacy' }>({
     isOpen: false,
@@ -120,7 +132,9 @@ function LoginContent() {
             padding: '0 0.5rem',
           }}
         >
-          העתיד הכלכלי שלך מתחיל כאן.
+          {isHarediUser
+            ? 'לאן הכסף הולך — ואיך גורמים לו לעבוד בשבילכם.'
+            : 'העתיד הכלכלי שלך מתחיל כאן.'}
         </h2>
 
         {/* Glassmorphism Card */}
@@ -189,7 +203,7 @@ function LoginContent() {
               overflowWrap: 'break-word',
             }}
           >
-            ניהול הון חכם
+            {isHarediUser ? '3 צעדים פשוטים, ומתחילים לעשות סדר' : 'ניהול הון חכם'}
           </h1>
 
           {/* Error Message */}
@@ -246,7 +260,9 @@ function LoginContent() {
                   overflowWrap: 'break-word',
                 }}
               >
-                מקסום זכויות והטבות בעזרת AI
+                {isHarediUser
+                  ? 'עושים סדר במספרים: הכנסות, הוצאות, נכסים והתחייבויות'
+                  : 'מיפוי המצב הפיננסי המשפחתי שלך'}
               </span>
               <div
                 style={{
@@ -289,7 +305,9 @@ function LoginContent() {
                   overflowWrap: 'break-word',
                 }}
               >
-                השקעות וצמיחה פיננסית
+                {isHarediUser
+                  ? 'מגדירים מטרה אחת ברורה (חתונה, דירה, חיסכון לילדים)'
+                  : 'הגדרת יעדים ברורים ומסודרים'}
               </span>
               <div
                 style={{
@@ -332,7 +350,9 @@ function LoginContent() {
                   overflowWrap: 'break-word',
                 }}
               >
-                שקיפות ותמונת מצב מלאה של ההון העצמי שלך
+                {isHarediUser
+                  ? 'מקבלים תכנית חודשית: כמה לשים בצד, ומה האפשרויות להשקעה'
+                  : 'ניתוח התזרים ואפשרויות ההשקעה'}
               </span>
               <div
                 style={{
@@ -387,7 +407,7 @@ function LoginContent() {
               e.currentTarget.style.transform = 'translateY(0)';
             }}
           >
-            <span>התחל עכשיו עם Google</span>
+            <span>{isHarediUser ? 'להתחיל בחינם עם Google' : 'התחל עכשיו עם Google'}</span>
             <svg style={{ width: 'clamp(1.25rem, 3vw, 1.5rem)', height: 'clamp(1.25rem, 3vw, 1.5rem)', flexShrink: 0 }} viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
@@ -407,6 +427,23 @@ function LoginContent() {
               />
             </svg>
           </button>
+
+          {/* Micro-copy for Haredi users */}
+          {isHarediUser && (
+            <p
+              style={{
+                textAlign: 'center',
+                fontSize: 'clamp(0.75rem, 2vw, 0.8125rem)',
+                color: '#86868b',
+                marginTop: '0.75rem',
+                fontFamily: 'var(--font-heebo), sans-serif',
+                fontWeight: 500,
+                lineHeight: 1.5,
+              }}
+            >
+              לוקח 2-3 דקות. בלי כרטיס אשראי.
+            </p>
+          )}
 
           {/* Legal Disclaimer & Privacy */}
           <div style={{ marginTop: 'clamp(1rem, 3vw, 1.5rem)', textAlign: 'center' }}>
