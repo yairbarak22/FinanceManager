@@ -5,14 +5,7 @@ import { Users, UserCheck, Clock, FileText, CreditCard, UserCog, Upload, UsersRo
 import { apiFetch } from '@/lib/utils';
 import UserSelector from './UserSelector';
 import CsvUploader from './CsvUploader';
-
-interface SegmentFilter {
-  type: 'all' | 'freeOnly' | 'inactiveDays' | 'hasProfile' | 'noTransactionsThisMonth' | 'haredi' | 'manual' | 'csv' | 'custom';
-  days?: number;
-  selectedUserIds?: string[];
-  csvEmails?: string[];
-  customFilter?: unknown;
-}
+import type { SegmentFilter } from '@/lib/marketing/segment';
 
 interface SegmentSelectorProps {
   value: SegmentFilter;
