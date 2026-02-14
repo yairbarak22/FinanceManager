@@ -205,26 +205,28 @@ export default function CampaignsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#303150] mb-1">קמפיינים</h1>
-          <p className="text-sm text-[#7E7F90]">ניהול קמפיינים שיווקיים</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-[#303150] mb-1">קמפיינים</h1>
+          <p className="text-xs sm:text-sm text-[#7E7F90]">ניהול קמפיינים שיווקיים</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={handleSyncAll}
             disabled={syncingAll}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white text-[#303150] rounded-xl hover:bg-[#F7F7F8] transition-colors text-sm shadow-[0_2px_8px_rgba(0,0,0,0.06)] disabled:opacity-50"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-white text-[#303150] rounded-xl hover:bg-[#F7F7F8] transition-colors text-xs sm:text-sm shadow-[0_2px_8px_rgba(0,0,0,0.06)] disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${syncingAll ? 'animate-spin' : ''}`} />
-            סנכרן הכל
+            <span className="hidden sm:inline">סנכרן הכל</span>
+            <span className="sm:hidden">סנכרן</span>
           </button>
           <button
             onClick={() => router.push('/admin/marketing/campaigns/new')}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors shadow-[0_4px_12px_rgba(105,173,255,0.3)]"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors shadow-[0_4px_12px_rgba(105,173,255,0.3)] text-xs sm:text-sm"
           >
-            <Plus className="w-5 h-5" />
-            קמפיין חדש
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="hidden sm:inline">קמפיין חדש</span>
+            <span className="sm:hidden">חדש</span>
           </button>
         </div>
       </div>
@@ -244,10 +246,10 @@ export default function CampaignsPage() {
         </div>
       )}
 
-      {/* Campaigns Table */}
+      {/* Campaigns */}
       <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-hidden">
         {campaigns.length === 0 ? (
-          <div className="p-12 text-center">
+          <div className="p-8 sm:p-12 text-center">
             <div className="w-16 h-16 bg-[#69ADFF]/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Mail className="w-8 h-8 text-[#69ADFF]" />
             </div>
@@ -261,90 +263,140 @@ export default function CampaignsPage() {
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[#F7F7F8] text-[#7E7F90]">
-                  <th className="text-right px-6 py-3.5 text-xs font-medium">שם</th>
-                  <th className="text-right px-4 py-3.5 text-xs font-medium">נושא</th>
-                  <th className="text-center px-4 py-3.5 text-xs font-medium">סטטוס</th>
-                  <th className="text-center px-4 py-3.5 text-xs font-medium">נשלחו</th>
-                  <th className="text-center px-4 py-3.5 text-xs font-medium">% פתיחה</th>
-                  <th className="text-center px-4 py-3.5 text-xs font-medium">% הקלקה</th>
-                  <th className="text-right px-4 py-3.5 text-xs font-medium">תאריך</th>
-                  <th className="text-center px-4 py-3.5 text-xs font-medium">פעולות</th>
-                </tr>
-              </thead>
-              <tbody>
-                {campaigns.map((campaign) => {
-                  const openRate = campaign.sentCount > 0
-                    ? (campaign.openCount / campaign.sentCount) * 100
-                    : 0;
-                  const clickRate = campaign.sentCount > 0
-                    ? (campaign.clickCount / campaign.sentCount) * 100
-                    : 0;
-                  return (
-                    <tr
-                      key={campaign.id}
-                      className="border-b border-[#F7F7F8] hover:bg-[#FAFAFE] transition-colors cursor-pointer"
-                      onClick={() => router.push(`/admin/marketing/campaigns/${campaign.id}`)}
-                    >
-                      <td className="px-6 py-4 text-sm text-[#303150] font-medium">{campaign.name}</td>
-                      <td className="px-4 py-4 text-sm text-[#7E7F90] truncate max-w-[200px]">{campaign.subject}</td>
-                      <td className="px-4 py-4 text-center">
-                        <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-medium ${getStatusColor(campaign.status)}`}>
-                          {getStatusLabel(campaign.status)}
+          <>
+            {/* Mobile card list */}
+            <div className="lg:hidden divide-y divide-[#F7F7F8]">
+              {campaigns.map((campaign) => {
+                const openRate = campaign.sentCount > 0
+                  ? (campaign.openCount / campaign.sentCount) * 100
+                  : 0;
+                return (
+                  <button
+                    key={campaign.id}
+                    onClick={() => router.push(`/admin/marketing/campaigns/${campaign.id}`)}
+                    className="w-full text-right p-4 hover:bg-[#FAFAFE] transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-[#303150] truncate">{campaign.name}</p>
+                        <p className="text-xs text-[#7E7F90] truncate">{campaign.subject}</p>
+                      </div>
+                      <span className={`inline-block px-2 py-0.5 rounded-lg text-[10px] font-medium flex-shrink-0 ${getStatusColor(campaign.status)}`}>
+                        {getStatusLabel(campaign.status)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-[11px] text-[#7E7F90]">
+                      <span>{campaign.sentCount} נשלחו</span>
+                      {campaign.sentCount > 0 && (
+                        <span className={`font-bold ${getOpenRateColor(openRate)}`}>
+                          {openRate.toFixed(0)}% פתיחה
                         </span>
-                      </td>
-                      <td className="px-4 py-4 text-center text-sm font-medium text-[#303150]">
-                        {campaign.sentCount.toLocaleString()}
-                      </td>
-                      <td className="px-4 py-4 text-center">
-                        {campaign.sentCount > 0 ? (
-                          <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-bold ${getOpenRateBg(openRate)} ${getOpenRateColor(openRate)}`}>
-                            {openRate.toFixed(1)}%
+                      )}
+                      <span className="mr-auto">{formatDate(campaign.createdAt)}</span>
+                    </div>
+                    {campaign.status === 'DRAFT' && (
+                      <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => handleSendCampaign(campaign.id, campaign.name)}
+                          disabled={sendingCampaignId === campaign.id}
+                          className="text-xs text-[#69ADFF] font-medium disabled:opacity-50"
+                        >
+                          <Send className={`w-3 h-3 inline-block ml-1 ${sendingCampaignId === campaign.id ? 'animate-pulse' : ''}`} />
+                          שלח עכשיו
+                        </button>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full min-w-[700px]">
+                <thead>
+                  <tr className="border-b border-[#F7F7F8] text-[#7E7F90]">
+                    <th className="text-right px-6 py-3.5 text-xs font-medium">שם</th>
+                    <th className="text-right px-4 py-3.5 text-xs font-medium">נושא</th>
+                    <th className="text-center px-4 py-3.5 text-xs font-medium">סטטוס</th>
+                    <th className="text-center px-4 py-3.5 text-xs font-medium">נשלחו</th>
+                    <th className="text-center px-4 py-3.5 text-xs font-medium">% פתיחה</th>
+                    <th className="text-center px-4 py-3.5 text-xs font-medium">% הקלקה</th>
+                    <th className="text-right px-4 py-3.5 text-xs font-medium">תאריך</th>
+                    <th className="text-center px-4 py-3.5 text-xs font-medium">פעולות</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {campaigns.map((campaign) => {
+                    const openRate = campaign.sentCount > 0
+                      ? (campaign.openCount / campaign.sentCount) * 100
+                      : 0;
+                    const clickRate = campaign.sentCount > 0
+                      ? (campaign.clickCount / campaign.sentCount) * 100
+                      : 0;
+                    return (
+                      <tr
+                        key={campaign.id}
+                        className="border-b border-[#F7F7F8] hover:bg-[#FAFAFE] transition-colors cursor-pointer"
+                        onClick={() => router.push(`/admin/marketing/campaigns/${campaign.id}`)}
+                      >
+                        <td className="px-6 py-4 text-sm text-[#303150] font-medium">{campaign.name}</td>
+                        <td className="px-4 py-4 text-sm text-[#7E7F90] truncate max-w-[200px]">{campaign.subject}</td>
+                        <td className="px-4 py-4 text-center">
+                          <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-medium ${getStatusColor(campaign.status)}`}>
+                            {getStatusLabel(campaign.status)}
                           </span>
-                        ) : (
-                          <span className="text-[#BDBDCB] text-sm">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4 text-center">
-                        {campaign.sentCount > 0 ? (
-                          <span className="text-xs font-medium text-[#303150]">
-                            {clickRate.toFixed(1)}%
-                          </span>
-                        ) : (
-                          <span className="text-[#BDBDCB] text-sm">—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-4 text-sm text-[#7E7F90]">{formatDate(campaign.createdAt)}</td>
-                      <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            onClick={() => router.push(`/admin/marketing/campaigns/${campaign.id}`)}
-                            className="p-2 hover:bg-[#F7F7F8] rounded-lg transition-colors"
-                            title="צפייה"
-                          >
-                            <Eye className="w-4 h-4 text-[#7E7F90]" />
-                          </button>
-                          {campaign.status === 'DRAFT' && (
-                            <button
-                              onClick={() => handleSendCampaign(campaign.id, campaign.name)}
-                              disabled={sendingCampaignId === campaign.id}
-                              className="p-2 hover:bg-[#F7F7F8] rounded-lg transition-colors disabled:opacity-50"
-                              title="שליחה"
-                            >
-                              <Send className={`w-4 h-4 text-[#69ADFF] ${sendingCampaignId === campaign.id ? 'animate-pulse' : ''}`} />
-                            </button>
+                        </td>
+                        <td className="px-4 py-4 text-center text-sm font-medium text-[#303150]">
+                          {campaign.sentCount.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          {campaign.sentCount > 0 ? (
+                            <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-bold ${getOpenRateBg(openRate)} ${getOpenRateColor(openRate)}`}>
+                              {openRate.toFixed(1)}%
+                            </span>
+                          ) : (
+                            <span className="text-[#BDBDCB] text-sm">—</span>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          {campaign.sentCount > 0 ? (
+                            <span className="text-xs font-medium text-[#303150]">
+                              {clickRate.toFixed(1)}%
+                            </span>
+                          ) : (
+                            <span className="text-[#BDBDCB] text-sm">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 text-sm text-[#7E7F90]">{formatDate(campaign.createdAt)}</td>
+                        <td className="px-4 py-4" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => router.push(`/admin/marketing/campaigns/${campaign.id}`)}
+                              className="p-2 hover:bg-[#F7F7F8] rounded-lg transition-colors"
+                              title="צפייה"
+                            >
+                              <Eye className="w-4 h-4 text-[#7E7F90]" />
+                            </button>
+                            {campaign.status === 'DRAFT' && (
+                              <button
+                                onClick={() => handleSendCampaign(campaign.id, campaign.name)}
+                                disabled={sendingCampaignId === campaign.id}
+                                className="p-2 hover:bg-[#F7F7F8] rounded-lg transition-colors disabled:opacity-50"
+                                title="שליחה"
+                              >
+                                <Send className={`w-4 h-4 text-[#69ADFF] ${sendingCampaignId === campaign.id ? 'animate-pulse' : ''}`} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>

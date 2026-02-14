@@ -163,34 +163,36 @@ export default function TemplatesPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#303150] mb-1">תבניות</h1>
-          <p className="text-sm text-[#7E7F90]">
+          <h1 className="text-xl lg:text-2xl font-bold text-[#303150] mb-0.5">תבניות</h1>
+          <p className="text-xs lg:text-sm text-[#7E7F90]">
             ניהול תבניות מייל &middot; {templates.length} תבניות
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {!hasSystemTemplates && (
             <button
               onClick={handleLoadDefaults}
               disabled={loadingDefaults}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#0DBACC]/10 text-[#0DBACC] rounded-xl hover:bg-[#0DBACC]/20 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#0DBACC]/10 text-[#0DBACC] rounded-xl hover:bg-[#0DBACC]/20 transition-colors disabled:opacity-50 text-xs sm:text-sm"
             >
               {loadingDefaults ? (
                 <div className="w-4 h-4 border-2 border-[#0DBACC] border-t-transparent rounded-full animate-spin" />
               ) : (
                 <Download className="w-4 h-4" />
               )}
-              טען תבניות מוכנות
+              <span className="hidden sm:inline">טען תבניות מוכנות</span>
+              <span className="sm:hidden">טען</span>
             </button>
           )}
           <button
             onClick={() => router.push('/admin/marketing/templates/new')}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors text-xs sm:text-sm"
           >
-            <Plus className="w-5 h-5" />
-            תבנית חדשה
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="hidden sm:inline">תבנית חדשה</span>
+            <span className="sm:hidden">חדשה</span>
           </button>
         </div>
       </div>
@@ -211,8 +213,8 @@ export default function TemplatesPage() {
 
       {/* Category Filters */}
       {templates.length > 0 && (
-        <div className="flex items-center gap-2 mb-6">
-          <Filter className="w-4 h-4 text-[#7E7F90]" />
+        <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1 -mx-1 px-1">
+          <Filter className="w-4 h-4 text-[#7E7F90] flex-shrink-0" />
           {ALL_CATEGORIES.map((cat) => {
             const count = cat.value
               ? templates.filter((t) => t.category === cat.value).length
@@ -221,7 +223,7 @@ export default function TemplatesPage() {
               <button
                 key={cat.value}
                 onClick={() => setActiveCategory(cat.value)}
-                className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                   activeCategory === cat.value
                     ? 'bg-[#69ADFF] text-white'
                     : 'bg-white text-[#7E7F90] hover:bg-[#F7F7F8] border border-[#E8E8ED]'
@@ -229,7 +231,7 @@ export default function TemplatesPage() {
               >
                 {cat.label}
                 {count > 0 && (
-                  <span className={`mr-1.5 text-xs ${
+                  <span className={`mr-1 sm:mr-1.5 text-[10px] sm:text-xs ${
                     activeCategory === cat.value ? 'text-white/80' : 'text-[#BDBDCB]'
                   }`}>
                     ({count})
@@ -281,7 +283,7 @@ export default function TemplatesPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
           {filteredTemplates.map((template) => (
             <div
               key={template.id}

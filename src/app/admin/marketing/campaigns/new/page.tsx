@@ -289,14 +289,14 @@ export default function NewCampaignPage() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6 lg:mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-[#303150] mb-1">קמפיין חדש</h1>
-          <p className="text-sm text-[#7E7F90]">צור קמפיין דיוור חדש</p>
+          <h1 className="text-xl lg:text-2xl font-bold text-[#303150] mb-1">קמפיין חדש</h1>
+          <p className="text-xs lg:text-sm text-[#7E7F90]">צור קמפיין דיוור חדש</p>
         </div>
         <button
           onClick={() => router.push('/admin/marketing/campaigns')}
-          className="text-sm text-[#7E7F90] hover:text-[#303150] transition-colors"
+          className="text-xs lg:text-sm text-[#7E7F90] hover:text-[#303150] transition-colors"
         >
           ביטול
         </button>
@@ -371,8 +371,8 @@ export default function NewCampaignPage() {
 
       {/* Step 1: Settings & Audience */}
       {step === 1 && (
-        <div className="bg-white rounded-2xl p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-          <h2 className="text-xl font-bold text-[#303150] mb-6">הגדרות וקהל</h2>
+        <div className="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+          <h2 className="text-lg lg:text-xl font-bold text-[#303150] mb-4 lg:mb-6">הגדרות וקהל</h2>
 
           <div className="space-y-6">
             <div>
@@ -408,7 +408,7 @@ export default function NewCampaignPage() {
             />
           </div>
 
-          <div className="mt-8 flex justify-end">
+          <div className="mt-6 lg:mt-8 flex justify-end">
             <button
               onClick={() => setStep(2)}
               disabled={
@@ -422,7 +422,7 @@ export default function NewCampaignPage() {
                 (segmentFilter.type === 'csv' &&
                   (!segmentFilter.csvEmails || segmentFilter.csvEmails.length === 0))
               }
-              className="flex items-center gap-2 px-6 py-3 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-5 py-2.5 lg:px-6 lg:py-3 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm lg:text-base"
             >
               הבא
               <ArrowLeft className="w-4 h-4" />
@@ -433,9 +433,9 @@ export default function NewCampaignPage() {
 
       {/* Step 2: Content */}
       {step === 2 && (
-        <div className="bg-white rounded-2xl p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-[#303150]">תוכן ועיצוב</h2>
+        <div className="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 lg:mb-6">
+            <h2 className="text-lg lg:text-xl font-bold text-[#303150]">תוכן ועיצוב</h2>
             <button
               onClick={handleTestEmail}
               disabled={loading || !subject || !content}
@@ -549,10 +549,10 @@ export default function NewCampaignPage() {
             </div>
           </div>
 
-          <div className="mt-8 flex justify-between">
+          <div className="mt-6 lg:mt-8 flex justify-between">
             <button
               onClick={() => setStep(1)}
-              className="flex items-center gap-2 px-6 py-3 bg-[#F7F7F8] text-[#303150] rounded-xl hover:bg-[#E8E8ED] transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 lg:px-6 lg:py-3 bg-[#F7F7F8] text-[#303150] rounded-xl hover:bg-[#E8E8ED] transition-colors text-sm lg:text-base"
             >
               <ArrowRight className="w-4 h-4" />
               קודם
@@ -560,7 +560,7 @@ export default function NewCampaignPage() {
             <button
               onClick={() => setStep(3)}
               disabled={!content}
-              className="flex items-center gap-2 px-6 py-3 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-5 py-2.5 lg:px-6 lg:py-3 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm lg:text-base"
             >
               הבא
               <ArrowLeft className="w-4 h-4" />
@@ -571,8 +571,8 @@ export default function NewCampaignPage() {
 
       {/* Step 3: Review & Send */}
       {step === 3 && (
-        <div className="bg-white rounded-2xl p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-          <h2 className="text-xl font-bold text-[#303150] mb-6">סיכום ושליחה</h2>
+        <div className="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+          <h2 className="text-lg lg:text-xl font-bold text-[#303150] mb-4 lg:mb-6">סיכום ושליחה</h2>
 
           <div className="space-y-6">
             {/* Summary */}
@@ -686,10 +686,10 @@ export default function NewCampaignPage() {
             )}
           </div>
 
-          <div className="mt-8 flex justify-between">
+          <div className="mt-6 lg:mt-8 flex justify-between">
             <button
               onClick={() => setStep(2)}
-              className="flex items-center gap-2 px-6 py-3 bg-[#F7F7F8] text-[#303150] rounded-xl hover:bg-[#E8E8ED] transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 lg:px-6 lg:py-3 bg-[#F7F7F8] text-[#303150] rounded-xl hover:bg-[#E8E8ED] transition-colors text-sm lg:text-base"
             >
               <ArrowRight className="w-4 h-4" />
               קודם
@@ -697,7 +697,7 @@ export default function NewCampaignPage() {
             <button
               onClick={handleSubmit}
               disabled={loading || (sendOption === 'scheduled' && !scheduledAt)}
-              className="flex items-center gap-2 px-6 py-3 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_12px_rgba(105,173,255,0.3)]"
+              className="flex items-center gap-2 px-5 py-2.5 lg:px-6 lg:py-3 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_4px_12px_rgba(105,173,255,0.3)] text-sm lg:text-base"
             >
               {loading ? (
                 <>

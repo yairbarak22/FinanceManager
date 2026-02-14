@@ -5,6 +5,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/adminHelpers';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { isValidSenderAddress, getSenderDisplay, generateThreadId, extractEmailAddress } from '@/lib/inbox/constants';
 import { config } from '@/lib/config';
 
@@ -13,6 +15,17 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { userId, error } = await requireAdmin();
+    if (error) return error;
+
+    const rateLimitResult = await checkRateLimit(`admin:${userId}`, RATE_LIMITS.admin);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'יותר מדי בקשות. נסה שוב בעוד דקה.' },
+        { status: 429 }
+      );
+    }
+
     const { id } = await params;
     const body = await request.json();
     const { content, replyFromAddress } = body;

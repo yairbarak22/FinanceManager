@@ -173,13 +173,13 @@ export default function MarketingDashboardPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6 lg:mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-[#303150] mb-1">דאשבורד דיוור</h1>
-          <div className="flex items-center gap-3">
-            <p className="text-sm text-[#7E7F90]">סקירה כללית של ביצועי הקמפיינים</p>
+          <h1 className="text-xl lg:text-2xl font-bold text-[#303150] mb-0.5">דאשבורד דיוור</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+            <p className="text-xs lg:text-sm text-[#7E7F90]">סקירה כללית של ביצועי הקמפיינים</p>
             {lastRefresh && (
-              <span className="text-xs text-[#BDBDCB]">
+              <span className="text-[10px] lg:text-xs text-[#BDBDCB]">
                 עודכן {lastRefresh.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
@@ -188,32 +188,34 @@ export default function MarketingDashboardPage() {
         <button
           onClick={fetchStats}
           disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 text-sm bg-white text-[#303150] rounded-xl hover:bg-[#F7F7F8] transition-colors shadow-[0_2px_8px_rgba(0,0,0,0.06)] disabled:opacity-50"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm bg-white text-[#303150] rounded-xl hover:bg-[#F7F7F8] transition-colors shadow-[0_2px_8px_rgba(0,0,0,0.06)] disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-          רענן
+          <span className="hidden sm:inline">רענן</span>
         </button>
       </div>
 
       {/* Quick Actions */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-6">
         <button
           onClick={() => router.push('/admin/marketing/campaigns/new')}
-          className="flex items-center gap-2 px-5 py-2.5 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors text-sm font-medium shadow-[0_4px_12px_rgba(105,173,255,0.3)]"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors text-xs sm:text-sm font-medium shadow-[0_4px_12px_rgba(105,173,255,0.3)]"
         >
           <Plus className="w-4 h-4" />
-          קמפיין חדש
+          <span className="hidden sm:inline">קמפיין חדש</span>
+          <span className="sm:hidden">חדש</span>
         </button>
         <button
           onClick={() => router.push('/admin/marketing/campaigns')}
-          className="flex items-center gap-2 px-5 py-2.5 bg-white text-[#303150] rounded-xl hover:bg-[#F7F7F8] transition-colors text-sm font-medium shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-white text-[#303150] rounded-xl hover:bg-[#F7F7F8] transition-colors text-xs sm:text-sm font-medium shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
         >
           <LayoutGrid className="w-4 h-4" />
-          כל הקמפיינים
+          <span className="hidden sm:inline">כל הקמפיינים</span>
+          <span className="sm:hidden">קמפיינים</span>
         </button>
         <button
           onClick={() => router.push('/admin/marketing/templates')}
-          className="flex items-center gap-2 px-5 py-2.5 bg-white text-[#303150] rounded-xl hover:bg-[#F7F7F8] transition-colors text-sm font-medium shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
+          className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-white text-[#303150] rounded-xl hover:bg-[#F7F7F8] transition-colors text-xs sm:text-sm font-medium shadow-[0_2px_8px_rgba(0,0,0,0.06)]"
         >
           <FileText className="w-4 h-4" />
           תבניות
@@ -241,61 +243,61 @@ export default function MarketingDashboardPage() {
       ) : (
         <>
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
             {/* Sent This Month */}
-            <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-t-[3px] border-[#69ADFF]">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-[#69ADFF]/10 rounded-xl flex items-center justify-center">
-                  <Mail className="w-5 h-5 text-[#69ADFF]" />
+            <div className="bg-white rounded-xl lg:rounded-2xl p-3.5 lg:p-5 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-t-[3px] border-[#69ADFF]">
+              <div className="flex items-center gap-2 lg:gap-3 mb-2 lg:mb-3">
+                <div className="w-8 h-8 lg:w-10 lg:h-10 bg-[#69ADFF]/10 rounded-lg lg:rounded-xl flex items-center justify-center">
+                  <Mail className="w-4 h-4 lg:w-5 lg:h-5 text-[#69ADFF]" />
                 </div>
-                <span className="text-xs text-[#7E7F90]">החודש</span>
+                <span className="text-[10px] lg:text-xs text-[#7E7F90]">החודש</span>
               </div>
-              <p className="text-2xl font-bold text-[#303150] mb-1">
+              <p className="text-xl lg:text-2xl font-bold text-[#303150] mb-0.5 lg:mb-1">
                 {stats.thisMonth.sent.toLocaleString()}
               </p>
-              <p className="text-xs text-[#7E7F90]">מיילים שנשלחו</p>
+              <p className="text-[10px] lg:text-xs text-[#7E7F90]">מיילים שנשלחו</p>
             </div>
 
             {/* Open Rate */}
-            <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-t-[3px] border-[#0DBACC]">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-[#0DBACC]/10 rounded-xl flex items-center justify-center">
-                  <Eye className="w-5 h-5 text-[#0DBACC]" />
+            <div className="bg-white rounded-xl lg:rounded-2xl p-3.5 lg:p-5 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-t-[3px] border-[#0DBACC]">
+              <div className="flex items-center gap-2 lg:gap-3 mb-2 lg:mb-3">
+                <div className="w-8 h-8 lg:w-10 lg:h-10 bg-[#0DBACC]/10 rounded-lg lg:rounded-xl flex items-center justify-center">
+                  <Eye className="w-4 h-4 lg:w-5 lg:h-5 text-[#0DBACC]" />
                 </div>
-                <span className="text-xs text-[#7E7F90]">החודש</span>
+                <span className="text-[10px] lg:text-xs text-[#7E7F90]">החודש</span>
               </div>
-              <p className={`text-2xl font-bold mb-1 ${getOpenRateColor(stats.thisMonth.openRate)}`}>
+              <p className={`text-xl lg:text-2xl font-bold mb-0.5 lg:mb-1 ${getOpenRateColor(stats.thisMonth.openRate)}`}>
                 {stats.thisMonth.sent > 0 ? `${stats.thisMonth.openRate.toFixed(1)}%` : '—'}
               </p>
-              <p className="text-xs text-[#7E7F90]">אחוז פתיחה</p>
+              <p className="text-[10px] lg:text-xs text-[#7E7F90]">אחוז פתיחה</p>
             </div>
 
             {/* Click Rate */}
-            <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-t-[3px] border-[#74ACEF]">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-[#74ACEF]/10 rounded-xl flex items-center justify-center">
-                  <MousePointerClick className="w-5 h-5 text-[#74ACEF]" />
+            <div className="bg-white rounded-xl lg:rounded-2xl p-3.5 lg:p-5 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-t-[3px] border-[#74ACEF]">
+              <div className="flex items-center gap-2 lg:gap-3 mb-2 lg:mb-3">
+                <div className="w-8 h-8 lg:w-10 lg:h-10 bg-[#74ACEF]/10 rounded-lg lg:rounded-xl flex items-center justify-center">
+                  <MousePointerClick className="w-4 h-4 lg:w-5 lg:h-5 text-[#74ACEF]" />
                 </div>
-                <span className="text-xs text-[#7E7F90]">החודש</span>
+                <span className="text-[10px] lg:text-xs text-[#7E7F90]">החודש</span>
               </div>
-              <p className="text-2xl font-bold text-[#303150] mb-1">
+              <p className="text-xl lg:text-2xl font-bold text-[#303150] mb-0.5 lg:mb-1">
                 {stats.thisMonth.sent > 0 ? `${stats.thisMonth.clickRate.toFixed(1)}%` : '—'}
               </p>
-              <p className="text-xs text-[#7E7F90]">אחוז הקלקה</p>
+              <p className="text-[10px] lg:text-xs text-[#7E7F90]">אחוז הקלקה</p>
             </div>
 
             {/* Active Campaigns */}
-            <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-t-[3px] border-[#F18AB5]">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-[#F18AB5]/10 rounded-xl flex items-center justify-center">
-                  <Activity className="w-5 h-5 text-[#F18AB5]" />
+            <div className="bg-white rounded-xl lg:rounded-2xl p-3.5 lg:p-5 shadow-[0_4px_20px_rgba(0,0,0,0.08)] border-t-[3px] border-[#F18AB5]">
+              <div className="flex items-center gap-2 lg:gap-3 mb-2 lg:mb-3">
+                <div className="w-8 h-8 lg:w-10 lg:h-10 bg-[#F18AB5]/10 rounded-lg lg:rounded-xl flex items-center justify-center">
+                  <Activity className="w-4 h-4 lg:w-5 lg:h-5 text-[#F18AB5]" />
                 </div>
-                <span className="text-xs text-[#7E7F90]">סה״כ</span>
+                <span className="text-[10px] lg:text-xs text-[#7E7F90]">סה״כ</span>
               </div>
-              <p className="text-2xl font-bold text-[#303150] mb-1">
+              <p className="text-xl lg:text-2xl font-bold text-[#303150] mb-0.5 lg:mb-1">
                 {stats.totalCampaigns}
               </p>
-              <p className="text-xs text-[#7E7F90]">
+              <p className="text-[10px] lg:text-xs text-[#7E7F90]">
                 {stats.activeCampaigns > 0 ? `${stats.activeCampaigns} פעילים` : 'קמפיינים'}
               </p>
             </div>
@@ -304,8 +306,8 @@ export default function MarketingDashboardPage() {
           {/* Recent Campaigns */}
           {stats.recentCampaigns.length > 0 && (
             <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] mb-6 overflow-hidden">
-              <div className="flex items-center justify-between p-5 pb-3">
-                <h2 className="text-base font-bold text-[#303150]">קמפיינים אחרונים</h2>
+              <div className="flex items-center justify-between p-4 lg:p-5 pb-3">
+                <h2 className="text-sm lg:text-base font-bold text-[#303150]">קמפיינים אחרונים</h2>
                 <button
                   onClick={() => router.push('/admin/marketing/campaigns')}
                   className="text-xs text-[#69ADFF] hover:underline flex items-center gap-1"
@@ -314,7 +316,41 @@ export default function MarketingDashboardPage() {
                   <ChevronLeft className="w-3 h-3" />
                 </button>
               </div>
-              <div className="overflow-x-auto">
+
+              {/* Mobile card list */}
+              <div className="lg:hidden divide-y divide-[#F7F7F8]">
+                {stats.recentCampaigns.map((campaign) => {
+                  const openRate = campaign.sentCount > 0
+                    ? (campaign.openCount / campaign.sentCount) * 100
+                    : 0;
+                  return (
+                    <button
+                      key={campaign.id}
+                      onClick={() => router.push(`/admin/marketing/campaigns/${campaign.id}`)}
+                      className="w-full text-right p-4 hover:bg-[#FAFAFE] transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <p className="text-sm font-medium text-[#303150] truncate">{campaign.name}</p>
+                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-medium flex-shrink-0 ${getStatusColor(campaign.status)}`}>
+                          {getStatusLabel(campaign.status)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-[11px] text-[#7E7F90]">
+                        <span>{campaign.sentCount} נשלחו</span>
+                        {campaign.sentCount > 0 && (
+                          <span className={`font-bold ${getOpenRateColor(openRate)}`}>
+                            {openRate.toFixed(0)}% פתיחה
+                          </span>
+                        )}
+                        <span className="mr-auto">{formatDate(campaign.completedAt || campaign.createdAt)}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Desktop table */}
+              <div className="hidden lg:block overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-t border-[#F7F7F8] text-[#7E7F90]">
@@ -383,35 +419,35 @@ export default function MarketingDashboardPage() {
           )}
 
           {/* All Time Stats - Compact row */}
-          <div className="bg-white rounded-2xl p-5 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-            <h2 className="text-base font-bold text-[#303150] mb-4 flex items-center gap-2">
+          <div className="bg-white rounded-2xl p-4 lg:p-5 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+            <h2 className="text-sm lg:text-base font-bold text-[#303150] mb-3 lg:mb-4 flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-[#69ADFF]" />
               סה״כ כל הזמנים
             </h2>
-            <div className="flex items-center gap-8">
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-3 sm:gap-6 lg:gap-8">
               <div className="flex items-center gap-2">
-                <ArrowUpLeft className="w-4 h-4 text-[#69ADFF]" />
-                <span className="text-sm text-[#7E7F90]">נשלחו</span>
-                <span className="text-base font-bold text-[#303150]">{stats.allTime.totalSent.toLocaleString()}</span>
+                <ArrowUpLeft className="w-4 h-4 text-[#69ADFF] flex-shrink-0" />
+                <span className="text-xs sm:text-sm text-[#7E7F90]">נשלחו</span>
+                <span className="text-sm sm:text-base font-bold text-[#303150]">{stats.allTime.totalSent.toLocaleString()}</span>
               </div>
-              <div className="h-4 w-px bg-[#E8E8ED]" />
+              <div className="hidden sm:block h-4 w-px bg-[#E8E8ED]" />
               <div className="flex items-center gap-2">
-                <Eye className="w-4 h-4 text-[#0DBACC]" />
-                <span className="text-sm text-[#7E7F90]">נפתחו</span>
-                <span className="text-base font-bold text-[#303150]">{stats.allTime.totalOpened.toLocaleString()}</span>
+                <Eye className="w-4 h-4 text-[#0DBACC] flex-shrink-0" />
+                <span className="text-xs sm:text-sm text-[#7E7F90]">נפתחו</span>
+                <span className="text-sm sm:text-base font-bold text-[#303150]">{stats.allTime.totalOpened.toLocaleString()}</span>
               </div>
-              <div className="h-4 w-px bg-[#E8E8ED]" />
+              <div className="hidden sm:block h-4 w-px bg-[#E8E8ED]" />
               <div className="flex items-center gap-2">
-                <MousePointerClick className="w-4 h-4 text-[#74ACEF]" />
-                <span className="text-sm text-[#7E7F90]">הקליקו</span>
-                <span className="text-base font-bold text-[#303150]">{stats.allTime.totalClicked.toLocaleString()}</span>
+                <MousePointerClick className="w-4 h-4 text-[#74ACEF] flex-shrink-0" />
+                <span className="text-xs sm:text-sm text-[#7E7F90]">הקליקו</span>
+                <span className="text-sm sm:text-base font-bold text-[#303150]">{stats.allTime.totalClicked.toLocaleString()}</span>
               </div>
               {stats.allTime.totalSent > 0 && (
                 <>
-                  <div className="h-4 w-px bg-[#E8E8ED]" />
+                  <div className="hidden sm:block h-4 w-px bg-[#E8E8ED]" />
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-[#7E7F90]">% פתיחה כולל</span>
-                    <span className={`text-base font-bold ${getOpenRateColor((stats.allTime.totalOpened / stats.allTime.totalSent) * 100)}`}>
+                    <span className="text-xs sm:text-sm text-[#7E7F90]">% פתיחה</span>
+                    <span className={`text-sm sm:text-base font-bold ${getOpenRateColor((stats.allTime.totalOpened / stats.allTime.totalSent) * 100)}`}>
                       {((stats.allTime.totalOpened / stats.allTime.totalSent) * 100).toFixed(1)}%
                     </span>
                   </div>

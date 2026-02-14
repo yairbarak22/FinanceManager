@@ -158,7 +158,23 @@ export default function LogsPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Mobile card list */}
+            <div className="lg:hidden divide-y divide-[#F7F7F8]">
+              {events.map((event) => (
+                <div key={event.id} className="p-4">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    {getEventIcon(event.eventType)}
+                    <span className="text-sm font-medium text-[#303150]">{getEventLabel(event.eventType)}</span>
+                    <span className="text-[11px] text-[#BDBDCB] mr-auto">{formatDate(event.timestamp)}</span>
+                  </div>
+                  <p className="text-sm text-[#303150] truncate">{event.campaign.name}</p>
+                  <p className="text-xs text-[#7E7F90] truncate">{event.user.email}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden lg:block overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-[#F7F7F8] border-b border-[#E8E8ED]">
                   <tr>

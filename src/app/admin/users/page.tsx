@@ -157,10 +157,10 @@ export default function AdminUsersPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-[#303150] mb-1">ניהול משתמשים</h1>
-          <p className="text-sm text-[#7E7F90]">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#303150] mb-1">ניהול משתמשים</h1>
+          <p className="text-xs sm:text-sm text-[#7E7F90]">
             צפייה בכל המשתמשים הרשומים במערכת
           </p>
         </div>
@@ -168,7 +168,7 @@ export default function AdminUsersPage() {
         <button
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-2 px-5 py-2.5 bg-white border border-[#E8E8ED] rounded-xl hover:bg-[#F7F7F8] transition-colors disabled:opacity-50 text-[#303150]"
+          className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-white border border-[#E8E8ED] rounded-xl hover:bg-[#F7F7F8] transition-colors disabled:opacity-50 text-[#303150] self-end sm:self-auto text-sm"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           רענן
@@ -356,8 +356,49 @@ export default function AdminUsersPage() {
         {/* Users Table */}
         {!loading && !error && (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            {/* Mobile card list */}
+            <div className="lg:hidden divide-y divide-gray-100">
+              {users.map((user) => (
+                <div key={user.id} className="p-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    {user.image ? (
+                      <img
+                        src={user.image}
+                        alt={user.name || 'User'}
+                        className="w-9 h-9 rounded-full"
+                        data-sl="mask"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <User className="w-4 h-4 text-indigo-600" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <SensitiveData as="p" className="text-sm font-medium text-gray-900 truncate">
+                        {user.name || 'ללא שם'}
+                      </SensitiveData>
+                      <SensitiveData as="p" className="text-xs text-gray-500 truncate">
+                        {user.email}
+                      </SensitiveData>
+                    </div>
+                    {user.hasSeenOnboarding ? (
+                      <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                    ) : (
+                      <XCircle className="w-4 h-4 text-gray-300 flex-shrink-0" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-[11px] text-gray-400 mr-12">
+                    <span>{formatDate(user.createdAt)}</span>
+                    <span>{user._count.transactions} עסקאות</span>
+                    <span>{user._count.assets} נכסים</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full min-w-[700px]">
                 <thead className="bg-gray-50 border-b border-gray-100">
                   <tr>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">

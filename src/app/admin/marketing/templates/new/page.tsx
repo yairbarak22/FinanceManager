@@ -161,8 +161,8 @@ export default function NewTemplatePage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => router.push('/admin/marketing/templates')}
             className="p-2 hover:bg-[#F7F7F8] rounded-xl transition-colors"
@@ -170,22 +170,22 @@ export default function NewTemplatePage() {
             <ArrowLeft className="w-5 h-5 text-[#7E7F90]" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-[#303150] mb-1">תבנית חדשה</h1>
-            <p className="text-sm text-[#7E7F90]">צור תבנית מייל חדשה</p>
+            <h1 className="text-xl lg:text-2xl font-bold text-[#303150] mb-0.5">תבנית חדשה</h1>
+            <p className="text-xs lg:text-sm text-[#7E7F90]">צור תבנית מייל חדשה</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 mr-11 sm:mr-0">
           <button
             type="button"
             onClick={() => router.push('/admin/marketing/templates')}
-            className="px-5 py-2.5 bg-[#F7F7F8] text-[#303150] rounded-xl hover:bg-[#E8E8ED] transition-colors text-sm"
+            className="px-4 py-2 sm:px-5 sm:py-2.5 bg-[#F7F7F8] text-[#303150] rounded-xl hover:bg-[#E8E8ED] transition-colors text-xs sm:text-sm"
           >
             ביטול
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading || !name || !subject || !content}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+            className="flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm"
           >
             {loading ? (
               <>
@@ -195,7 +195,8 @@ export default function NewTemplatePage() {
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                שמור תבנית
+                <span className="hidden sm:inline">שמור תבנית</span>
+                <span className="sm:hidden">שמור</span>
               </>
             )}
           </button>
@@ -212,17 +213,17 @@ export default function NewTemplatePage() {
 
       {/* Template Starter Section */}
       {systemTemplates.length > 0 && !content && (
-        <div className="mb-6 bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-[#69ADFF]/10 rounded-xl flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-[#69ADFF]" />
+        <div className="mb-4 lg:mb-6 bg-white rounded-2xl lg:rounded-3xl p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+          <div className="flex items-center gap-3 mb-3 lg:mb-4">
+            <div className="w-9 h-9 lg:w-10 lg:h-10 bg-[#69ADFF]/10 rounded-xl flex items-center justify-center">
+              <Sparkles className="w-4 h-4 lg:w-5 lg:h-5 text-[#69ADFF]" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-[#303150]">התחל מתבנית מוכנה</h2>
-              <p className="text-xs text-[#7E7F90]">בחר תבנית בסיס ותתאים אותה לצרכים שלך</p>
+              <h2 className="text-sm lg:text-base font-bold text-[#303150]">התחל מתבנית מוכנה</h2>
+              <p className="text-[11px] lg:text-xs text-[#7E7F90]">בחר תבנית בסיס ותתאים אותה לצרכים שלך</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 lg:gap-3">
             {systemTemplates.map((template) => (
               <button
                 key={template.id}
@@ -281,9 +282,9 @@ export default function NewTemplatePage() {
 
       <form onSubmit={handleSubmit}>
         {/* Details Card */}
-        <div className="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] mb-6">
-          <h2 className="text-lg font-bold text-[#303150] mb-4">פרטי התבנית</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl lg:rounded-3xl p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] mb-4 lg:mb-6">
+          <h2 className="text-base lg:text-lg font-bold text-[#303150] mb-3 lg:mb-4">פרטי התבנית</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
             <div>
               <label className="block text-sm font-medium text-[#7E7F90] mb-1.5">שם התבנית *</label>
               <input
@@ -333,10 +334,10 @@ export default function NewTemplatePage() {
         </div>
 
         {/* Split-Screen Editor + Preview */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
           {/* HTML Editor */}
-          <div className="bg-white rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex flex-col min-h-[600px]">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#F7F7F8]">
+          <div className="bg-white rounded-2xl lg:rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex flex-col min-h-[400px] lg:min-h-[600px]">
+            <div className="flex items-center justify-between px-4 lg:px-6 py-3 lg:py-4 border-b border-[#F7F7F8]">
               <h2 className="text-base font-bold text-[#303150]">עורך HTML</h2>
               <button
                 type="button"
@@ -365,12 +366,12 @@ export default function NewTemplatePage() {
               </div>
             )}
 
-            <div className="flex-1 p-6">
+            <div className="flex-1 p-4 lg:p-6">
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="הכנס כאן את תוכן התבנית ב-HTML..."
-                className="w-full h-full min-h-[450px] px-4 py-3 border border-[#E8E8ED] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent font-mono text-xs leading-relaxed resize-none"
+                className="w-full h-full min-h-[300px] lg:min-h-[450px] px-3 lg:px-4 py-3 border border-[#E8E8ED] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent font-mono text-[11px] lg:text-xs leading-relaxed resize-none"
                 required
                 dir="ltr"
               />
@@ -378,8 +379,8 @@ export default function NewTemplatePage() {
           </div>
 
           {/* Preview Panel */}
-          <div className="bg-white rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex flex-col min-h-[600px]">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#F7F7F8]">
+          <div className="bg-white rounded-2xl lg:rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex flex-col min-h-[400px] lg:min-h-[600px]">
+            <div className="flex items-center justify-between px-4 lg:px-6 py-3 lg:py-4 border-b border-[#F7F7F8]">
               <h2 className="text-base font-bold text-[#303150]">תצוגה מקדימה</h2>
               <div className="flex items-center gap-1 bg-[#F5F5F7] rounded-lg p-1">
                 <button
@@ -418,7 +419,7 @@ export default function NewTemplatePage() {
             )}
 
             {/* Preview Content */}
-            <div className="flex-1 p-6 flex justify-center">
+            <div className="flex-1 p-4 lg:p-6 flex justify-center">
               {content ? (
                 <EmailPreview
                   htmlContent={content}

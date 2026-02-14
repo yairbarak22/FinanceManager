@@ -141,8 +141,8 @@ export default function TemplateDetailPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 lg:mb-8">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => router.push('/admin/marketing/templates')}
             className="p-2 hover:bg-[#F7F7F8] rounded-xl transition-colors"
@@ -150,22 +150,22 @@ export default function TemplateDetailPage() {
             <ArrowLeft className="w-5 h-5 text-[#7E7F90]" />
           </button>
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-[#303150]">{template.name}</h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl lg:text-2xl font-bold text-[#303150]">{template.name}</h1>
               {template.isSystem && (
-                <span className="px-3 py-1 bg-[#0DBACC]/10 text-[#0DBACC] text-xs font-medium rounded-lg">
+                <span className="px-2 py-0.5 bg-[#0DBACC]/10 text-[#0DBACC] text-[10px] sm:text-xs font-medium rounded-lg">
                   מערכת
                 </span>
               )}
             </div>
-            <p className="text-sm text-[#7E7F90]">פרטי תבנית</p>
+            <p className="text-xs lg:text-sm text-[#7E7F90]">פרטי תבנית</p>
           </div>
         </div>
         {!template.isSystem && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 mr-11 sm:mr-0">
             <button
               onClick={() => router.push(`/admin/marketing/templates/${templateId}/edit`)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#F7F7F8] text-[#303150] rounded-xl hover:bg-[#E8E8ED] transition-colors"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#F7F7F8] text-[#303150] rounded-xl hover:bg-[#E8E8ED] transition-colors text-xs sm:text-sm"
             >
               <Edit className="w-4 h-4" />
               עריכה
@@ -173,7 +173,7 @@ export default function TemplateDetailPage() {
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#F18AB5]/10 text-[#F18AB5] rounded-xl hover:bg-[#F18AB5]/20 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#F18AB5]/10 text-[#F18AB5] rounded-xl hover:bg-[#F18AB5]/20 transition-colors disabled:opacity-50 text-xs sm:text-sm"
             >
               <Trash2 className="w-4 h-4" />
               {deleting ? 'מוחק...' : 'מחק'}
@@ -182,10 +182,10 @@ export default function TemplateDetailPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         {/* Template Info */}
-        <div className="lg:col-span-1 bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-          <h2 className="text-lg font-bold text-[#303150] mb-4">פרטי התבנית</h2>
+        <div className="lg:col-span-1 bg-white rounded-2xl lg:rounded-3xl p-4 lg:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+          <h2 className="text-base lg:text-lg font-bold text-[#303150] mb-3 lg:mb-4">פרטי התבנית</h2>
           <div className="space-y-4">
             <div>
               <p className="text-sm text-[#7E7F90] mb-1">שם</p>
@@ -227,9 +227,9 @@ export default function TemplateDetailPage() {
         </div>
 
         {/* Content Preview */}
-        <div className="lg:col-span-2 bg-white rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex flex-col">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[#F7F7F8]">
-            <h2 className="text-lg font-bold text-[#303150]">תצוגה מקדימה</h2>
+        <div className="lg:col-span-2 bg-white rounded-2xl lg:rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] flex flex-col">
+          <div className="flex items-center justify-between px-4 lg:px-6 py-3 lg:py-4 border-b border-[#F7F7F8]">
+            <h2 className="text-base lg:text-lg font-bold text-[#303150]">תצוגה מקדימה</h2>
             <div className="flex items-center gap-1 bg-[#F5F5F7] rounded-lg p-1">
               <button
                 onClick={() => setPreviewMode('desktop')}
@@ -256,11 +256,11 @@ export default function TemplateDetailPage() {
             </div>
           </div>
           {/* Email header preview */}
-          <div className="mx-6 mt-4 p-3 bg-[#F5F5F7] rounded-xl">
+          <div className="mx-4 lg:mx-6 mt-3 lg:mt-4 p-3 bg-[#F5F5F7] rounded-xl">
             <p className="text-xs text-[#7E7F90] mb-1">מאת: myneto &lt;admin@myneto.co.il&gt;</p>
             <p className="text-sm font-semibold text-[#303150]">{template.subject}</p>
           </div>
-          <div className="p-6 flex justify-center">
+          <div className="p-4 lg:p-6 flex justify-center">
             <EmailPreview
               htmlContent={template.content}
               previewMode={previewMode}

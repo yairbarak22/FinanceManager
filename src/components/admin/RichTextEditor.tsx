@@ -110,7 +110,7 @@ export default function RichTextEditor({
       type="button"
       onClick={onClick}
       title={title}
-      className={`p-1.5 rounded-lg transition-colors ${
+      className={`p-1.5 sm:p-2 rounded-lg transition-colors ${
         isActive
           ? 'bg-[#69ADFF]/20 text-[#69ADFF]'
           : 'text-[#7E7F90] hover:bg-[#F7F7F8] hover:text-[#303150]'
@@ -123,7 +123,7 @@ export default function RichTextEditor({
   return (
     <div className="border border-[#E8E8ED] rounded-xl bg-white overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center gap-1 px-3 py-2 border-b border-[#F7F7F8] bg-[#FAFAFA]">
+      <div className="flex flex-wrap items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-1.5 sm:py-2 border-b border-[#F7F7F8] bg-[#FAFAFA]">
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
           isActive={editor.isActive('bold')}
@@ -148,7 +148,7 @@ export default function RichTextEditor({
           <UnderlineIcon className="w-4 h-4" />
         </ToolbarButton>
 
-        <div className="w-px h-5 bg-[#E8E8ED] mx-1" />
+        <div className="w-px h-4 sm:h-5 bg-[#E8E8ED] mx-0.5 sm:mx-1" />
 
         <ToolbarButton
           onClick={setLink}
@@ -158,7 +158,7 @@ export default function RichTextEditor({
           <LinkIcon className="w-4 h-4" />
         </ToolbarButton>
 
-        <div className="w-px h-5 bg-[#E8E8ED] mx-1" />
+        <div className="w-px h-4 sm:h-5 bg-[#E8E8ED] mx-0.5 sm:mx-1" />
 
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -210,6 +210,12 @@ export default function RichTextEditor({
         .tiptap {
           direction: rtl;
           text-align: right;
+          font-size: 14px;
+        }
+        @media (min-width: 640px) {
+          .tiptap {
+            font-size: 16px;
+          }
         }
         .tiptap p {
           margin: 0.25em 0;
