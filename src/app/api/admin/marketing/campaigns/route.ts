@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
@@ -121,7 +122,7 @@ export async function POST(request: NextRequest) {
         name,
         subject,
         content,
-        segmentFilter: segmentFilter as SegmentFilter,
+        segmentFilter: segmentFilter as unknown as Prisma.InputJsonValue,
         status: scheduledAt ? 'SCHEDULED' : 'DRAFT',
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
         createdBy: userId,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { MarketingEventType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
     // Build where clause
     const where: {
       campaignId?: string;
-      eventType?: string;
+      eventType?: MarketingEventType;
       timestamp?: {
         gte?: Date;
         lte?: Date;
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (eventType) {
-      where.eventType = eventType as any;
+      where.eventType = eventType as MarketingEventType;
     }
 
     if (startDate || endDate) {

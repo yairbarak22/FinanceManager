@@ -176,12 +176,6 @@ export async function getSegmentUsers(
       return [];
   }
 
-  // For CSV, we already returned above
-  if (segmentFilter.type === 'csv') {
-    // This should never be reached, but TypeScript needs it
-    return [];
-  }
-
   // For manual and other types, query the database
   try {
     const users = await prisma.user.findMany({

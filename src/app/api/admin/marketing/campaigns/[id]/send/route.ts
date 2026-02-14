@@ -74,7 +74,7 @@ export async function POST(
 
     console.log('[Campaign Send] Validating segment filter', {
       campaignId: id,
-      segmentFilterType: (campaign.segmentFilter as SegmentFilter)?.type,
+      segmentFilterType: (campaign.segmentFilter as unknown as SegmentFilter)?.type,
     });
 
     if (!validateSegmentFilter(campaign.segmentFilter)) {
@@ -91,12 +91,12 @@ export async function POST(
     // Get users matching segment
     console.log('[Campaign Send] Getting segment users', {
       campaignId: id,
-      segmentFilterType: (campaign.segmentFilter as SegmentFilter).type,
+      segmentFilterType: (campaign.segmentFilter as unknown as SegmentFilter).type,
     });
 
     let users;
     try {
-      users = await getSegmentUsers(campaign.segmentFilter as SegmentFilter);
+      users = await getSegmentUsers(campaign.segmentFilter as unknown as SegmentFilter);
       console.log('[Campaign Send] Found users', {
         campaignId: id,
         userCount: users.length,

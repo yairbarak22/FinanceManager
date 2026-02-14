@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Prisma } from '@prisma/client';
+import { Prisma, CampaignStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
@@ -137,7 +137,7 @@ export async function PUT(
       content?: string;
       segmentFilter?: Prisma.InputJsonValue;
       scheduledAt?: Date | null;
-      status?: string;
+      status?: CampaignStatus;
     } = {};
 
     if (name !== undefined) updateData.name = name;
@@ -147,7 +147,7 @@ export async function PUT(
     if (scheduledAt !== undefined) {
       updateData.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
     }
-    if (status !== undefined) updateData.status = status;
+    if (status !== undefined) updateData.status = status as CampaignStatus;
 
     const campaign = await prisma.marketingCampaign.update({
       where: { id },

@@ -154,13 +154,14 @@ export async function GET() {
 
     // Enrich recent campaigns with real-time event counts
     const recentCampaignIds = recentCampaigns.map((c) => c.id);
-    let recentEventCounts: Array<{ campaignId: string; eventType: string; _count: { id: number } }> = [];
+    let recentEventCounts: { campaignId: string; eventType: string; _count: { id: number } }[] = [];
     if (recentCampaignIds.length > 0) {
-      recentEventCounts = await prisma.marketingEvent.groupBy({
-        by: ['campaignId', 'eventType'],
+      const grouped = await prisma.marketingEvent.groupBy({
+        by: ['campaignId', 'eventType'] as const,
         where: { campaignId: { in: recentCampaignIds } },
         _count: { id: true },
       });
+      recentEventCounts = grouped as typeof recentEventCounts;
     }
 
     const enrichedRecentCampaigns = recentCampaigns.map((campaign) => {

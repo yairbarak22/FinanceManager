@@ -200,7 +200,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Prepare metadata
-    const metadata: Record<string, unknown> = {
+    const metadata: Record<string, string> = {
       emailId,
       timestamp: event.created_at,
     };
