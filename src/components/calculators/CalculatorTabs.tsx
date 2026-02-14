@@ -10,6 +10,7 @@ import {
   Building2, 
   Shield, 
   GraduationCap,
+  TrendingUp,
   LucideIcon 
 } from 'lucide-react';
 import SalaryCalc from './SalaryCalc';
@@ -18,6 +19,7 @@ import FIRECalc from './FIRECalc';
 import MortgageCalc from './MortgageCalc';
 import EmergencyFundCalc from './EmergencyFundCalc';
 import EducationFundCalc from './EducationFundCalc';
+import PensionVsTradingCalc from './PensionVsTradingCalc';
 import { useAnalytics } from '@/hooks/useAnalytics';
 
 interface CalculatorTab {
@@ -77,6 +79,14 @@ const CALCULATOR_TABS: CalculatorTab[] = [
     iconBg: 'bg-[#D4E4FF]',
     iconColor: 'text-[#69ADFF]',
     component: EducationFundCalc,
+  },
+  {
+    id: 'pension-vs-trading',
+    label: 'קופת גמל מול מסחר',
+    icon: TrendingUp,
+    iconBg: 'bg-[#B4F1F1]',
+    iconColor: 'text-[#0DBACC]',
+    component: PensionVsTradingCalc,
   },
 ];
 

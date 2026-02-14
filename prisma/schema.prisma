@@ -17,6 +17,8 @@ model User {
   hasSeenOnboarding     Boolean                @default(false)
   hasProAccess          Boolean                @default(false) // Pro calculator access (unlocked via referral)
   signupSource          String?                // Signup source tracking (e.g., "prog", "facebook", "google_ads")
+  isMarketingSubscribed Boolean               @default(true) // Whether subscribed to marketing emails
+  marketingUnsubscribedAt DateTime?            // When user unsubscribed from marketing
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   accounts              Account[]
@@ -34,6 +36,9 @@ model User {
   sharedAccountMembers  SharedAccountMember[]
   merchantMappings      MerchantCategoryMap[]
   calculatorInvites     CalculatorInvite[]     // Invites sent by this user
+  marketingEvents       MarketingEvent[]       // Marketing email events
+  createdCampaigns      MarketingCampaign[]    // Campaigns created by this admin
+  createdTemplates      EmailTemplate[]        // Templates created by this admin
 }
 
 model Account {
@@ -440,4 +445,121 @@ model SecurityEnrichment {
 
   @@index([symbol])
   @@index([nameHe]) // אופטימיזציה לחיפוש בעברית
+}
+
+// ============================================
+// EMAIL MARKETING - Campaign management and tracking
+// ============================================
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum MarketingEventType {
+  SENT
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  COMPLAINED
+  UNSUBSCRIBED
+}
+
+model MarketingCampaign {
+  id              String            @id @default(cuid())
+  name            String            // Internal campaign name
+  subject         String            // Email subject
+  content         String            // HTML/JSON email content
+  status          CampaignStatus    @default(DRAFT)
+  segmentFilter   Json              // Audience segmentation settings
+  sentCount       Int               @default(0)
+  openCount       Int               @default(0)
+  clickCount      Int               @default(0)
+  bounceCount     Int               @default(0)
+  complaintCount  Int               @default(0)
+  scheduledAt     DateTime?         // Scheduled send time
+  startedAt       DateTime?         // When sending started
+  completedAt     DateTime?         // When sending completed
+  createdBy       String            // Admin user ID who created
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  creator         User              @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  events          MarketingEvent[]
+
+  @@index([createdBy])
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+model MarketingEvent {
+  id          String              @id @default(cuid())
+  campaignId  String
+  userId      String
+  emailId     String              // Resend email ID
+  eventType   MarketingEventType
+  metadata    Json?               // Additional data (clicked URL, IP, user agent)
+  timestamp   DateTime            @default(now())
+  campaign    MarketingCampaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([emailId, eventType]) // Prevent duplicate events for same email
+  @@index([campaignId])
+  @@index([userId])
+  @@index([emailId])
+  @@index([eventType])
+  @@index([timestamp])
+}
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  name        String   // Template name
+  subject     String   // Default subject
+  content     String   // HTML/JSON content
+  description String?  // Template description
+  category    String?  // 'newsletter' | 'promotional' | 'announcement' | null
+  isSystem    Boolean  @default(false) // System template (cannot be deleted)
+  createdBy   String   // Admin user ID who created
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  creator     User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@index([createdBy])
+  @@index([category])
+}
+
+// ============================================
+// INBOX - Incoming/outgoing email management
+// ============================================
+model InboxMessage {
+  id              String   @id @default(cuid())
+  resendEmailId   String?  @unique           // Resend email_id for dedup
+  from            String                     // Sender display (e.g., "John <john@gmail.com>")
+  fromEmail       String                     // Extracted email address
+  to              String[]                   // Recipient addresses
+  cc              String[]                   // CC addresses
+  bcc             String[]                   // BCC addresses
+  subject         String
+  htmlBody        String?                    // HTML content
+  textBody        String?                    // Plain text content
+  isRead          Boolean  @default(false)
+  isStarred       Boolean  @default(false)
+  isArchived      Boolean  @default(false)
+  direction       String   @default("inbound") // "inbound" | "outbound"
+  parentId        String?                    // For threading - reply to which message
+  threadId        String?                    // Group related messages
+  replyFromAddress String?                   // Which @myneto.co.il address was used to reply
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  parent          InboxMessage?  @relation("MessageThread", fields: [parentId], references: [id])
+  replies         InboxMessage[] @relation("MessageThread")
+
+  @@index([fromEmail])
+  @@index([threadId])
+  @@index([isRead])
+  @@index([isArchived])
+  @@index([createdAt])
+  @@index([direction])
 }

@@ -23,6 +23,7 @@ interface Config {
 
   // Optional services
   resendApiKey?: string;
+  resendWebhookSecret?: string;
   gaMeasurementId?: string;
   openaiApiKey?: string;
   googleAiApiKey?: string;
@@ -93,6 +94,7 @@ function loadConfig(): Config {
 
     // Optional services
     resendApiKey: process.env.RESEND_API_KEY,
+    resendWebhookSecret: process.env.RESEND_WEBHOOK_SECRET,
     gaMeasurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
     openaiApiKey: process.env.OPENAI_API_KEY,
     googleAiApiKey: process.env.GOOGLE_AI_API_KEY,

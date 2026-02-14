@@ -11,3 +11,4 @@ export { default as FIRECalc } from './FIRECalc';
 export { default as MortgageCalc } from './MortgageCalc';
 export { default as EmergencyFundCalc } from './EmergencyFundCalc';
 export { default as EducationFundCalc } from './EducationFundCalc';
+export { default as PensionVsTradingCalc } from './PensionVsTradingCalc';

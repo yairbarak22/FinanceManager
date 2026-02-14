@@ -10,7 +10,6 @@ import {
   User,
   CheckCircle2,
   XCircle,
-  ArrowLeft,
   TrendingUp,
   Wallet,
   CreditCard,
@@ -137,68 +136,55 @@ export default function AdminUsersPage() {
   // Show access denied if API returned 403/401
   if (isAccessDenied) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="text-center p-8">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Shield className="w-8 h-8 text-red-600" />
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center p-8 bg-white rounded-3xl shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+          <div className="w-16 h-16 bg-[#F18AB5]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Shield className="w-8 h-8 text-[#F18AB5]" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">גישה נדחתה</h1>
-          <p className="text-gray-500 mb-6">אין לך הרשאה לצפות בעמוד זה</p>
+          <h1 className="text-2xl font-bold text-[#303150] mb-2">גישה נדחתה</h1>
+          <p className="text-[#7E7F90] mb-6">אין לך הרשאה לצפות בעמוד זה</p>
           <button
             onClick={() => router.push('/')}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg mx-auto hover:bg-indigo-600 transition-colors"
+            className="px-5 py-2.5 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
             חזור לדף הבית
           </button>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen py-6 px-4 md:px-6 lg:px-8 bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push('/')}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
-            </button>
-            <div>
-              <div className="flex items-center gap-2">
-                <Shield className="w-6 h-6 text-indigo-500" />
-                <h1 className="text-2xl font-bold text-gray-900">ניהול משתמשים</h1>
-              </div>
-              <p className="text-sm text-gray-500 mt-1">
-                צפייה בכל המשתמשים הרשומים במערכת
-              </p>
-            </div>
-          </div>
-          
-          <button
-            onClick={fetchData}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            רענן
-          </button>
+    <div>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-[#303150] mb-1">ניהול משתמשים</h1>
+          <p className="text-sm text-[#7E7F90]">
+            צפייה בכל המשתמשים הרשומים במערכת
+          </p>
         </div>
+        
+        <button
+          onClick={fetchData}
+          disabled={loading}
+          className="flex items-center gap-2 px-5 py-2.5 bg-white border border-[#E8E8ED] rounded-xl hover:bg-[#F7F7F8] transition-colors disabled:opacity-50 text-[#303150]"
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          רענן
+        </button>
+      </div>
 
-        {/* System-wide Statistics */}
-        {stats && (
-          <>
-            {/* Total System Counts */}
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-indigo-500" />
-                סה״כ במערכת
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* System-wide Statistics */}
+      {stats && (
+        <>
+          {/* Total System Counts */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-[#303150] mb-3 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-[#69ADFF]" />
+              סה״כ במערכת
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center">
@@ -454,13 +440,12 @@ export default function AdminUsersPage() {
           </div>
         )}
 
-        {/* Security Notice */}
-        <div className="mt-6 text-center text-xs text-gray-400">
-          <Shield className="w-4 h-4 inline-block ml-1" />
-          עמוד זה מוגן ונגיש רק לאדמינים מורשים
-        </div>
+      {/* Security Notice */}
+      <div className="mt-6 text-center text-xs text-[#BDBDCB]">
+        <Shield className="w-4 h-4 inline-block ml-1" />
+        עמוד זה מוגן ונגיש רק לאדמינים מורשים
       </div>
-    </main>
+    </div>
   );
 }
 

@@ -16,7 +16,13 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow webhook endpoints without authentication (they verify signatures)
-  if (pathname === '/api/webhook/receive') {
+  // Allow public marketing unsubscribe endpoints (users click from email)
+  if (
+    pathname === '/api/webhook/receive' ||
+    pathname === '/api/webhooks/resend' ||
+    pathname === '/api/marketing/unsubscribe' ||
+    pathname === '/api/marketing/unsubscribe-email'
+  ) {
     return NextResponse.next();
   }
 
@@ -71,9 +77,10 @@ export async function middleware(request: NextRequest) {
   const isSafeMethod = ['GET', 'HEAD', 'OPTIONS'].includes(request.method);
   const isApiRoute = pathname.startsWith('/api/');
   const isAuthRoute = pathname.startsWith('/api/auth/');
-  const isWebhookRoute = pathname === '/api/webhook/receive';
+  const isWebhookRoute = pathname === '/api/webhook/receive' || pathname === '/api/webhooks/resend';
+    const isPublicMarketingRoute = pathname === '/api/marketing/unsubscribe' || pathname === '/api/marketing/unsubscribe-email';
 
-  if (!isSafeMethod && isApiRoute && !isAuthRoute && !isWebhookRoute) {
+  if (!isSafeMethod && isApiRoute && !isAuthRoute && !isWebhookRoute && !isPublicMarketingRoute) {
     const csrfHeader = request.headers.get('X-CSRF-Protection');
     if (csrfHeader !== '1') {
       // Audit log: CSRF violation
@@ -154,11 +161,11 @@ export const config = {
      * - /login
      * - /invite/* (invite pages - handle their own auth)
      * - /api/auth (NextAuth.js authentication routes)
-     * - /api/webhook/receive (webhook endpoints - verify signatures themselves)
+     * - /api/webhook/receive, /api/webhooks/resend (webhook endpoints - verify signatures themselves)
      * - /_next/static (static files)
      * - /_next/image (image optimization)
      * - /favicon.ico, /images (static assets)
      */
-    '/((?!login|invite|api/auth|api/webhook|_next/static|_next/image|favicon.ico|images).*)',
+    '/((?!login|invite|api/auth|api/webhook|api/marketing/unsubscribe|_next/static|_next/image|favicon.ico|images).*)',
   ],
 };

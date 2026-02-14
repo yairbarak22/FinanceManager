@@ -1,11 +1,13 @@
 /**
  * Resend Webhook Receiver
- * Handles incoming email webhooks and forwards them
+ * Handles incoming email webhooks: saves to DB and forwards them
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { isValidEmail, escapeHtml } from '@/lib/contactValidation';
+import { prisma } from '@/lib/prisma';
+import { generateThreadId, extractEmailAddress as extractEmail } from '@/lib/inbox/constants';
 
 // Lazy initialization of Resend client
 let resendClient: Resend | null = null;
@@ -144,28 +146,61 @@ async function getAttachments(emailId: string) {
   }
 }
 
-async function forwardEmail(event: EmailReceivedEvent) {
+/**
+ * Save incoming email to database for inbox feature
+ */
+async function saveToInbox(
+  event: EmailReceivedEvent,
+  emailContent: { html?: string; text?: string }
+): Promise<void> {
+  const { email_id, from, to, cc, bcc, subject } = event.data;
+  const senderEmail = extractEmail(from);
+  const threadId = generateThreadId(subject, senderEmail);
+
+  try {
+    await prisma.inboxMessage.create({
+      data: {
+        resendEmailId: email_id,
+        from,
+        fromEmail: senderEmail,
+        to,
+        cc: cc || [],
+        bcc: bcc || [],
+        subject,
+        htmlBody: emailContent.html || null,
+        textBody: emailContent.text || null,
+        direction: 'inbound',
+        threadId,
+        isRead: false,
+        isStarred: false,
+        isArchived: false,
+      },
+    });
+    console.log(`[Webhook] Saved email ${email_id} to inbox`);
+  } catch (error: unknown) {
+    // Handle duplicate (resendEmailId unique constraint)
+    if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'P2002') {
+      console.log(`[Webhook] Duplicate email ${email_id}, skipping inbox save`);
+    } else {
+      console.error('[Webhook] Failed to save to inbox:', error);
+    }
+  }
+}
+
+async function forwardEmail(event: EmailReceivedEvent, emailContent: { html?: string; text?: string }) {
   const resend = getResend();
   if (!resend) {
     throw new Error('Resend client not initialized');
   }
 
   const forwardTo = getForwardToEmail();
-  const { email_id, from, to, subject } = event.data;
+  const { from, to, subject } = event.data;
   const senderEmail = extractEmailAddress(from);
-
-  // Fetch full email content
-  let emailContent: { html?: string; text?: string } = {};
-  try {
-    emailContent = await getEmailContent(email_id) || {};
-  } catch (error) {
-    console.error('[Webhook] Failed to fetch email content:', error);
-  }
 
   // Prepare attachments
   const forwardAttachments: Array<{ filename: string; content: Buffer }> = [];
   try {
-    const attachmentsList = await getAttachments(email_id);
+    const attachmentsList = await getAttachments(event.data.email_id);
     for (const attachment of attachmentsList) {
       if (attachment.download_url) {
         try {
@@ -259,8 +294,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
+    // Fetch email content once (used for both DB save and forwarding)
+    let emailContent: { html?: string; text?: string } = {};
     try {
-      await forwardEmail(event);
+      emailContent = await getEmailContent(event.data.email_id) || {};
+    } catch (error) {
+      console.error('[Webhook] Failed to fetch email content:', error);
+    }
+
+    // Save to inbox database (async, don't block on failure)
+    try {
+      await saveToInbox(event, emailContent);
+    } catch (error) {
+      console.error('[Webhook] Inbox save failed:', error);
+    }
+
+    // Forward email (existing behavior)
+    try {
+      await forwardEmail(event, emailContent);
     } catch (error) {
       console.error('[Webhook] Forward failed:', error);
     }
