@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
@@ -134,7 +135,7 @@ export async function PUT(
       name?: string;
       subject?: string;
       content?: string;
-      segmentFilter?: SegmentFilter;
+      segmentFilter?: Prisma.InputJsonValue;
       scheduledAt?: Date | null;
       status?: string;
     } = {};
@@ -142,7 +143,7 @@ export async function PUT(
     if (name !== undefined) updateData.name = name;
     if (subject !== undefined) updateData.subject = subject;
     if (content !== undefined) updateData.content = content;
-    if (segmentFilter !== undefined) updateData.segmentFilter = segmentFilter as SegmentFilter;
+    if (segmentFilter !== undefined) updateData.segmentFilter = segmentFilter as Prisma.InputJsonValue;
     if (scheduledAt !== undefined) {
       updateData.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
     }
