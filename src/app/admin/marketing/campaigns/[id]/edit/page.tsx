@@ -6,7 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { ArrowLeft, Save, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
 import SegmentSelector from '@/components/admin/SegmentSelector';
-import type { SegmentFilter } from '@/components/admin/SegmentSelector';
+import type { SegmentFilter } from '@/lib/marketing/segment';
 import EmailPreview from '@/components/admin/EmailPreview';
 
 export default function EditCampaignPage() {
