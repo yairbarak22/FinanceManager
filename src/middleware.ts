@@ -179,16 +179,15 @@ export async function middleware(request: NextRequest) {
 }
 
 // Protect all routes except:
-// - /login (auth page)
 // - /invite/* (invite pages - handle their own auth)
 // - /api/auth/* (NextAuth routes)
 // - /_next/* (Next.js internals)
 // - /favicon.ico, /images/* (static assets)
+// NOTE: /login is NOT excluded — middleware handles it (source cookie + redirect)
 export const config = {
   matcher: [
     /*
      * Match all request paths except:
-     * - /login
      * - /invite/* (invite pages - handle their own auth)
      * - /api/auth (NextAuth.js authentication routes)
      * - /api/webhook/receive, /api/webhooks/resend (webhook endpoints - verify signatures themselves)
@@ -196,6 +195,6 @@ export const config = {
      * - /_next/image (image optimization)
      * - /favicon.ico, /images, /screenshots (static assets)
      */
-    '/((?!login|invite|api/auth|api/webhook|api/marketing/unsubscribe|_next/static|_next/image|favicon.ico|images|screenshots).*)',
+    '/((?!invite|api/auth|api/webhook|api/marketing/unsubscribe|_next/static|_next/image|favicon.ico|images|screenshots).*)',
   ],
 };
