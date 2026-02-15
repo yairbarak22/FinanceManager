@@ -233,25 +233,25 @@ export default function CampaignDetailPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6 lg:mb-8">
+        <div className="flex items-center gap-3 sm:gap-4">
           <button
             onClick={() => router.push('/admin/marketing/campaigns')}
-            className="p-2 hover:bg-[#F7F7F8] rounded-xl transition-colors"
+            className="p-2 hover:bg-[#F7F7F8] rounded-xl transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-5 h-5 text-[#7E7F90]" />
           </button>
-          <div>
-            <h1 className="text-2xl font-bold text-[#303150] mb-1">{campaign.name}</h1>
-            <p className="text-sm text-[#7E7F90]">פרטי קמפיין</p>
+          <div className="min-w-0">
+            <h1 className="text-xl lg:text-2xl font-bold text-[#303150] mb-1 truncate">{campaign.name}</h1>
+            <p className="text-xs sm:text-sm text-[#7E7F90]">פרטי קמפיין</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mr-10 sm:mr-0">
           {campaign.status === 'DRAFT' && (
             <>
               <button
                 onClick={() => router.push(`/admin/marketing/campaigns/${campaignId}/edit`)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-[#F7F7F8] text-[#303150] rounded-xl hover:bg-[#E8E8ED] transition-colors"
+                className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#F7F7F8] text-[#303150] rounded-xl hover:bg-[#E8E8ED] transition-colors text-xs sm:text-sm"
               >
                 <Edit className="w-4 h-4" />
                 עריכה
@@ -259,7 +259,7 @@ export default function CampaignDetailPage() {
               <button
                 onClick={handleSend}
                 disabled={sending}
-                className="flex items-center gap-2 px-5 py-2.5 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors disabled:opacity-50 text-xs sm:text-sm"
               >
                 <Send className="w-4 h-4" />
                 {sending ? 'שולח...' : 'שלח'}
@@ -270,7 +270,7 @@ export default function CampaignDetailPage() {
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#F18AB5]/10 text-[#F18AB5] rounded-xl hover:bg-[#F18AB5]/20 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#F18AB5]/10 text-[#F18AB5] rounded-xl hover:bg-[#F18AB5]/20 transition-colors disabled:opacity-50 text-xs sm:text-sm"
             >
               <Trash2 className="w-4 h-4" />
               {deleting ? 'מוחק...' : 'מחק'}
@@ -288,16 +288,16 @@ export default function CampaignDetailPage() {
       )}
 
       {/* Stats - Full Width */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-[#303150]">סטטיסטיקות</h2>
+      <div className="mb-4 sm:mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 sm:mb-4">
+          <h2 className="text-base sm:text-lg font-bold text-[#303150]">סטטיסטיקות</h2>
           {campaign.status === 'COMPLETED' && (
             <button
               onClick={handleSync}
               disabled={syncing}
-              className="flex items-center gap-2 px-4 py-2 text-sm bg-[#F7F7F8] text-[#303150] rounded-xl hover:bg-[#E8E8ED] transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm bg-[#F7F7F8] text-[#303150] rounded-xl hover:bg-[#E8E8ED] transition-colors disabled:opacity-50 self-end sm:self-auto"
             >
-              <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? 'מסנכרן...' : 'סנכרן עם Resend'}
             </button>
           )}
@@ -312,9 +312,9 @@ export default function CampaignDetailPage() {
       </div>
 
       {/* Campaign Info */}
-      <div className="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] mb-6">
-        <h2 className="text-lg font-bold text-[#303150] mb-4">פרטי הקמפיין</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)] mb-4 sm:mb-6">
+        <h2 className="text-base sm:text-lg font-bold text-[#303150] mb-3 sm:mb-4">פרטי הקמפיין</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 lg:gap-x-8 gap-y-3 sm:gap-y-4">
           <div>
             <p className="text-sm text-[#7E7F90] mb-1">שם</p>
             <p className="text-base font-medium text-[#303150]">{campaign.name}</p>
@@ -361,8 +361,8 @@ export default function CampaignDetailPage() {
       </div>
 
       {/* Content Preview */}
-      <div className="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-        <h2 className="text-lg font-bold text-[#303150] mb-4">תוכן המייל</h2>
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+        <h2 className="text-base sm:text-lg font-bold text-[#303150] mb-3 sm:mb-4">תוכן המייל</h2>
         <EmailPreview
           htmlContent={campaign.content}
           maxHeight="384px"

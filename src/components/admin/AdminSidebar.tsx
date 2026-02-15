@@ -288,18 +288,21 @@ export default function AdminSidebar({ isMobileOpen, onMobileClose }: AdminSideb
       </aside>
 
       {/* Mobile Sidebar Overlay */}
-      {isMobileOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
-          onClick={onMobileClose}
-        />
-      )}
+      <div
+        className={`lg:hidden fixed inset-0 z-40 bg-black/30 backdrop-blur-sm transition-opacity duration-300 ${
+          isMobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onMobileClose}
+        aria-hidden="true"
+      />
 
       {/* Mobile Sidebar Panel */}
       <aside
         className={`lg:hidden fixed top-0 right-0 bottom-0 z-50 w-72 bg-white flex flex-col transform transition-transform duration-300 ease-in-out shadow-2xl ${
           isMobileOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
+        role="dialog"
+        aria-modal="true"
       >
         {sidebarContent}
       </aside>

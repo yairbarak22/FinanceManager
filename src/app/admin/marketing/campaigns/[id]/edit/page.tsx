@@ -148,33 +148,31 @@ export default function EditCampaignPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push(`/admin/marketing/campaigns/${campaignId}`)}
-            className="p-2 hover:bg-[#F7F7F8] rounded-xl transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-[#7E7F90]" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-[#303150] mb-1">עריכת קמפיין</h1>
-            <p className="text-sm text-[#7E7F90]">ערוך קמפיין דיוור</p>
-          </div>
+      <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6 lg:mb-8">
+        <button
+          onClick={() => router.push(`/admin/marketing/campaigns/${campaignId}`)}
+          className="p-2 hover:bg-[#F7F7F8] rounded-xl transition-colors flex-shrink-0"
+        >
+          <ArrowLeft className="w-5 h-5 text-[#7E7F90]" />
+        </button>
+        <div className="min-w-0">
+          <h1 className="text-xl lg:text-2xl font-bold text-[#303150] mb-1 truncate">עריכת קמפיין</h1>
+          <p className="text-xs sm:text-sm text-[#7E7F90]">ערוך קמפיין דיוור</p>
         </div>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="mb-6 bg-[#F18AB5]/10 border border-[#F18AB5]/30 rounded-xl p-4 flex items-center gap-3">
+        <div className="mb-4 sm:mb-6 bg-[#F18AB5]/10 border border-[#F18AB5]/30 rounded-xl p-3 sm:p-4 flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-[#F18AB5] flex-shrink-0" />
-          <p className="text-sm text-[#303150]">{error}</p>
+          <p className="text-xs sm:text-sm text-[#303150]">{error}</p>
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
-          <div className="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-            <h2 className="text-lg font-bold text-[#303150] mb-4">הגדרות וקהל</h2>
+        <div className="space-y-4 sm:space-y-6">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+            <h2 className="text-base sm:text-lg font-bold text-[#303150] mb-3 sm:mb-4">הגדרות וקהל</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-[#303150] mb-2">
@@ -214,8 +212,8 @@ export default function EditCampaignPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-3xl p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-            <h2 className="text-lg font-bold text-[#303150] mb-4">תוכן ועיצוב</h2>
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
+            <h2 className="text-base sm:text-lg font-bold text-[#303150] mb-3 sm:mb-4">תוכן ועיצוב</h2>
             <div>
               <label className="block text-sm font-medium text-[#303150] mb-2">
                 תוכן HTML *
@@ -250,18 +248,18 @@ export default function EditCampaignPage() {
         </div>
 
         {/* Actions */}
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="mt-4 sm:mt-6 flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
           <button
             type="button"
             onClick={() => router.push(`/admin/marketing/campaigns/${campaignId}`)}
-            className="px-6 py-3 bg-[#F7F7F8] text-[#303150] rounded-xl hover:bg-[#E8E8ED] transition-colors"
+            className="px-4 sm:px-6 py-2.5 sm:py-3 bg-[#F7F7F8] text-[#303150] rounded-xl hover:bg-[#E8E8ED] transition-colors text-sm"
           >
             ביטול
           </button>
           <button
             type="submit"
             disabled={saving || !name || !subject || !content || campaignStatus !== 'DRAFT'}
-            className="flex items-center gap-2 px-6 py-3 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
             {saving ? (
               <>

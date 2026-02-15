@@ -351,7 +351,7 @@ export default function NewTemplatePage() {
 
             {/* Variable Help */}
             {showVariableHelp && (
-              <div className="mx-6 mt-4 p-4 bg-[#F5F5F7] rounded-xl">
+              <div className="mx-3 sm:mx-6 mt-3 sm:mt-4 p-3 sm:p-4 bg-[#F5F5F7] rounded-xl">
                 <p className="text-xs font-semibold text-[#303150] mb-2">משתנים זמינים:</p>
                 <div className="space-y-1.5">
                   {templateVariables.map((v) => (
@@ -412,7 +412,7 @@ export default function NewTemplatePage() {
 
             {/* Preview Email Header */}
             {subject && (
-              <div className="mx-6 mt-4 p-3 bg-[#F5F5F7] rounded-xl">
+              <div className="mx-3 sm:mx-6 mt-3 sm:mt-4 p-3 bg-[#F5F5F7] rounded-xl">
                 <p className="text-xs text-[#7E7F90] mb-1">מאת: myneto &lt;admin@myneto.co.il&gt;</p>
                 <p className="text-sm font-semibold text-[#303150]">{subject}</p>
               </div>
