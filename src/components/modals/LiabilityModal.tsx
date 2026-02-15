@@ -101,7 +101,7 @@ export default function LiabilityModal({
     try {
       await onSave({
         name,
-        type: type as 'loan' | 'mortgage',
+        type,
         totalAmount: parseFloat(totalAmount),
         monthlyPayment: parseFloat(monthlyPayment),
         interestRate: parseFloat(interestRate) || 0,

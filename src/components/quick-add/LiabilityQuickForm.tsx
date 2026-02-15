@@ -6,8 +6,6 @@ import { CategoryInfo } from '@/lib/categories';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
 
-type LiabilityType = 'loan' | 'mortgage';
-
 // Field order for auto-scroll
 const FIELD_ORDER = ['name', 'type', 'totalAmount', 'monthlyPayment', 'interestRate', 'startDate'];
 
@@ -15,7 +13,7 @@ interface LiabilityQuickFormProps {
   liabilityCategories: { default: CategoryInfo[]; custom: CategoryInfo[] };
   onSave: (data: {
     name: string;
-    type: LiabilityType;
+    type: string;
     totalAmount: number;
     monthlyPayment: number;
     interestRate?: number;
@@ -30,7 +28,7 @@ export default function LiabilityQuickForm({
   onAddCategory,
 }: LiabilityQuickFormProps) {
   const [name, setName] = useState('');
-  const [type, setType] = useState<LiabilityType | ''>('');
+  const [type, setType] = useState('');
   const [totalAmount, setTotalAmount] = useState('');
   const [monthlyPayment, setMonthlyPayment] = useState('');
   const [interestRate, setInterestRate] = useState('');
@@ -72,7 +70,7 @@ export default function LiabilityQuickForm({
     try {
       await onSave({
         name,
-        type: type as LiabilityType,
+        type,
         totalAmount: parseFloat(totalAmount),
         monthlyPayment: parseFloat(monthlyPayment),
         interestRate: interestRate ? parseFloat(interestRate) : undefined,
@@ -85,18 +83,13 @@ export default function LiabilityQuickForm({
 
   const handleAddCategory = async (categoryName: string) => {
     const newCategory = await onAddCategory(categoryName);
-    // For liability types, we need to validate it's a valid type
-    if (newCategory.id === 'loan' || newCategory.id === 'mortgage') {
-      setType(newCategory.id);
-    }
+    setType(newCategory.id);
     setShowAddCategory(false);
   };
 
   const handleTypeChange = (value: string) => {
-    if (value === 'loan' || value === 'mortgage') {
-      setType(value);
-      scrollToNextField('type');
-    }
+    setType(value);
+    scrollToNextField('type');
   };
 
   return (

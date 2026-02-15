@@ -46,10 +46,10 @@ export async function PUT(
     }
 
     if (body.type !== undefined) {
-      if (!['loan', 'mortgage'].includes(body.type)) {
-        return NextResponse.json({ error: 'Invalid type. Must be "loan" or "mortgage"' }, { status: 400 });
+      if (typeof body.type !== 'string' || body.type.trim().length === 0) {
+        return NextResponse.json({ error: 'Type must be a non-empty string' }, { status: 400 });
       }
-      updateData.type = body.type;
+      updateData.type = body.type.trim();
     }
 
     if (body.totalAmount !== undefined) {

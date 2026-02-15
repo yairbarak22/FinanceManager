@@ -52,8 +52,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name too long (max 100 characters)' }, { status: 400 });
     }
     
-    if (!body.type || !['loan', 'mortgage'].includes(body.type)) {
-      return NextResponse.json({ error: 'Type must be "loan" or "mortgage"' }, { status: 400 });
+    if (!body.type || typeof body.type !== 'string' || body.type.trim().length === 0) {
+      return NextResponse.json({ error: 'Type is required' }, { status: 400 });
     }
     
     if (typeof body.totalAmount !== 'number' || body.totalAmount <= 0) {

@@ -54,7 +54,7 @@ interface QuickAddModalProps {
   }) => Promise<void>;
   onSaveLiability: (data: {
     name: string;
-    type: 'loan' | 'mortgage';
+    type: string;
     totalAmount: number;
     monthlyPayment: number;
     interestRate?: number;
@@ -146,7 +146,7 @@ export default function QuickAddModal({
 
   const handleSaveLiability = async (data: {
     name: string;
-    type: 'loan' | 'mortgage';
+    type: string;
     totalAmount: number;
     monthlyPayment: number;
     interestRate?: number;

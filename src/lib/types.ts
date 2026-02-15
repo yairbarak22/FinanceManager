@@ -71,7 +71,7 @@ export interface AssetValueHistory {
 export interface Liability {
   id: string;
   name: string;
-  type: 'loan' | 'mortgage';
+  type: string;
   totalAmount: number;        // סכום ההלוואה המקורי
   monthlyPayment: number;     // תשלום חודשי קבוע
   interestRate: number;       // ריבית שנתית באחוזים
@@ -161,8 +161,12 @@ export type AssetCategory =
   | 'pension';        // פנסיה
 
 export type LiabilityType = 
-  | 'loan'         // הלוואה
-  | 'mortgage';    // משכנתא
+  | 'loan'           // הלוואה
+  | 'mortgage'       // משכנתא
+  | 'credit_card'    // כרטיס אשראי
+  | 'car_loan'       // הלוואת רכב
+  | 'student_loan'   // הלוואת סטודנטים
+  | (string & {});   // קטגוריות מותאמות אישית
 
 // Monthly summary
 export interface MonthlySummary {

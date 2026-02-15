@@ -113,7 +113,7 @@ export default function LiabilitiesSection({
       <div className="overflow-y-scroll flex-1 min-h-0 scrollbar-liabilities scrollbar-edge-left scrollbar-fade-bottom">
         {liabilities.map((liability, index) => {
           const categoryInfo = getCategoryInfo(liability.type, 'liability');
-          const Icon = liability.type === 'mortgage' ? Home : Banknote;
+          const Icon = categoryInfo?.icon || (liability.type === 'mortgage' ? Home : Banknote);
           const hasLoanDetails = liability.interestRate > 0 && liability.loanTermMonths > 0;
           const currentPayment = getCurrentMonthPayment(liability);
           const effectiveExpense = getEffectiveMonthlyExpense(liability);

@@ -79,7 +79,7 @@ async function getTotalLiabilitiesForMonthKey(
     const liabilityData: Liability = {
       id: liability.id,
       name: liability.name,
-      type: liability.type as 'loan' | 'mortgage',
+      type: liability.type,
       totalAmount: liability.totalAmount,
       monthlyPayment: liability.monthlyPayment,
       interestRate: liability.interestRate,
