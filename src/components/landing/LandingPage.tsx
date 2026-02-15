@@ -19,7 +19,7 @@ const SIGNUP_SOURCE_COOKIE = 'signup_source';
 
 function LandingPageContent() {
   const searchParams = useSearchParams();
-  const callbackUrl = '/dashboard';
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
   // Capture signup source from URL and store in cookie
   useEffect(() => {

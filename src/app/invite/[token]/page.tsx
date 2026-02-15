@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import { Users, Check, X, Loader2 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
 import { SensitiveData } from '@/components/common/SensitiveData';
@@ -18,8 +18,8 @@ export default function InvitePage() {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      // Redirect to login with callback
-      router.push(`/login?callbackUrl=${encodeURIComponent(`/invite/${token}`)}`);
+      // Sign in directly — after auth, user returns to this invite page
+      signIn('google', { callbackUrl: `/invite/${token}` });
     }
   }, [status, token, router]);
 

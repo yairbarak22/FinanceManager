@@ -48,6 +48,11 @@ export async function middleware(request: NextRequest) {
     if (source) {
       redirectUrl.searchParams.set('source', source);
     }
+    // Preserve callbackUrl param (used by invite flow)
+    const callbackUrl = request.nextUrl.searchParams.get('callbackUrl');
+    if (callbackUrl) {
+      redirectUrl.searchParams.set('callbackUrl', callbackUrl);
+    }
     response = NextResponse.redirect(redirectUrl);
     if (source) {
       response.cookies.set(SIGNUP_SOURCE_COOKIE, source, {

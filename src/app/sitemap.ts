@@ -14,10 +14,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Static public pages
   const staticPages: MetadataRoute.Sitemap = [
     {
-      url: `${baseUrl}/login`,
+      url: baseUrl,
       lastModified: new Date(),
-      changeFrequency: 'yearly',
-      priority: 0.8,
+      changeFrequency: 'weekly',
+      priority: 1.0,
     },
   ];
 

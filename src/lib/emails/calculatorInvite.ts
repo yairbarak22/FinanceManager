@@ -34,7 +34,7 @@ export async function sendCalculatorInviteEmail(params: SendInviteEmailParams): 
   }
 
   const { to, inviterName, inviteToken } = params;
-  const inviteUrl = `${config.nextAuthUrl}/login?ref=${inviteToken}`;
+  const inviteUrl = `${config.nextAuthUrl}/?source=invite&ref=${inviteToken}`;
 
   try {
     await resendClient.emails.send({
