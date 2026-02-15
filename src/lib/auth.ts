@@ -107,8 +107,8 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: '/login',
-    error: '/login',
+    signIn: '/',
+    error: '/',
   },
   session: {
     strategy: 'jwt', // Use JWT for sessions (works with middleware)

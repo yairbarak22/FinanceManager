@@ -49,7 +49,7 @@ export default function Step4Action({ onInView }: Step4ActionProps) {
         const data = await res.json();
         if (res.status === 401) {
           // User not logged in - redirect to login
-          window.location.href = '/login';
+          window.location.href = '/';
           return;
         }
         throw new Error(data.error || 'Failed');

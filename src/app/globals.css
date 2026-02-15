@@ -820,6 +820,7 @@ body.pause-animations *::after {
   animation: slideOutToLeft 0.3s ease-out;
 }
 
+
 /* Staggered animation delays */
 .delay-1 {
   animation-delay: 50ms;

@@ -119,7 +119,7 @@ export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserM
                 setIsOpen(false);
                 trackMixpanelEvent('logout');
                 resetMixpanel();
-                signOut({ callbackUrl: '/login' });
+                signOut({ callbackUrl: '/' });
               }}
               className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
             >

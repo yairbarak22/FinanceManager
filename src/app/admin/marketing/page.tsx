@@ -99,7 +99,7 @@ export default function MarketingDashboardPage() {
   useEffect(() => {
     if (status === 'loading') return;
     if (!session) {
-      router.push('/login');
+      router.push('/');
       return;
     }
     fetchStats();

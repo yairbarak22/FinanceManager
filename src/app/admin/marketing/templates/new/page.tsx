@@ -92,7 +92,7 @@ export default function NewTemplatePage() {
   }
 
   if (!session) {
-    router.push('/login');
+    router.push('/');
     return null;
   }
 

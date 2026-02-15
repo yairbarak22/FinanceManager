@@ -47,7 +47,7 @@ export default function CampaignDetailPage() {
   useEffect(() => {
     if (status === 'loading') return;
     if (!session) {
-      router.push('/login');
+      router.push('/');
       return;
     }
     fetchCampaign();

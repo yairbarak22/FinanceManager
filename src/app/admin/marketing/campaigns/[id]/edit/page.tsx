@@ -30,7 +30,7 @@ export default function EditCampaignPage() {
   useEffect(() => {
     if (status === 'loading') return;
     if (!session) {
-      router.push('/login');
+      router.push('/');
       return;
     }
     fetchCampaign();

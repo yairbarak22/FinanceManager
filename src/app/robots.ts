@@ -4,7 +4,7 @@ import { MetadataRoute } from 'next';
  * Robots.txt Generator for NETO
  *
  * Controls search engine crawling behavior:
- * - Allows: Public pages (/login)
+ * - Allows: Landing page (/)
  * - Disallows: Private/authenticated areas, API routes, admin pages
  *
  * @see https://nextjs.org/docs/app/api-reference/file-conventions/robots-txt
@@ -16,9 +16,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: ['/login'],
+        allow: ['/'],
         disallow: [
-          '/',           // Main dashboard (protected)
+          '/dashboard/', // Main dashboard (protected)
           '/admin/',     // Admin area
           '/api/',       // API routes
           '/invite/',    // Invite tokens (private)

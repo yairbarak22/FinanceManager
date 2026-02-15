@@ -52,10 +52,10 @@ interface SidebarProps {
 // Build nav items (investments submenu is dynamic based on Haredi user status)
 function buildNavItems(isHaredi: boolean): NavItem[] {
   return [
-    { 
-      id: 'dashboard', 
-      label: 'דשבורד', 
-      path: '/dashboard', 
+    {
+      id: 'dashboard',
+      label: 'דשבורד',
+      path: '/dashboard',
       icon: Home,
       iconBg: 'bg-blue-100',
       iconColor: 'text-blue-600',
@@ -116,7 +116,9 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
       ? 'help'
       : pathname.startsWith('/investments')
         ? 'investments'
-        : null
+        : pathname === '/dashboard'
+          ? 'dashboard'
+          : null
   );
 
   // Keep submenus expanded on relevant pages
@@ -126,6 +128,9 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
     }
     if (pathname.startsWith('/investments') && expandedMenu !== 'investments') {
       setExpandedMenu('investments');
+    }
+    if (pathname === '/dashboard' && expandedMenu !== 'dashboard') {
+      setExpandedMenu('dashboard');
     }
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
   const [mounted, setMounted] = useState(false);
@@ -325,7 +330,7 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
                           const resolvedPath = subItem.id === 'calculators' && isHarediUser
                             ? '/calculators-haredi'
                             : subItem.path;
-                          const isSubActive = pathname === resolvedPath || 
+                          const isSubActive = pathname === resolvedPath ||
                             (subItem.id === 'calculators' && (pathname === '/calculators' || pathname === '/calculators-haredi')) ||
                             (subItem.id === 'investments-guide' && pathname === '/investments/guide') ||
                             (subItem.id === 'investments-portfolio' && pathname === '/investments');
@@ -402,7 +407,7 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
             </button>
             <button
               type="button"
-              onClick={() => { trackMixpanelEvent('logout'); resetMixpanel(); signOut({ callbackUrl: '/login' }); }}
+              onClick={() => { trackMixpanelEvent('logout'); resetMixpanel(); signOut({ callbackUrl: '/' }); }}
               className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-rose-500 hover:bg-rose-50 transition-colors"
             >
               <LogOut className="w-4 h-4" />

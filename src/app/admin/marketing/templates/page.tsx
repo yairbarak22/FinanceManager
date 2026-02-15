@@ -55,7 +55,7 @@ export default function TemplatesPage() {
   useEffect(() => {
     if (status === 'loading') return;
     if (!session) {
-      router.push('/login');
+      router.push('/');
       return;
     }
     fetchTemplates();

@@ -40,9 +40,15 @@ export async function middleware(request: NextRequest) {
     secret: appConfig.nextAuthSecret,
   });
 
-  // If trying to access login page while authenticated, redirect to home
-  if (pathname === '/login' && token) {
-    response = NextResponse.redirect(new URL('/', request.url));
+  // /login redirects: authenticated → dashboard, unauthenticated → landing page
+  if (pathname === '/login') {
+    const target = token ? '/dashboard' : '/';
+    const redirectUrl = new URL(target, request.url);
+    // Preserve source param
+    if (source) {
+      redirectUrl.searchParams.set('source', source);
+    }
+    response = NextResponse.redirect(redirectUrl);
     if (source) {
       response.cookies.set(SIGNUP_SOURCE_COOKIE, source, {
         path: '/',
@@ -53,15 +59,39 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // If trying to access protected route without token, redirect to login
-  if (!token) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('callbackUrl', request.url);
-    // Preserve source parameter in callback URL
-    if (source) {
-      loginUrl.searchParams.set('source', source);
+  // Landing page: unauthenticated users see it, authenticated users go to dashboard
+  if (pathname === '/') {
+    if (!token) {
+      response = NextResponse.next();
+      if (source && !request.cookies.get(SIGNUP_SOURCE_COOKIE)) {
+        response.cookies.set(SIGNUP_SOURCE_COOKIE, source, {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+          sameSite: 'lax',
+        });
+      }
+      return response;
+    } else {
+      response = NextResponse.redirect(new URL('/dashboard', request.url));
+      if (source) {
+        response.cookies.set(SIGNUP_SOURCE_COOKIE, source, {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+          sameSite: 'lax',
+        });
+      }
+      return response;
     }
-    response = NextResponse.redirect(loginUrl);
+  }
+
+  // If trying to access protected route without token, redirect to landing page
+  if (!token) {
+    const landingUrl = new URL('/', request.url);
+    // Preserve source parameter
+    if (source) {
+      landingUrl.searchParams.set('source', source);
+    }
+    response = NextResponse.redirect(landingUrl);
     if (source) {
       response.cookies.set(SIGNUP_SOURCE_COOKIE, source, {
         path: '/',
@@ -164,8 +194,8 @@ export const config = {
      * - /api/webhook/receive, /api/webhooks/resend (webhook endpoints - verify signatures themselves)
      * - /_next/static (static files)
      * - /_next/image (image optimization)
-     * - /favicon.ico, /images (static assets)
+     * - /favicon.ico, /images, /screenshots (static assets)
      */
-    '/((?!login|invite|api/auth|api/webhook|api/marketing/unsubscribe|_next/static|_next/image|favicon.ico|images).*)',
+    '/((?!login|invite|api/auth|api/webhook|api/marketing/unsubscribe|_next/static|_next/image|favicon.ico|images|screenshots).*)',
   ],
 };

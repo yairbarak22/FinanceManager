@@ -40,7 +40,7 @@ export default function TemplateDetailPage() {
   useEffect(() => {
     if (status === 'loading') return;
     if (!session) {
-      router.push('/login');
+      router.push('/');
       return;
     }
     fetchTemplate();

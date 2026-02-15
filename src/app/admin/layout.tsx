@@ -19,7 +19,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   useEffect(() => {
     if (status === 'loading') return;
     if (!session) {
-      router.push('/login');
+      router.push('/');
     }
   }, [session, status, router]);
 

@@ -74,7 +74,7 @@ export default function EditTemplatePage() {
   useEffect(() => {
     if (status === 'loading') return;
     if (!session) {
-      router.push('/login');
+      router.push('/');
       return;
     }
     fetchTemplate();

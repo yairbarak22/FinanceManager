@@ -1,23 +1,14 @@
-'use client';
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/auth';
+import LandingPage from '@/components/landing/LandingPage';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+export default async function HomePage() {
+  const session = await getServerSession(authOptions);
 
-// Root redirect to dashboard with new sidebar layout
-export default function RootRedirect() {
-  const router = useRouter();
+  if (session) {
+    redirect('/dashboard');
+  }
 
-  useEffect(() => {
-    router.replace('/dashboard');
-  }, [router]);
-
-  // Show loading while redirecting
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-slate-500">טוען...</p>
-      </div>
-    </div>
-  );
+  return <LandingPage />;
 }

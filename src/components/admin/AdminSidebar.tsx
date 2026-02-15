@@ -269,7 +269,7 @@ export default function AdminSidebar({ isMobileOpen, onMobileClose }: AdminSideb
             </div>
           </div>
           <button
-            onClick={() => signOut({ callbackUrl: '/login' })}
+            onClick={() => signOut({ callbackUrl: '/' })}
             className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[#F18AB5] hover:bg-[#F7F7F8] transition-colors"
           >
             <LogOut className="w-4 h-4" />

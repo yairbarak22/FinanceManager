@@ -101,7 +101,7 @@ export default function NewCampaignPage() {
   }
 
   if (!session) {
-    router.push('/login');
+    router.push('/');
     return null;
   }
 

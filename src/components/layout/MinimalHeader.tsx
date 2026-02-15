@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import {
-  Bell,
   User,
   UserCog,
   Users,
@@ -16,6 +15,7 @@ import {
   Accessibility,
   Menu,
 } from 'lucide-react';
+import ProgressBell from '@/components/haredi/ProgressBell';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { useAccessibility } from '@/context/AccessibilityContext';
 import { useSidebar } from '@/context/SidebarContext';
@@ -136,15 +136,8 @@ export default function MinimalHeader({
               </>
             )}
 
-            {/* Notification Bell - Desktop only */}
-            <button
-              type="button"
-              className="hidden md:flex relative p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-lg hover:bg-slate-50"
-              aria-label="התראות"
-            >
-              <Bell className="w-[18px] h-[18px]" strokeWidth={1.75} />
-              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-rose-400 rounded-full" />
-            </button>
+            {/* Progress Bell - visible for Haredi users (self-manages visibility) */}
+            <ProgressBell />
 
             {/* Accessibility Button - All screens */}
             <button
@@ -240,7 +233,7 @@ export default function MinimalHeader({
                     <div className="border-t border-slate-100 py-1">
                       <button
                         type="button"
-                        onClick={() => { trackMixpanelEvent('logout'); resetMixpanel(); signOut({ callbackUrl: '/login' }); }}
+                        onClick={() => { trackMixpanelEvent('logout'); resetMixpanel(); signOut({ callbackUrl: '/' }); }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-rose-500 hover:bg-rose-50 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
