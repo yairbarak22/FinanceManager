@@ -331,6 +331,7 @@ export default function DashboardPage() {
   const monthsWithDataArray = Array.from(monthsWithData).sort().reverse();
   const monthlySummaries: MonthlySummaryType[] = monthsWithDataArray.map((monthKey) => {
     const [year, month] = monthKey.split('-');
+    const monthDate = new Date(parseInt(year), parseInt(month) - 1, 1);
     const monthTransactions = transactions.filter((tx) => getMonthKey(tx.date) === monthKey);
 
     const txIncome = monthTransactions
@@ -340,8 +341,13 @@ export default function DashboardPage() {
       .filter((tx) => tx.type === 'expense')
       .reduce((sum, tx) => sum + tx.amount, 0);
 
+    // Calculate liability payments for this specific month (respects loan end dates)
+    const monthlyLiabilityPaymentsForMonth = liabilities
+      .filter((l) => l.isActiveInCashFlow !== false)
+      .reduce((sum, l) => sum + getEffectiveMonthlyExpense(l, monthDate), 0);
+
     const income = txIncome + fixedIncome;
-    const expenses = txExpenses + fixedExpenses + monthlyLiabilityPayments;
+    const expenses = txExpenses + fixedExpenses + monthlyLiabilityPaymentsForMonth;
 
     return {
       month,

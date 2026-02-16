@@ -93,7 +93,8 @@ export function generateAmortizationSchedule(
  * Get current month's payment details from amortization schedule
  */
 export function getCurrentMonthPayment(
-  liability: Liability
+  liability: Liability,
+  asOfDate?: Date
 ): { payment: number; principal: number; interest: number; currentMonth: number } | null {
   // Note: interestRate can be 0 (zero-interest loan), so we check for undefined/null explicitly
   if (typeof liability.interestRate !== 'number' || !liability.loanTermMonths || !liability.startDate) {
@@ -107,12 +108,12 @@ export function getCurrentMonthPayment(
   }
   
   const startDate = new Date(liability.startDate);
-  const now = new Date();
+  const targetDate = asOfDate || new Date();
   
   // Calculate how many months have passed
   const monthsPassed = 
-    (now.getFullYear() - startDate.getFullYear()) * 12 + 
-    (now.getMonth() - startDate.getMonth());
+    (targetDate.getFullYear() - startDate.getFullYear()) * 12 + 
+    (targetDate.getMonth() - startDate.getMonth());
   
   const currentMonth = monthsPassed + 1;
   
@@ -147,8 +148,8 @@ export function getCurrentMonthPayment(
  * Calculate effective monthly expense for a liability
  * If hasInterestRebate is true, only the principal counts as expense
  */
-export function getEffectiveMonthlyExpense(liability: Liability): number {
-  const paymentDetails = getCurrentMonthPayment(liability);
+export function getEffectiveMonthlyExpense(liability: Liability, asOfDate?: Date): number {
+  const paymentDetails = getCurrentMonthPayment(liability, asOfDate);
   
   if (!paymentDetails) {
     return 0;
