@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
         remainingAmount: body.totalAmount,
         loanMethod: body.loanMethod || 'spitzer',
         hasInterestRebate: body.hasInterestRebate || false,
+        isActiveInCashFlow: body.isActiveInCashFlow !== undefined ? Boolean(body.isActiveInCashFlow) : true,
       },
     });
     

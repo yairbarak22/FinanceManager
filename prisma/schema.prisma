@@ -175,11 +175,12 @@ model Liability {
   startDate         DateTime @default(now())
   remainingAmount   Float?
   loanMethod        String   @default("spitzer")
-  hasInterestRebate Boolean  @default(false)
-  linkage           String   @default("none") // none | index | foreign
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hasInterestRebate   Boolean  @default(false)
+  linkage             String   @default("none") // none | index | foreign
+  isActiveInCashFlow  Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, type])

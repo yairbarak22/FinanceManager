@@ -281,7 +281,9 @@ export default function DashboardPage() {
     .filter((t) => t.type === 'expense' && t.isActive)
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const monthlyLiabilityPayments = liabilities.reduce((sum, l) => sum + getEffectiveMonthlyExpense(l), 0);
+  const monthlyLiabilityPayments = liabilities
+    .filter((l) => l.isActiveInCashFlow !== false)
+    .reduce((sum, l) => sum + getEffectiveMonthlyExpense(l), 0);
 
   // Calculate totals - filter by month only (for summaries)
   const monthFilteredTransactions = selectedMonth === 'all'
@@ -646,6 +648,13 @@ export default function DashboardPage() {
     }
   };
 
+  // Optimistic toggle for cash flow inclusion
+  const handleToggleLiabilityCashFlow = useCallback((id: string, isActive: boolean) => {
+    setLiabilities((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, isActiveInCashFlow: isActive } : l))
+    );
+  }, []);
+
   return (
     <AppLayout
       pageTitle="דשבורד"
@@ -775,6 +784,7 @@ export default function DashboardPage() {
                     setIsLiabilityModalOpen(true);
                   }}
                   onDelete={handleDeleteLiability}
+                  onToggleCashFlow={handleToggleLiabilityCashFlow}
                   onViewAmortization={(liability) => {
                     setViewingLiability(liability);
                     setIsAmortizationModalOpen(true);

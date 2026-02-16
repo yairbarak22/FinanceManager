@@ -81,6 +81,7 @@ export interface Liability {
   loanMethod: 'spitzer' | 'equal_principal'; // שיטת ההלוואה
   hasInterestRebate: boolean; // זיכוי על הריבית
   linkage?: 'none' | 'index' | 'foreign'; // הצמדה (אין / מדד / מט"ח)
+  isActiveInCashFlow?: boolean; // האם פעיל בתזרים החודשי (ברירת מחדל: true)
   createdAt?: string;
   updatedAt?: string;
 }

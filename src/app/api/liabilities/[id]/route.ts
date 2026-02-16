@@ -107,6 +107,10 @@ export async function PUT(
       updateData.hasInterestRebate = Boolean(body.hasInterestRebate);
     }
 
+    if (body.isActiveInCashFlow !== undefined) {
+      updateData.isActiveInCashFlow = Boolean(body.isActiveInCashFlow);
+    }
+
     // Calculate new remainingAmount with validation
     let remainingAmount = body.remainingAmount;
     if (remainingAmount !== undefined) {
