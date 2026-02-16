@@ -15,6 +15,16 @@ import { validateExcelFile } from '@/lib/fileValidator';
 import { sanitizeExcelData } from '@/lib/excelSanitizer';
 
 // ============================================
+// SECURITY CONSTANTS
+// ============================================
+const MAX_ROWS = 10000;                        // Maximum rows to process (prevents memory exhaustion)
+const MAX_TRANSACTIONS = 5000;                 // Maximum transactions to parse per import
+const MAX_HTML_SIZE = 5 * 1024 * 1024;         // 5MB max HTML content for parsing
+const MAX_HTML_ROWS = 10000;                   // Maximum rows to parse from HTML tables
+const IMPORT_TIMEOUT_MS = 60 * 1000;           // 60 seconds timeout for entire import
+const MAX_MERCHANT_LENGTH_FOR_AI = 200;        // Maximum merchant name length sent to AI
+
+// ============================================
 // TYPES
 // ============================================
 
@@ -309,8 +319,9 @@ async function mapColumnsWithAI(
       return null;
     }
     
-    const headerStr = headerRow.map((h, i) => `[${i}] ${String(h || '')}`).join(', ');
-    const sampleStr = sampleRow.map((s, i) => `[${i}] ${String(s || '')}`).join(', ');
+    // Sanitize cell values before sending to AI to prevent prompt injection
+    const headerStr = headerRow.map((h, i) => `[${i}] ${sanitizeForAI(String(h || ''))}`).join(', ');
+    const sampleStr = sampleRow.map((s, i) => `[${i}] ${sanitizeForAI(String(s || ''))}`).join(', ');
 
     console.log('[AI Column Mapping] Starting column detection');
     console.log('[AI Column Mapping] Header:', headerStr);
@@ -349,24 +360,27 @@ async function mapColumnsWithAI(
       if (codeBlockMatch) jsonStr = codeBlockMatch[1].trim();
     }
 
-    // Try to parse JSON with recovery
+    // Try to parse JSON with recovery (safe parsing prevents prototype pollution)
     let mapping: ColumnMapping;
-    try {
-      mapping = JSON.parse(jsonStr) as ColumnMapping;
-    } catch (parseError) {
+    const safeParsedMapping = safeJsonParse<Record<string, unknown>>(jsonStr);
+    if (safeParsedMapping) {
+      mapping = safeParsedMapping as unknown as ColumnMapping;
+    } else {
       // Recovery: try to find JSON in the original response
-      console.warn('[AI Column Mapping] JSON parse failed, attempting recovery');
+      console.warn('[AI Column Mapping] Safe JSON parse failed, attempting recovery');
       const jsonMatch = response.text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        try {
-          mapping = JSON.parse(jsonMatch[0]) as ColumnMapping;
+        const recoveredParsed = safeJsonParse<Record<string, unknown>>(jsonMatch[0]);
+        if (recoveredParsed) {
+          mapping = recoveredParsed as unknown as ColumnMapping;
           console.log('[AI Column Mapping] Recovered mapping from text');
-        } catch (recoveryError) {
+        } else {
           console.error('[AI Column Mapping] Recovery also failed');
-          throw parseError;
+          return null;
         }
       } else {
-        throw parseError;
+        console.error('[AI Column Mapping] No JSON found in response');
+        return null;
       }
     }
 
@@ -1003,6 +1017,71 @@ other (אחר)
 {"merchantName1 (הוצאה)": "category", "merchantName2 (הכנסה)": "category", ...}`;
 }
 
+// ============================================
+// SECURITY HELPERS
+// ============================================
+
+/**
+ * Sanitize a string before sending it to AI to prevent prompt injection.
+ * Removes dangerous prefixes, HTML, quotes, and truncates to safe length.
+ */
+function sanitizeForAI(input: string, maxLength = MAX_MERCHANT_LENGTH_FOR_AI): string {
+  let s = String(input || '').trim();
+
+  // Truncate
+  if (s.length > maxLength) {
+    s = s.slice(0, maxLength);
+  }
+
+  // Remove Excel formula injection prefixes
+  s = s.replace(/^[=+\-@\t\r\n]+/, '');
+
+  // Remove HTML tags
+  s = s.replace(/<[^>]*>/g, '');
+
+  // Remove control characters (U+0000–U+001F except space)
+  s = s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+
+  return s.trim();
+}
+
+/**
+ * Parse JSON safely, preventing Prototype Pollution attacks.
+ * Removes dangerous keys (__proto__, constructor, prototype) and
+ * ensures all values are strings, numbers, or null.
+ */
+function safeJsonParse<T extends Record<string, unknown>>(jsonStr: string): T | null {
+  try {
+    const parsed = JSON.parse(jsonStr);
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return null;
+    }
+
+    // Remove dangerous keys that could cause prototype pollution
+    const DANGEROUS_KEYS = ['__proto__', 'constructor', 'prototype'];
+    for (const key of DANGEROUS_KEYS) {
+      if (key in parsed) {
+        console.warn(`[Security] Removed dangerous key "${key}" from parsed JSON`);
+        delete parsed[key];
+      }
+    }
+
+    // Validate all remaining values are safe types (string, number, null)
+    const safe: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      if (typeof key !== 'string') continue;
+      if (value === null || typeof value === 'string' || typeof value === 'number') {
+        safe[key] = value;
+      }
+      // Skip any other types (objects, arrays, functions)
+    }
+
+    return safe as T;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Classify merchants using AI
  * 
@@ -1022,9 +1101,11 @@ async function classifyMerchantsWithAI(
 
   try {
     // Build the merchant list with their types for context
+    // Sanitize merchant names to prevent AI prompt injection
     const merchantList = merchants.map(m => {
+      const sanitized = sanitizeForAI(m);
       const type = transactionTypes.get(m) || 'expense';
-      return `${m} (${type === 'income' ? 'הכנסה' : 'הוצאה'})`;
+      return `${sanitized} (${type === 'income' ? 'הכנסה' : 'הוצאה'})`;
     }).join('\n');
 
     console.log('[AI Classification] Starting classification for', merchants.length, 'merchants');
@@ -1070,12 +1151,13 @@ async function classifyMerchantsWithAI(
     jsonStr = jsonStr.replace(/,\s*}/g, '}'); // Remove trailing commas before }
     jsonStr = jsonStr.replace(/,\s*]/g, ']'); // Remove trailing commas before ]
 
-    // Step 5: Try to parse JSON with multiple recovery strategies
+    // Step 5: Try to parse JSON with multiple recovery strategies (safe parsing prevents prototype pollution)
     let parsed: Record<string, string | null> = {};
-    try {
-      parsed = JSON.parse(jsonStr);
-    } catch (parseError) {
-      console.warn('[AI Classification] JSON parse failed, attempting recovery strategies');
+    const safeParsed = safeJsonParse<Record<string, string | null>>(jsonStr);
+    if (safeParsed) {
+      parsed = safeParsed;
+    } else {
+      console.warn('[AI Classification] Safe JSON parse failed, attempting recovery strategies');
       
       // Recovery Strategy 1: Try to fix unclosed JSON
       let recovered = false;
@@ -1093,12 +1175,11 @@ async function classifyMerchantsWithAI(
         for (let i = 0; i < openBraces - closeBraces; i++) {
           fixedJson += '}';
         }
-        try {
-          parsed = JSON.parse(fixedJson);
+        const fixedParsed = safeJsonParse<Record<string, string | null>>(fixedJson);
+        if (fixedParsed) {
+          parsed = fixedParsed;
           console.log('[AI Classification] Recovered by fixing unclosed JSON');
           recovered = true;
-        } catch (e) {
-          // Continue to next strategy
         }
       }
       
@@ -1121,7 +1202,7 @@ async function classifyMerchantsWithAI(
       
       if (!recovered) {
         console.error('[AI Classification] All recovery strategies failed');
-        throw parseError;
+        throw new Error('Failed to parse AI classification response');
       }
     }
 
@@ -1203,6 +1284,14 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       );
     }
+
+    // 🔒 SECURITY: Timeout protection - prevent long-running imports from hanging the server
+    const importStart = Date.now();
+    const checkTimeout = () => {
+      if (Date.now() - importStart > IMPORT_TIMEOUT_MS) {
+        throw new Error('IMPORT_TIMEOUT');
+      }
+    };
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -1303,13 +1392,29 @@ export async function POST(request: NextRequest) {
       
       const htmlContent = buffer.toString('utf8');
       
+      // 🔒 SECURITY: Limit HTML content size to prevent ReDoS on regex parsing
+      if (htmlContent.length > MAX_HTML_SIZE) {
+        console.error('[Excel Security] HTML content too large:', htmlContent.length, '>', MAX_HTML_SIZE);
+        return NextResponse.json(
+          { error: 'קובץ HTML גדול מדי לעיבוד. גודל מקסימלי: 5MB' },
+          { status: 413 }
+        );
+      }
+      
       // Manual HTML table parsing for Israeli bank files
       // Extract all <tr> rows and their <td>/<th> cells
       const rows: string[][] = [];
+      let htmlRowCount = 0;
       
       // Find all table rows
       const rowMatches = htmlContent.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi);
       for (const rowMatch of rowMatches) {
+        // 🔒 SECURITY: Limit row count to prevent memory exhaustion
+        if (++htmlRowCount > MAX_HTML_ROWS) {
+          console.warn('[Excel Security] HTML row limit reached:', MAX_HTML_ROWS, '- truncating');
+          break;
+        }
+        
         const rowHtml = rowMatch[1];
         const cells: string[] = [];
         
@@ -1324,7 +1429,9 @@ export async function POST(request: NextRequest) {
             .replace(/&amp;/gi, '&')
             .replace(/&lt;/gi, '<')
             .replace(/&gt;/gi, '>')
-            .replace(/&#\d+;/g, '') // Remove numeric entities
+            .replace(/&#\d+;/g, '') // Remove decimal numeric entities
+            .replace(/&#x[0-9a-fA-F]+;/g, '') // Remove hex numeric entities
+            .replace(/&[a-zA-Z]+;/g, '') // Remove any remaining named entities
             .replace(/\s+/g, ' ') // Normalize whitespace
             .trim();
           cells.push(cellContent);
@@ -1335,7 +1442,8 @@ export async function POST(request: NextRequest) {
         }
       }
       
-      console.log('[Excel Import] Manually parsed', rows.length, 'rows from HTML');
+      console.log('[Excel Import] Manually parsed', rows.length, 'rows from HTML',
+        htmlRowCount > MAX_HTML_ROWS ? `(truncated from ${htmlRowCount}+)` : '');
       
       // Use parsed rows directly without going through XLSX
       // This preserves the original date format (DD.MM.YYYY or DD/MM/YY)
@@ -1438,6 +1546,20 @@ export async function POST(request: NextRequest) {
     }
 
     // ============================================
+    // 🔒 SECURITY: Row count validation (prevents memory exhaustion)
+    // ============================================
+    if (rawData.length > MAX_ROWS) {
+      console.error('[Excel Security] File exceeds MAX_ROWS:', rawData.length, '>', MAX_ROWS);
+      return NextResponse.json(
+        {
+          error: `הקובץ מכיל יותר מדי שורות (${rawData.length.toLocaleString()}). מקסימום: ${MAX_ROWS.toLocaleString()}`,
+          details: 'אנא חלק את הקובץ לקבצים קטנים יותר'
+        },
+        { status: 413 }
+      );
+    }
+
+    // ============================================
     // PHASE 1: DETECT ALL TABLES (Multi-table support)
     // ============================================
     
@@ -1473,6 +1595,9 @@ export async function POST(request: NextRequest) {
 
       if (firstDataRow.length === 0) continue;
 
+      // 🔒 SECURITY: Check timeout before AI call
+      checkTimeout();
+
       // Get column mapping for this table
       const aiMapping = await mapColumnsWithAI(headerRow, firstDataRow);
       
@@ -1495,6 +1620,13 @@ export async function POST(request: NextRequest) {
 
       // Process rows in this table
       for (let i = firstDataRowIndex; i < tableEndIndex; i++) {
+        // 🔒 SECURITY: Limit total parsed transactions (prevents memory exhaustion)
+        if (parsedTransactions.length >= MAX_TRANSACTIONS) {
+          console.warn('[Excel Security] Reached MAX_TRANSACTIONS limit:', MAX_TRANSACTIONS);
+          errors.push(`הגעת למגבלת העסקאות (${MAX_TRANSACTIONS}). שאר השורות לא עובדו.`);
+          break;
+        }
+
         const row = rawData[i];
         const rowNum = i + 1; // 1-indexed for user display
 
@@ -1728,6 +1860,9 @@ export async function POST(request: NextRequest) {
     // ============================================
     // PHASE 5: AI CLASSIFICATION (only unknowns)
     // ============================================
+    // 🔒 SECURITY: Check timeout before expensive AI classification
+    checkTimeout();
+    
     const transactionTypes = new Map<string, 'income' | 'expense'>();
     for (const t of parsedTransactions) {
       transactionTypes.set(t.merchantName, t.type);
@@ -1823,6 +1958,15 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
+    // 🔒 SECURITY: Handle timeout specifically
+    if (error instanceof Error && error.message === 'IMPORT_TIMEOUT') {
+      console.error('[Excel Security] Import timed out after', IMPORT_TIMEOUT_MS / 1000, 'seconds. userId:', userId);
+      return NextResponse.json(
+        { error: 'ייבוא הקובץ לוקח יותר מדי זמן. אנא נסה קובץ קטן יותר.' },
+        { status: 408 } // 408 Request Timeout
+      );
+    }
+
     // 🔒 SECURITY LOGGING (Layer #5): Log error details for audit, return generic message
     console.error('[Excel Import] CRITICAL ERROR:', error);
     console.error('[Excel Import] Error details:', {
