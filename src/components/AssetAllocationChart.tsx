@@ -120,15 +120,21 @@ export default function AssetAllocationChart({ assets }: AssetAllocationChartPro
             </div>
 
             {/* Right Side: Donut Chart */}
-            <div className="relative w-32 h-32 flex-shrink-0">
+            <div
+              className="relative flex-shrink-0 overflow-hidden"
+              style={{
+                width: 'clamp(96px, 18vw, 128px)',
+                aspectRatio: '1',
+              }}
+            >
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={chartData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={40}
-                    outerRadius={55}
+                    innerRadius="58%"
+                    outerRadius="80%"
                     paddingAngle={2}
                     dataKey="value"
                     strokeWidth={0}
@@ -139,10 +145,10 @@ export default function AssetAllocationChart({ assets }: AssetAllocationChartPro
                         fill={entry.color}
                         style={{
                           filter: hoveredItemId === entry.id 
-                            ? `drop-shadow(0 0 8px ${entry.color}33)` 
+                            ? `drop-shadow(0 0 6px ${entry.color}33)` 
                             : 'none',
                           transform: hoveredItemId === entry.id 
-                            ? 'scale(1.07)' 
+                            ? 'scale(1.04)' 
                             : 'scale(1)',
                           transformOrigin: 'center',
                           transition: 'all 250ms ease-out',
