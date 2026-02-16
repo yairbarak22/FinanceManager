@@ -1288,6 +1288,7 @@ export async function POST(request: NextRequest) {
     
     // Variable to hold the parsed data
     let rawData: unknown[][];
+    let rawAmountData: unknown[][] | null = null; // Raw numeric data for amount sign preservation
     
     if (isHtmlBased) {
       // ============================================
@@ -1410,11 +1411,22 @@ export async function POST(request: NextRequest) {
         blankrows: true,  // Keep blank rows (for header detection)
       });
 
-      console.log('[Excel Import] Converted', unsafeData.length, 'rows');
+      // Also read raw numeric values to preserve signs on amounts
+      // REASON: raw:false uses Excel number formats which may strip minus signs
+      // (e.g. format "#,##0.00;[Red]#,##0.00" renders -769.71 as "769.71" in red)
+      const unsafeRawData: unknown[][] = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        raw: true,        // Return raw numeric values (preserves negative signs)
+        defval: '',
+        blankrows: true,
+      });
+
+      console.log('[Excel Import] Converted', unsafeData.length, 'rows (formatted + raw)');
 
       // Step 6: SANITIZE ALL DATA - Security Layer #3
       console.log('[Excel Security] Sanitizing all cell values...');
       rawData = sanitizeExcelData(unsafeData);
+      rawAmountData = sanitizeExcelData(unsafeRawData);
       console.log('[Excel Security] Sanitization complete ✓');
     }
 
@@ -1532,8 +1544,10 @@ export async function POST(request: NextRequest) {
 
           if (columnMapping.isDualAmount) {
             // DUAL COLUMN MODE: separate debit (חובה) and credit (זכות) columns
-            const debitRaw = row[columnMapping.debitIndex];
-            const creditRaw = row[columnMapping.creditIndex];
+            // Use raw data to preserve negative signs (raw:false may strip them due to Excel number formats)
+            const rawRow = rawAmountData ? rawAmountData[i] : null;
+            const debitRaw = rawRow ? (rawRow as unknown[])[columnMapping.debitIndex] : row[columnMapping.debitIndex];
+            const creditRaw = rawRow ? (rawRow as unknown[])[columnMapping.creditIndex] : row[columnMapping.creditIndex];
             const parsedDebit = parseAmount(debitRaw);
             const parsedCredit = parseAmount(creditRaw);
             
@@ -1593,7 +1607,9 @@ export async function POST(request: NextRequest) {
             }
           } else {
             // SINGLE COLUMN MODE
-            const amount = row[columnMapping.amountIndex];
+            // Use raw data to preserve negative signs (raw:false may strip them due to Excel number formats)
+            const rawRow = rawAmountData ? rawAmountData[i] : null;
+            const amount = rawRow ? (rawRow as unknown[])[columnMapping.amountIndex] : row[columnMapping.amountIndex];
             parsedAmount = parseAmount(amount);
             if (parsedAmount === null || parsedAmount === 0) {
               errors.push(`שורה ${rowNum}: סכום לא תקין`);
