@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useCategories } from '@/hooks/useCategories';
 import { useAnalytics } from '@/hooks/useAnalytics';
@@ -16,6 +16,7 @@ import {
   FolderOpen,
   HelpCircle,
   ChevronDown,
+  ChevronRight,
   Check,
   CheckSquare,
   Square,
@@ -68,6 +69,10 @@ const DATE_FORMAT_OPTIONS: { value: DateFormatOption; label: string; example: st
   { value: 'MM/DD/YYYY', label: 'חודש/יום/שנה', example: '03/15/2024', description: 'פורמט אמריקאי' },
   { value: 'YYYY-MM-DD', label: 'שנה-חודש-יום', example: '2024-03-15', description: 'פורמט בינלאומי' },
 ];
+
+// Quick action category IDs for fast classification
+const QUICK_EXPENSE_IDS = ['food', 'shopping', 'bills', 'transport', 'housing', 'health', 'education', 'other'] as const;
+const QUICK_INCOME_IDS = ['salary', 'bonus', 'investment', 'other'] as const;
 
 // Stats from API
 interface ImportStats {
@@ -478,6 +483,12 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
   // Track which dropdown is open (by rowNum)
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
 
+  // Bulk selection state for review
+  const [selectedTransactions, setSelectedTransactions] = useState<Set<number>>(new Set());
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [openGroupDropdown, setOpenGroupDropdown] = useState<string | null>(null);
+  const [isMobileCategorySheet, setIsMobileCategorySheet] = useState(false);
+
   // Refs for each review row (for auto-scroll after categorization)
   const rowRefs = useRef<Map<number, HTMLElement>>(new Map());
   const setRowRef = useCallback((rowNum: number, element: HTMLElement | null) => {
@@ -528,6 +539,10 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
     setSavedCount(0);
     setReviewCategories({});
     setOpenDropdown(null);
+    setSelectedTransactions(new Set());
+    setExpandedGroups(new Set());
+    setOpenGroupDropdown(null);
+    setIsMobileCategorySheet(false);
     setDuplicates([]);
     setPendingTransactions([]);
     setSelectedDuplicateIndices(new Set());
@@ -851,6 +866,158 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
     const customCats = getCustomByType(type);
     return [...defaultCats, ...customCats];
   };
+
+  // === Grouping & bulk selection logic ===
+
+  // Group transactions by normalized merchant name
+  const groupedByMerchant = useMemo(() => {
+    const groups = new Map<string, ParsedTransaction[]>();
+    needsReview.forEach(t => {
+      const key = t.merchantName.toLowerCase().trim();
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(t);
+    });
+    return Array.from(groups.entries())
+      .map(([merchant, txns]) => ({
+        merchant,
+        displayName: txns[0].merchantName,
+        transactions: txns,
+        count: txns.length,
+        type: txns[0].type, // predominant type
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [needsReview]);
+
+  // Expand all groups by default when entering review
+  useEffect(() => {
+    if (phase === 'review' && needsReview.length > 0) {
+      setExpandedGroups(new Set(
+        needsReview.map(t => t.merchantName.toLowerCase().trim())
+      ));
+    }
+  }, [phase, needsReview]);
+
+  // Selection helpers
+  const toggleTransactionSelection = useCallback((rowNum: number) => {
+    setSelectedTransactions(prev => {
+      const next = new Set(prev);
+      if (next.has(rowNum)) next.delete(rowNum);
+      else next.add(rowNum);
+      return next;
+    });
+  }, []);
+
+  const toggleGroupSelection = useCallback((merchant: string) => {
+    const group = groupedByMerchant.find(g => g.merchant === merchant);
+    if (!group) return;
+    const rowNums = group.transactions.map(t => t.rowNum);
+    setSelectedTransactions(prev => {
+      const next = new Set(prev);
+      const allSelected = rowNums.every(rn => prev.has(rn));
+      if (allSelected) {
+        rowNums.forEach(rn => next.delete(rn));
+      } else {
+        rowNums.forEach(rn => next.add(rn));
+      }
+      return next;
+    });
+  }, [groupedByMerchant]);
+
+  const selectAllReview = useCallback(() => {
+    setSelectedTransactions(new Set(needsReview.map(t => t.rowNum)));
+  }, [needsReview]);
+
+  const deselectAllReview = useCallback(() => {
+    setSelectedTransactions(new Set());
+  }, []);
+
+  const isAllReviewSelected = needsReview.length > 0 && selectedTransactions.size === needsReview.length;
+
+  // Bulk apply category to selected transactions
+  const handleBulkCategoryChange = useCallback((category: string) => {
+    if (selectedTransactions.size === 0) return;
+    setReviewCategories(prev => {
+      const next = { ...prev };
+      selectedTransactions.forEach(rowNum => {
+        next[rowNum] = category;
+      });
+      return next;
+    });
+    setSelectedTransactions(new Set());
+    setOpenGroupDropdown(null);
+    setOpenDropdown(null);
+  }, [selectedTransactions]);
+
+  // Apply category to a whole merchant group
+  const handleGroupCategoryChange = useCallback((merchant: string, category: string) => {
+    const group = groupedByMerchant.find(g => g.merchant === merchant);
+    if (!group) return;
+    setReviewCategories(prev => {
+      const next = { ...prev };
+      group.transactions.forEach(t => {
+        next[t.rowNum] = category;
+      });
+      return next;
+    });
+    setOpenGroupDropdown(null);
+  }, [groupedByMerchant]);
+
+  // Quick category action - apply to selected transactions of matching type
+  const handleQuickCategory = useCallback((categoryId: string, type: 'expense' | 'income') => {
+    const matching = needsReview.filter(
+      t => selectedTransactions.has(t.rowNum) && t.type === type
+    );
+    if (matching.length === 0) return;
+    setReviewCategories(prev => {
+      const next = { ...prev };
+      matching.forEach(t => {
+        next[t.rowNum] = categoryId;
+      });
+      return next;
+    });
+    setSelectedTransactions(new Set());
+  }, [needsReview, selectedTransactions]);
+
+  // Toggle group expand/collapse
+  const toggleGroupExpanded = useCallback((merchant: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(merchant)) next.delete(merchant);
+      else next.add(merchant);
+      return next;
+    });
+  }, []);
+
+  // Progress tracking
+  const categorizedCount = useMemo(() => {
+    return needsReview.filter(t => reviewCategories[t.rowNum]).length;
+  }, [needsReview, reviewCategories]);
+
+  // Check if a group has all items categorized
+  const isGroupFullyCategorized = useCallback((merchant: string) => {
+    const group = groupedByMerchant.find(g => g.merchant === merchant);
+    if (!group) return false;
+    return group.transactions.every(t => reviewCategories[t.rowNum]);
+  }, [groupedByMerchant, reviewCategories]);
+
+  // Check if all in a group are selected
+  const isGroupSelected = useCallback((merchant: string) => {
+    const group = groupedByMerchant.find(g => g.merchant === merchant);
+    if (!group) return false;
+    return group.transactions.every(t => selectedTransactions.has(t.rowNum));
+  }, [groupedByMerchant, selectedTransactions]);
+
+  // Check if some (but not all) in a group are selected
+  const isGroupPartiallySelected = useCallback((merchant: string) => {
+    const group = groupedByMerchant.find(g => g.merchant === merchant);
+    if (!group) return false;
+    const selectedCount = group.transactions.filter(t => selectedTransactions.has(t.rowNum)).length;
+    return selectedCount > 0 && selectedCount < group.transactions.length;
+  }, [groupedByMerchant, selectedTransactions]);
+
+  // Types present in review
+  const hasExpenseReview = useMemo(() => needsReview.some(t => t.type === 'expense'), [needsReview]);
+  const hasIncomeReview = useMemo(() => needsReview.some(t => t.type === 'income'), [needsReview]);
 
   if (!isOpen) return null;
 
@@ -1327,6 +1494,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
           {/* Review mode */}
           {phase === 'review' && (
             <div className="space-y-4">
+              {/* Info banner */}
               <div 
                 className="rounded-xl p-4"
                 style={{
@@ -1341,12 +1509,13 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                       נדרשת עזרתך ב-{needsReview.length} עסקאות
                     </p>
                     <p className="text-sm mt-1" style={{ color: '#F18AB5', opacity: 0.8 }}>
-                      ה-AI לא הצליח לזהות את הקטגוריה. בחר קטגוריה לכל עסקה.
+                      בחר קטגוריה לכל עסקה, או סמן כמה ביחד והגדר קטגוריה לכולן.
                     </p>
                   </div>
                 </div>
               </div>
 
+              {/* Stats badges */}
               {stats && (
                 <div className="flex gap-3 text-sm flex-wrap">
                   <span 
@@ -1366,50 +1535,295 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                 </div>
               )}
 
-              {/* Desktop: Table view */}
+              {/* Progress indicator */}
+              <div className="rounded-xl p-3" style={{ backgroundColor: '#F7F7F8' }}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-medium" style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
+                    התקדמות סיווג
+                  </span>
+                  <span className="text-xs font-bold" style={{ color: categorizedCount === needsReview.length ? '#0DBACC' : '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
+                    {categorizedCount} / {needsReview.length}
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full" style={{ backgroundColor: '#E8E8ED' }}>
+                  <div 
+                    className="h-2 rounded-full transition-all duration-300"
+                    style={{ 
+                      width: `${needsReview.length > 0 ? (categorizedCount / needsReview.length) * 100 : 0}%`,
+                      backgroundColor: categorizedCount === needsReview.length ? '#0DBACC' : '#69ADFF',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Quick Actions Bar - Desktop only (mobile uses bottom sheet) */}
+              {(hasExpenseReview || hasIncomeReview) && (
+                <div className="hidden md:block rounded-xl p-3" style={{ border: '1px solid #F7F7F8' }}>
+                  <p className="text-xs font-medium mb-2" style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
+                    {selectedTransactions.size > 0 
+                      ? `קטגוריה מהירה (${selectedTransactions.size} נבחרו)`
+                      : 'קטגוריה מהירה — סמן עסקאות ולחץ'}
+                  </p>
+                  {hasExpenseReview && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {QUICK_EXPENSE_IDS.map(catId => {
+                        const cat = expenseCategories.find(c => c.id === catId);
+                        if (!cat) return null;
+                        const Icon = cat.icon;
+                        return (
+                          <button
+                            key={catId}
+                            type="button"
+                            onClick={() => handleQuickCategory(catId, 'expense')}
+                            disabled={selectedTransactions.size === 0}
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
+                            style={{
+                              backgroundColor: selectedTransactions.size > 0 ? 'rgba(105, 173, 255, 0.08)' : '#F7F7F8',
+                              color: selectedTransactions.size > 0 ? '#69ADFF' : '#BDBDCB',
+                              border: '1px solid',
+                              borderColor: selectedTransactions.size > 0 ? 'rgba(105, 173, 255, 0.2)' : '#E8E8ED',
+                              cursor: selectedTransactions.size > 0 ? 'pointer' : 'default',
+                              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                            }}
+                          >
+                            <Icon className="w-3.5 h-3.5" />
+                            {cat.nameHe}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {hasIncomeReview && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {QUICK_INCOME_IDS.map(catId => {
+                        const cat = incomeCategories.find(c => c.id === catId);
+                        if (!cat) return null;
+                        const Icon = cat.icon;
+                        return (
+                          <button
+                            key={`income-${catId}`}
+                            type="button"
+                            onClick={() => handleQuickCategory(catId, 'income')}
+                            disabled={selectedTransactions.size === 0}
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all"
+                            style={{
+                              backgroundColor: selectedTransactions.size > 0 ? 'rgba(13, 186, 204, 0.08)' : '#F7F7F8',
+                              color: selectedTransactions.size > 0 ? '#0DBACC' : '#BDBDCB',
+                              border: '1px solid',
+                              borderColor: selectedTransactions.size > 0 ? 'rgba(13, 186, 204, 0.2)' : '#E8E8ED',
+                              cursor: selectedTransactions.size > 0 ? 'pointer' : 'default',
+                              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                            }}
+                          >
+                            <Icon className="w-3.5 h-3.5" />
+                            {cat.nameHe}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Bulk Selection Toolbar */}
+              <div 
+                className="flex items-center gap-3 rounded-xl px-3 py-2 flex-wrap"
+                style={{ backgroundColor: '#F7F7F8', border: '1px solid #E8E8ED' }}
+              >
+                <button
+                  type="button"
+                  onClick={isAllReviewSelected ? deselectAllReview : selectAllReview}
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-colors"
+                  style={{
+                    backgroundColor: isAllReviewSelected ? 'rgba(105, 173, 255, 0.15)' : 'white',
+                    color: isAllReviewSelected ? '#69ADFF' : '#7E7F90',
+                    border: '1px solid',
+                    borderColor: isAllReviewSelected ? 'rgba(105, 173, 255, 0.3)' : '#E8E8ED',
+                    fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                  }}
+                >
+                  {isAllReviewSelected ? (
+                    <><CheckSquare className="w-3.5 h-3.5" /> בטל הכל</>
+                  ) : (
+                    <><Square className="w-3.5 h-3.5" /> בחר הכל</>
+                  )}
+                </button>
+                {selectedTransactions.size > 0 && (
+                  <span 
+                    className="text-xs font-medium px-2 py-1 rounded-lg"
+                    style={{ 
+                      backgroundColor: 'rgba(105, 173, 255, 0.15)', 
+                      color: '#69ADFF',
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    }}
+                  >
+                    {selectedTransactions.size} נבחרו
+                  </span>
+                )}
+                {selectedTransactions.size > 0 && (
+                  <div className="flex-1 min-w-[140px] max-w-[200px]">
+                    <CategoryDropdown
+                      value=""
+                      onChange={(value) => handleBulkCategoryChange(value)}
+                      categories={getCategoriesForType(
+                        needsReview.find(t => selectedTransactions.has(t.rowNum))?.type || 'expense'
+                      )}
+                      isOpen={openGroupDropdown === '__bulk__'}
+                      onToggle={() => setOpenGroupDropdown(openGroupDropdown === '__bulk__' ? null : '__bulk__')}
+                      onClose={() => setOpenGroupDropdown(null)}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Grouped transactions */}
               {categoriesLoading ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
                   <p className="text-[#303150] font-medium">טוען קטגוריות...</p>
                 </div>
               ) : (
-                <>
-                  <div className="hidden md:block rounded-xl overflow-hidden" style={{ border: '1px solid #F7F7F8' }}>
-                    <table className="w-full text-sm">
-                      <thead style={{ backgroundColor: '#F7F7F8' }}>
-                        <tr>
-                          <th className="text-right px-4 py-3 font-medium" style={{ color: '#7E7F90' }}>עסק</th>
-                          <th className="text-right px-4 py-3 font-medium" style={{ color: '#7E7F90' }}>סכום</th>
-                          <th className="text-right px-4 py-3 font-medium" style={{ color: '#7E7F90' }}>תאריך</th>
-                          <th className="text-right px-4 py-3 font-medium min-w-[160px]" style={{ color: '#7E7F90' }}>קטגוריה</th>
-                        </tr>
-                      </thead>
-                      <tbody style={{ borderColor: '#F7F7F8' }}>
-                        {needsReview.map((t) => (
-                          <tr 
+                <div className="space-y-3">
+                  {groupedByMerchant.map(group => {
+                    const isExpanded = expandedGroups.has(group.merchant);
+                    const groupFullyCategorized = isGroupFullyCategorized(group.merchant);
+                    const groupSelected = isGroupSelected(group.merchant);
+                    const groupPartial = isGroupPartiallySelected(group.merchant);
+
+                    return (
+                      <div 
+                        key={group.merchant}
+                        className="rounded-xl overflow-hidden transition-all"
+                        style={{ 
+                          border: groupFullyCategorized 
+                            ? '1px solid rgba(13, 186, 204, 0.3)' 
+                            : '1px solid #E8E8ED',
+                          backgroundColor: groupFullyCategorized ? 'rgba(13, 186, 204, 0.03)' : 'white',
+                        }}
+                      >
+                        {/* Group Header */}
+                        <div 
+                          className="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none"
+                          style={{ backgroundColor: groupFullyCategorized ? 'rgba(13, 186, 204, 0.06)' : '#F7F7F8' }}
+                        >
+                          {/* Group checkbox */}
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); toggleGroupSelection(group.merchant); }}
+                            className={cn(
+                              'w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-colors',
+                              groupSelected ? 'bg-[#69ADFF]' : groupPartial ? 'bg-[#69ADFF]/50' : 'bg-white border-2 border-[#E8E8ED]'
+                            )}
+                          >
+                            {(groupSelected || groupPartial) && <Check className="w-3.5 h-3.5 text-white" />}
+                          </button>
+                          
+                          {/* Expand/collapse toggle */}
+                          <button
+                            type="button"
+                            onClick={() => toggleGroupExpanded(group.merchant)}
+                            className="flex items-center gap-2 flex-1 min-w-0"
+                          >
+                            <ChevronRight 
+                              className={cn('w-4 h-4 flex-shrink-0 transition-transform', isExpanded && 'rotate-90')}
+                              style={{ color: '#7E7F90' }}
+                            />
+                            <SensitiveData 
+                              className="font-medium text-sm truncate"
+                              style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                            >
+                              {group.displayName}
+                            </SensitiveData>
+                            <span 
+                              className="text-xs px-1.5 py-0.5 rounded-full flex-shrink-0"
+                              style={{ 
+                                backgroundColor: groupFullyCategorized ? 'rgba(13, 186, 204, 0.15)' : 'rgba(105, 173, 255, 0.15)',
+                                color: groupFullyCategorized ? '#0DBACC' : '#69ADFF',
+                                fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                              }}
+                            >
+                              {group.count}
+                            </span>
+                            {groupFullyCategorized && (
+                              <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: '#0DBACC' }} />
+                            )}
+                          </button>
+
+                          {/* Group-level category dropdown */}
+                          {group.count > 1 && (
+                            <div className="flex-shrink-0 w-[140px]" onClick={(e) => e.stopPropagation()}>
+                              <CategoryDropdown
+                                value={
+                                  // Show the common category if all in group have the same one
+                                  group.transactions.every(t => reviewCategories[t.rowNum] && reviewCategories[t.rowNum] === reviewCategories[group.transactions[0].rowNum])
+                                    ? reviewCategories[group.transactions[0].rowNum] || ''
+                                    : ''
+                                }
+                                onChange={(value) => handleGroupCategoryChange(group.merchant, value)}
+                                categories={getCategoriesForType(group.type)}
+                                isOpen={openGroupDropdown === group.merchant}
+                                onToggle={() => setOpenGroupDropdown(openGroupDropdown === group.merchant ? null : group.merchant)}
+                                onClose={() => setOpenGroupDropdown(null)}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Expanded transactions */}
+                        {isExpanded && (
+                          <div>
+                            {/* Desktop table-like layout */}
+                            <div className="hidden md:block">
+                              {group.transactions.map((t, idx) => {
+                                const isSelected = selectedTransactions.has(t.rowNum);
+                                const hasCat = !!reviewCategories[t.rowNum];
+                                return (
+                                  <div
                             key={t.rowNum} 
                             ref={(el) => setRowRef(t.rowNum, el)}
-                            className="hover:bg-[#F7F7F8]" 
-                            style={{ borderBottom: '1px solid #F7F7F8' }}
-                          >
-                            <td className="px-4 py-3">
-                              <SensitiveData className="font-medium" style={{ color: '#303150' }}>
+                                    className="flex items-center gap-3 px-3 py-2.5 transition-colors"
+                                    style={{ 
+                                      borderTop: idx === 0 ? '1px solid #F7F7F8' : 'none',
+                                      borderBottom: '1px solid #F7F7F8',
+                                      backgroundColor: isSelected ? 'rgba(105, 173, 255, 0.05)' : hasCat ? 'rgba(13, 186, 204, 0.02)' : 'transparent',
+                                    }}
+                                  >
+                                    {/* Row checkbox */}
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleTransactionSelection(t.rowNum)}
+                                      className={cn(
+                                        'w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-colors',
+                                        isSelected ? 'bg-[#69ADFF]' : 'bg-white border-2 border-[#E8E8ED]'
+                                      )}
+                                    >
+                                      {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
+                                    </button>
+                                    
+                                    {/* Merchant */}
+                                    <SensitiveData 
+                                      className="text-sm flex-1 min-w-0 truncate"
+                                      style={{ color: '#303150' }}
+                                    >
                                 {t.merchantName}
                               </SensitiveData>
-                            </td>
-                            <td className="px-4 py-3">
+                                    
+                                    {/* Amount */}
                               <SensitiveData 
-                                className="font-medium"
+                                      className="text-sm font-medium flex-shrink-0 w-24 text-left"
                                 style={{ color: t.type === 'income' ? '#0DBACC' : '#F18AB5' }}
                                 dir="ltr"
                               >
                                 {`${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}`}
                               </SensitiveData>
-                            </td>
-                            <td className="px-4 py-3" style={{ color: '#7E7F90' }}>
+                                    
+                                    {/* Date */}
+                                    <span className="text-xs flex-shrink-0 w-20" style={{ color: '#7E7F90' }}>
                               {new Date(t.date).toLocaleDateString('he-IL')}
-                            </td>
-                            <td className="px-4 py-3">
+                                    </span>
+                                    
+                                    {/* Category dropdown */}
+                                    <div className="flex-shrink-0 w-[140px]">
                               <CategoryDropdown
                                 value={reviewCategories[t.rowNum] || ''}
                                 onChange={(value) => handleCategoryChange(t.rowNum, value)}
@@ -1418,30 +1832,222 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                                 onToggle={() => setOpenDropdown(openDropdown === t.rowNum ? null : t.rowNum)}
                                 onClose={() => setOpenDropdown(null)}
                               />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                   </div>
 
-                  {/* Mobile: Card view */}
-                  <div className="md:hidden space-y-3">
-                    {needsReview.map((t) => (
-                      <TransactionCard
+                            {/* Mobile card layout */}
+                            <div className="md:hidden space-y-0">
+                              {group.transactions.map((t) => {
+                                const isSelected = selectedTransactions.has(t.rowNum);
+                                const hasCat = !!reviewCategories[t.rowNum];
+                                return (
+                                  <div
                         key={t.rowNum}
-                        transaction={t}
-                        selectedCategory={reviewCategories[t.rowNum] || ''}
-                        onCategoryChange={(category) => handleCategoryChange(t.rowNum, category)}
+                                    ref={(el) => setRowRef(t.rowNum, el as HTMLElement)}
+                                    className="p-3 space-y-2 transition-colors"
+                                    style={{ 
+                                      borderTop: '1px solid #F7F7F8',
+                                      backgroundColor: isSelected ? 'rgba(105, 173, 255, 0.05)' : hasCat ? 'rgba(13, 186, 204, 0.02)' : 'transparent',
+                                    }}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      {/* Checkbox */}
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleTransactionSelection(t.rowNum)}
+                                        className={cn(
+                                          'w-6 h-6 rounded flex items-center justify-center flex-shrink-0 transition-colors',
+                                          isSelected ? 'bg-[#69ADFF]' : 'bg-white border-2 border-[#E8E8ED]'
+                                        )}
+                                      >
+                                        {isSelected && <Check className="w-4 h-4 text-white" />}
+                                      </button>
+                                      <div className="flex-1 min-w-0">
+                                        <SensitiveData className="font-medium text-sm truncate" style={{ color: '#303150' }}>
+                                          {t.merchantName}
+                                        </SensitiveData>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                          <span className="text-xs" style={{ color: '#7E7F90' }}>
+                                            {new Date(t.date).toLocaleDateString('he-IL')}
+                                          </span>
+                                          <SensitiveData 
+                                            className="text-xs font-medium"
+                                            style={{ color: t.type === 'income' ? '#0DBACC' : '#F18AB5' }}
+                                            dir="ltr"
+                                          >
+                                            {`${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}`}
+                                          </SensitiveData>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <CategoryDropdown
+                                      value={reviewCategories[t.rowNum] || ''}
+                                      onChange={(value) => handleCategoryChange(t.rowNum, value)}
                         categories={getCategoriesForType(t.type)}
-                        isDropdownOpen={openDropdown === t.rowNum}
-                        onDropdownToggle={() => setOpenDropdown(openDropdown === t.rowNum ? null : t.rowNum)}
-                        onDropdownClose={() => setOpenDropdown(null)}
-                        rowRef={(el) => setRowRef(t.rowNum, el)}
-                      />
-                    ))}
+                                      isOpen={openDropdown === t.rowNum}
+                                      onToggle={() => setOpenDropdown(openDropdown === t.rowNum ? null : t.rowNum)}
+                                      onClose={() => setOpenDropdown(null)}
+                                    />
+                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Mobile FAB - Floating Action Button for quick category */}
+              {selectedTransactions.size > 0 && (
+                <div className="md:hidden fixed bottom-24 left-4 z-50">
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileCategorySheet(true)}
+                    className="flex items-center gap-2 px-4 py-3 rounded-full shadow-lg transition-all active:scale-95"
+                    style={{
+                      background: 'linear-gradient(135deg, #69ADFF 0%, #9F7FE0 100%)',
+                      boxShadow: '0 6px 20px rgba(105, 173, 255, 0.4)',
+                    }}
+                  >
+                    <CheckSquare className="w-5 h-5 text-white" />
+                    <span 
+                      className="text-sm font-bold text-white"
+                      style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                    >
+                      {selectedTransactions.size} נבחרו
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {/* Mobile Bottom Sheet for quick categories */}
+              {isMobileCategorySheet && (
+                <div className="md:hidden fixed inset-0 z-[9999]">
+                  {/* Backdrop */}
+                  <div 
+                    className="absolute inset-0 bg-black/30 transition-opacity"
+                    onClick={() => setIsMobileCategorySheet(false)} 
+                  />
+                  {/* Sheet */}
+                  <div 
+                    className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-4 pb-8 shadow-2xl animate-slide-up"
+                    style={{ maxHeight: '60vh', overflowY: 'auto' }}
+                  >
+                    {/* Handle bar */}
+                    <div className="w-10 h-1 rounded-full bg-[#E8E8ED] mx-auto mb-4" />
+                    
+                    <p 
+                      className="text-sm font-semibold mb-3 text-center"
+                      style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                    >
+                      בחר קטגוריה ל-{selectedTransactions.size} עסקאות
+                    </p>
+
+                    {/* Expense categories */}
+                    {hasExpenseReview && (
+                      <>
+                        <p className="text-xs font-medium mb-2" style={{ color: '#7E7F90' }}>הוצאות</p>
+                        <div className="grid grid-cols-3 gap-2 mb-4">
+                          {QUICK_EXPENSE_IDS.map(catId => {
+                            const cat = expenseCategories.find(c => c.id === catId);
+                            if (!cat) return null;
+                            const Icon = cat.icon;
+                            return (
+                              <button
+                                key={catId}
+                                type="button"
+                                onClick={() => {
+                                  handleQuickCategory(catId, 'expense');
+                                  setIsMobileCategorySheet(false);
+                                }}
+                                className="flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all active:scale-95"
+                                style={{
+                                  backgroundColor: 'rgba(105, 173, 255, 0.08)',
+                                  border: '1px solid rgba(105, 173, 255, 0.15)',
+                                }}
+                              >
+                                <div 
+                                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                                  style={{ backgroundColor: 'rgba(105, 173, 255, 0.15)' }}
+                                >
+                                  <Icon className="w-5 h-5" style={{ color: '#69ADFF' }} />
+                                </div>
+                                <span 
+                                  className="text-xs font-medium"
+                                  style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                                >
+                                  {cat.nameHe}
+                                </span>
+                              </button>
+                            );
+                          })}
                   </div>
                 </>
+              )}
+
+                    {/* Income categories */}
+                    {hasIncomeReview && (
+                      <>
+                        <p className="text-xs font-medium mb-2" style={{ color: '#7E7F90' }}>הכנסות</p>
+                        <div className="grid grid-cols-3 gap-2 mb-4">
+                          {QUICK_INCOME_IDS.map(catId => {
+                            const cat = incomeCategories.find(c => c.id === catId);
+                            if (!cat) return null;
+                            const Icon = cat.icon;
+                            return (
+                              <button
+                                key={`mobile-income-${catId}`}
+                                type="button"
+                                onClick={() => {
+                                  handleQuickCategory(catId, 'income');
+                                  setIsMobileCategorySheet(false);
+                                }}
+                                className="flex flex-col items-center gap-1.5 p-3 rounded-xl transition-all active:scale-95"
+                                style={{
+                                  backgroundColor: 'rgba(13, 186, 204, 0.08)',
+                                  border: '1px solid rgba(13, 186, 204, 0.15)',
+                                }}
+                              >
+                                <div 
+                                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                                  style={{ backgroundColor: 'rgba(13, 186, 204, 0.15)' }}
+                                >
+                                  <Icon className="w-5 h-5" style={{ color: '#0DBACC' }} />
+                                </div>
+                                <span 
+                                  className="text-xs font-medium"
+                                  style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                                >
+                                  {cat.nameHe}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+
+                    {/* Cancel button */}
+                    <button
+                      type="button"
+                      onClick={() => setIsMobileCategorySheet(false)}
+                      className="w-full py-3 rounded-xl text-sm font-medium transition-colors"
+                      style={{
+                        backgroundColor: '#F7F7F8',
+                        color: '#7E7F90',
+                        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                      }}
+                    >
+                      ביטול
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           )}
@@ -1744,7 +2350,9 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
               className="btn-primary flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Brain className="w-4 h-4" />
-              שמור ולמד
+              {categorizedCount === needsReview.length 
+                ? 'שמור ולמד'
+                : `סווגו ${categorizedCount}/${needsReview.length} — סיים סיווג`}
             </button>
           )}
 
