@@ -624,9 +624,22 @@ function parseDate(value: unknown, enableLogging = false, isHtmlFile = false, da
   log(`String value: "${str}"`);
   if (!str) return null;
   
-  // Reject strings that are just large numbers (likely not dates)
+  // Handle strings that are pure digits (5+ digits)
   if (/^\d{5,}$/.test(str)) {
-    log(`String "${str}" is a large number, likely not a date, returning null`);
+    const num = parseInt(str, 10);
+    // Check if it's in Excel serial date range (30000-100000)
+    if (num > 30000 && num < 100000) {
+      log(`String "${str}" detected as Excel serial date number`);
+      const date = new Date((num - 25569) * 86400 * 1000);
+      if (!isNaN(date.getTime()) && isValidDateRange(date)) {
+        log(`Excel serial string conversion: ${str} -> ${date.toISOString()}`);
+        return date;
+      }
+      log(`Excel serial string ${str} resulted in invalid or out-of-range date`);
+      return null;
+    }
+    // Not in Excel serial range - reject as large number
+    log(`String "${str}" is a large number outside Excel serial range, likely not a date, returning null`);
     return null;
   }
   
