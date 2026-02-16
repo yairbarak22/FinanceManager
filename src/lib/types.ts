@@ -146,6 +146,8 @@ export type ExpenseCategory =
   | 'entertainment' // בילויים
   | 'bills'        // חשבונות
   | 'health'       // בריאות
+  | 'maaser'       // מעשר כספים (חרדי)
+  | 'donation'     // תרומה (חרדי)
   | 'other';       // אחר
 
 export type IncomeCategory = 

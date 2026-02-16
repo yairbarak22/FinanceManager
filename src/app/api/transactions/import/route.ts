@@ -25,6 +25,9 @@ const EXPENSE_CATEGORIES = [
   'personal_care', 'communication', 'other'
 ];
 
+// Haredi-only expense categories (shown only for users with signupSource === 'prog')
+const HAREDI_EXPENSE_CATEGORIES = ['maaser', 'donation'];
+
 // Available income categories
 const INCOME_CATEGORIES = [
   'salary', 'bonus', 'investment', 'rental', 'freelance', 'pension',
@@ -686,11 +689,23 @@ function parseDate(value: unknown, enableLogging = false, isHtmlFile = false, da
 // AI CATEGORY CLASSIFICATION
 // ============================================
 
-const CLASSIFICATION_PROMPT = `אתה מסווג עסקאות פיננסיות ישראליות לקטגוריות.
+// Haredi-specific categories text for AI prompt
+const HAREDI_CATEGORIES_PROMPT = `
+maaser (מעשר כספים)
+  דוגמאות: מעשר, מעשר כספים, מעשרות, הפרשת מעשר, מעשר חודשי
+  מילות מפתח: מעשר, מעשרות, הפרשת מעשר
+
+donation (תרומה)
+  דוגמאות: תרומה, תרומות, תרומה לישיבה, תרומה לכולל, תרומה לעמותה, צדקה, גמ"ח, גמח, קופת צדקה, מתן בסתר, ישיבה, כולל, בית מדרש, בית כנסת
+  מילות מפתח: תרומה, צדקה, גמ"ח, גמח, ישיבה, כולל, בית מדרש, בית כנסת, קופת צדקה, מתן בסתר
+`;
+
+function buildClassificationPrompt(isHaredi: boolean): string {
+  return `אתה מסווג עסקאות פיננסיות ישראליות לקטגוריות.
 
 **חשוב מאוד:** נסה לסווג את כל העסקים! החזר null רק אם זה שם פרטי של אדם או העברה כללית ללא שם עסק.
 
-קטגוריות הוצאות זמינות:
+קטגוריות הוצאות זמינות:${isHaredi ? '\n' + HAREDI_CATEGORIES_PROMPT : ''}
 
 housing (דיור, שכר דירה, משכנתא)
   דוגמאות: בנק לאומי, בנק פועלים, בנק דיסקונט, בנק מזרחי, בנק יהב, משכנתא, שכר דירה, ועד בית, ניהול נכסים, אגודת שיתופית, אגודה שיתופית
@@ -837,6 +852,7 @@ other (אחר)
 
 החזר JSON בפורמט הבא בלבד:
 {"merchantName1 (הוצאה)": "category", "merchantName2 (הכנסה)": "category", ...}`;
+}
 
 /**
  * Classify merchants using AI
@@ -848,7 +864,8 @@ other (אחר)
  */
 async function classifyMerchantsWithAI(
   merchants: string[],
-  transactionTypes: Map<string, 'income' | 'expense'>
+  transactionTypes: Map<string, 'income' | 'expense'>,
+  isHaredi = false
 ): Promise<Map<string, string | null>> {
   const result = new Map<string, string | null>();
 
@@ -865,7 +882,7 @@ async function classifyMerchantsWithAI(
 
     const response = await generateText({
       model: openai('gpt-4-turbo'),
-      system: CLASSIFICATION_PROMPT,
+      system: buildClassificationPrompt(isHaredi),
       messages: [{
         role: 'user',
         content: `סווג את העסקים הבאים:\n${merchantList}`,
@@ -986,8 +1003,9 @@ async function classifyMerchantsWithAI(
         // Normalize category name if needed
         const normalizedCategory = categoryNormalize[category] || category;
         
-        // Validate category exists
-        const validCategories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+        // Validate category exists (include haredi categories for haredi users)
+        const validExpenseCats = isHaredi ? [...EXPENSE_CATEGORIES, ...HAREDI_EXPENSE_CATEGORIES] : EXPENSE_CATEGORIES;
+        const validCategories = type === 'income' ? INCOME_CATEGORIES : validExpenseCats;
         if (validCategories.includes(normalizedCategory)) {
           result.set(merchant, normalizedCategory);
         } else {
@@ -1040,11 +1058,37 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const dateFormatParam = (formData.get('dateFormat') as string) || 'AUTO';
+    const importTypeParam = (formData.get('importType') as string) || 'expenses';
+    const signConventionParam = (formData.get('signConvention') as string) || 'positiveExpense';
     
     // Validate dateFormat parameter
     const validDateFormats = ['AUTO', 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD'];
     const userDateFormat = validDateFormats.includes(dateFormatParam) ? dateFormatParam : 'AUTO';
-    console.log('[Excel Import] User selected date format:', userDateFormat);
+    
+    // Validate importType and signConvention parameters
+    const validImportTypes = ['expenses', 'roundTrip'];
+    const importType = validImportTypes.includes(importTypeParam) ? importTypeParam : 'expenses';
+    const validSignConventions = ['positiveIncome', 'positiveExpense'];
+    const signConvention = validSignConventions.includes(signConventionParam) ? signConventionParam : 'positiveExpense';
+    
+    console.log('[Excel Import] User selected date format:', userDateFormat, '| Import type:', importType, '| Sign convention:', signConvention);
+
+    // Warn if roundTrip without explicit signConvention
+    if (importType === 'roundTrip' && !formData.get('signConvention')) {
+      console.warn('[Excel Import] roundTrip without signConvention, using default positiveExpense');
+    }
+
+    // Check if user is Haredi (signupSource === 'prog') for extra categories
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { signupSource: true },
+    });
+    const isHarediUser = user?.signupSource === 'prog';
+
+    // Build the valid expense categories list (include haredi categories for haredi users)
+    const validExpenseCategories = isHarediUser
+      ? [...EXPENSE_CATEGORIES, ...HAREDI_EXPENSE_CATEGORIES]
+      : EXPENSE_CATEGORIES;
 
     if (!file) {
       return NextResponse.json(
@@ -1361,8 +1405,20 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-          // Determine type (positive = expense, negative = income)
-          const type: 'income' | 'expense' = parsedAmount > 0 ? 'expense' : 'income';
+          // Determine type based on importType and signConvention
+          let type: 'income' | 'expense';
+          if (importType === 'roundTrip') {
+            if (signConvention === 'positiveIncome') {
+              // הכנסות בפלוס, הוצאות במינוס
+              type = parsedAmount > 0 ? 'income' : 'expense';
+            } else {
+              // הכנסות במינוס, הוצאות בפלוס (ברירת מחדל)
+              type = parsedAmount > 0 ? 'expense' : 'income';
+            }
+          } else {
+            // פירוט הוצאות - הכל הוצאות (positive = expense for credit card statements)
+            type = parsedAmount > 0 ? 'expense' : 'income';
+          }
           const absAmount = Math.abs(parsedAmount);
 
           parsedTransactions.push({
@@ -1442,7 +1498,7 @@ export async function POST(request: NextRequest) {
     }
     
     const aiClassifications = unknownMerchants.length > 0
-      ? await classifyMerchantsWithAI(unknownMerchants, transactionTypes)
+      ? await classifyMerchantsWithAI(unknownMerchants, transactionTypes, isHarediUser)
       : new Map<string, string | null>();
 
     // ============================================

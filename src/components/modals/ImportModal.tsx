@@ -20,6 +20,9 @@ import {
   CheckSquare,
   Square,
   Calendar,
+  ArrowUpDown,
+  CreditCard,
+  ChevronRight,
 } from 'lucide-react';
 import { formatCurrency, apiFetch } from '@/lib/utils';
 import { expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
@@ -43,7 +46,13 @@ interface ParsedTransaction {
 }
 
 // Import phases
-type ImportPhase = 'idle' | 'detectingFormat' | 'dateFormat' | 'parsing' | 'classifying' | 'review' | 'duplicates' | 'saving' | 'done' | 'error';
+type ImportPhase = 'idle' | 'importType' | 'signConvention' | 'detectingFormat' | 'dateFormat' | 'parsing' | 'classifying' | 'review' | 'duplicates' | 'saving' | 'done' | 'error';
+
+// Import type selection
+type ImportType = 'expenses' | 'roundTrip';
+
+// Sign convention for round-trip imports
+type SignConvention = 'positiveIncome' | 'positiveExpense';
 
 // Date format options
 type DateFormatOption = 'AUTO' | 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD';
@@ -374,6 +383,7 @@ function TransactionCard({
   isDropdownOpen,
   onDropdownToggle,
   onDropdownClose,
+  rowRef,
 }: {
   transaction: ParsedTransaction;
   selectedCategory: string;
@@ -382,9 +392,11 @@ function TransactionCard({
   isDropdownOpen: boolean;
   onDropdownToggle: () => void;
   onDropdownClose: () => void;
+  rowRef?: (el: HTMLDivElement | null) => void;
 }) {
   return (
     <div 
+      ref={rowRef}
       className="bg-white rounded-xl p-4 space-y-3"
       style={{ border: '1px solid #F7F7F8' }}
     >
@@ -456,6 +468,10 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
   // Selected duplicates for import (indices of duplicates to include)
   const [selectedDuplicateIndices, setSelectedDuplicateIndices] = useState<Set<number>>(new Set());
 
+  // Import type and sign convention
+  const [importType, setImportType] = useState<ImportType | null>(null);
+  const [signConvention, setSignConvention] = useState<SignConvention | null>(null);
+
   // Date format selection & detection
   const [dateFormat, setDateFormat] = useState<DateFormatOption>('AUTO');
   const [detection, setDetection] = useState<DateFormatDetection | null>(null);
@@ -466,6 +482,16 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
 
   // Track which dropdown is open (by rowNum)
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+
+  // Refs for each review row (for auto-scroll after categorization)
+  const rowRefs = useRef<Map<number, HTMLElement>>(new Map());
+  const setRowRef = useCallback((rowNum: number, element: HTMLElement | null) => {
+    if (element) {
+      rowRefs.current.set(rowNum, element);
+    } else {
+      rowRefs.current.delete(rowNum);
+    }
+  }, []);
 
   // Fetch custom categories
   const { getCustomByType, loading: categoriesLoading } = useCategories();
@@ -510,6 +536,8 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
     setDuplicates([]);
     setPendingTransactions([]);
     setSelectedDuplicateIndices(new Set());
+    setImportType(null);
+    setSignConvention(null);
     setDateFormat('AUTO');
     setDetection(null);
     setShowManualFormat(false);
@@ -550,6 +578,14 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
   // Start date format detection when user clicks "Start Import"
   const handleDetectDateFormat = async () => {
     if (!file) return;
+
+    // Validation: if roundTrip, signConvention must be selected
+    if (importType === 'roundTrip' && !signConvention) {
+      setErrors(['נא לבחור את פורמט הסכומים בקובץ לפני המשך']);
+      setPhase('signConvention');
+      return;
+    }
+
     setPhase('detectingFormat');
     setDetection(null);
     setShowManualFormat(false);
@@ -591,6 +627,19 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
   const handleStartImport = async () => {
     if (!file) return;
 
+    // Validation before sending to API
+    if (!importType) {
+      setPhase('error');
+      setErrors(['נא לבחור את סוג הייבוא']);
+      return;
+    }
+
+    if (importType === 'roundTrip' && !signConvention) {
+      setPhase('error');
+      setErrors(['נא לבחור את פורמט הסכומים בקובץ']);
+      return;
+    }
+
     setPhase('parsing');
     setErrors([]);
 
@@ -600,6 +649,10 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
     const formData = new FormData();
     formData.append('file', file);
     formData.append('dateFormat', formatToSend);
+    formData.append('importType', importType || 'expenses');
+    if (importType === 'roundTrip' && signConvention) {
+      formData.append('signConvention', signConvention);
+    }
 
     try {
       setPhase('classifying');
@@ -764,9 +817,36 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
     }
   };
 
-  // Handle manual category selection during review
+  // Handle manual category selection during review (with auto-scroll to next)
   const handleCategoryChange = (rowNum: number, category: string) => {
+    // Update the category
     setReviewCategories(prev => ({ ...prev, [rowNum]: category }));
+
+    // Close the current dropdown
+    setOpenDropdown(null);
+
+    // Find the next uncategorized row
+    const currentIndex = needsReview.findIndex(t => t.rowNum === rowNum);
+    const nextUncategorized = needsReview
+      .slice(currentIndex + 1)
+      .find(t => !reviewCategories[t.rowNum]);
+
+    if (nextUncategorized) {
+      const nextRowElement = rowRefs.current.get(nextUncategorized.rowNum);
+      if (nextRowElement) {
+        // Smooth scroll to the next row, then auto-open its dropdown
+        setTimeout(() => {
+          nextRowElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+          // Auto-open the dropdown of the next row after scroll settles
+          setTimeout(() => {
+            setOpenDropdown(nextUncategorized.rowNum);
+          }, 200);
+        }, 100);
+      }
+    }
   };
 
   // Complete review and save
@@ -848,8 +928,8 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
           </button>
         </div>
 
-        {/* Progress Stepper (show when processing, not during idle/detectingFormat/dateFormat/error) */}
-        {phase !== 'idle' && phase !== 'detectingFormat' && phase !== 'dateFormat' && phase !== 'error' && (
+        {/* Progress Stepper (show when processing, not during idle/importType/signConvention/detectingFormat/dateFormat/error) */}
+        {phase !== 'idle' && phase !== 'importType' && phase !== 'signConvention' && phase !== 'detectingFormat' && phase !== 'dateFormat' && phase !== 'error' && (
           <div className="px-6 py-4 border-b border-[#F7F7F8]">
             <div className="flex items-center justify-between">
               <ProgressStep
@@ -945,16 +1025,244 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                   ניתן להעלות קבצי Excel מבנק לאומי, פועלים, דיסקונט, ישראכרט, מקס ועוד.
                 </p>
                 <p className="text-xs mt-1" style={{ color: '#69ADFF' }}>
-                  המערכת תזהה אוטומטית את מבנה הקובץ ותסווג את העסקאות.
-                </p>
-                <p className="text-xs mt-2 font-medium" style={{ color: '#F59E0B' }}>
-                  ⚠️ מיועד לייבוא פירוט אשראי (הוצאות בלבד). לא מיועד לפירוט עו״ש שיש בו גם הכנסות וגם הוצאות.
+                  תומך בפירוט הוצאות (אשראי) ובעובר ושב (הכנסות + הוצאות).
                 </p>
                 <p className="text-xs mt-2 font-medium" style={{ color: '#F18AB5' }}>
                   💡 לפרטיות מומלץ למחוק עמודות עם מידע אישי (מספר כרטיס, יתרה) לפני ההעלאה.
                 </p>
               </div>
             </>
+          )}
+
+          {/* Import type selection */}
+          {phase === 'importType' && (
+            <div className="space-y-5">
+              <div className="text-center">
+                <h4
+                  className="text-base font-semibold mb-1"
+                  style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                >
+                  מה תרצה לייבא?
+                </h4>
+                <p className="text-sm" style={{ color: '#7E7F90' }}>
+                  בחר את סוג הקובץ שהעלית
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Expenses only */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImportType('expenses');
+                    setSignConvention(null);
+                    handleDetectDateFormat();
+                  }}
+                  className="group relative rounded-3xl p-6 text-center transition-all hover:scale-[1.02]"
+                  style={{
+                    backgroundColor: 'rgba(105, 173, 255, 0.06)',
+                    border: '2px solid rgba(105, 173, 255, 0.2)',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+                    minHeight: '140px',
+                  }}
+                >
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-all group-hover:shadow-md"
+                    style={{
+                      background: 'linear-gradient(135deg, #69ADFF 0%, #5A9EE6 100%)',
+                      boxShadow: '0 4px 12px rgba(105, 173, 255, 0.3)',
+                    }}
+                  >
+                    <CreditCard className="w-7 h-7 text-white" />
+                  </div>
+                  <p
+                    className="text-sm font-semibold mb-1"
+                    style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                  >
+                    פירוט הוצאות
+                  </p>
+                  <p className="text-xs" style={{ color: '#7E7F90' }}>
+                    פירוט כרטיס אשראי, הוצאות בלבד
+                  </p>
+                </button>
+
+                {/* Round-trip (income + expenses) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImportType('roundTrip');
+                    setPhase('signConvention');
+                  }}
+                  className="group relative rounded-3xl p-6 text-center transition-all hover:scale-[1.02]"
+                  style={{
+                    backgroundColor: 'rgba(13, 186, 204, 0.06)',
+                    border: '2px solid rgba(13, 186, 204, 0.2)',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+                    minHeight: '140px',
+                  }}
+                >
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 transition-all group-hover:shadow-md"
+                    style={{
+                      background: 'linear-gradient(135deg, #0DBACC 0%, #0AA3B3 100%)',
+                      boxShadow: '0 4px 12px rgba(13, 186, 204, 0.3)',
+                    }}
+                  >
+                    <ArrowUpDown className="w-7 h-7 text-white" />
+                  </div>
+                  <p
+                    className="text-sm font-semibold mb-1"
+                    style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                  >
+                    עובר ושב
+                  </p>
+                  <p className="text-xs" style={{ color: '#7E7F90' }}>
+                    הכנסות והוצאות מחשבון הבנק
+                  </p>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Sign convention selection for round-trip */}
+          {phase === 'signConvention' && (
+            <div className="space-y-5">
+              {/* Back button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setSignConvention(null);
+                  setPhase('importType');
+                }}
+                className="flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-80"
+                style={{ color: '#7E7F90' }}
+              >
+                <ChevronRight className="w-4 h-4" />
+                חזור לבחירת סוג ייבוא
+              </button>
+
+              <div className="text-center">
+                <h4
+                  className="text-base font-semibold mb-1"
+                  style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                >
+                  איך הסכומים מופיעים בקובץ?
+                </h4>
+                <p className="text-sm" style={{ color: '#7E7F90' }}>
+                  בחר את הפורמט שתואם לקובץ שלך
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {/* Positive = Income */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSignConvention('positiveIncome');
+                    handleDetectDateFormat();
+                  }}
+                  className="w-full rounded-3xl p-5 text-right transition-all hover:scale-[1.01]"
+                  style={{
+                    backgroundColor: 'rgba(13, 186, 204, 0.06)',
+                    border: '2px solid rgba(13, 186, 204, 0.2)',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: 'rgba(13, 186, 204, 0.12)' }}
+                    >
+                      <span className="text-lg font-bold" style={{ color: '#0DBACC' }}>+</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className="text-sm font-semibold mb-1"
+                        style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                      >
+                        הכנסות בפלוס, הוצאות במינוס
+                      </p>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span
+                          className="text-xs px-2 py-0.5 rounded-lg font-mono"
+                          style={{ backgroundColor: 'rgba(13, 186, 204, 0.1)', color: '#0DBACC' }}
+                          dir="ltr"
+                        >
+                          +1,000 = הכנסה
+                        </span>
+                        <span
+                          className="text-xs px-2 py-0.5 rounded-lg font-mono"
+                          style={{ backgroundColor: 'rgba(241, 138, 181, 0.1)', color: '#F18AB5' }}
+                          dir="ltr"
+                        >
+                          -500 = הוצאה
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Positive = Expense */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSignConvention('positiveExpense');
+                    handleDetectDateFormat();
+                  }}
+                  className="w-full rounded-3xl p-5 text-right transition-all hover:scale-[1.01]"
+                  style={{
+                    backgroundColor: 'rgba(241, 138, 181, 0.06)',
+                    border: '2px solid rgba(241, 138, 181, 0.2)',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: 'rgba(241, 138, 181, 0.12)' }}
+                    >
+                      <span className="text-lg font-bold" style={{ color: '#F18AB5' }}>-</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className="text-sm font-semibold mb-1"
+                        style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                      >
+                        הכנסות במינוס, הוצאות בפלוס
+                      </p>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span
+                          className="text-xs px-2 py-0.5 rounded-lg font-mono"
+                          style={{ backgroundColor: 'rgba(241, 138, 181, 0.1)', color: '#F18AB5' }}
+                          dir="ltr"
+                        >
+                          +500 = הוצאה
+                        </span>
+                        <span
+                          className="text-xs px-2 py-0.5 rounded-lg font-mono"
+                          style={{ backgroundColor: 'rgba(13, 186, 204, 0.1)', color: '#0DBACC' }}
+                          dir="ltr"
+                        >
+                          -1,000 = הכנסה
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              <div
+                className="rounded-xl p-3"
+                style={{
+                  backgroundColor: 'rgba(105, 173, 255, 0.08)',
+                  border: '1px solid rgba(105, 173, 255, 0.15)',
+                }}
+              >
+                <p className="text-xs" style={{ color: '#7E7F90' }}>
+                  💡 ברוב הבנקים בישראל, הכנסות מופיעות בפלוס והוצאות במינוס.
+                </p>
+              </div>
+            </div>
           )}
 
           {/* Detecting date format - loading state */}
@@ -1242,7 +1550,12 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                       </thead>
                       <tbody style={{ borderColor: '#F7F7F8' }}>
                         {needsReview.map((t) => (
-                          <tr key={t.rowNum} className="hover:bg-[#F7F7F8]" style={{ borderBottom: '1px solid #F7F7F8' }}>
+                          <tr 
+                            key={t.rowNum} 
+                            ref={(el) => setRowRef(t.rowNum, el)}
+                            className="hover:bg-[#F7F7F8]" 
+                            style={{ borderBottom: '1px solid #F7F7F8' }}
+                          >
                             <td className="px-4 py-3">
                               <SensitiveData className="font-medium" style={{ color: '#303150' }}>
                                 {t.merchantName}
@@ -1288,6 +1601,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                         isDropdownOpen={openDropdown === t.rowNum}
                         onDropdownToggle={() => setOpenDropdown(openDropdown === t.rowNum ? null : t.rowNum)}
                         onDropdownClose={() => setOpenDropdown(null)}
+                        rowRef={(el) => setRowRef(t.rowNum, el)}
                       />
                     ))}
                   </div>
@@ -1559,7 +1873,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
 
           {phase === 'idle' && file && (
             <button
-              onClick={handleDetectDateFormat}
+              onClick={() => setPhase('importType')}
               className="btn-primary flex-1 justify-center"
             >
               <Upload className="w-4 h-4" />

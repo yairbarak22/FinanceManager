@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { CategoryInfo, customCategoryToInfo } from '@/lib/categories';
+import { CategoryInfo, customCategoryToInfo, harediExpenseCategories } from '@/lib/categories';
 import { apiFetch } from '@/lib/utils';
 
 // Goal category color - matching the API
@@ -44,6 +44,24 @@ export function useCategories() {
   const [goalCategories, setGoalCategories] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isHaredi, setIsHaredi] = useState(false);
+
+  // Detect if user is Haredi (signupSource === 'prog')
+  useEffect(() => {
+    if (status === 'unauthenticated' || !session) return;
+    const checkHaredi = async () => {
+      try {
+        const res = await apiFetch('/api/user/onboarding');
+        if (res.ok) {
+          const data = await res.json();
+          setIsHaredi(data.signupSource === 'prog');
+        }
+      } catch {
+        // silently ignore
+      }
+    };
+    checkHaredi();
+  }, [session, status]);
 
   const fetchCategories = useCallback(async () => {
     // Don't fetch if user is not authenticated
@@ -138,11 +156,17 @@ export function useCategories() {
   }, []);
 
   // Get custom categories as CategoryInfo for a specific type
+  // For Haredi users, haredi-only expense categories are prepended
   const getCustomByType = useCallback(
     (type: 'expense' | 'income' | 'asset' | 'liability'): (CategoryInfo & { isGoalCategory?: boolean })[] => {
-      return customCategories[type].map(convertToInfo);
+      const customCats = customCategories[type].map(convertToInfo);
+      // Prepend haredi expense categories for Haredi users
+      if (type === 'expense' && isHaredi) {
+        return [...harediExpenseCategories, ...customCats];
+      }
+      return customCats;
     },
-    [customCategories, convertToInfo]
+    [customCategories, convertToInfo, isHaredi]
   );
   
   // Check if a category name is a goal category
@@ -211,5 +235,6 @@ export function useCategories() {
     getCustomByType,
     isGoalCategory,
     goalCategories,
+    isHaredi,
   };
 }

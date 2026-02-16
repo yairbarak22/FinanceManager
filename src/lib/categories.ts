@@ -26,6 +26,8 @@ import {
   Bitcoin,
   Landmark,
   Star,
+  BookOpen,
+  HeartHandshake,
 } from 'lucide-react';
 
 export interface CategoryInfo {
@@ -37,6 +39,7 @@ export interface CategoryInfo {
   bgColor: string;
   textColor: string;
   isCustom?: boolean;
+  harediOnly?: boolean;
 }
 
 // ============================================
@@ -177,6 +180,33 @@ export const expenseCategories: CategoryInfo[] = [
     color: '#64748b',  // Neutral slate
     bgColor: 'bg-slate-100',
     textColor: 'text-slate-600',
+  },
+];
+
+// ============================================
+// HAREDI-ONLY EXPENSE CATEGORIES (2)
+// These are shown only for Haredi users (signupSource === 'prog')
+// ============================================
+export const harediExpenseCategories: CategoryInfo[] = [
+  {
+    id: 'maaser',
+    name: 'Maaser',
+    nameHe: 'מעשר כספים',
+    icon: BookOpen,
+    color: '#1E3269',  // Deep Brand Indigo
+    bgColor: 'bg-indigo-100',
+    textColor: 'text-indigo-900',
+    harediOnly: true,
+  },
+  {
+    id: 'donation',
+    name: 'Donation',
+    nameHe: 'תרומה',
+    icon: HeartHandshake,
+    color: '#7166D8',  // Rich Purple
+    bgColor: 'bg-purple-100',
+    textColor: 'text-purple-700',
+    harediOnly: true,
   },
 ];
 
@@ -435,6 +465,8 @@ export const iconMap: { [key: string]: LucideIcon } = {
   Bitcoin,
   Landmark,
   Star,
+  BookOpen,
+  HeartHandshake,
 };
 
 // Default icon for custom categories
@@ -468,7 +500,8 @@ export function getCategoryInfo(
       result = incomeCategories.find(c => c.id === categoryId);
       break;
     case 'expense':
-      result = expenseCategories.find(c => c.id === categoryId);
+      result = expenseCategories.find(c => c.id === categoryId)
+        || harediExpenseCategories.find(c => c.id === categoryId);
       break;
     case 'asset':
       result = assetCategories.find(c => c.id === categoryId);
