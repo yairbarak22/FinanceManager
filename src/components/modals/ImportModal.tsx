@@ -22,7 +22,6 @@ import {
   Calendar,
   ArrowUpDown,
   CreditCard,
-  ChevronRight,
 } from 'lucide-react';
 import { formatCurrency, apiFetch } from '@/lib/utils';
 import { expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
@@ -46,13 +45,10 @@ interface ParsedTransaction {
 }
 
 // Import phases
-type ImportPhase = 'idle' | 'importType' | 'signConvention' | 'detectingFormat' | 'dateFormat' | 'parsing' | 'classifying' | 'review' | 'duplicates' | 'saving' | 'done' | 'error';
+type ImportPhase = 'idle' | 'importType' | 'detectingFormat' | 'dateFormat' | 'parsing' | 'classifying' | 'review' | 'duplicates' | 'saving' | 'done' | 'error';
 
 // Import type selection
 type ImportType = 'expenses' | 'roundTrip';
-
-// Sign convention for round-trip imports
-type SignConvention = 'positiveIncome' | 'positiveExpense';
 
 // Date format options
 type DateFormatOption = 'AUTO' | 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD';
@@ -468,9 +464,8 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
   // Selected duplicates for import (indices of duplicates to include)
   const [selectedDuplicateIndices, setSelectedDuplicateIndices] = useState<Set<number>>(new Set());
 
-  // Import type and sign convention
+  // Import type
   const [importType, setImportType] = useState<ImportType | null>(null);
-  const [signConvention, setSignConvention] = useState<SignConvention | null>(null);
 
   // Date format selection & detection
   const [dateFormat, setDateFormat] = useState<DateFormatOption>('AUTO');
@@ -537,7 +532,6 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
     setPendingTransactions([]);
     setSelectedDuplicateIndices(new Set());
     setImportType(null);
-    setSignConvention(null);
     setDateFormat('AUTO');
     setDetection(null);
     setShowManualFormat(false);
@@ -578,13 +572,6 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
   // Start date format detection when user clicks "Start Import"
   const handleDetectDateFormat = async () => {
     if (!file) return;
-
-    // Validation: if roundTrip, signConvention must be selected
-    if (importType === 'roundTrip' && !signConvention) {
-      setErrors(['נא לבחור את פורמט הסכומים בקובץ לפני המשך']);
-      setPhase('signConvention');
-      return;
-    }
 
     setPhase('detectingFormat');
     setDetection(null);
@@ -634,12 +621,6 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
       return;
     }
 
-    if (importType === 'roundTrip' && !signConvention) {
-      setPhase('error');
-      setErrors(['נא לבחור את פורמט הסכומים בקובץ']);
-      return;
-    }
-
     setPhase('parsing');
     setErrors([]);
 
@@ -650,9 +631,6 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
     formData.append('file', file);
     formData.append('dateFormat', formatToSend);
     formData.append('importType', importType || 'expenses');
-    if (importType === 'roundTrip' && signConvention) {
-      formData.append('signConvention', signConvention);
-    }
 
     try {
       setPhase('classifying');
@@ -928,8 +906,8 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
           </button>
         </div>
 
-        {/* Progress Stepper (show when processing, not during idle/importType/signConvention/detectingFormat/dateFormat/error) */}
-        {phase !== 'idle' && phase !== 'importType' && phase !== 'signConvention' && phase !== 'detectingFormat' && phase !== 'dateFormat' && phase !== 'error' && (
+        {/* Progress Stepper (show when processing, not during idle/importType/detectingFormat/dateFormat/error) */}
+        {phase !== 'idle' && phase !== 'importType' && phase !== 'detectingFormat' && phase !== 'dateFormat' && phase !== 'error' && (
           <div className="px-6 py-4 border-b border-[#F7F7F8]">
             <div className="flex items-center justify-between">
               <ProgressStep
@@ -1055,7 +1033,6 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                   type="button"
                   onClick={() => {
                     setImportType('expenses');
-                    setSignConvention(null);
                     handleDetectDateFormat();
                   }}
                   className="group relative rounded-3xl p-6 text-center transition-all hover:scale-[1.02]"
@@ -1091,7 +1068,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                   type="button"
                   onClick={() => {
                     setImportType('roundTrip');
-                    setPhase('signConvention');
+                    handleDetectDateFormat();
                   }}
                   className="group relative rounded-3xl p-6 text-center transition-all hover:scale-[1.02]"
                   style={{
@@ -1120,147 +1097,6 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                     הכנסות והוצאות מחשבון הבנק
                   </p>
                 </button>
-              </div>
-            </div>
-          )}
-
-          {/* Sign convention selection for round-trip */}
-          {phase === 'signConvention' && (
-            <div className="space-y-5">
-              {/* Back button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setSignConvention(null);
-                  setPhase('importType');
-                }}
-                className="flex items-center gap-2 text-sm font-medium transition-colors hover:opacity-80"
-                style={{ color: '#7E7F90' }}
-              >
-                <ChevronRight className="w-4 h-4" />
-                חזור לבחירת סוג ייבוא
-              </button>
-
-              <div className="text-center">
-                <h4
-                  className="text-base font-semibold mb-1"
-                  style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-                >
-                  איך הסכומים מופיעים בקובץ?
-                </h4>
-                <p className="text-sm" style={{ color: '#7E7F90' }}>
-                  בחר את הפורמט שתואם לקובץ שלך
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {/* Positive = Income */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSignConvention('positiveIncome');
-                    handleDetectDateFormat();
-                  }}
-                  className="w-full rounded-3xl p-5 text-right transition-all hover:scale-[1.01]"
-                  style={{
-                    backgroundColor: 'rgba(13, 186, 204, 0.06)',
-                    border: '2px solid rgba(13, 186, 204, 0.2)',
-                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
-                  }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: 'rgba(13, 186, 204, 0.12)' }}
-                    >
-                      <span className="text-lg font-bold" style={{ color: '#0DBACC' }}>+</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className="text-sm font-semibold mb-1"
-                        style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-                      >
-                        הכנסות בפלוס, הוצאות במינוס
-                      </p>
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span
-                          className="text-xs px-2 py-0.5 rounded-lg font-mono"
-                          style={{ backgroundColor: 'rgba(13, 186, 204, 0.1)', color: '#0DBACC' }}
-                          dir="ltr"
-                        >
-                          +1,000 = הכנסה
-                        </span>
-                        <span
-                          className="text-xs px-2 py-0.5 rounded-lg font-mono"
-                          style={{ backgroundColor: 'rgba(241, 138, 181, 0.1)', color: '#F18AB5' }}
-                          dir="ltr"
-                        >
-                          -500 = הוצאה
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-
-                {/* Positive = Expense */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSignConvention('positiveExpense');
-                    handleDetectDateFormat();
-                  }}
-                  className="w-full rounded-3xl p-5 text-right transition-all hover:scale-[1.01]"
-                  style={{
-                    backgroundColor: 'rgba(241, 138, 181, 0.06)',
-                    border: '2px solid rgba(241, 138, 181, 0.2)',
-                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.04)',
-                  }}
-                >
-                  <div className="flex items-center gap-4">
-                    <div
-                      className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: 'rgba(241, 138, 181, 0.12)' }}
-                    >
-                      <span className="text-lg font-bold" style={{ color: '#F18AB5' }}>-</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className="text-sm font-semibold mb-1"
-                        style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-                      >
-                        הכנסות במינוס, הוצאות בפלוס
-                      </p>
-                      <div className="flex items-center gap-3 flex-wrap">
-                        <span
-                          className="text-xs px-2 py-0.5 rounded-lg font-mono"
-                          style={{ backgroundColor: 'rgba(241, 138, 181, 0.1)', color: '#F18AB5' }}
-                          dir="ltr"
-                        >
-                          +500 = הוצאה
-                        </span>
-                        <span
-                          className="text-xs px-2 py-0.5 rounded-lg font-mono"
-                          style={{ backgroundColor: 'rgba(13, 186, 204, 0.1)', color: '#0DBACC' }}
-                          dir="ltr"
-                        >
-                          -1,000 = הכנסה
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              </div>
-
-              <div
-                className="rounded-xl p-3"
-                style={{
-                  backgroundColor: 'rgba(105, 173, 255, 0.08)',
-                  border: '1px solid rgba(105, 173, 255, 0.15)',
-                }}
-              >
-                <p className="text-xs" style={{ color: '#7E7F90' }}>
-                  💡 ברוב הבנקים בישראל, הכנסות מופיעות בפלוס והוצאות במינוס.
-                </p>
               </div>
             </div>
           )}

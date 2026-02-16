@@ -8,6 +8,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/authHelpers';
 
+// Valid categories (must match categories.ts)
+const VALID_EXPENSE_CATEGORIES = [
+  'housing', 'food', 'transport', 'entertainment', 'bills', 'health',
+  'shopping', 'education', 'subscriptions', 'pets', 'gifts', 'savings',
+  'personal_care', 'communication', 'maaser', 'donation', 'other'
+];
+const VALID_INCOME_CATEGORIES = [
+  'salary', 'bonus', 'investment', 'rental', 'freelance', 'pension',
+  'child_allowance', 'other'
+];
+
 // Transaction to save
 interface TransactionToSave {
   merchantName: string;
@@ -49,7 +60,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate all transactions have required fields
+    // Validate all transactions have required fields and valid categories
     for (let i = 0; i < transactions.length; i++) {
       const t = transactions[i];
       if (!t.merchantName || !t.amount || !t.date || !t.type || !t.category) {
@@ -57,6 +68,13 @@ export async function POST(request: NextRequest) {
           { error: `עסקה ${i + 1}: חסרים שדות חובה` },
           { status: 400 }
         );
+      }
+
+      // Validate category matches transaction type
+      const validCategories = t.type === 'income' ? VALID_INCOME_CATEGORIES : VALID_EXPENSE_CATEGORIES;
+      if (!validCategories.includes(t.category)) {
+        console.warn(`[Confirm Import] Invalid category "${t.category}" for ${t.type} transaction "${t.merchantName}", falling back to "other"`);
+        t.category = 'other';
       }
     }
 

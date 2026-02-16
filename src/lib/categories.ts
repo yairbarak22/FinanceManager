@@ -516,6 +516,16 @@ export function getCategoryInfo(
     result = customCategories.find(c => c.id === categoryId);
   }
 
+  // Fallback: if still not found, search ALL category lists so at least the Hebrew name is shown
+  // (handles edge case where a category was saved with the wrong type, e.g. expense category on income transaction)
+  if (!result) {
+    result = incomeCategories.find(c => c.id === categoryId)
+      || expenseCategories.find(c => c.id === categoryId)
+      || harediExpenseCategories.find(c => c.id === categoryId)
+      || assetCategories.find(c => c.id === categoryId)
+      || liabilityTypes.find(c => c.id === categoryId);
+  }
+
   return result;
 }
 

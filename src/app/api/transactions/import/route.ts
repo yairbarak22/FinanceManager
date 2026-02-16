@@ -34,6 +34,27 @@ const INCOME_CATEGORIES = [
   'child_allowance', 'other'
 ];
 
+// All valid categories combined (for quick lookup)
+const ALL_EXPENSE_CATEGORIES = [...EXPENSE_CATEGORIES, ...HAREDI_EXPENSE_CATEGORIES];
+
+/**
+ * Check if a category is valid for a given transaction type.
+ * Prevents expense categories from being applied to income transactions and vice versa.
+ */
+function isCategoryValidForType(
+  category: string,
+  type: 'income' | 'expense',
+  isHaredi = false
+): boolean {
+  if (type === 'income') {
+    return INCOME_CATEGORIES.includes(category);
+  } else {
+    return isHaredi
+      ? ALL_EXPENSE_CATEGORIES.includes(category)
+      : EXPENSE_CATEGORIES.includes(category);
+  }
+}
+
 // Parsed transaction from Excel
 interface ParsedTransaction {
   rowNum: number;
@@ -44,11 +65,14 @@ interface ParsedTransaction {
   category: string | null;
 }
 
-// Column mapping from AI
+// Column mapping from AI (supports both single and dual amount columns)
 interface ColumnMapping {
   dateIndex: number;
-  amountIndex: number;
+  amountIndex: number;       // Single column amount (-1 if dual mode)
   merchantIndex: number;
+  debitIndex: number;         // Dual column: debit/חובה index (-1 if single mode)
+  creditIndex: number;        // Dual column: credit/זכות index (-1 if single mode)
+  isDualAmount: boolean;      // Whether we're using dual amount columns
 }
 
 // API Response structure
@@ -76,7 +100,9 @@ interface ImportResponse {
 const HEADER_KEYWORDS = [
   'תאריך', 'date', 'סכום', 'amount', 'שם', 'עסק', 'בית עסק',
   'פרטים', 'merchant', 'description', 'חיוב', 'זיכוי', 'תיאור',
-  'פעולה', 'אסמכתא', 'יתרה', 'כרטיס', 'מספר', 'קטגוריה'
+  'פעולה', 'אסמכתא', 'יתרה', 'כרטיס', 'מספר', 'קטגוריה',
+  // עו"ש-specific keywords
+  'חובה', 'בחובה', 'זכות', 'בזכות', 'ערך', 'תנועה',
 ];
 
 /**
@@ -212,25 +238,37 @@ const COLUMN_MAPPING_PROMPT = `אתה ממפה עמודות בקובץ אקסל 
 
 1. dateIndex - עמודה עם תאריך העסקה
    חפש: "תאריך", "תאריך עסקה", "תאריך רכישה", "date", "תאריך חיוב"
+   אם יש "תאריך" ו"תאריך ערך" - בחר את "תאריך" (לא "תאריך ערך")
    
-2. amountIndex - עמודה עם הסכום שנגבה בפועל
-   **חשוב מאוד:** אם יש גם "סכום חיוב" וגם "סכום עסקה" - בחר את "סכום חיוב"!
-   "סכום חיוב" = הסכום שנגבה בפועל בחודש הנוכחי (נכון לתשלומים)
-   "סכום עסקה" = הסכום הכולל של העסקה (לא נכון לתשלומים)
+2. סכום - יש שני פורמטים אפשריים:
+
+   **פורמט A - עמודה בודדת (נפוץ בפירוט אשראי):**
+   amountIndex - עמודה אחת עם סכום (חיובי או שלילי)
+   **חשוב:** אם יש גם "סכום חיוב" וגם "סכום עסקה" - בחר את "סכום חיוב"!
    סדר עדיפות: "סכום חיוב" > "חיוב" > "סכום" > "סכום עסקה"
    
+   **פורמט B - שתי עמודות נפרדות (נפוץ בעו"ש/תנועות בחשבון):**
+   debitIndex - עמודת חיוב/הוצאות: "חובה", "בחובה", "חיוב"
+   creditIndex - עמודת זיכוי/הכנסות: "זכות", "בזכות", "זיכוי"
+   בפורמט זה שתי העמודות מכילות מספרים חיוביים, והעמודה השנייה מכילה 0 או ריקה.
+   
 3. merchantIndex - עמודה עם שם העסק/תיאור
-   חפש: "שם בית עסק", "שם העסק", "תיאור", "פרטים", "שם", "עסק", "merchant", "description", "פירוט"
+   חפש: "שם בית עסק", "שם העסק", "תיאור", "פרטים", "שם", "עסק", "merchant", "description", "פירוט", "תיאור הפעולה"
 
 כללים:
 - **חשוב מאוד:** החזר JSON בלבד, ללא הסברים או טקסט נוסף לפני או אחרי
 - אם לא מצאת עמודה, החזר -1
-- התבסס גם על תוכן שורת הדוגמה (תאריכים נראים כמו 01/12/2024 או 01.01.26, סכומים כמו 150.00)
-- אם שורת הכותרות ארוכה מדי (מעל 500 תווים) או שורת הדוגמה ריקה - החזר {"dateIndex": -1, "amountIndex": -1, "merchantIndex": -1}
+- **לעולם אל תבחר עמודת "יתרה" / "היתרה" כעמודת סכום!** (יתרה היא סכום מצטבר, לא סכום עסקה)
+- **לעולם אל תבחר עמודת "אסמכתא" / "מספר אסמכתא" כעמודת סכום!** (אסמכתא היא מספר ייחוס, לא סכום)
+- התבסס גם על תוכן שורת הדוגמה (תאריכים נראים כמו 01/12/2024 או 11.2.2026, סכומים כמו 150.00, יתרות הן מספרים גדולים כמו 189,244.48)
+- אם שורת הכותרות ארוכה מדי (מעל 500 תווים) או שורת הדוגמה ריקה - החזר {"dateIndex": -1, "amountIndex": -1, "merchantIndex": -1, "debitIndex": -1, "creditIndex": -1}
 - לא לכתוב הסברים, רק JSON!
 
-החזר בפורמט:
-{"dateIndex": X, "amountIndex": Y, "merchantIndex": Z}`;
+אם זיהית פורמט A (עמודה בודדת):
+{"dateIndex": X, "amountIndex": Y, "merchantIndex": Z, "debitIndex": -1, "creditIndex": -1}
+
+אם זיהית פורמט B (שתי עמודות):
+{"dateIndex": X, "amountIndex": -1, "merchantIndex": Z, "debitIndex": A, "creditIndex": B}`;
 
 /**
  * Use AI to identify column indices from header + sample row
@@ -328,15 +366,35 @@ async function mapColumnsWithAI(
     // Validate the mapping
     if (
       typeof mapping.dateIndex !== 'number' ||
-      typeof mapping.amountIndex !== 'number' ||
       typeof mapping.merchantIndex !== 'number'
     ) {
       console.error('[AI Column Mapping] Invalid mapping response:', mapping);
       return null;
     }
 
-    console.log('[AI Column Mapping] Successfully mapped columns:', mapping);
-    return mapping;
+    // Normalize: ensure all fields exist with defaults
+    const debitIndex = typeof mapping.debitIndex === 'number' ? mapping.debitIndex : -1;
+    const creditIndex = typeof mapping.creditIndex === 'number' ? mapping.creditIndex : -1;
+    const amountIndex = typeof mapping.amountIndex === 'number' ? mapping.amountIndex : -1;
+    const isDualAmount = debitIndex !== -1 && creditIndex !== -1;
+
+    // Must have either amountIndex OR both debit+credit
+    if (amountIndex === -1 && !isDualAmount) {
+      console.error('[AI Column Mapping] No amount column found (neither single nor dual):', mapping);
+      return null;
+    }
+
+    const normalizedMapping: ColumnMapping = {
+      dateIndex: mapping.dateIndex,
+      amountIndex: isDualAmount ? -1 : amountIndex,
+      merchantIndex: mapping.merchantIndex,
+      debitIndex,
+      creditIndex,
+      isDualAmount,
+    };
+
+    console.log('[AI Column Mapping] Successfully mapped columns:', normalizedMapping);
+    return normalizedMapping;
   } catch (error) {
     console.error('[AI Column Mapping] ERROR:', error);
     console.error('[AI Column Mapping] Error details:', {
@@ -360,51 +418,81 @@ function findColumnsFallback(headerRow: unknown[]): ColumnMapping {
   let dateIndex = -1;
   let amountIndex = -1;
   let merchantIndex = -1;
+  let debitIndex = -1;
+  let creditIndex = -1;
   
   // First pass: look for high-priority matches
   for (let i = 0; i < headerRow.length; i++) {
-    const header = String(headerRow[i] || '').toLowerCase();
+    const header = String(headerRow[i] || '').trim().toLowerCase();
     
-    // Date detection
+    // Date detection - prefer "תאריך" but not "תאריך ערך"
     if (dateIndex === -1 && (
-      header.includes('תאריך') || header.includes('date')
+      header === 'תאריך' || header.includes('תאריך עסקה') || header.includes('תאריך רכישה') ||
+      header.includes('תאריך חיוב') || header.includes('date')
     )) {
       dateIndex = i;
     }
     
-    // Amount detection - prioritize "סכום חיוב" (actual charge) over "סכום עסקה" (total)
-    if (header.includes('סכום חיוב') || header === 'חיוב') {
+    // Dual amount columns detection (עו"ש format)
+    if (header === 'חובה' || header === 'בחובה' || header === 'חיוב' || header.includes('debit')) {
+      // Only set debitIndex if this looks like a standalone debit column (not "סכום חיוב")
+      if (!header.includes('סכום')) {
+        debitIndex = i;
+      }
+    }
+    if (header === 'זכות' || header === 'בזכות' || header === 'זיכוי' || header.includes('credit')) {
+      creditIndex = i;
+    }
+    
+    // Single amount detection - prioritize "סכום חיוב" (actual charge) over "סכום עסקה" (total)
+    if (header.includes('סכום חיוב')) {
       amountIndex = i; // Override any previous match
     } else if (amountIndex === -1 && (
-      header.includes('סכום') || header.includes('חיוב') || 
-      header.includes('זיכוי') || header.includes('amount')
+      header.includes('סכום') || header.includes('amount')
     )) {
-      amountIndex = i;
+      // Don't pick "יתרה" or "אסמכתא"
+      if (!header.includes('יתרה') && !header.includes('אסמכתא')) {
+        amountIndex = i;
+      }
     }
     
     // Merchant detection
     if (merchantIndex === -1 && (
       header.includes('עסק') || header.includes('שם') ||
       header.includes('תיאור') || header.includes('פרטים') ||
+      header.includes('פעולה') || header.includes('פירוט') ||
       header.includes('merchant') || header.includes('description')
     )) {
       merchantIndex = i;
     }
   }
   
+  // Determine if dual amount mode
+  const isDualAmount = debitIndex !== -1 && creditIndex !== -1;
+  
+  if (isDualAmount) {
+    // Dual column mode: we have both debit and credit columns
+    const hasDateAndMerchant = dateIndex !== -1 && merchantIndex !== -1;
+    if (hasDateAndMerchant) {
+      console.log('[Fallback] Found dual-column mapping:', { dateIndex, debitIndex, creditIndex, merchantIndex });
+      return { dateIndex, amountIndex: -1, merchantIndex, debitIndex, creditIndex, isDualAmount: true };
+    }
+  }
+  
+  // Single column mode
   // Validate that we found valid, unique columns
   const allFound = dateIndex !== -1 && amountIndex !== -1 && merchantIndex !== -1;
   const allDifferent = dateIndex !== amountIndex && dateIndex !== merchantIndex && amountIndex !== merchantIndex;
   
   if (allFound && allDifferent) {
-    console.log('[Fallback] Found valid mapping:', { dateIndex, amountIndex, merchantIndex });
-    return { dateIndex, amountIndex, merchantIndex };
+    console.log('[Fallback] Found valid single-column mapping:', { dateIndex, amountIndex, merchantIndex });
+    return { dateIndex, amountIndex, merchantIndex, debitIndex: -1, creditIndex: -1, isDualAmount: false };
   }
   
   // If no columns found at all, use sensible defaults
   if (dateIndex === -1 && amountIndex === -1 && merchantIndex === -1) {
     console.warn('[Fallback] No columns found, using defaults (0, 1, 2)');
-    return { dateIndex: 0, amountIndex: 1, merchantIndex: 2 };
+    return { dateIndex: 0, amountIndex: 1, merchantIndex: 2, debitIndex: -1, creditIndex: -1, isDualAmount: false };
   }
   
   // Fill in missing columns with unique indices
@@ -440,7 +528,7 @@ function findColumnsFallback(headerRow: unknown[]): ColumnMapping {
   if (dateIndex === -1) dateIndex = 2;
   
   console.log('[Fallback] Using partial mapping:', { dateIndex, amountIndex, merchantIndex });
-  return { dateIndex, amountIndex, merchantIndex };
+  return { dateIndex, amountIndex, merchantIndex, debitIndex: -1, creditIndex: -1, isDualAmount: false };
 }
 
 // ============================================
@@ -1059,24 +1147,16 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const dateFormatParam = (formData.get('dateFormat') as string) || 'AUTO';
     const importTypeParam = (formData.get('importType') as string) || 'expenses';
-    const signConventionParam = (formData.get('signConvention') as string) || 'positiveExpense';
     
     // Validate dateFormat parameter
     const validDateFormats = ['AUTO', 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD'];
     const userDateFormat = validDateFormats.includes(dateFormatParam) ? dateFormatParam : 'AUTO';
     
-    // Validate importType and signConvention parameters
+    // Validate importType parameter
     const validImportTypes = ['expenses', 'roundTrip'];
     const importType = validImportTypes.includes(importTypeParam) ? importTypeParam : 'expenses';
-    const validSignConventions = ['positiveIncome', 'positiveExpense'];
-    const signConvention = validSignConventions.includes(signConventionParam) ? signConventionParam : 'positiveExpense';
     
-    console.log('[Excel Import] User selected date format:', userDateFormat, '| Import type:', importType, '| Sign convention:', signConvention);
-
-    // Warn if roundTrip without explicit signConvention
-    if (importType === 'roundTrip' && !formData.get('signConvention')) {
-      console.warn('[Excel Import] roundTrip without signConvention, using default positiveExpense');
-    }
+    console.log('[Excel Import] User selected date format:', userDateFormat, '| Import type:', importType);
 
     // Check if user is Haredi (signupSource === 'prog') for extra categories
     const user = await prisma.user.findUnique({
@@ -1321,17 +1401,20 @@ export async function POST(request: NextRequest) {
       if (firstDataRow.length === 0) continue;
 
       // Get column mapping for this table
-      let columnMapping = await mapColumnsWithAI(headerRow, firstDataRow);
+      const aiMapping = await mapColumnsWithAI(headerRow, firstDataRow);
       
-      if (!columnMapping || 
-          columnMapping.dateIndex === -1 || 
-          columnMapping.amountIndex === -1 || 
-          columnMapping.merchantIndex === -1) {
-        columnMapping = findColumnsFallback(headerRow);
-      }
+      // Validate: need date, merchant, and either amountIndex or dual columns
+      const isValidMapping = aiMapping && 
+          aiMapping.dateIndex !== -1 && 
+          aiMapping.merchantIndex !== -1 &&
+          (aiMapping.amountIndex !== -1 || aiMapping.isDualAmount);
+      
+      const columnMapping: ColumnMapping = isValidMapping ? aiMapping : findColumnsFallback(headerRow);
       
       // DEBUG: Log column mapping
       console.log('[IMPORT DEBUG] Column mapping:', JSON.stringify(columnMapping));
+      console.log('[IMPORT DEBUG] isDualAmount:', columnMapping.isDualAmount, 
+        columnMapping.isDualAmount ? `debitIndex: ${columnMapping.debitIndex}, creditIndex: ${columnMapping.creditIndex}` : `amountIndex: ${columnMapping.amountIndex}`);
       console.log('[IMPORT DEBUG] Header row:', JSON.stringify(headerRow));
       console.log('[IMPORT DEBUG] First data row:', JSON.stringify(firstDataRow));
       
@@ -1347,10 +1430,19 @@ export async function POST(request: NextRequest) {
         
         // Skip if all relevant cells are empty
         const merchant = row[columnMapping.merchantIndex];
-        const amount = row[columnMapping.amountIndex];
         const date = row[columnMapping.dateIndex];
         
-        if (!merchant && !amount && !date) continue;
+        // Check amount depending on column mode
+        let hasAmountData = false;
+        if (columnMapping.isDualAmount) {
+          const debit = row[columnMapping.debitIndex];
+          const credit = row[columnMapping.creditIndex];
+          hasAmountData = !!(debit || credit);
+        } else {
+          hasAmountData = !!row[columnMapping.amountIndex];
+        }
+        
+        if (!merchant && !hasAmountData && !date) continue;
 
         // DEBUG: Log first 10 rows with detailed date parsing
         const shouldLog = debugRowCount < DEBUG_MAX_ROWS;
@@ -1358,7 +1450,11 @@ export async function POST(request: NextRequest) {
           console.log(`\n[IMPORT DEBUG] ===== Row ${rowNum} =====`);
           console.log(`[IMPORT DEBUG] Raw date value: ${JSON.stringify(date)}, type: ${typeof date}`);
           console.log(`[IMPORT DEBUG] Merchant: ${merchant}`);
-          console.log(`[IMPORT DEBUG] Amount: ${amount}`);
+          if (columnMapping.isDualAmount) {
+            console.log(`[IMPORT DEBUG] Debit: ${row[columnMapping.debitIndex]}, Credit: ${row[columnMapping.creditIndex]}`);
+          } else {
+            console.log(`[IMPORT DEBUG] Amount: ${row[columnMapping.amountIndex]}`);
+          }
         }
 
         try {
@@ -1366,17 +1462,96 @@ export async function POST(request: NextRequest) {
           const merchantName = String(merchant || '').trim();
           if (!merchantName) {
             errors.push(`שורה ${rowNum}: שם עסק חסר`);
-          continue;
-        }
+            continue;
+          }
 
-          // Parse amount
-          const parsedAmount = parseAmount(amount);
-          if (parsedAmount === null || parsedAmount === 0) {
-            errors.push(`שורה ${rowNum}: סכום לא תקין`);
-          continue;
-        }
+          // Parse amount - handle dual columns vs single column
+          let parsedAmount: number | null = null;
+          let type: 'income' | 'expense' = 'expense';
 
-        // Parse date - pass isHtmlBased and user-selected dateFormat
+          if (columnMapping.isDualAmount) {
+            // DUAL COLUMN MODE: separate debit (חובה) and credit (זכות) columns
+            const debitRaw = row[columnMapping.debitIndex];
+            const creditRaw = row[columnMapping.creditIndex];
+            const parsedDebit = parseAmount(debitRaw);
+            const parsedCredit = parseAmount(creditRaw);
+            
+            if (shouldLog) {
+              console.log(`[IMPORT DEBUG] Parsed debit: ${parsedDebit}, credit: ${parsedCredit}`);
+            }
+            
+            if ((parsedDebit === null || parsedDebit === 0) && (parsedCredit === null || parsedCredit === 0)) {
+              // Both columns empty/zero - skip row
+              errors.push(`שורה ${rowNum}: סכום לא תקין (שתי עמודות ריקות)`);
+              continue;
+            }
+            
+            if (parsedDebit && parsedDebit > 0 && parsedCredit && parsedCredit > 0) {
+              // RARE: Both columns have values - create two transactions
+              // First push the debit (expense)
+              const parsedDateForDual = parseDate(date, false, isHtmlBased, userDateFormat);
+              if (parsedDateForDual) {
+                parsedTransactions.push({
+                  rowNum,
+                  merchantName,
+                  amount: Math.abs(parsedDebit),
+                  date: parsedDateForDual,
+                  type: 'expense',
+                  category: null,
+                });
+                parsedTransactions.push({
+                  rowNum,
+                  merchantName: merchantName + ' (זיכוי)',
+                  amount: Math.abs(parsedCredit),
+                  date: parsedDateForDual,
+                  type: 'income',
+                  category: null,
+                });
+                debugRowCount++;
+                continue; // Skip the rest of the loop - already added both
+              }
+            }
+            
+            if (parsedDebit && parsedDebit > 0) {
+              // Debit column has value → expense
+              parsedAmount = Math.abs(parsedDebit);
+              type = 'expense';
+            } else if (parsedCredit && parsedCredit > 0) {
+              // Credit column has value → income
+              parsedAmount = Math.abs(parsedCredit);
+              type = 'income';
+            } else {
+              // Fallback: try to find any non-zero value
+              parsedAmount = parsedDebit !== null && parsedDebit !== 0 ? Math.abs(parsedDebit) : 
+                             parsedCredit !== null && parsedCredit !== 0 ? Math.abs(parsedCredit) : null;
+              if (parsedAmount === null) {
+                errors.push(`שורה ${rowNum}: סכום לא תקין`);
+                continue;
+              }
+              type = 'expense'; // Default
+            }
+          } else {
+            // SINGLE COLUMN MODE
+            const amount = row[columnMapping.amountIndex];
+            parsedAmount = parseAmount(amount);
+            if (parsedAmount === null || parsedAmount === 0) {
+              errors.push(`שורה ${rowNum}: סכום לא תקין`);
+              continue;
+            }
+
+            // Determine type based on importType
+            if (importType === 'roundTrip') {
+              // עו"ש with single column: positive = income (הפקדה), negative = expense (משיכה)
+              // This is the standard Israeli convention for single-column bank statements
+              type = parsedAmount > 0 ? 'income' : 'expense';
+            } else {
+              // פירוט הוצאות - positive = expense for credit card statements
+              type = parsedAmount > 0 ? 'expense' : 'income';
+            }
+            parsedAmount = Math.abs(parsedAmount);
+          }
+
+          // Parse date - pass isHtmlBased and user-selected dateFormat
           const parsedDate = parseDate(date, false, isHtmlBased, userDateFormat);
           if (!parsedDate) {
             // Provide detailed error message based on the value type
@@ -1402,29 +1577,13 @@ export async function POST(request: NextRequest) {
             }
             
             errors.push(errorMsg);
-          continue;
-        }
-
-          // Determine type based on importType and signConvention
-          let type: 'income' | 'expense';
-          if (importType === 'roundTrip') {
-            if (signConvention === 'positiveIncome') {
-              // הכנסות בפלוס, הוצאות במינוס
-              type = parsedAmount > 0 ? 'income' : 'expense';
-            } else {
-              // הכנסות במינוס, הוצאות בפלוס (ברירת מחדל)
-              type = parsedAmount > 0 ? 'expense' : 'income';
-            }
-          } else {
-            // פירוט הוצאות - הכל הוצאות (positive = expense for credit card statements)
-            type = parsedAmount > 0 ? 'expense' : 'income';
+            continue;
           }
-          const absAmount = Math.abs(parsedAmount);
 
           parsedTransactions.push({
             rowNum,
             merchantName,
-            amount: absAmount,
+            amount: parsedAmount,
             date: parsedDate,
             type,
             category: null,
@@ -1436,7 +1595,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Use the last column mapping for stats (or first if only one table)
-    const columnMapping = lastColumnMapping || { dateIndex: -1, amountIndex: -1, merchantIndex: -1 };
+    const columnMapping = lastColumnMapping || { dateIndex: -1, amountIndex: -1, merchantIndex: -1, debitIndex: -1, creditIndex: -1, isDualAmount: false };
     const headerRowIndex = headerRows[0];
 
     if (parsedTransactions.length === 0) {
@@ -1522,18 +1681,31 @@ export async function POST(request: NextRequest) {
       
       // Check cache first (using normalized name)
       if (cacheMap.has(normalizedName)) {
-        transaction.category = cacheMap.get(normalizedName)!;
-        classifiedTransactions.push(transaction);
-        cachedCount++;
-        continue;
+        const cachedCategory = cacheMap.get(normalizedName)!;
+        // Validate that cached category matches the transaction type
+        if (isCategoryValidForType(cachedCategory, transaction.type, isHarediUser)) {
+          transaction.category = cachedCategory;
+          classifiedTransactions.push(transaction);
+          cachedCount++;
+          continue;
+        } else {
+          console.warn(`[IMPORT] Cache category "${cachedCategory}" invalid for ${transaction.type} transaction "${merchantName}", sending to review`);
+          // Fall through to AI or review
+        }
       }
       
       // Check AI classification
       const aiCategory = aiClassifications.get(merchantName);
       if (aiCategory) {
-        transaction.category = aiCategory;
-        classifiedTransactions.push(transaction);
-        aiClassifiedCount++;
+        // Validate AI category against this specific transaction's type
+        if (isCategoryValidForType(aiCategory, transaction.type, isHarediUser)) {
+          transaction.category = aiCategory;
+          classifiedTransactions.push(transaction);
+          aiClassifiedCount++;
+        } else {
+          console.warn(`[IMPORT] AI category "${aiCategory}" invalid for ${transaction.type} transaction "${merchantName}", sending to review`);
+          needsReviewTransactions.push(transaction);
+        }
       } else {
         // Needs manual review
         needsReviewTransactions.push(transaction);
