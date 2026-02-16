@@ -712,10 +712,10 @@ export default function OnboardingWizard() {
           <div className="relative">
             <input
               type="text"
-              inputMode="numeric"
+              inputMode="decimal"
               value={value}
               onChange={(e) => {
-                const cleaned = e.target.value.replace(/[^\d,]/g, '');
+                const cleaned = e.target.value.replace(/[^\d,.]/g, '');
                 handleFieldChange(field.key, cleaned);
               }}
               placeholder={field.placeholder}

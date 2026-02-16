@@ -609,7 +609,7 @@ export default function HarediOnboardingWizard() {
           <div className="relative">
             <input
               type="text"
-              inputMode="numeric"
+              inputMode="decimal"
               value={value}
               onChange={(e) => {
                 const cleaned = e.target.value.replace(/[^\d,.]/g, '');
