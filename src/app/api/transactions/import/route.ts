@@ -252,6 +252,12 @@ const COLUMN_MAPPING_PROMPT = `אתה ממפה עמודות בקובץ אקסל 
    creditIndex - עמודת זיכוי/הכנסות: "זכות", "בזכות", "זיכוי"
    בפורמט זה שתי העמודות מכילות מספרים חיוביים, והעמודה השנייה מכילה 0 או ריקה.
    
+   **פורמט C - עמודה משולבת (זכות/חובה בעמודה אחת):**
+   אם יש עמודה אחת שמכילה גם "זכות" וגם "חובה" בשם (לדוגמה: "₪ זכות/חובה", "חובה/זכות", "חיוב/זיכוי"):
+   - זו עמודת סכום בודדת! לא פורמט B!
+   - זו עמודה אחת עם ערכים חיוביים (חובה) ושליליים (זכות)
+   - החזר: amountIndex = אינדקס של העמודה הזו, debitIndex = -1, creditIndex = -1
+   
 3. merchantIndex - עמודה עם שם העסק/תיאור
    חפש: "שם בית עסק", "שם העסק", "תיאור", "פרטים", "שם", "עסק", "merchant", "description", "פירוט", "תיאור הפעולה"
 
@@ -261,13 +267,14 @@ const COLUMN_MAPPING_PROMPT = `אתה ממפה עמודות בקובץ אקסל 
 - **לעולם אל תבחר עמודת "יתרה" / "היתרה" כעמודת סכום!** (יתרה היא סכום מצטבר, לא סכום עסקה)
 - **לעולם אל תבחר עמודת "אסמכתא" / "מספר אסמכתא" כעמודת סכום!** (אסמכתא היא מספר ייחוס, לא סכום)
 - התבסס גם על תוכן שורת הדוגמה (תאריכים נראים כמו 01/12/2024 או 11.2.2026, סכומים כמו 150.00, יתרות הן מספרים גדולים כמו 189,244.48)
+- **אם שם עמודה אחת מכיל גם "זכות" וגם "חובה" (או גם "חיוב" וגם "זיכוי") - זו עמודה בודדת (פורמט C), לא שתי עמודות נפרדות!**
 - אם שורת הכותרות ארוכה מדי (מעל 500 תווים) או שורת הדוגמה ריקה - החזר {"dateIndex": -1, "amountIndex": -1, "merchantIndex": -1, "debitIndex": -1, "creditIndex": -1}
 - לא לכתוב הסברים, רק JSON!
 
-אם זיהית פורמט A (עמודה בודדת):
+אם זיהית פורמט A או C (עמודה בודדת או משולבת):
 {"dateIndex": X, "amountIndex": Y, "merchantIndex": Z, "debitIndex": -1, "creditIndex": -1}
 
-אם זיהית פורמט B (שתי עמודות):
+אם זיהית פורמט B (שתי עמודות נפרדות):
 {"dateIndex": X, "amountIndex": -1, "merchantIndex": Z, "debitIndex": A, "creditIndex": B}`;
 
 /**
@@ -373,10 +380,36 @@ async function mapColumnsWithAI(
     }
 
     // Normalize: ensure all fields exist with defaults
-    const debitIndex = typeof mapping.debitIndex === 'number' ? mapping.debitIndex : -1;
-    const creditIndex = typeof mapping.creditIndex === 'number' ? mapping.creditIndex : -1;
-    const amountIndex = typeof mapping.amountIndex === 'number' ? mapping.amountIndex : -1;
-    const isDualAmount = debitIndex !== -1 && creditIndex !== -1;
+    let debitIndex = typeof mapping.debitIndex === 'number' ? mapping.debitIndex : -1;
+    let creditIndex = typeof mapping.creditIndex === 'number' ? mapping.creditIndex : -1;
+    let amountIndex = typeof mapping.amountIndex === 'number' ? mapping.amountIndex : -1;
+    let isDualAmount = debitIndex !== -1 && creditIndex !== -1;
+
+    // Recovery: detect combined "זכות/חובה" column that AI may have split incorrectly
+    // If AI set only debitIndex (or only creditIndex) for a header that contains BOTH
+    // "זכות" and "חובה", it's actually a single combined amount column (Format C).
+    if (amountIndex === -1 && !isDualAmount) {
+      if (debitIndex !== -1 && creditIndex === -1) {
+        const headerName = String(headerRow[debitIndex] || '').toLowerCase();
+        if ((headerName.includes('זכות') && headerName.includes('חובה')) ||
+            (headerName.includes('חיוב') && headerName.includes('זיכוי'))) {
+          console.log('[AI Column Mapping] Detected combined זכות/חובה column at debitIndex', debitIndex, '→ converting to amountIndex');
+          amountIndex = debitIndex;
+          debitIndex = -1;
+        }
+      }
+      if (creditIndex !== -1 && debitIndex === -1 && amountIndex === -1) {
+        const headerName = String(headerRow[creditIndex] || '').toLowerCase();
+        if ((headerName.includes('זכות') && headerName.includes('חובה')) ||
+            (headerName.includes('חיוב') && headerName.includes('זיכוי'))) {
+          console.log('[AI Column Mapping] Detected combined זכות/חובה column at creditIndex', creditIndex, '→ converting to amountIndex');
+          amountIndex = creditIndex;
+          creditIndex = -1;
+        }
+      }
+      // Recalculate isDualAmount after recovery
+      isDualAmount = debitIndex !== -1 && creditIndex !== -1;
+    }
 
     // Must have either amountIndex OR both debit+credit
     if (amountIndex === -1 && !isDualAmount) {
@@ -433,21 +466,36 @@ function findColumnsFallback(headerRow: unknown[]): ColumnMapping {
       dateIndex = i;
     }
     
-    // Dual amount columns detection (עו"ש format)
-    if (header === 'חובה' || header === 'בחובה' || header === 'חיוב' || header.includes('debit')) {
-      // Only set debitIndex if this looks like a standalone debit column (not "סכום חיוב")
-      if (!header.includes('סכום')) {
-        debitIndex = i;
-      }
+    // === Combined "זכות/חובה" column detection (MUST come BEFORE individual debit/credit checks) ===
+    // A single column whose name contains both "זכות" and "חובה" (or both "חיוב" and "זיכוי")
+    // is a combined debit/credit column (Format C) -- NOT two separate columns.
+    let isCombinedColumn = false;
+    if (amountIndex === -1 && (
+      (header.includes('זכות') && header.includes('חובה')) ||
+      (header.includes('חיוב') && header.includes('זיכוי'))
+    )) {
+      amountIndex = i;
+      isCombinedColumn = true;
+      console.log('[Fallback] Detected combined זכות/חובה column at index', i);
     }
-    if (header === 'זכות' || header === 'בזכות' || header === 'זיכוי' || header.includes('credit')) {
-      creditIndex = i;
+    
+    // Dual amount columns detection (עו"ש format) - only if NOT a combined column
+    if (!isCombinedColumn) {
+      if (header === 'חובה' || header === 'בחובה' || header === 'חיוב' || header.includes('debit')) {
+        // Only set debitIndex if this looks like a standalone debit column (not "סכום חיוב")
+        if (!header.includes('סכום')) {
+          debitIndex = i;
+        }
+      }
+      if (header === 'זכות' || header === 'בזכות' || header === 'זיכוי' || header.includes('credit')) {
+        creditIndex = i;
+      }
     }
     
     // Single amount detection - prioritize "סכום חיוב" (actual charge) over "סכום עסקה" (total)
-    if (header.includes('סכום חיוב')) {
+    if (!isCombinedColumn && header.includes('סכום חיוב')) {
       amountIndex = i; // Override any previous match
-    } else if (amountIndex === -1 && (
+    } else if (!isCombinedColumn && amountIndex === -1 && (
       header.includes('סכום') || header.includes('amount')
     )) {
       // Don't pick "יתרה" or "אסמכתא"
