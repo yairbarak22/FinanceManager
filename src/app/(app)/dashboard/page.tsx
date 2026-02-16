@@ -36,7 +36,7 @@ import {
   MonthlySummary as MonthlySummaryType,
 } from '@/lib/types';
 import { getMonthKey, calculateSavingsRate, apiFetch } from '@/lib/utils';
-import { getEffectiveMonthlyExpense, getRemainingBalance } from '@/lib/loanCalculations';
+import { getEffectiveMonthlyExpense, getRemainingBalance, isLiabilityActiveInCashFlow } from '@/lib/loanCalculations';
 import { getTotalAssetsForMonth } from '@/lib/assetUtils';
 import { useCategories } from '@/hooks/useCategories';
 import { useAnalytics } from '@/hooks/useAnalytics';
@@ -282,7 +282,7 @@ export default function DashboardPage() {
     .reduce((sum, t) => sum + t.amount, 0);
 
   const monthlyLiabilityPayments = liabilities
-    .filter((l) => l.isActiveInCashFlow !== false)
+    .filter((l) => isLiabilityActiveInCashFlow(l))
     .reduce((sum, l) => sum + getEffectiveMonthlyExpense(l), 0);
 
   // Calculate totals - filter by month only (for summaries)
@@ -343,7 +343,7 @@ export default function DashboardPage() {
 
     // Calculate liability payments for this specific month (respects loan end dates)
     const monthlyLiabilityPaymentsForMonth = liabilities
-      .filter((l) => l.isActiveInCashFlow !== false)
+      .filter((l) => isLiabilityActiveInCashFlow(l, monthDate))
       .reduce((sum, l) => sum + getEffectiveMonthlyExpense(l, monthDate), 0);
 
     const income = txIncome + fixedIncome;

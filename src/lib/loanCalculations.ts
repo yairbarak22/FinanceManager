@@ -164,6 +164,24 @@ export function getEffectiveMonthlyExpense(liability: Liability, asOfDate?: Date
 }
 
 /**
+ * Check if a liability is active in cash flow for a specific date
+ * A liability is considered active if:
+ * 1. isActiveInCashFlow is not false (explicitly set to false)
+ * 2. The loan has remaining balance > 0 at the given date
+ * 3. The effective monthly expense > 0 at the given date
+ */
+export function isLiabilityActiveInCashFlow(liability: Liability, asOfDate?: Date): boolean {
+  // If explicitly set to false, it's not active
+  if (liability.isActiveInCashFlow === false) {
+    return false;
+  }
+  
+  // Check if there's an effective expense (loan is still active)
+  const effectiveExpense = getEffectiveMonthlyExpense(liability, asOfDate);
+  return effectiveExpense > 0;
+}
+
+/**
  * Calculate remaining balance at a specific date (defaults to current date)
  * @param liability - The liability to calculate balance for
  * @param asOfDate - Optional date to calculate balance as of (defaults to now)

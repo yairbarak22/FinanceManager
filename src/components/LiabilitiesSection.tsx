@@ -5,7 +5,7 @@ import { Plus, Trash2, Banknote, Home, TrendingDown, Table, FolderOpen } from 'l
 import { Liability } from '@/lib/types';
 import { formatCurrency, cn, apiFetch } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
-import { getEffectiveMonthlyExpense, getCurrentMonthPayment, getRemainingBalance } from '@/lib/loanCalculations';
+import { getEffectiveMonthlyExpense, getCurrentMonthPayment, getRemainingBalance, isLiabilityActiveInCashFlow } from '@/lib/loanCalculations';
 import ConfirmDialog from './modals/ConfirmDialog';
 import { SensitiveData } from './common/SensitiveData';
 
@@ -125,10 +125,11 @@ export default function LiabilitiesSection({
   const totalLiabilities = liabilities.reduce((sum, l) => sum + getRemainingBalance(l, selectedMonthDate), 0);
 
   // Monthly payments — split by active in cash flow
+  // Calculate monthly payments based on selected month (or current date if 'all')
   const activeMonthlyPayments = liabilities
-    .filter((l) => l.isActiveInCashFlow !== false)
-    .reduce((sum, l) => sum + l.monthlyPayment, 0);
-  const totalMonthlyPayments = liabilities.reduce((sum, l) => sum + l.monthlyPayment, 0);
+    .filter((l) => isLiabilityActiveInCashFlow(l, selectedMonthDate))
+    .reduce((sum, l) => sum + getEffectiveMonthlyExpense(l, selectedMonthDate), 0);
+  const totalMonthlyPayments = liabilities.reduce((sum, l) => sum + getEffectiveMonthlyExpense(l, selectedMonthDate), 0);
   const hasInactive = activeMonthlyPayments !== totalMonthlyPayments;
 
   return (
@@ -224,8 +225,8 @@ export default function LiabilitiesSection({
           const categoryInfo = getCategoryInfo(liability.type, 'liability');
           const Icon = categoryInfo?.icon || (liability.type === 'mortgage' ? Home : Banknote);
           const hasLoanDetails = liability.interestRate > 0 && liability.loanTermMonths > 0;
-          const currentPayment = getCurrentMonthPayment(liability);
-          const effectiveExpense = getEffectiveMonthlyExpense(liability);
+          const currentPayment = getCurrentMonthPayment(liability, selectedMonthDate);
+          const effectiveExpense = getEffectiveMonthlyExpense(liability, selectedMonthDate);
           const isActiveInCashFlow = liability.isActiveInCashFlow !== false;
           const isSaving = savingIds.has(liability.id);
 
