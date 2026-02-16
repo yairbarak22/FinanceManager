@@ -484,12 +484,12 @@ function parseAmount(value: unknown): number | null {
  * For HTML files from Israeli banks, dates are ALWAYS in DD.MM.YYYY format.
  * The isHtmlFile parameter forces DD.MM interpretation for dots.
  */
-function parseDate(value: unknown, enableLogging = false, isHtmlFile = false): Date | null {
+function parseDate(value: unknown, enableLogging = false, isHtmlFile = false, dateFormat = 'AUTO'): Date | null {
   const log = (msg: string) => {
     if (enableLogging) console.log(`[parseDate] ${msg}`);
   };
   
-  log(`Input: ${JSON.stringify(value)}, type: ${typeof value}, isHtmlFile: ${isHtmlFile}`);
+  log(`Input: ${JSON.stringify(value)}, type: ${typeof value}, isHtmlFile: ${isHtmlFile}, dateFormat: ${dateFormat}`);
   
   if (value === null || value === undefined || value === '') {
     log('Empty value, returning null');
@@ -545,7 +545,8 @@ function parseDate(value: unknown, enableLogging = false, isHtmlFile = false): D
   const hasDash = str.includes('-') && !str.startsWith('-'); // exclude negative numbers
   
   // Handle date formats: DD/MM/YYYY, MM/DD/YY, DD-MM-YYYY, DD.MM.YYYY
-  const dateMatch = str.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  // Skip DD/MM or MM/DD matching when user explicitly selected YYYY-MM-DD format
+  const dateMatch = dateFormat !== 'YYYY-MM-DD' ? str.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/) : null;
   if (dateMatch) {
     const first = parseInt(dateMatch[1], 10);
     const second = parseInt(dateMatch[2], 10);
@@ -566,6 +567,8 @@ function parseDate(value: unknown, enableLogging = false, isHtmlFile = false): D
     let day: number, month: number;
     
     // FORMAT DETECTION LOGIC:
+    // If user explicitly selected a format (not AUTO), use it directly.
+    // Otherwise, use heuristic detection:
     // Priority for HTML files (Israeli banks): ALWAYS DD.MM.YYYY
     // 1. HTML files with dots → DD.MM.YYYY (Israeli format, highest priority)
     // 2. If first > 12 → Must be DD/MM (day can't be > 12 in MM/DD)
@@ -574,7 +577,17 @@ function parseDate(value: unknown, enableLogging = false, isHtmlFile = false): D
     // 5. Slashes with 2-digit year → MM/DD/YY (XLSX American format)
     // 6. Default: DD/MM/YYYY (Israeli standard)
     
-    if (isHtmlFile) {
+    if (dateFormat === 'DD/MM/YYYY') {
+      // User explicitly selected DD/MM/YYYY
+      day = first;
+      month = second - 1;
+      log(`User-selected DD/MM/YYYY: day=${first}, month=${second}, year=${year}`);
+    } else if (dateFormat === 'MM/DD/YYYY') {
+      // User explicitly selected MM/DD/YYYY
+      month = first - 1;
+      day = second;
+      log(`User-selected MM/DD/YYYY: month=${first}, day=${second}, year=${year}`);
+    } else if (isHtmlFile) {
       // HTML files from Israeli banks: ALWAYS DD/MM/YYYY or DD.MM.YYYY format
       // Israeli banks use DD/MM format regardless of separator (dots or slashes)
       day = first;
@@ -1026,6 +1039,12 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
+    const dateFormatParam = (formData.get('dateFormat') as string) || 'AUTO';
+    
+    // Validate dateFormat parameter
+    const validDateFormats = ['AUTO', 'DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD'];
+    const userDateFormat = validDateFormats.includes(dateFormatParam) ? dateFormatParam : 'AUTO';
+    console.log('[Excel Import] User selected date format:', userDateFormat);
 
     if (!file) {
       return NextResponse.json(
@@ -1313,8 +1332,8 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // Parse date - pass isHtmlBased to force DD/MM format for Israeli bank HTML files
-          const parsedDate = parseDate(date, false, isHtmlBased);
+        // Parse date - pass isHtmlBased and user-selected dateFormat
+          const parsedDate = parseDate(date, false, isHtmlBased, userDateFormat);
           if (!parsedDate) {
             // Provide detailed error message based on the value type
             let errorMsg = `שורה ${rowNum}: תאריך לא תקין`;

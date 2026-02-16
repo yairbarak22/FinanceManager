@@ -19,6 +19,7 @@ import {
   Check,
   CheckSquare,
   Square,
+  Calendar,
 } from 'lucide-react';
 import { formatCurrency, apiFetch } from '@/lib/utils';
 import { expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
@@ -42,7 +43,26 @@ interface ParsedTransaction {
 }
 
 // Import phases
-type ImportPhase = 'idle' | 'parsing' | 'classifying' | 'review' | 'duplicates' | 'saving' | 'done' | 'error';
+type ImportPhase = 'idle' | 'detectingFormat' | 'dateFormat' | 'parsing' | 'classifying' | 'review' | 'duplicates' | 'saving' | 'done' | 'error';
+
+// Date format options
+type DateFormatOption = 'AUTO' | 'DD/MM/YYYY' | 'MM/DD/YYYY' | 'YYYY-MM-DD';
+
+// Detection result from API
+interface DateFormatDetection {
+  detectedFormat: DateFormatOption;
+  confidence: 'high' | 'medium' | 'low';
+  sampleDates: string[];
+  sampleParsed: string[];
+  isHtmlFile: boolean;
+  isExcelSerial: boolean;
+}
+
+const DATE_FORMAT_OPTIONS: { value: DateFormatOption; label: string; example: string; description: string }[] = [
+  { value: 'DD/MM/YYYY', label: 'יום/חודש/שנה', example: '15/03/2024', description: 'פורמט ישראלי' },
+  { value: 'MM/DD/YYYY', label: 'חודש/יום/שנה', example: '03/15/2024', description: 'פורמט אמריקאי' },
+  { value: 'YYYY-MM-DD', label: 'שנה-חודש-יום', example: '2024-03-15', description: 'פורמט בינלאומי' },
+];
 
 // Stats from API
 interface ImportStats {
@@ -436,6 +456,11 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
   // Selected duplicates for import (indices of duplicates to include)
   const [selectedDuplicateIndices, setSelectedDuplicateIndices] = useState<Set<number>>(new Set());
 
+  // Date format selection & detection
+  const [dateFormat, setDateFormat] = useState<DateFormatOption>('AUTO');
+  const [detection, setDetection] = useState<DateFormatDetection | null>(null);
+  const [showManualFormat, setShowManualFormat] = useState(false);
+
   // Manual category selections for review items
   const [reviewCategories, setReviewCategories] = useState<Record<number, string>>({});
 
@@ -485,6 +510,9 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
     setDuplicates([]);
     setPendingTransactions([]);
     setSelectedDuplicateIndices(new Set());
+    setDateFormat('AUTO');
+    setDetection(null);
+    setShowManualFormat(false);
   };
 
   // Duplicate selection helper functions
@@ -519,15 +547,59 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
     onClose();
   };
 
-  // Start import process
+  // Start date format detection when user clicks "Start Import"
+  const handleDetectDateFormat = async () => {
+    if (!file) return;
+    setPhase('detectingFormat');
+    setDetection(null);
+    setShowManualFormat(false);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await apiFetch('/api/transactions/import/detect-date-format', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        // If detection fails, fall back to manual selection
+        setDetection(null);
+        setShowManualFormat(true);
+        setPhase('dateFormat');
+        return;
+      }
+
+      setDetection(data as DateFormatDetection);
+      // Pre-select the detected format
+      if (data.detectedFormat && data.detectedFormat !== 'AUTO') {
+        setDateFormat(data.detectedFormat);
+      }
+      setPhase('dateFormat');
+    } catch {
+      // If detection fails, fall back to manual selection
+      setDetection(null);
+      setShowManualFormat(true);
+      setPhase('dateFormat');
+    }
+  };
+
+  // Start import process (called after date format confirmation)
   const handleStartImport = async () => {
     if (!file) return;
 
     setPhase('parsing');
     setErrors([]);
 
+    // Determine the format to send to the API
+    const formatToSend = detection?.isExcelSerial ? 'AUTO' : dateFormat;
+
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('dateFormat', formatToSend);
 
     try {
       setPhase('classifying');
@@ -776,8 +848,8 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
           </button>
         </div>
 
-        {/* Progress Stepper (show when processing) */}
-        {phase !== 'idle' && phase !== 'error' && (
+        {/* Progress Stepper (show when processing, not during idle/detectingFormat/dateFormat/error) */}
+        {phase !== 'idle' && phase !== 'detectingFormat' && phase !== 'dateFormat' && phase !== 'error' && (
           <div className="px-6 py-4 border-b border-[#F7F7F8]">
             <div className="flex items-center justify-between">
               <ProgressStep
@@ -883,6 +955,212 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                 </p>
               </div>
             </>
+          )}
+
+          {/* Detecting date format - loading state */}
+          {phase === 'detectingFormat' && (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Loader2 className="w-12 h-12 animate-spin mb-4" style={{ color: '#69ADFF' }} />
+              <p className="font-medium" style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
+                מנתח את התאריכים בקובץ...
+              </p>
+            </div>
+          )}
+
+          {/* Date format confirmation / selection */}
+          {phase === 'dateFormat' && (
+            <div className="space-y-4">
+              {/* Explanation of why this step exists */}
+              <div 
+                className="rounded-xl p-4"
+                style={{
+                  backgroundColor: 'rgba(105, 173, 255, 0.08)',
+                  border: '1px solid rgba(105, 173, 255, 0.15)',
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <Brain className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#69ADFF' }} />
+                  <div>
+                    <p className="text-sm" style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
+                      המערכת מנתחת נתונים באמצעות AI ואנחנו רוצים לוודא בקצרה שהניתוח נכון.
+                    </p>
+                    <p className="text-sm mt-1.5" style={{ color: '#7E7F90' }}>
+                      {detection 
+                        ? 'זה הפורמט שזיהינו - נשמח שתוודא שזה הפורמט הנכון לפני שממשיכים כדי למנוע טעויות.'
+                        : 'נא בחר את פורמט התאריך בקובץ שלך כדי למנוע טעויות בפרסור התאריכים.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Detection result - show what the system found */}
+              {detection && !showManualFormat && !detection.isExcelSerial && (
+                <>
+                  {/* Detected format display */}
+                  <div 
+                    className="rounded-xl p-4"
+                    style={{
+                      backgroundColor: detection.confidence === 'high' 
+                        ? 'rgba(13, 186, 204, 0.08)' 
+                        : 'rgba(105, 173, 255, 0.08)',
+                      border: `1px solid ${detection.confidence === 'high' 
+                        ? 'rgba(13, 186, 204, 0.2)' 
+                        : 'rgba(105, 173, 255, 0.15)'}`,
+                    }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Calendar className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: detection.confidence === 'high' ? '#0DBACC' : '#69ADFF' }} />
+                      <div className="flex-1">
+                        <p className="font-medium" style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
+                          המערכת זיהתה: <span style={{ color: detection.confidence === 'high' ? '#0DBACC' : '#69ADFF' }}>
+                            {DATE_FORMAT_OPTIONS.find(o => o.value === detection.detectedFormat)?.label || detection.detectedFormat}
+                          </span>
+                        </p>
+                        <p className="text-xs mt-1" style={{ color: '#7E7F90' }}>
+                          {detection.confidence === 'high' ? 'זיהוי ברמת ודאות גבוהה' : detection.confidence === 'medium' ? 'זיהוי ברמת ודאות בינונית - מומלץ לוודא' : 'זיהוי ברמת ודאות נמוכה - יש לוודא'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sample dates preview */}
+                  {detection.sampleDates.length > 0 && (
+                    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #E8E8ED' }}>
+                      <div className="px-4 py-2.5" style={{ backgroundColor: '#F7F7F8' }}>
+                        <p className="text-xs font-medium" style={{ color: '#7E7F90' }}>
+                          דוגמאות מהקובץ שלך:
+                        </p>
+                      </div>
+                      <div className="divide-y" style={{ borderColor: '#F7F7F8' }}>
+                        {detection.sampleDates.slice(0, 3).map((raw, i) => (
+                          <div key={i} className="px-4 py-2 flex items-center justify-between">
+                            <span className="text-sm font-mono" style={{ color: '#7E7F90' }} dir="ltr">
+                              {raw}
+                            </span>
+                            <span className="text-sm" style={{ color: '#303150' }}>
+                              → {detection.sampleParsed[i] || raw}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Warning for low/medium confidence */}
+                  {detection.confidence !== 'high' && (
+                    <p className="text-xs" style={{ color: '#F18AB5' }}>
+                      ⚠️ פורמט שגוי עלול לגרום לתאריכים לא נכונים (למשל: להחליף בין יום לחודש).
+                    </p>
+                  )}
+                </>
+              )}
+
+              {/* Excel serial dates - no need to choose format */}
+              {detection && detection.isExcelSerial && !showManualFormat && (
+                <div 
+                  className="rounded-xl p-4"
+                  style={{
+                    backgroundColor: 'rgba(13, 186, 204, 0.08)',
+                    border: '1px solid rgba(13, 186, 204, 0.2)',
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#0DBACC' }} />
+                    <div>
+                      <p className="font-medium" style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
+                        תאריכים בפורמט Excel - נקראים אוטומטית
+                      </p>
+                      <p className="text-xs mt-1" style={{ color: '#7E7F90' }}>
+                        אין צורך לבחור פורמט, המערכת תקרא את התאריכים ישירות מהקובץ.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* No detection available - fallback */}
+              {!detection && !showManualFormat && (
+                <div 
+                  className="rounded-xl p-4"
+                  style={{
+                    backgroundColor: 'rgba(241, 138, 181, 0.08)',
+                    border: '1px solid rgba(241, 138, 181, 0.2)',
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#F18AB5' }} />
+                    <div>
+                      <p className="font-medium" style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
+                        לא הצלחנו לזהות את פורמט התאריך
+                      </p>
+                      <p className="text-xs mt-1" style={{ color: '#7E7F90' }}>
+                        נא לבחור ידנית את פורמט התאריך שבקובץ שלך.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Manual format selection - shown when user clicks "change" or when detection failed */}
+              {(showManualFormat || !detection || (!detection.isExcelSerial && detection.confidence === 'low')) && (
+                <div className="space-y-2">
+                  {detection && !showManualFormat && (
+                    <p className="text-xs font-medium" style={{ color: '#7E7F90' }}>
+                      בחר/י פורמט:
+                    </p>
+                  )}
+                  {DATE_FORMAT_OPTIONS.map((option) => {
+                    const isSelected = dateFormat === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setDateFormat(option.value)}
+                        className="w-full rounded-xl p-3 text-right transition-all flex items-center gap-3"
+                        style={{
+                          backgroundColor: isSelected ? 'rgba(105, 173, 255, 0.08)' : 'white',
+                          border: isSelected ? '2px solid #69ADFF' : '2px solid #E8E8ED',
+                        }}
+                      >
+                        <div
+                          className="w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center"
+                          style={{ border: isSelected ? '2px solid #69ADFF' : '2px solid #BDBDCB' }}
+                        >
+                          {isSelected && (
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#69ADFF' }} />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium" style={{ color: isSelected ? '#303150' : '#7E7F90' }}>
+                            {option.label}
+                          </span>
+                          <span 
+                            className="text-xs px-1.5 py-0.5 rounded font-mono"
+                            style={{ backgroundColor: '#F7F7F8', color: '#7E7F90' }}
+                            dir="ltr"
+                          >
+                            {option.example}
+                          </span>
+                        </div>
+                        {isSelected && <Check className="w-4 h-4 flex-shrink-0" style={{ color: '#69ADFF' }} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* "Change format" button - only if detection was successful and format picker is hidden */}
+              {detection && !showManualFormat && !detection.isExcelSerial && detection.confidence !== 'low' && (
+                <button
+                  type="button"
+                  onClick={() => setShowManualFormat(true)}
+                  className="text-xs underline"
+                  style={{ color: '#7E7F90' }}
+                >
+                  לא נכון? שנה פורמט ידנית
+                </button>
+              )}
+            </div>
           )}
 
           {/* Processing states */}
@@ -1281,11 +1559,31 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
 
           {phase === 'idle' && file && (
             <button
-              onClick={handleStartImport}
+              onClick={handleDetectDateFormat}
               className="btn-primary flex-1 justify-center"
             >
               <Upload className="w-4 h-4" />
               התחל ייבוא
+            </button>
+          )}
+
+          {phase === 'dateFormat' && (
+            <button
+              onClick={handleStartImport}
+              disabled={!detection?.isExcelSerial && dateFormat === 'AUTO' && !detection}
+              className="btn-primary flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {detection && !showManualFormat && detection.confidence === 'high' ? (
+                <>
+                  <CheckCircle className="w-4 h-4" />
+                  זה נכון, המשך
+                </>
+              ) : (
+                <>
+                  <Upload className="w-4 h-4" />
+                  המשך לייבוא
+                </>
+              )}
             </button>
           )}
 
