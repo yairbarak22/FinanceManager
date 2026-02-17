@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, ChevronDown, Check, Loader2, Filter } from 'lucide-react';
+import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, ChevronDown, Check, Loader2, Filter, Search } from 'lucide-react';
 import { Transaction } from '@/lib/types';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { getCategoryInfo, expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
@@ -55,6 +55,10 @@ export default function RecentTransactions({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [multiDeleteConfirm, setMultiDeleteConfirm] = useState(false);
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+
   // Transaction edit state
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [editingCategory, setEditingCategory] = useState<string>('');
@@ -81,6 +85,14 @@ export default function RecentTransactions({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isDropdownOpen]);
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Update dropdown position when opened
   const handleToggleDropdown = () => {
@@ -181,6 +193,15 @@ export default function RecentTransactions({
     return categoryInfo?.nameHe || selectedCategory;
   }, [selectedCategory, customExpenseCategories]);
 
+  // Filter transactions by search query
+  const filteredBySearch = useMemo(() => {
+    if (!debouncedSearchQuery.trim()) return transactions;
+    const query = debouncedSearchQuery.toLowerCase();
+    return transactions.filter(t =>
+      t.description?.toLowerCase().includes(query)
+    );
+  }, [transactions, debouncedSearchQuery]);
+
   const toggleSelectMode = () => {
     setIsSelectMode(!isSelectMode);
     setSelectedIds(new Set());
@@ -238,7 +259,10 @@ export default function RecentTransactions({
               className="text-xs font-medium"
               style={{ color: '#F18AB5' }}
             >
-              {transactions.length} עסקאות
+              {debouncedSearchQuery
+                ? `${filteredBySearch.length} מתוך ${transactions.length} עסקאות`
+                : `${transactions.length} עסקאות`
+              }
             </p>
           </div>
         </div>
@@ -341,10 +365,53 @@ export default function RecentTransactions({
         )}
       </AnimatePresence>
 
+      {/* Search Input */}
+      {transactions.length > 0 && (
+        <div className="relative mb-3 flex-shrink-0">
+          <Search
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+            style={{ color: '#BDBDCB' }}
+            strokeWidth={1.75}
+          />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="חיפוש לפי תיאור העסקה..."
+            dir="rtl"
+            aria-label="חיפוש לפי תיאור העסקה"
+            className="w-full pr-10 pl-9 py-2.5 bg-white rounded-xl text-sm transition-all outline-none"
+            style={{
+              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+              color: '#303150',
+              border: '1px solid #E8E8ED',
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = '#69ADFF';
+              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(105, 173, 255, 0.2)';
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = '#E8E8ED';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute left-3 top-1/2 -translate-y-1/2 p-0.5 rounded-md hover:bg-[#F7F7F8] transition-colors"
+              style={{ color: '#7E7F90' }}
+              aria-label="נקה חיפוש"
+            >
+              <X className="w-4 h-4" strokeWidth={2} />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Transactions List - Scrollable - Matching AssetsSection Style */}
       <div className="overflow-y-scroll flex-1 min-h-0 scrollbar-transactions scrollbar-edge-left scrollbar-fade-bottom">
         <AnimatePresence mode="popLayout">
-          {transactions.map((transaction, index) => {
+          {filteredBySearch.map((transaction, index) => {
             const cached = categoryInfoMap.get(transaction.id);
             const categoryInfo = cached?.info;
             const Icon = categoryInfo?.icon;
@@ -392,7 +459,7 @@ export default function RecentTransactions({
                     ? 'focus:outline-none focus:ring-2 focus:ring-indigo-500'
                     : 'hover:bg-[#F7F7F8] hover:shadow-sm active:scale-[0.98]',
                   isSelected ? 'bg-indigo-50' : 'bg-white',
-                  index < transactions.length - 1 && 'border-b'
+                  index < filteredBySearch.length - 1 && 'border-b'
                 )}
                 style={{ borderColor: '#F7F7F8' }}
               >
@@ -500,7 +567,7 @@ export default function RecentTransactions({
         </AnimatePresence>
         
         <AnimatePresence>
-          {transactions.length === 0 && (
+          {transactions.length === 0 && !debouncedSearchQuery && (
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -509,6 +576,18 @@ export default function RecentTransactions({
               style={{ color: '#7E7F90' }}
             >
               אין עסקאות להצגה
+            </motion.p>
+          )}
+          {filteredBySearch.length === 0 && transactions.length > 0 && debouncedSearchQuery && (
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="text-center text-sm py-6"
+              style={{ color: '#7E7F90' }}
+              aria-live="polite"
+            >
+              לא נמצאו תוצאות לחיפוש &quot;{debouncedSearchQuery}&quot;
             </motion.p>
           )}
         </AnimatePresence>
