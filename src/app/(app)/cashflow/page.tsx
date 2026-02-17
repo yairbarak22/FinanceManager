@@ -25,7 +25,6 @@ import ImportModal from '@/components/modals/ImportModal';
 import DocumentsModal from '@/components/modals/DocumentsModal';
 import ProfileModal from '@/components/ProfileModal';
 import AccountSettings from '@/components/AccountSettings';
-import { QuickAddModal } from '@/components/quick-add';
 import {
   Transaction,
   RecurringTransaction,
@@ -36,7 +35,7 @@ import {
   MonthlySummary as MonthlySummaryType,
 } from '@/lib/types';
 import { getMonthKey, calculateSavingsRate, apiFetch } from '@/lib/utils';
-import { getEffectiveMonthlyExpense, getRemainingBalance, isLiabilityActiveInCashFlow } from '@/lib/loanCalculations';
+import { getEffectiveMonthlyExpense, getRemainingBalance } from '@/lib/loanCalculations';
 import { getTotalAssetsForMonth } from '@/lib/assetUtils';
 import { useCategories } from '@/hooks/useCategories';
 import { useAnalytics } from '@/hooks/useAnalytics';
@@ -122,7 +121,7 @@ export default function DashboardPage() {
   const toast = useToast();
 
   // Onboarding
-  const { startTour, startHarediTour } = useOnboarding();
+  const { startTour } = useOnboarding();
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
   const { status: sessionStatus } = useSession();
 
@@ -252,14 +251,7 @@ export default function DashboardPage() {
         if (res.ok) {
           const data = await res.json();
           if (!data.hasSeenOnboarding) {
-            // Track Sign Up event for new users entering onboarding
-            analytics.trackSignUp('google');
-            // Check if user is Haredi (signupSource === 'prog')
-            if (data.signupSource === 'prog') {
-              startHarediTour();
-            } else {
-              startTour();
-            }
+            startTour();
           }
         }
       } catch (error) {
@@ -270,7 +262,7 @@ export default function DashboardPage() {
     };
 
     checkOnboarding();
-  }, [sessionStatus, isLoading, hasCheckedOnboarding, startTour, startHarediTour]);
+  }, [sessionStatus, isLoading, hasCheckedOnboarding, startTour]);
 
   // Calculate recurring totals
   const fixedIncome = recurringTransactions
@@ -281,9 +273,7 @@ export default function DashboardPage() {
     .filter((t) => t.type === 'expense' && t.isActive)
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const monthlyLiabilityPayments = liabilities
-    .filter((l) => isLiabilityActiveInCashFlow(l))
-    .reduce((sum, l) => sum + getEffectiveMonthlyExpense(l), 0);
+  const monthlyLiabilityPayments = liabilities.reduce((sum, l) => sum + getEffectiveMonthlyExpense(l), 0);
 
   // Calculate totals - filter by month only (for summaries)
   const monthFilteredTransactions = selectedMonth === 'all'
@@ -331,7 +321,6 @@ export default function DashboardPage() {
   const monthsWithDataArray = Array.from(monthsWithData).sort().reverse();
   const monthlySummaries: MonthlySummaryType[] = monthsWithDataArray.map((monthKey) => {
     const [year, month] = monthKey.split('-');
-    const monthDate = new Date(parseInt(year), parseInt(month) - 1, 1);
     const monthTransactions = transactions.filter((tx) => getMonthKey(tx.date) === monthKey);
 
     const txIncome = monthTransactions
@@ -341,13 +330,8 @@ export default function DashboardPage() {
       .filter((tx) => tx.type === 'expense')
       .reduce((sum, tx) => sum + tx.amount, 0);
 
-    // Calculate liability payments for this specific month (respects loan end dates)
-    const monthlyLiabilityPaymentsForMonth = liabilities
-      .filter((l) => isLiabilityActiveInCashFlow(l, monthDate))
-      .reduce((sum, l) => sum + getEffectiveMonthlyExpense(l, monthDate), 0);
-
     const income = txIncome + fixedIncome;
-    const expenses = txExpenses + fixedExpenses + monthlyLiabilityPaymentsForMonth;
+    const expenses = txExpenses + fixedExpenses + monthlyLiabilityPayments;
 
     return {
       month,
@@ -508,7 +492,6 @@ export default function DashboardPage() {
       }
 
       await fetchData();
-      analytics.trackEditTransaction();
 
       // Show appropriate toast message
       if (responseData.updatedTransactionsCount > 0) {
@@ -672,13 +655,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Optimistic toggle for cash flow inclusion
-  const handleToggleLiabilityCashFlow = useCallback((id: string, isActive: boolean) => {
-    setLiabilities((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, isActiveInCashFlow: isActive } : l))
-    );
-  }, []);
-
   return (
     <AppLayout
       pageTitle="דשבורד"
@@ -689,7 +665,6 @@ export default function DashboardPage() {
       currentMonth={currentMonth}
       onOpenProfile={() => openModal('profile')}
       onOpenAccountSettings={() => openModal('accountSettings')}
-      showQuickAddFab={true}
       showMonthFilter={true}
     >
       {/* Loading State */}
@@ -808,7 +783,6 @@ export default function DashboardPage() {
                     setIsLiabilityModalOpen(true);
                   }}
                   onDelete={handleDeleteLiability}
-                  onToggleCashFlow={handleToggleLiabilityCashFlow}
                   onViewAmortization={(liability) => {
                     setViewingLiability(liability);
                     setIsAmortizationModalOpen(true);
@@ -988,48 +962,6 @@ export default function DashboardPage() {
       <AccountSettings
         isOpen={isModalOpen('accountSettings')}
         onClose={closeModal}
-      />
-
-      <QuickAddModal
-        expenseCategories={expenseCats}
-        incomeCategories={incomeCats}
-        assetCategories={assetCats}
-        liabilityCategories={liabilityCats}
-        onSaveTransaction={async (data) => {
-          await handleAddTransaction({
-            type: data.type,
-            amount: data.amount,
-            category: data.category,
-            description: data.description,
-            date: data.date,
-          });
-        }}
-        onSaveAsset={async (data) => {
-          await handleAddAsset({
-            name: data.name,
-            category: data.category,
-            value: data.value,
-          });
-        }}
-        onSaveLiability={async (data) => {
-          // Calculate loan term based on total amount and monthly payment
-          const loanTermMonths = data.monthlyPayment > 0 
-            ? Math.ceil(data.totalAmount / data.monthlyPayment)
-            : 12;
-          
-          await handleAddLiability({
-            name: data.name,
-            type: data.type,
-            totalAmount: data.totalAmount,
-            monthlyPayment: data.monthlyPayment,
-            interestRate: data.interestRate ?? 0,
-            startDate: data.startDate,
-            loanTermMonths,
-            loanMethod: 'spitzer',
-            hasInterestRebate: false,
-          });
-        }}
-        onAddCategory={addCustomCategory}
       />
 
       <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />

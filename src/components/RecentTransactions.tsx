@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, ChevronDown, Check, Loader2, Filter, Search } from 'lucide-react';
+import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, ChevronDown, Check, Loader2, Filter, Search, Tag } from 'lucide-react';
 import { Transaction } from '@/lib/types';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { getCategoryInfo, expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
@@ -26,6 +26,7 @@ interface RecentTransactionsProps {
     newAmount?: number,
     updateExistingTransactions?: boolean
   ) => Promise<void> | void;
+  onBulkUpdateCategory?: (ids: string[], category: string) => Promise<void> | void;
   onNewTransaction: () => void;
   onImport: () => void;
   customExpenseCategories?: CategoryInfo[];
@@ -39,6 +40,7 @@ export default function RecentTransactions({
   onDelete,
   onDeleteMultiple,
   onUpdateTransaction,
+  onBulkUpdateCategory,
   onNewTransaction,
   onImport,
   customExpenseCategories = [],
@@ -58,6 +60,15 @@ export default function RecentTransactions({
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+
+  // Bulk category edit state
+  const [isBulkCategoryModalOpen, setIsBulkCategoryModalOpen] = useState(false);
+  const [bulkCategory, setBulkCategory] = useState<string>('');
+  const [isBulkSaving, setIsBulkSaving] = useState(false);
+  const [bulkDropdownOpen, setBulkDropdownOpen] = useState(false);
+  const [bulkDropdownPosition, setBulkDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+  const bulkCategoryButtonRef = useRef<HTMLButtonElement>(null);
+  const bulkDropdownRef = useRef<HTMLDivElement>(null);
 
   // Transaction edit state
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -93,6 +104,20 @@ export default function RecentTransactions({
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // Close bulk dropdown on click outside
+  useEffect(() => {
+    if (!bulkDropdownOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (bulkDropdownRef.current && !bulkDropdownRef.current.contains(target) &&
+          bulkCategoryButtonRef.current && !bulkCategoryButtonRef.current.contains(target)) {
+        setBulkDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [bulkDropdownOpen]);
 
   // Update dropdown position when opened
   const handleToggleDropdown = () => {
@@ -232,6 +257,62 @@ export default function RecentTransactions({
       setIsSelectMode(false);
     }
     setMultiDeleteConfirm(false);
+  };
+
+  // Bulk category edit handlers
+  const openBulkCategoryModal = () => {
+    setBulkCategory('');
+    setIsBulkCategoryModalOpen(true);
+    setBulkDropdownOpen(false);
+    setIsBulkSaving(false);
+  };
+
+  const closeBulkCategoryModal = () => {
+    setIsBulkCategoryModalOpen(false);
+    setBulkCategory('');
+    setBulkDropdownOpen(false);
+    setIsBulkSaving(false);
+  };
+
+  const handleToggleBulkDropdown = () => {
+    if (!bulkDropdownOpen && bulkCategoryButtonRef.current) {
+      const rect = bulkCategoryButtonRef.current.getBoundingClientRect();
+      setBulkDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      });
+    }
+    setBulkDropdownOpen(!bulkDropdownOpen);
+  };
+
+  // Determine the dominant type of selected transactions for category filtering
+  const selectedTransactionsType = useMemo(() => {
+    if (selectedIds.size === 0) return 'expense';
+    const selectedTxns = transactions.filter(t => selectedIds.has(t.id));
+    const expenseCount = selectedTxns.filter(t => t.type === 'expense').length;
+    const incomeCount = selectedTxns.filter(t => t.type === 'income').length;
+    return expenseCount >= incomeCount ? 'expense' : 'income';
+  }, [selectedIds, transactions]);
+
+  const bulkCategoriesList = useMemo(() => {
+    if (selectedTransactionsType === 'income') {
+      return [...incomeCategories, ...customIncomeCategories];
+    }
+    return [...expenseCategories, ...customExpenseCategories];
+  }, [selectedTransactionsType, customExpenseCategories, customIncomeCategories]);
+
+  const handleBulkSave = async () => {
+    if (!onBulkUpdateCategory || selectedIds.size === 0 || !bulkCategory) return;
+    setIsBulkSaving(true);
+    try {
+      await onBulkUpdateCategory(Array.from(selectedIds), bulkCategory);
+      closeBulkCategoryModal();
+      setSelectedIds(new Set());
+      setIsSelectMode(false);
+    } catch {
+      setIsBulkSaving(false);
+    }
   };
 
   return (
@@ -594,22 +675,62 @@ export default function RecentTransactions({
       </div>
 
       {/* Floating Action Bar (Select Mode) */}
-      {
-        isSelectMode && selectedIds.size > 0 && (
-          <div className="sticky bottom-0 mt-4 p-3 bg-gradient-to-r from-red-500 to-pink-500 rounded-xl shadow-lg flex items-center justify-between">
-            <span className="text-white font-medium">
+      <AnimatePresence>
+        {isSelectMode && selectedIds.size > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="sticky bottom-0 mt-4 p-3 rounded-xl shadow-lg flex items-center justify-between"
+            style={{
+              background: 'linear-gradient(135deg, #303150 0%, #3D3E68 100%)',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+            }}
+            dir="rtl"
+          >
+            <span
+              className="text-sm font-semibold"
+              style={{
+                fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                color: '#FFFFFF',
+              }}
+            >
               {selectedIds.size} נבחרו
             </span>
-            <button
-              onClick={() => setMultiDeleteConfirm(true)}
-              className="px-4 py-2 bg-white text-red-600 rounded-lg font-medium hover:bg-red-50 transition-colors flex items-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              מחק הכל
-            </button>
-          </div>
-        )
-      }
+            <div className="flex items-center gap-2">
+              {onBulkUpdateCategory && (
+                <button
+                  onClick={openBulkCategoryModal}
+                  className="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                  style={{
+                    fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    backgroundColor: '#69ADFF',
+                    color: '#FFFFFF',
+                  }}
+                  aria-label="עריכת קטגוריה לעסקאות שנבחרו"
+                >
+                  <Tag className="w-4 h-4" strokeWidth={1.75} />
+                  קטגוריה
+                </button>
+              )}
+              <button
+                onClick={() => setMultiDeleteConfirm(true)}
+                className="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                style={{
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                  backgroundColor: '#F18AB5',
+                  color: '#FFFFFF',
+                }}
+                aria-label="מחיקת עסקאות שנבחרו"
+              >
+                <Trash2 className="w-4 h-4" strokeWidth={1.75} />
+                מחק
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
@@ -899,6 +1020,241 @@ export default function RecentTransactions({
           document.body
         )
       }
+
+      {/* Bulk Category Edit Modal */}
+      {isBulkCategoryModalOpen && createPortal(
+        <div
+          className="fixed inset-0 flex items-center justify-center p-4"
+          style={{
+            zIndex: 9999,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            backdropFilter: 'blur(4px)',
+          }}
+          onClick={() => !isBulkSaving && closeBulkCategoryModal()}
+          role="presentation"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="bg-white rounded-3xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+            dir="rtl"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bulk-category-title"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape' && !isBulkSaving) closeBulkCategoryModal();
+            }}
+          >
+            {/* Header */}
+            <div
+              className="p-6 flex items-center justify-between"
+              style={{ borderBottom: '1px solid #F7F7F8' }}
+            >
+              <h3
+                id="bulk-category-title"
+                className="font-semibold text-lg"
+                style={{
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                  color: '#303150',
+                }}
+              >
+                עריכת קטגוריה ל-{selectedIds.size} עסקאות
+              </h3>
+              <button
+                type="button"
+                onClick={closeBulkCategoryModal}
+                className="p-2 rounded-lg transition-colors"
+                style={{ color: '#7E7F90' }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F7F7F8'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                aria-label="סגור"
+                disabled={isBulkSaving}
+              >
+                <X className="w-5 h-5" strokeWidth={1.75} aria-hidden="true" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4">
+              <p
+                className="text-sm"
+                style={{
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                  color: '#7E7F90',
+                }}
+              >
+                בחר קטגוריה חדשה שתוחל על כל {selectedIds.size} העסקאות שנבחרו.
+              </p>
+
+              {/* Category dropdown */}
+              <div>
+                <label
+                  className="block text-sm font-medium mb-1.5"
+                  style={{
+                    fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    color: '#7E7F90',
+                  }}
+                >
+                  קטגוריה
+                </label>
+                <div className="relative">
+                  <button
+                    ref={bulkCategoryButtonRef}
+                    type="button"
+                    onClick={handleToggleBulkDropdown}
+                    disabled={isBulkSaving}
+                    className={cn(
+                      'w-full px-4 py-3 rounded-xl text-sm font-medium transition-all',
+                      'flex items-center justify-between gap-2',
+                      'focus:outline-none',
+                      isBulkSaving && 'opacity-50 cursor-not-allowed'
+                    )}
+                    style={{
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                      backgroundColor: '#FFFFFF',
+                      border: bulkDropdownOpen ? '1px solid #69ADFF' : '1px solid #E8E8ED',
+                      color: bulkCategory ? '#303150' : '#BDBDCB',
+                      boxShadow: bulkDropdownOpen ? '0 0 0 3px rgba(105, 173, 255, 0.2)' : 'none',
+                    }}
+                  >
+                    <span>
+                      {bulkCategory
+                        ? (getCategoryInfo(
+                            bulkCategory,
+                            selectedTransactionsType as 'income' | 'expense',
+                            selectedTransactionsType === 'income' ? customIncomeCategories : customExpenseCategories
+                          )?.nameHe || 'בחר קטגוריה...')
+                        : 'בחר קטגוריה...'}
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        'w-4 h-4 flex-shrink-0 transition-transform',
+                        bulkDropdownOpen && 'rotate-180'
+                      )}
+                      style={{ color: '#7E7F90' }}
+                    />
+                  </button>
+
+                  {/* Category dropdown rendered via portal */}
+                  {bulkDropdownOpen && bulkDropdownPosition && createPortal(
+                    <div
+                      ref={bulkDropdownRef}
+                      className="rounded-xl shadow-lg max-h-48 overflow-y-auto"
+                      style={{
+                        position: 'fixed',
+                        top: bulkDropdownPosition.top,
+                        left: bulkDropdownPosition.left,
+                        width: bulkDropdownPosition.width,
+                        zIndex: 10001,
+                        backgroundColor: '#FFFFFF',
+                        border: '1px solid #E8E8ED',
+                      }}
+                      dir="rtl"
+                    >
+                      <div className="p-1">
+                        {bulkCategoriesList.map((cat) => {
+                          const isCatSelected = cat.id === bulkCategory;
+                          const CatIcon = cat.icon;
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => {
+                                setBulkCategory(cat.id);
+                                setBulkDropdownOpen(false);
+                              }}
+                              className={cn(
+                                'w-full px-3 py-2 rounded-lg text-sm font-medium text-right',
+                                'flex items-center gap-2 transition-colors'
+                              )}
+                              style={{
+                                fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                                backgroundColor: isCatSelected ? '#C1DDFF' : 'transparent',
+                                color: '#303150',
+                                border: isCatSelected ? '2px solid #69ADFF' : '2px solid transparent',
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!isCatSelected) e.currentTarget.style.backgroundColor = '#F7F7F8';
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!isCatSelected) e.currentTarget.style.backgroundColor = 'transparent';
+                              }}
+                            >
+                              <div
+                                className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                                style={{ background: cat.bgColor, color: cat.color }}
+                              >
+                                {CatIcon && <CatIcon className="w-3.5 h-3.5" strokeWidth={1.75} />}
+                              </div>
+                              <span className="flex-1 text-right">{cat.nameHe}</span>
+                              {isCatSelected && <Check className="w-4 h-4" style={{ color: '#69ADFF' }} />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>,
+                    document.body
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div
+              className="p-6 flex gap-3"
+              style={{ borderTop: '1px solid #F7F7F8' }}
+            >
+              <button
+                onClick={handleBulkSave}
+                disabled={isBulkSaving || !bulkCategory}
+                className="flex-1 py-2.5 rounded-xl font-medium transition-all flex items-center justify-center gap-2 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                  backgroundColor: '#69ADFF',
+                  color: '#FFFFFF',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isBulkSaving && bulkCategory) e.currentTarget.style.backgroundColor = '#5A9EE6';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#69ADFF';
+                }}
+              >
+                {isBulkSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    שומר...
+                  </>
+                ) : (
+                  'שמור'
+                )}
+              </button>
+              <button
+                onClick={closeBulkCategoryModal}
+                disabled={isBulkSaving}
+                className="flex-1 py-2.5 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                  backgroundColor: '#F7F7F8',
+                  color: '#303150',
+                }}
+                onMouseEnter={(e) => {
+                  if (!isBulkSaving) e.currentTarget.style.backgroundColor = '#E8E8ED';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#F7F7F8';
+                }}
+              >
+                ביטול
+              </button>
+            </div>
+          </motion.div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
