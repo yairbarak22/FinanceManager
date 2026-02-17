@@ -28,6 +28,7 @@ import {
   Star,
   BookOpen,
   HeartHandshake,
+  Handshake,
 } from 'lucide-react';
 
 export interface CategoryInfo {
@@ -374,6 +375,16 @@ export const assetCategories: CategoryInfo[] = [
     textColor: 'text-emerald-600',
   },
   {
+    id: 'gemach',
+    name: 'Gemach',
+    nameHe: 'גמ"ח',
+    icon: Handshake,
+    color: '#1E3269',
+    bgColor: 'bg-indigo-100',
+    textColor: 'text-indigo-900',
+    harediOnly: true,
+  },
+  {
     id: 'other',
     name: 'Other',
     nameHe: 'אחר',
@@ -433,6 +444,16 @@ export const liabilityTypes: CategoryInfo[] = [
     bgColor: 'bg-emerald-100',
     textColor: 'text-emerald-600',
   },
+  {
+    id: 'gemach',
+    name: 'Gemach',
+    nameHe: 'גמ"ח',
+    icon: Handshake,
+    color: '#1E3269',
+    bgColor: 'bg-indigo-100',
+    textColor: 'text-indigo-900',
+    harediOnly: true,
+  },
 ];
 
 // ============================================
@@ -467,6 +488,7 @@ export const iconMap: { [key: string]: LucideIcon } = {
   Star,
   BookOpen,
   HeartHandshake,
+  Handshake,
 };
 
 // Default icon for custom categories

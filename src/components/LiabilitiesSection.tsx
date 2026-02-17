@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Plus, Trash2, Banknote, Home, TrendingDown, Table, FolderOpen } from 'lucide-react';
+import { Plus, Trash2, Banknote, Home, TrendingDown, Table, FolderOpen, Link2 } from 'lucide-react';
 import { Liability } from '@/lib/types';
 import { formatCurrency, cn, apiFetch } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
@@ -73,10 +73,11 @@ export default function LiabilitiesSection({
   onToggleCashFlow,
   selectedMonth = 'all'
 }: LiabilitiesSectionProps) {
-  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; name: string }>({
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; name: string; isGemach: boolean }>({
     isOpen: false,
     id: '',
     name: '',
+    isGemach: false,
   });
 
   // Track which liabilities are currently saving their toggle state
@@ -230,21 +231,26 @@ export default function LiabilitiesSection({
           const isActiveInCashFlow = liability.isActiveInCashFlow !== false;
           const isSaving = savingIds.has(liability.id);
 
+          const isGemach = !!liability.gemachId;
+
           return (
             <div
               key={liability.id}
-              onClick={() => onEdit(liability)}
+              onClick={() => {
+                if (!isGemach) onEdit(liability);
+              }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if ((e.key === 'Enter' || e.key === ' ') && !isGemach) {
                   e.preventDefault();
                   onEdit(liability);
                 }
               }}
               role="button"
               tabIndex={0}
-              aria-label={`ערוך התחייבות: ${liability.name}`}
+              aria-label={isGemach ? `תוכנית גמ"ח: ${liability.name}` : `ערוך התחייבות: ${liability.name}`}
               className={cn(
-                "group relative p-3 bg-white transition-all duration-200 hover:bg-[#F7F7F8] hover:shadow-sm cursor-pointer active:scale-[0.98]",
+                "group relative p-3 bg-white transition-all duration-200 hover:bg-[#F7F7F8] hover:shadow-sm active:scale-[0.98]",
+                isGemach ? "cursor-default" : "cursor-pointer",
                 index < liabilities.length - 1 && "border-b",
                 !isActiveInCashFlow && "opacity-50"
               )}
@@ -288,6 +294,19 @@ export default function LiabilitiesSection({
                     >
                       {liability.name}
                     </SensitiveData>
+                    {isGemach && (
+                      <span
+                        className="flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0"
+                        style={{
+                          background: 'rgba(30, 50, 105, 0.08)',
+                          color: '#1E3269',
+                        }}
+                        title='תוכנית גמ"ח - מקושר לנכס. מחיקה תסיר את שניהם'
+                      >
+                        <Link2 className="w-3 h-3" strokeWidth={2} />
+                        גמ&quot;ח
+                      </span>
+                    )}
                     {!isActiveInCashFlow && (
                       <span
                         className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0"
@@ -370,7 +389,7 @@ export default function LiabilitiesSection({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setDeleteConfirm({ isOpen: true, id: liability.id, name: liability.name });
+                      setDeleteConfirm({ isOpen: true, id: liability.id, name: liability.name, isGemach });
                     }}
                     className="p-1.5 rounded hover:bg-red-50 transition-colors"
                     style={{ color: '#7E7F90' }}
@@ -397,10 +416,14 @@ export default function LiabilitiesSection({
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         isOpen={deleteConfirm.isOpen}
-        onClose={() => setDeleteConfirm({ isOpen: false, id: '', name: '' })}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: '', name: '', isGemach: false })}
         onConfirm={() => onDelete(deleteConfirm.id)}
-        title="מחיקת התחייבות"
-        message={`האם אתה בטוח שברצונך למחוק את "${deleteConfirm.name}"?`}
+        title={deleteConfirm.isGemach ? 'מחיקת תוכנית גמ"ח' : 'מחיקת התחייבות'}
+        message={
+          deleteConfirm.isGemach
+            ? `האם אתה בטוח שברצונך למחוק את "${deleteConfirm.name}"? פעולה זו תמחק גם את הנכס המקושר.`
+            : `האם אתה בטוח שברצונך למחוק את "${deleteConfirm.name}"?`
+        }
       />
     </div>
   );

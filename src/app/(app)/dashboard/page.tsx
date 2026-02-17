@@ -20,6 +20,8 @@ import TransactionModal from '@/components/modals/TransactionModal';
 import RecurringModal from '@/components/modals/RecurringModal';
 import AssetModal from '@/components/modals/AssetModal';
 import LiabilityModal from '@/components/modals/LiabilityModal';
+import LiabilityTypeSelectionModal from '@/components/modals/LiabilityTypeSelectionModal';
+import GemachFormModal from '@/components/modals/GemachFormModal';
 import AmortizationModal from '@/components/modals/AmortizationModal';
 import ImportModal from '@/components/modals/ImportModal';
 import DocumentsModal from '@/components/modals/DocumentsModal';
@@ -82,6 +84,8 @@ export default function DashboardPage() {
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [isLiabilityModalOpen, setIsLiabilityModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isLiabilityTypeSelectionOpen, setIsLiabilityTypeSelectionOpen] = useState(false);
+  const [isGemachFormOpen, setIsGemachFormOpen] = useState(false);
 
   // Edit state
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
@@ -113,7 +117,7 @@ export default function DashboardPage() {
   const liabilitiesRef = useRef<HTMLDivElement>(null);
 
   // Categories hook
-  const { getCustomByType, addCustomCategory } = useCategories();
+  const { getCustomByType, addCustomCategory, isHaredi } = useCategories();
 
   // Analytics hook
   const analytics = useAnalytics();
@@ -672,6 +676,32 @@ export default function DashboardPage() {
     }
   };
 
+  // Gemach Plan handler
+  const handleCreateGemach = async (data: {
+    name: string;
+    monthlyDeposit: number;
+    totalMonths: number;
+    monthsAlreadyPaid: number;
+  }) => {
+    try {
+      const res = await apiFetch('/api/gemach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to create gemach plan');
+      }
+      await fetchData();
+      toast.success('תוכנית גמ"ח נוצרה בהצלחה');
+    } catch (error) {
+      console.error('Error creating gemach plan:', error);
+      toast.error(error instanceof Error ? error.message : 'שגיאה ביצירת תוכנית גמ"ח');
+      throw error;
+    }
+  };
+
   // Optimistic toggle for cash flow inclusion
   const handleToggleLiabilityCashFlow = useCallback((id: string, isActive: boolean) => {
     setLiabilities((prev) =>
@@ -801,7 +831,11 @@ export default function DashboardPage() {
                   selectedMonth={selectedMonth}
                   onAdd={() => {
                     setEditingLiability(null);
-                    setIsLiabilityModalOpen(true);
+                    if (isHaredi) {
+                      setIsLiabilityTypeSelectionOpen(true);
+                    } else {
+                      setIsLiabilityModalOpen(true);
+                    }
                   }}
                   onEdit={(liability) => {
                     setEditingLiability(liability);
@@ -950,6 +984,24 @@ export default function DashboardPage() {
         liability={editingLiability}
         liabilityTypes={liabilityCats}
         onAddCategory={(name) => addCustomCategory(name, 'liability')}
+      />
+
+      <LiabilityTypeSelectionModal
+        isOpen={isLiabilityTypeSelectionOpen}
+        onClose={() => setIsLiabilityTypeSelectionOpen(false)}
+        onSelectLoan={() => {
+          setEditingLiability(null);
+          setIsLiabilityModalOpen(true);
+        }}
+        onSelectGemach={() => {
+          setIsGemachFormOpen(true);
+        }}
+      />
+
+      <GemachFormModal
+        isOpen={isGemachFormOpen}
+        onClose={() => setIsGemachFormOpen(false)}
+        onSave={handleCreateGemach}
       />
 
       <AmortizationModal

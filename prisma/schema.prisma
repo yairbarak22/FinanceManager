@@ -142,6 +142,7 @@ model Asset {
   category     String
   value        Float
   liquidity    String              @default("locked") // immediate | short_term | pension | locked
+  gemachId     String?             // UUID linking to paired Liability (null for regular assets)
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
   user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -150,6 +151,7 @@ model Asset {
   @@index([userId])
   @@index([userId, category])
   @@index([userId, updatedAt])
+  @@index([gemachId])
 }
 
 model AssetValueHistory {
@@ -178,12 +180,14 @@ model Liability {
   hasInterestRebate   Boolean  @default(false)
   linkage             String   @default("none") // none | index | foreign
   isActiveInCashFlow  Boolean  @default(true)
+  gemachId            String?  // UUID linking to paired Asset (null for regular liabilities)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, type])
+  @@index([gemachId])
 }
 
 model NetWorthHistory {

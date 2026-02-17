@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Trash2, TrendingUp, HelpCircle, FolderOpen, Link } from 'lucide-react';
+import { Plus, Trash2, TrendingUp, HelpCircle, FolderOpen, Link, Link2 } from 'lucide-react';
 import { Asset, AssetValueHistory } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
@@ -35,10 +35,11 @@ export default function AssetsSection({
   selectedMonth = 'all',
   assetHistory = []
 }: AssetsSectionProps) {
-  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; name: string }>({
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; name: string; isGemach: boolean }>({
     isOpen: false,
     id: '',
     name: '',
+    isGemach: false,
   });
   
   // Calculate total assets for the selected month
@@ -95,29 +96,31 @@ export default function AssetsSection({
           const displayValue = getAssetValueForMonth(asset, assetHistory, selectedMonth);
 
           const isSyncAsset = isPortfolioSyncAsset(asset.name);
+          const isGemach = !!asset.gemachId;
+          const isEditable = !isSyncAsset && !isGemach;
 
           return (
             <div
               key={asset.id}
-              onClick={!isSyncAsset ? () => onEdit(asset) : undefined}
-              onKeyDown={!isSyncAsset ? (e) => {
+              onClick={isEditable ? () => onEdit(asset) : undefined}
+              onKeyDown={isEditable ? (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
                   onEdit(asset);
                 }
               } : undefined}
-              role={!isSyncAsset ? 'button' : undefined}
-              tabIndex={!isSyncAsset ? 0 : undefined}
-              aria-label={!isSyncAsset ? `ערוך נכס: ${asset.name}` : undefined}
+              role={isEditable ? 'button' : undefined}
+              tabIndex={isEditable ? 0 : undefined}
+              aria-label={isGemach ? `תוכנית גמ"ח: ${asset.name}` : (!isSyncAsset ? `ערוך נכס: ${asset.name}` : undefined)}
               className={cn(
                 "group relative p-3 bg-white transition-all duration-200",
-                !isSyncAsset && "hover:bg-[#F7F7F8] hover:shadow-sm cursor-pointer active:scale-[0.98]",
+                isEditable && "hover:bg-[#F7F7F8] hover:shadow-sm cursor-pointer active:scale-[0.98]",
                 index < assets.length - 1 && "border-b"
               )}
               style={{ borderColor: '#F7F7F8' }}
             >
-              {/* Edge Indicator - only for non-sync assets */}
-              {!isSyncAsset && (
+              {/* Edge Indicator - only for editable assets */}
+              {isEditable && (
                 <div className="absolute right-0 top-2 bottom-2 w-0.5 bg-[#69ADFF] opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
               )}
 
@@ -133,16 +136,31 @@ export default function AssetsSection({
 
                 {/* Details - full width, allow wrapping */}
                 <div className="flex-1">
-                  <SensitiveData 
-                    as="p" 
-                    className="font-medium text-sm leading-tight"
-                    style={{ 
-                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-                      color: '#303150'
-                    }}
-                  >
-                    {asset.name}
-                  </SensitiveData>
+                  <div className="flex items-center gap-2">
+                    <SensitiveData 
+                      as="p" 
+                      className="font-medium text-sm leading-tight"
+                      style={{ 
+                        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                        color: '#303150'
+                      }}
+                    >
+                      {asset.name}
+                    </SensitiveData>
+                    {isGemach && (
+                      <span
+                        className="flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-md flex-shrink-0"
+                        style={{
+                          background: 'rgba(30, 50, 105, 0.08)',
+                          color: '#1E3269',
+                        }}
+                        title='תוכנית גמ"ח - מקושר להתחייבות. מחיקה תסיר את שניהם'
+                      >
+                        <Link2 className="w-3 h-3" strokeWidth={2} />
+                        גמ&quot;ח
+                      </span>
+                    )}
+                  </div>
                   <SensitiveData 
                     as="p" 
                     className="text-xs mt-0.5"
@@ -185,22 +203,24 @@ export default function AssetsSection({
                   ) : (
                     /* Regular actions for non-sync assets */
                     <>
+                      {!isGemach && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onViewDocuments(asset);
+                          }}
+                          className="p-1.5 rounded hover:bg-[#F7F7F8] transition-colors"
+                          style={{ color: '#7E7F90' }}
+                          title="מסמכים"
+                          aria-label={`צפייה במסמכים של ${asset.name}`}
+                        >
+                          <FolderOpen className="w-3.5 h-3.5" strokeWidth={1.5} />
+                        </button>
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          onViewDocuments(asset);
-                        }}
-                        className="p-1.5 rounded hover:bg-[#F7F7F8] transition-colors"
-                        style={{ color: '#7E7F90' }}
-                        title="מסמכים"
-                        aria-label={`צפייה במסמכים של ${asset.name}`}
-                      >
-                        <FolderOpen className="w-3.5 h-3.5" strokeWidth={1.5} />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteConfirm({ isOpen: true, id: asset.id, name: asset.name });
+                          setDeleteConfirm({ isOpen: true, id: asset.id, name: asset.name, isGemach });
                         }}
                         className="p-1.5 rounded hover:bg-red-50 transition-colors"
                         style={{ color: '#7E7F90' }}
@@ -229,10 +249,14 @@ export default function AssetsSection({
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         isOpen={deleteConfirm.isOpen}
-        onClose={() => setDeleteConfirm({ isOpen: false, id: '', name: '' })}
+        onClose={() => setDeleteConfirm({ isOpen: false, id: '', name: '', isGemach: false })}
         onConfirm={() => onDelete(deleteConfirm.id)}
-        title="מחיקת נכס"
-        message={`האם אתה בטוח שברצונך למחוק את "${deleteConfirm.name}"?`}
+        title={deleteConfirm.isGemach ? 'מחיקת תוכנית גמ"ח' : 'מחיקת נכס'}
+        message={
+          deleteConfirm.isGemach
+            ? `האם אתה בטוח שברצונך למחוק את "${deleteConfirm.name}"? פעולה זו תמחק גם את ההתחייבות המקושרת.`
+            : `האם אתה בטוח שברצונך למחוק את "${deleteConfirm.name}"?`
+        }
       />
     </div>
   );

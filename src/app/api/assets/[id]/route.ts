@@ -41,6 +41,14 @@ export async function PUT(
       );
     }
 
+    // Block editing Gemach-linked assets
+    if (currentAsset.gemachId) {
+      return NextResponse.json(
+        { error: 'לא ניתן לערוך תוכנית גמ"ח ישירות. יש למחוק וליצור מחדש.' },
+        { status: 400 }
+      );
+    }
+
     // Build update data object with validation
     // SECURITY: Validate each field before updating
     const updateData: Record<string, unknown> = {};
@@ -152,13 +160,21 @@ export async function DELETE(
         { status: 403 }
       );
     }
-    
-    const result = await prisma.asset.deleteMany({
-      where: sharedWhere,
-    });
-    
-    if (result.count === 0) {
-      return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
+
+    // If this is a Gemach-linked asset, delete both asset and liability atomically
+    if (assetToDelete?.gemachId) {
+      await prisma.$transaction([
+        prisma.asset.deleteMany({ where: { gemachId: assetToDelete.gemachId } }),
+        prisma.liability.deleteMany({ where: { gemachId: assetToDelete.gemachId } }),
+      ]);
+    } else {
+      const result = await prisma.asset.deleteMany({
+        where: sharedWhere,
+      });
+      
+      if (result.count === 0) {
+        return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
+      }
     }
     
     // Update net worth history for current month

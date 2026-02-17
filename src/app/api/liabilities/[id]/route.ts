@@ -31,6 +31,14 @@ export async function PUT(
       return NextResponse.json({ error: 'Liability not found' }, { status: 404 });
     }
 
+    // Block editing Gemach-linked liabilities
+    if (currentLiability.gemachId) {
+      return NextResponse.json(
+        { error: 'לא ניתן לערוך תוכנית גמ"ח ישירות. יש למחוק וליצור מחדש.' },
+        { status: 400 }
+      );
+    }
+
     // Build update data object with validation
     // SECURITY: Validate each field before updating
     const updateData: Record<string, unknown> = {};
@@ -179,12 +187,29 @@ export async function DELETE(
     // Use shared account to allow deleting records from all members
     const sharedWhere = await withSharedAccountId(id, userId);
 
-    const result = await prisma.liability.deleteMany({
+    // Fetch the liability to check if it has a gemachId
+    const liabilityToDelete = await prisma.liability.findFirst({
       where: sharedWhere,
     });
-    
-    if (result.count === 0) {
+
+    if (!liabilityToDelete) {
       return NextResponse.json({ error: 'Liability not found' }, { status: 404 });
+    }
+
+    // If this is a Gemach-linked liability, delete both asset and liability atomically
+    if (liabilityToDelete.gemachId) {
+      await prisma.$transaction([
+        prisma.asset.deleteMany({ where: { gemachId: liabilityToDelete.gemachId } }),
+        prisma.liability.deleteMany({ where: { gemachId: liabilityToDelete.gemachId } }),
+      ]);
+    } else {
+      const result = await prisma.liability.deleteMany({
+        where: sharedWhere,
+      });
+      
+      if (result.count === 0) {
+        return NextResponse.json({ error: 'Liability not found' }, { status: 404 });
+      }
     }
     
     // Update net worth history for current month

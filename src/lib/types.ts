@@ -56,6 +56,7 @@ export interface Asset {
   category: string; // 'investments' | 'real_estate' etc.
   value: number;
   liquidity?: 'immediate' | 'short_term' | 'pension' | 'locked'; // נזילות הנכס
+  gemachId?: string; // UUID linking to paired Liability (null for regular assets)
   createdAt?: string;
   updatedAt?: string;
 }
@@ -82,6 +83,7 @@ export interface Liability {
   hasInterestRebate: boolean; // זיכוי על הריבית
   linkage?: 'none' | 'index' | 'foreign'; // הצמדה (אין / מדד / מט"ח)
   isActiveInCashFlow?: boolean; // האם פעיל בתזרים החודשי (ברירת מחדל: true)
+  gemachId?: string; // UUID linking to paired Asset (null for regular liabilities)
   createdAt?: string;
   updatedAt?: string;
 }
