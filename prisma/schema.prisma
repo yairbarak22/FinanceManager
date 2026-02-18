@@ -94,17 +94,18 @@ model Transaction {
 }
 
 model RecurringTransaction {
-  id        String          @id @default(cuid())
-  userId    String
-  type      String
-  amount    Float
-  category  String
-  name      String
-  isActive  Boolean         @default(true)
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  goal      FinancialGoal?
+  id           String          @id @default(cuid())
+  userId       String
+  type         String
+  amount       Float
+  category     String
+  name         String
+  isActive     Boolean         @default(true)
+  activeMonths Json?           // JSON array of "YYYY-MM" strings, null = all months
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal         FinancialGoal?
 
   @@index([userId])
   @@index([userId, isActive])

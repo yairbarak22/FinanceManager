@@ -37,7 +37,7 @@ import {
   NetWorthHistory,
   MonthlySummary as MonthlySummaryType,
 } from '@/lib/types';
-import { getMonthKey, calculateSavingsRate, apiFetch } from '@/lib/utils';
+import { getMonthKey, calculateSavingsRate, apiFetch, isRecurringActiveInMonth } from '@/lib/utils';
 import { getEffectiveMonthlyExpense, getRemainingBalance, isLiabilityActiveInCashFlow } from '@/lib/loanCalculations';
 import { getTotalAssetsForMonth } from '@/lib/assetUtils';
 import { useCategories } from '@/hooks/useCategories';
@@ -277,13 +277,14 @@ export default function DashboardPage() {
     checkOnboarding();
   }, [sessionStatus, isLoading, hasCheckedOnboarding, startTour, startHarediTour]);
 
-  // Calculate recurring totals
+  // Calculate recurring totals - filter by activeMonths for the selected month
+  const effectiveMonth = selectedMonth === 'all' || selectedMonth === 'custom' ? currentMonth : selectedMonth;
   const fixedIncome = recurringTransactions
-    .filter((t) => t.type === 'income' && t.isActive)
+    .filter((t) => t.type === 'income' && isRecurringActiveInMonth(t, effectiveMonth))
     .reduce((sum, t) => sum + t.amount, 0);
 
   const fixedExpenses = recurringTransactions
-    .filter((t) => t.type === 'expense' && t.isActive)
+    .filter((t) => t.type === 'expense' && isRecurringActiveInMonth(t, effectiveMonth))
     .reduce((sum, t) => sum + t.amount, 0);
 
   const monthlyLiabilityPayments = liabilities

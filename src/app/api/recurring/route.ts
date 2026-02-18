@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
+import { validateActiveMonths } from '@/lib/utils';
 import { autoLinkGoalToRecurring } from './[id]/route';
 
 export async function GET() {
@@ -67,6 +68,14 @@ export async function POST(request: NextRequest) {
     if (body.name.length > 100) {
       return NextResponse.json({ error: 'Name too long (max 100 characters)' }, { status: 400 });
     }
+
+    // Validate activeMonths if provided
+    if (body.activeMonths !== undefined) {
+      const activeMonthsError = validateActiveMonths(body.activeMonths);
+      if (activeMonthsError) {
+        return NextResponse.json({ error: activeMonthsError }, { status: 400 });
+      }
+    }
     
     const recurring = await prisma.recurringTransaction.create({
       data: {
@@ -76,6 +85,7 @@ export async function POST(request: NextRequest) {
         category: body.category,
         name: body.name.trim(),
         isActive: body.isActive ?? true,
+        activeMonths: body.activeMonths ?? null,
       },
     });
     

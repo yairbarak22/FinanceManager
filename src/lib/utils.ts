@@ -83,6 +83,36 @@ export function parseMonthKey(monthKey: string): Date {
   return new Date(year, month - 1, 1);
 }
 
+/**
+ * Check if a recurring transaction is active in a given month.
+ * - If isActive is false, always returns false.
+ * - If activeMonths is null/empty, the transaction is active in all months.
+ * - Otherwise, checks if monthKey is included in activeMonths.
+ */
+export function isRecurringActiveInMonth(
+  recurring: { isActive: boolean; activeMonths?: string[] | null },
+  monthKey: string
+): boolean {
+  if (!recurring.isActive) return false;
+  if (!recurring.activeMonths || recurring.activeMonths.length === 0) return true;
+  return recurring.activeMonths.includes(monthKey);
+}
+
+/**
+ * Validate activeMonths format: must be array of "YYYY-MM" strings or null.
+ */
+export function validateActiveMonths(activeMonths: unknown): string | null {
+  if (activeMonths === null || activeMonths === undefined) return null;
+  if (!Array.isArray(activeMonths)) return 'activeMonths must be an array or null';
+  const monthPattern = /^\d{4}-\d{2}$/;
+  for (const m of activeMonths) {
+    if (typeof m !== 'string' || !monthPattern.test(m)) {
+      return `Invalid month format: "${m}". Expected "YYYY-MM"`;
+    }
+  }
+  return null;
+}
+
 // ============================================================================
 // CSRF-Protected Fetch Wrapper
 // ============================================================================

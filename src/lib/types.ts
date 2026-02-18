@@ -18,6 +18,7 @@ export interface RecurringTransaction {
   category: string;
   name: string;
   isActive: boolean;
+  activeMonths?: string[] | null; // Array of month keys in "YYYY-MM" format, null = all months
   goalId?: string; // קישור ליעד פיננסי (אופציונלי)
   createdAt?: string;
   updatedAt?: string;

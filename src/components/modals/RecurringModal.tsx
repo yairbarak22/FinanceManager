@@ -1,15 +1,38 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Check } from 'lucide-react';
 import { RecurringTransaction } from '@/lib/types';
 import { CategoryInfo } from '@/lib/categories';
+import { useMonth } from '@/context/MonthContext';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
 
 // Field order for auto-scroll
-const FIELD_ORDER = ['type', 'name', 'amount', 'category', 'isActive'];
+const FIELD_ORDER = ['type', 'name', 'amount', 'category', 'activeMonths'];
+
+const MONTH_NAMES: { [key: string]: string } = {
+  '01': 'ינואר', '02': 'פברואר', '03': 'מרץ', '04': 'אפריל',
+  '05': 'מאי', '06': 'יוני', '07': 'יולי', '08': 'אוגוסט',
+  '09': 'ספטמבר', '10': 'אוקטובר', '11': 'נובמבר', '12': 'דצמבר',
+};
+
+const SHORT_MONTH_NAMES: { [key: string]: string } = {
+  '01': 'ינו\'', '02': 'פבר\'', '03': 'מרץ', '04': 'אפר\'',
+  '05': 'מאי', '06': 'יוני', '07': 'יולי', '08': 'אוג\'',
+  '09': 'ספט\'', '10': 'אוק\'', '11': 'נוב\'', '12': 'דצמ\'',
+};
+
+function formatMonthLabel(monthKey: string): string {
+  const [year, month] = monthKey.split('-');
+  return `${MONTH_NAMES[month]} ${year}`;
+}
+
+function formatShortMonthChip(monthKey: string): string {
+  const [year, month] = monthKey.split('-');
+  return `${SHORT_MONTH_NAMES[month]} ${year.slice(2)}`;
+}
 
 interface RecurringModalProps {
   isOpen: boolean;
@@ -34,14 +57,25 @@ export default function RecurringModal({
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [name, setName] = useState('');
-  const [isActive, setIsActive] = useState(true);
+  const [allMonthsActive, setAllMonthsActive] = useState(true);
+  const [selectedMonths, setSelectedMonths] = useState<Set<string>>(new Set());
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const { allMonths, currentMonth } = useMonth();
+
+  // Group months for the picker
+  const { pastMonths, futureMonths } = useMemo(() => {
+    const past = allMonths.filter(m => m < currentMonth);
+    const future = allMonths.filter(m => m > currentMonth);
+    return { pastMonths: past, futureMonths: future };
+  }, [allMonths, currentMonth]);
+
   // Refs for auto-scroll to next field
   const fieldRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const modalBodyRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to next field when current field is filled
   const scrollToNextField = useCallback((currentField: string) => {
@@ -68,17 +102,40 @@ export default function RecurringModal({
       setAmount(transaction.amount.toString());
       setCategory(transaction.category);
       setName(transaction.name);
-      setIsActive(transaction.isActive);
+      if (transaction.activeMonths && transaction.activeMonths.length > 0) {
+        setAllMonthsActive(false);
+        setSelectedMonths(new Set(transaction.activeMonths));
+      } else {
+        setAllMonthsActive(true);
+        setSelectedMonths(new Set());
+      }
     } else {
       setType('expense');
       setAmount('');
       setCategory('');
       setName('');
-      setIsActive(true);
+      setAllMonthsActive(true);
+      setSelectedMonths(new Set());
     }
   }, [transaction, isOpen]);
 
   const currentCategories = type === 'income' ? incomeCategories : expenseCategories;
+
+  const toggleMonth = useCallback((monthKey: string) => {
+    setSelectedMonths(prev => {
+      const next = new Set(prev);
+      if (next.has(monthKey)) {
+        next.delete(monthKey);
+      } else {
+        next.add(monthKey);
+      }
+      return next;
+    });
+    // Auto-scroll to footer after selecting a month
+    setTimeout(() => {
+      footerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,7 +146,8 @@ export default function RecurringModal({
         amount: parseFloat(amount),
         category,
         name,
-        isActive,
+        isActive: true,
+        activeMonths: allMonthsActive ? null : Array.from(selectedMonths).sort(),
       });
       onClose();
     } catch (error) {
@@ -228,24 +286,69 @@ export default function RecurringModal({
                 />
               </div>
 
-              {/* Active Toggle */}
-              <div ref={(el) => { if (el) fieldRefs.current.set('isActive', el); }} className="flex items-center justify-between">
-                <label className="label mb-0">פעיל</label>
-                <button
-                  type="button"
-                  onClick={() => setIsActive(!isActive)}
-                  className={`toggle ${isActive ? 'toggle-checked' : 'toggle-unchecked'}`}
-                >
-                  <span
-                    className={`toggle-thumb ${isActive ? 'toggle-thumb-checked' : 'toggle-thumb-unchecked'
-                      }`}
-                  />
-                </button>
+              {/* Active Months Selection */}
+              <div ref={(el) => { if (el) fieldRefs.current.set('activeMonths', el); }}>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="label mb-0">חודשים פעילים</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newVal = !allMonthsActive;
+                      setAllMonthsActive(newVal);
+                      if (newVal) {
+                        setSelectedMonths(new Set());
+                      } else {
+                        setTimeout(() => {
+                          footerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }, 100);
+                      }
+                    }}
+                    className={`toggle ${allMonthsActive ? 'toggle-checked' : 'toggle-unchecked'}`}
+                  >
+                    <span
+                      className={`toggle-thumb ${allMonthsActive ? 'toggle-thumb-checked' : 'toggle-thumb-unchecked'}`}
+                    />
+                  </button>
+                </div>
+                <p className="text-xs mb-2" style={{ color: '#7E7F90' }}>
+                  {allMonthsActive ? 'פעיל בכל החודשים' : `${selectedMonths.size} חודשים נבחרו`}
+                </p>
+
+                {!allMonthsActive && (
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {allMonths.map(m => {
+                      const isSelected = selectedMonths.has(m);
+                      const isCurrent = m === currentMonth;
+                      return (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => toggleMonth(m)}
+                          className="relative px-1 py-1.5 rounded-lg text-xs font-medium transition-all text-center"
+                          style={{
+                            backgroundColor: isSelected ? '#69ADFF' : '#F7F7F8',
+                            color: isSelected ? '#FFFFFF' : '#303150',
+                            border: isCurrent && !isSelected ? '1.5px solid #69ADFF' : '1.5px solid transparent',
+                            fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                          }}
+                        >
+                          {formatShortMonthChip(m)}
+                          {isSelected && (
+                            <Check
+                              className="absolute top-0.5 left-0.5 w-2.5 h-2.5 text-white"
+                              strokeWidth={3}
+                            />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Footer */}
-            <div className="modal-footer">
+            <div className="modal-footer" ref={footerRef}>
               <button type="button" onClick={onClose} className="btn-secondary flex-1" disabled={isLoading}>
                 ביטול
               </button>

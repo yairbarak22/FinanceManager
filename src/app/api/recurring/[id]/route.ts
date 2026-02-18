@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccountId, checkPermission, getSharedUserIds } from '@/lib/authHelpers';
 import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 import { recalculateDeadline } from '@/lib/goalCalculations';
+import { validateActiveMonths } from '@/lib/utils';
 
 /**
  * Auto-link a goal to a recurring transaction if:
@@ -148,6 +149,14 @@ export async function PUT(
 
     if (body.isActive !== undefined) {
       updateData.isActive = Boolean(body.isActive);
+    }
+
+    if (body.activeMonths !== undefined) {
+      const activeMonthsError = validateActiveMonths(body.activeMonths);
+      if (activeMonthsError) {
+        return NextResponse.json({ error: activeMonthsError }, { status: 400 });
+      }
+      updateData.activeMonths = body.activeMonths;
     }
 
     const result = await prisma.recurringTransaction.updateMany({
