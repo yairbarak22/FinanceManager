@@ -65,6 +65,7 @@ export default function DashboardPage() {
     monthsWithData,
     setMonthsWithData,
     currentMonth,
+    customDateRange,
   } = useMonth();
   
   // Use shared modal context
@@ -289,10 +290,15 @@ export default function DashboardPage() {
     .filter((l) => isLiabilityActiveInCashFlow(l))
     .reduce((sum, l) => sum + getEffectiveMonthlyExpense(l), 0);
 
-  // Calculate totals - filter by month only (for summaries)
-  const monthFilteredTransactions = selectedMonth === 'all'
-    ? transactions
-    : transactions.filter((tx) => getMonthKey(tx.date) === selectedMonth);
+  // Calculate totals - filter by month or custom date range (for summaries)
+  const monthFilteredTransactions = selectedMonth === 'custom' && customDateRange
+    ? transactions.filter((tx) => {
+        const txDate = tx.date.split('T')[0]; // YYYY-MM-DD
+        return txDate >= customDateRange.start && txDate <= customDateRange.end;
+      })
+    : selectedMonth === 'all'
+      ? transactions
+      : transactions.filter((tx) => getMonthKey(tx.date) === selectedMonth);
 
   // Filter by category as well (for display in Activity section)
   const filteredTransactions = monthFilteredTransactions.filter((tx) => {
@@ -310,7 +316,21 @@ export default function DashboardPage() {
     setSelectedCategory(null);
   };
 
-  const monthsCount = selectedMonth === 'all' ? Math.max(monthsWithData.size, 1) : 1;
+  // Calculate months count for recurring transactions multiplication
+  const monthsCount = selectedMonth === 'custom' && customDateRange
+    ? (() => {
+        const start = new Date(customDateRange.start);
+        const end = new Date(customDateRange.end);
+        // Calculate how many unique months the range spans
+        const uniqueMonths = new Set<string>();
+        const cursor = new Date(start);
+        while (cursor <= end) {
+          uniqueMonths.add(getMonthKey(cursor));
+          cursor.setDate(cursor.getDate() + 1);
+        }
+        return Math.max(uniqueMonths.size, 1);
+      })()
+    : selectedMonth === 'all' ? Math.max(monthsWithData.size, 1) : 1;
 
   const transactionIncome = monthFilteredTransactions
     .filter((tx) => tx.type === 'income')
@@ -324,8 +344,8 @@ export default function DashboardPage() {
   const totalExpenses = transactionExpenses + ((fixedExpenses + monthlyLiabilityPayments) * monthsCount);
   const totalBalance = totalIncome - totalExpenses;
 
-  const totalAssets = getTotalAssetsForMonth(assets, assetHistory, selectedMonth);
-  const selectedMonthDate = selectedMonth === 'all'
+  const totalAssets = getTotalAssetsForMonth(assets, assetHistory, selectedMonth === 'custom' ? 'all' : selectedMonth);
+  const selectedMonthDate = selectedMonth === 'all' || selectedMonth === 'custom'
     ? new Date()
     : new Date(selectedMonth + '-01');
   const totalLiabilities = liabilities.reduce((sum, l) => sum + getRemainingBalance(l, selectedMonthDate), 0);
@@ -369,7 +389,7 @@ export default function DashboardPage() {
 
   // Calculate previous month values for comparison
   const previousMonthData = useMemo(() => {
-    if (selectedMonth === 'all') {
+    if (selectedMonth === 'all' || selectedMonth === 'custom') {
       return { income: undefined, expenses: undefined, cashflow: undefined };
     }
     

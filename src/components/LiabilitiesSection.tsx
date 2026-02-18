@@ -120,7 +120,7 @@ export default function LiabilitiesSection({
   }, [onToggleCashFlow]);
   
   // Calculate remaining balance as of selected month (or current date if 'all')
-  const selectedMonthDate = selectedMonth === 'all' 
+  const selectedMonthDate = selectedMonth === 'all' || selectedMonth === 'custom'
     ? new Date() 
     : new Date(selectedMonth + '-01');
   const totalLiabilities = liabilities.reduce((sum, l) => sum + getRemainingBalance(l, selectedMonthDate), 0);
