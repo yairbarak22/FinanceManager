@@ -489,6 +489,9 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
   const [openGroupDropdown, setOpenGroupDropdown] = useState<string | null>(null);
   const [isMobileCategorySheet, setIsMobileCategorySheet] = useState(false);
 
+  // Ref for modal body scroll container
+  const modalBodyRef = useRef<HTMLDivElement>(null);
+
   // Refs for each review row (for auto-scroll after categorization)
   const rowRefs = useRef<Map<number, HTMLElement>>(new Map());
   const setRowRef = useCallback((rowNum: number, element: HTMLElement | null) => {
@@ -826,17 +829,24 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
 
     if (nextUncategorized) {
       const nextRowElement = rowRefs.current.get(nextUncategorized.rowNum);
-      if (nextRowElement) {
-        // Smooth scroll to the next row, then auto-open its dropdown
+      const container = modalBodyRef.current;
+      if (nextRowElement && container) {
+        // Smooth scroll the modal-body container to the next row
         setTimeout(() => {
-          nextRowElement.scrollIntoView({
+          const containerRect = container.getBoundingClientRect();
+          const elementRect = nextRowElement.getBoundingClientRect();
+          const offsetInContainer = elementRect.top - containerRect.top + container.scrollTop;
+          const targetScrollTop = offsetInContainer - (container.clientHeight / 2) + (nextRowElement.offsetHeight / 2);
+
+          container.scrollTo({
+            top: Math.max(0, targetScrollTop),
             behavior: 'smooth',
-            block: 'center',
           });
+
           // Auto-open the dropdown of the next row after scroll settles
           setTimeout(() => {
             setOpenDropdown(nextUncategorized.rowNum);
-          }, 200);
+          }, 400);
         }, 100);
       }
     }
@@ -993,6 +1003,60 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
     return needsReview.filter(t => reviewCategories[t.rowNum]).length;
   }, [needsReview, reviewCategories]);
 
+  const uncategorizedCount = needsReview.length - categorizedCount;
+
+  // Jump to the next uncategorized transaction and open its dropdown
+  const jumpToNextUncategorized = useCallback(() => {
+    const nextUncategorized = needsReview.find(t => !reviewCategories[t.rowNum]);
+    if (!nextUncategorized) return;
+
+    // Make sure the group containing this transaction is expanded
+    const groupKey = nextUncategorized.merchantName.toLowerCase().trim();
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      next.add(groupKey);
+      return next;
+    });
+
+    // Scroll to the row after a brief delay (to allow group expansion)
+    setTimeout(() => {
+      const rowElement = rowRefs.current.get(nextUncategorized.rowNum);
+      const container = modalBodyRef.current;
+
+      if (rowElement && container) {
+        // Calculate relative position within the modal-body container
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = rowElement.getBoundingClientRect();
+
+        // How far the element is from the container's visible top
+        const offsetInContainer = elementRect.top - containerRect.top + container.scrollTop;
+        const containerHeight = container.clientHeight;
+        const elementHeight = rowElement.offsetHeight;
+
+        // Target scroll position: center the element in the container
+        const targetScrollTop = offsetInContainer - (containerHeight / 2) + (elementHeight / 2);
+
+        // Smooth scroll the container itself
+        container.scrollTo({
+          top: Math.max(0, targetScrollTop),
+          behavior: 'smooth',
+        });
+
+        // Flash highlight effect
+        rowElement.style.transition = 'box-shadow 0.3s ease';
+        rowElement.style.boxShadow = '0 0 0 3px rgba(105, 173, 255, 0.5)';
+        setTimeout(() => {
+          rowElement.style.boxShadow = '';
+        }, 1200);
+
+        // Open the dropdown after scroll settles
+        setTimeout(() => {
+          setOpenDropdown(nextUncategorized.rowNum);
+        }, 500);
+      }
+    }, 150);
+  }, [needsReview, reviewCategories]);
+
   // Check if a group has all items categorized
   const isGroupFullyCategorized = useCallback((merchant: string) => {
     const group = groupedByMerchant.find(g => g.merchant === merchant);
@@ -1032,7 +1096,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
   return (
     <div className="modal-overlay" onClick={handleClose}>
       <div
-        className="modal-content max-w-2xl max-h-[85vh] flex flex-col"
+        className="modal-content max-w-4xl max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -1113,7 +1177,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
         )}
 
         {/* Body */}
-        <div className="modal-body flex-1 overflow-y-auto">
+        <div ref={modalBodyRef} className="modal-body flex-1 overflow-y-auto scrollbar-import">
           {/* Idle state - file upload */}
           {phase === 'idle' && (
             <>
@@ -1921,6 +1985,27 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
                       style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
                     >
                       {selectedTransactions.size} נבחרו
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {/* Jump to Next Uncategorized - FAB */}
+              {uncategorizedCount > 0 && (
+                <div className="sticky bottom-0 z-10 flex justify-center py-3 pointer-events-none">
+                  <button
+                    type="button"
+                    onClick={jumpToNextUncategorized}
+                    className="pointer-events-auto flex items-center gap-2 px-5 py-2.5 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
+                    style={{
+                      background: 'linear-gradient(135deg, #69ADFF 0%, #9F7FE0 100%)',
+                      boxShadow: '0 6px 20px rgba(105, 173, 255, 0.4)',
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    }}
+                  >
+                    <ChevronDown className="w-4 h-4 text-white" />
+                    <span className="text-sm font-bold text-white">
+                      קפוץ לפריט הבא ({uncategorizedCount})
                     </span>
                   </button>
                 </div>

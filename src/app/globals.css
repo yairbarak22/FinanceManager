@@ -933,6 +933,34 @@ body.pause-animations *::after {
 }
 
 /* ============================================
+   IMPORT MODAL SCROLLBAR - Always visible, prominent
+   Uses Dodger Blue (#69ADFF) to match design system
+   ============================================ */
+.scrollbar-import {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(105, 173, 255, 0.4) rgba(105, 173, 255, 0.08);
+}
+
+.scrollbar-import::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-import::-webkit-scrollbar-track {
+  background: rgba(105, 173, 255, 0.06);
+  border-radius: 10px;
+}
+
+.scrollbar-import::-webkit-scrollbar-thumb {
+  background: rgba(105, 173, 255, 0.4);
+  border-radius: 10px;
+  border: 1px solid rgba(105, 173, 255, 0.1);
+}
+
+.scrollbar-import::-webkit-scrollbar-thumb:hover {
+  background: rgba(105, 173, 255, 0.7);
+}
+
+/* ============================================
    GHOST SCROLLBAR - Design System Standard
    4px thumb, 10% opacity at rest, 60% on hover
    ============================================ */
