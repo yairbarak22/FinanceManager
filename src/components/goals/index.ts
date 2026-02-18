@@ -2,5 +2,8 @@ export { default as GoalCard } from './GoalCard';
 export { default as GoalCreationInfoModal } from './GoalCreationInfoModal';
 export { default as GoalModal } from './GoalModal';
 export { default as GoalProgressBar } from './GoalProgressBar';
+export { default as GoalQuickTemplates } from './GoalQuickTemplates';
 export { default as GoalSimulator } from './GoalSimulator';
-
+export { default as GoalSimulatorIdentity } from './GoalSimulatorIdentity';
+export { default as GoalSimulatorParams } from './GoalSimulatorParams';
+export { default as GoalSimulatorResults } from './GoalSimulatorResults';

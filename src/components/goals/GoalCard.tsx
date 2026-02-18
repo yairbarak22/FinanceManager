@@ -57,6 +57,17 @@ export default function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
   
   const statusDisplay = formatGoalStatus(status);
   const hasRecurring = !!goal.recurringTransaction;
+
+  // Accent bar gradient based on status
+  const accentGradient = (() => {
+    switch (status) {
+      case 'completed': return 'linear-gradient(to left, #0DBACC, #69ADFF)';
+      case 'on_track':
+      case 'ahead': return 'linear-gradient(to left, #C1DDFF, #69ADFF)';
+      case 'behind': return 'linear-gradient(to left, #FFC0DB, #F18AB5)';
+      default: return 'linear-gradient(to left, #E8E8ED, #BDBDCB)';
+    }
+  })();
   
   // Format deadline
   const deadline = new Date(goal.deadline);
@@ -77,13 +88,20 @@ export default function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
       role={onEdit ? 'button' : undefined}
       tabIndex={onEdit ? 0 : undefined}
       aria-label={onEdit ? `ערוך יעד: ${goal.name}` : undefined}
-      className={`bg-white rounded-3xl p-6 relative group transition-all duration-200 ${
+      className={`bg-white rounded-3xl relative group transition-all duration-200 overflow-hidden ${
         onEdit ? 'hover:shadow-lg cursor-pointer active:scale-[0.98]' : 'hover:scale-[1.02]'
       }`}
       style={{
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
       }}
     >
+      {/* Top Accent Gradient Bar */}
+      <div
+        className="h-[3px] rounded-t-3xl"
+        style={{ background: accentGradient }}
+      />
+
+      <div className="p-6">
       {/* Edge Indicator */}
       {onEdit && (
         <div className="absolute right-0 top-4 bottom-4 w-0.5 bg-[#69ADFF] opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
@@ -221,6 +239,7 @@ export default function GoalCard({ goal, onEdit, onDelete }: GoalCardProps) {
             />
           )}
         </div>
+      </div>
       </div>
     </div>
   );

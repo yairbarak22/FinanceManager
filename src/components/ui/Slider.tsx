@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useId } from 'react';
 import { Pencil } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
@@ -15,6 +15,7 @@ interface SliderProps {
   suffix?: string;
   prefix?: string;
   editable?: boolean;
+  color?: string;
 }
 
 export default function Slider({
@@ -28,10 +29,12 @@ export default function Slider({
   suffix = '',
   prefix = '',
   editable = true,
+  color = '#69ADFF',
 }: SliderProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingValue, setEditingValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const sliderId = useId();
 
   const percentage = ((value - min) / (max - min)) * 100;
 
@@ -99,8 +102,8 @@ export default function Slider({
               onBlur={saveEditValue}
               onKeyDown={handleKeyDown}
               className="w-32 py-1 pl-6 pr-2 text-lg font-bold tabular-nums rounded-lg border-2 text-left focus:outline-none"
-              style={{ 
-                borderColor: '#69ADFF',
+              style={{
+                borderColor: color,
                 color: '#303150',
                 direction: 'ltr',
               }}
@@ -125,6 +128,11 @@ export default function Slider({
       </div>
       
       <div className="relative">
+        <style dangerouslySetInnerHTML={{ __html: `
+          [data-slider-id="${sliderId}"]::-webkit-slider-thumb { border-color: ${color} !important; }
+          [data-slider-id="${sliderId}"]::-moz-range-thumb { border-color: ${color} !important; }
+          [data-slider-id="${sliderId}"]:focus-visible { --tw-ring-color: ${color}; }
+        `}} />
         <input
           type="range"
           min={min}
@@ -132,6 +140,7 @@ export default function Slider({
           step={step}
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
+          data-slider-id={sliderId}
           className="w-full h-2 bg-[#E8E8ED] rounded-full appearance-none cursor-pointer
             [&::-webkit-slider-thumb]:appearance-none
             [&::-webkit-slider-thumb]:w-5
@@ -139,7 +148,6 @@ export default function Slider({
             [&::-webkit-slider-thumb]:rounded-full
             [&::-webkit-slider-thumb]:bg-white
             [&::-webkit-slider-thumb]:border-2
-            [&::-webkit-slider-thumb]:border-[#69ADFF]
             [&::-webkit-slider-thumb]:shadow-md
             [&::-webkit-slider-thumb]:cursor-pointer
             [&::-webkit-slider-thumb]:transition-all
@@ -150,15 +158,13 @@ export default function Slider({
             [&::-moz-range-thumb]:rounded-full
             [&::-moz-range-thumb]:bg-white
             [&::-moz-range-thumb]:border-2
-            [&::-moz-range-thumb]:border-[#69ADFF]
             [&::-moz-range-thumb]:shadow-md
             [&::-moz-range-thumb]:cursor-pointer
             focus:outline-none
             focus-visible:ring-2
-            focus-visible:ring-[#69ADFF]
             focus-visible:ring-offset-2"
           style={{
-            background: `linear-gradient(to left, #69ADFF 0%, #69ADFF ${percentage}%, #E8E8ED ${percentage}%, #E8E8ED 100%)`,
+            background: `linear-gradient(to left, ${color} 0%, ${color} ${percentage}%, #E8E8ED ${percentage}%, #E8E8ED 100%)`,
           }}
           aria-label={label}
           aria-valuemin={min}
@@ -183,6 +189,7 @@ export function CurrencySlider({
   max,
   step = 1000,
   onChange,
+  color,
 }: Omit<SliderProps, 'formatValue' | 'prefix' | 'suffix'>) {
   return (
     <Slider
@@ -193,6 +200,7 @@ export function CurrencySlider({
       step={step}
       onChange={onChange}
       formatValue={(v) => formatCurrency(v)}
+      color={color}
     />
   );
 }
@@ -205,6 +213,7 @@ export function PercentageSlider({
   max = 100,
   step = 0.5,
   onChange,
+  color,
 }: Omit<SliderProps, 'formatValue' | 'prefix' | 'suffix'>) {
   return (
     <Slider
@@ -215,6 +224,7 @@ export function PercentageSlider({
       step={step}
       onChange={onChange}
       suffix="%"
+      color={color}
     />
   );
 }
@@ -227,6 +237,7 @@ export function YearsSlider({
   max = 50,
   step = 1,
   onChange,
+  color,
 }: Omit<SliderProps, 'formatValue' | 'prefix' | 'suffix'>) {
   return (
     <Slider
@@ -237,6 +248,7 @@ export function YearsSlider({
       step={step}
       onChange={onChange}
       suffix=" שנים"
+      color={color}
     />
   );
 }

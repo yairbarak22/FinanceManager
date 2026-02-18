@@ -25,7 +25,7 @@ export default function GoalCreationInfoModal({
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/50 z-[9999] animate-fade-in"
+        className="fixed inset-0 bg-black/50 backdrop-blur-[4px] z-[9999] animate-fade-in"
         onClick={() => !isCreating && onClose()}
       />
       <div
@@ -33,12 +33,12 @@ export default function GoalCreationInfoModal({
         onClick={() => !isCreating && onClose()}
       >
         <div
-          className="bg-white rounded-2xl shadow-xl max-w-md w-full animate-scale-in"
+          className="bg-white rounded-3xl shadow-xl max-w-md w-full animate-scale-in"
           onClick={(e) => e.stopPropagation()}
           dir="rtl"
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-slate-100">
+          <div className="flex items-center justify-between p-6 border-b border-[#F7F7F8]">
             <div className="flex items-center gap-3">
               <div 
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -60,7 +60,7 @@ export default function GoalCreationInfoModal({
               type="button"
               onClick={onClose}
               disabled={isCreating}
-              className="p-2 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50"
+              className="p-2 rounded-lg hover:bg-[#F7F7F8] transition-colors disabled:opacity-50"
             >
               <X className="w-5 h-5" style={{ color: '#7E7F90' }} />
             </button>
@@ -161,7 +161,7 @@ export default function GoalCreationInfoModal({
           </div>
 
           {/* Footer */}
-          <div className="flex gap-3 p-6 border-t border-slate-100">
+          <div className="flex gap-3 p-6 border-t border-[#F7F7F8]">
             <button
               type="button"
               onClick={onClose}

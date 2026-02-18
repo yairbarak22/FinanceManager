@@ -1,42 +1,26 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { 
-  Plane, 
-  Car, 
-  Home, 
-  GraduationCap, 
-  Umbrella, 
-  Wallet,
-  Shield,
-  Plus,
-  TrendingUp,
-  Edit3,
-  Check,
-  TrendingDown,
-} from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Area, AreaChart } from 'recharts';
-import { formatCurrency } from '@/lib/utils';
-import { 
-  calculateMonthlyContribution, 
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { TrendingUp, Plus, Loader2, ArrowLeft, ArrowRight, Target, Sliders, Sparkles, ChevronsDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  calculateMonthlyContribution,
   calculateProjectionWithInterest,
   calculateMonthlyContributionWithInterest,
   yearsToMonths,
 } from '@/lib/goalCalculations';
 import Card from '@/components/ui/Card';
 import GoalCreationInfoModal from './GoalCreationInfoModal';
+import GoalSimulatorIdentity from './GoalSimulatorIdentity';
+import GoalSimulatorParams from './GoalSimulatorParams';
+import GoalSimulatorResults from './GoalSimulatorResults';
 import { useAnalytics } from '@/hooks/useAnalytics';
 
-const GOAL_CATEGORIES = [
-  { id: 'saving', label: 'חיסכון כללי', icon: Wallet },
-  { id: 'home', label: 'דירה / בית', icon: Home },
-  { id: 'car', label: 'רכב', icon: Car },
-  { id: 'travel', label: 'נסיעות', icon: Plane },
-  { id: 'education', label: 'לימודים', icon: GraduationCap },
-  { id: 'vacation', label: 'חופשה', icon: Umbrella },
-  { id: 'emergency', label: 'קרן חירום', icon: Shield },
-  { id: 'custom', label: 'מותאם אישית', icon: Edit3 },
-];
+const STEPS = [
+  { id: 1, label: 'היעד שלך', icon: Target, subtitle: 'בחר שם וקטגוריה ליעד' },
+  { id: 2, label: 'פרטים', icon: Sliders, subtitle: 'הגדר סכומים וטווח זמן' },
+  { id: 3, label: 'תוצאה', icon: Sparkles, subtitle: 'צפה בתוצאות וצור את היעד' },
+] as const;
 
 interface GoalSimulatorProps {
   onCreateGoal: (goal: {
@@ -55,32 +39,28 @@ interface GoalSimulatorProps {
 
 export default function GoalSimulator({ onCreateGoal, isCreating, onSuccess }: GoalSimulatorProps) {
   const analytics = useAnalytics();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
+
+  // Identity state
   const [name, setName] = useState('');
-  const [targetAmount, setTargetAmount] = useState(200000);
-  const [currentAmount, setCurrentAmount] = useState(0);
-  const [years, setYears] = useState(5);
   const [category, setCategory] = useState('saving');
   const [customCategory, setCustomCategory] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
-  
-  // Portfolio investment state
+
+  // Params state
+  const [targetAmount, setTargetAmount] = useState(200000);
+  const [currentAmount, setCurrentAmount] = useState(0);
+  const [years, setYears] = useState(5);
+  const [months, setMonths] = useState(60);
+  const [timeUnit, setTimeUnit] = useState<'years' | 'months'>('years');
   const [investInPortfolio, setInvestInPortfolio] = useState(false);
   const [expectedInterestRate, setExpectedInterestRate] = useState(8);
-  
+
   // Info modal state
   const [showInfoModal, setShowInfoModal] = useState(false);
-  
-  // Editable target amount state
-  const [isEditingTargetAmount, setIsEditingTargetAmount] = useState(false);
-  const [editingTargetAmount, setEditingTargetAmount] = useState('');
-  
-  // Time unit state (years or months)
-  const [timeUnit, setTimeUnit] = useState<'years' | 'months'>('years');
-  const [months, setMonths] = useState(60); // 5 years default
-  const [isEditingTime, setIsEditingTime] = useState(false);
-  const [editingTime, setEditingTime] = useState('');
-  
-  // Calculate deadline from years or months
+
+  // Derived calculations
   const deadline = useMemo(() => {
     const date = new Date();
     if (timeUnit === 'months') {
@@ -90,66 +70,105 @@ export default function GoalSimulator({ onCreateGoal, isCreating, onSuccess }: G
     }
     return date.toISOString();
   }, [years, months, timeUnit]);
-  
-  // Get effective months for calculations
+
   const effectiveMonths = useMemo(() => {
     return timeUnit === 'months' ? months : yearsToMonths(years);
   }, [timeUnit, months, years]);
-  
-  // Calculate monthly contribution (with or without interest)
+
   const monthlyContribution = useMemo(() => {
     if (investInPortfolio && expectedInterestRate > 0) {
       return calculateMonthlyContributionWithInterest(
-        targetAmount,
-        currentAmount,
-        expectedInterestRate,
-        effectiveMonths
+        targetAmount, currentAmount, expectedInterestRate, effectiveMonths
       );
     }
     return calculateMonthlyContribution(targetAmount, currentAmount, deadline);
   }, [targetAmount, currentAmount, deadline, effectiveMonths, investInPortfolio, expectedInterestRate]);
-  
-  // Calculate monthly contribution without interest for comparison
+
   const monthlyContributionWithoutInterest = useMemo(() => {
     return calculateMonthlyContribution(targetAmount, currentAmount, deadline);
   }, [targetAmount, currentAmount, deadline]);
-  
-  // Calculate projection data for chart (includes both with and without interest)
+
   const projectionData = useMemo(() => {
     const data = calculateProjectionWithInterest(
-      currentAmount,
-      monthlyContribution,
+      currentAmount, monthlyContribution,
       Math.min(effectiveMonths, 60),
       investInPortfolio ? expectedInterestRate : 0
     );
-    // Sample to max 12 points for cleaner chart
     const step = Math.max(1, Math.floor(data.length / 12));
     return data.filter((_, i) => i % step === 0 || i === data.length - 1);
   }, [currentAmount, monthlyContribution, effectiveMonths, investInPortfolio, expectedInterestRate]);
-  
-  // Calculate savings from using interest
+
   const monthlySavings = useMemo(() => {
     if (!investInPortfolio) return 0;
     return Math.max(0, monthlyContributionWithoutInterest - monthlyContribution);
   }, [monthlyContributionWithoutInterest, monthlyContribution, investInPortfolio]);
-  
+
+  // Step validation
+  const isStep1Valid = name.trim() && (category !== 'custom' || customCategory.trim());
+  const isStepValid = useCallback((step: number) => {
+    if (step === 1) return !!isStep1Valid;
+    return true; // Steps 2 & 3 always valid (have defaults)
+  }, [isStep1Valid]);
+
+  // Handlers
+  const handleCategorySelect = (catId: string) => {
+    setCategory(catId);
+    if (catId === 'custom') {
+      setShowCustomInput(true);
+    } else {
+      setShowCustomInput(false);
+      setCustomCategory('');
+    }
+  };
+
+  const handleTimeUnitChange = (unit: 'years' | 'months') => {
+    if (unit !== timeUnit) {
+      setTimeUnit(unit);
+      if (unit === 'months') {
+        setMonths(years * 12);
+      } else {
+        setYears(Math.round(months / 12) || 1);
+      }
+    }
+  };
+
+  const goNext = () => {
+    if (currentStep < 3 && isStepValid(currentStep)) {
+      setDirection(1);
+      setCurrentStep(s => s + 1);
+    }
+  };
+
+  const goBack = () => {
+    if (currentStep > 1) {
+      setDirection(-1);
+      setCurrentStep(s => s - 1);
+    }
+  };
+
+  const goToStep = (step: number) => {
+    // Allow going back freely, forward only if current is valid
+    if (step < currentStep) {
+      setDirection(-1);
+      setCurrentStep(step);
+    } else if (step > currentStep && isStepValid(currentStep)) {
+      setDirection(1);
+      setCurrentStep(step);
+    }
+  };
+
   const handleSubmit = () => {
-    if (!name.trim()) return;
-    if (category === 'custom' && !customCategory.trim()) return;
-    
-    // Track simulator used
+    if (!isStep1Valid) return;
     analytics.trackGoalSimulatorUsed(targetAmount, effectiveMonths, investInPortfolio ? expectedInterestRate : 0);
     analytics.trackGoalFormOpened('simulator');
-    
-    // Show info modal first
     setShowInfoModal(true);
   };
-  
+
   const handleConfirmCreate = async () => {
-    const finalCategory = category === 'custom' && customCategory.trim() 
-      ? customCategory.trim() 
+    const finalCategory = category === 'custom' && customCategory.trim()
+      ? customCategory.trim()
       : category;
-    
+
     try {
       await onCreateGoal({
         name: name.trim(),
@@ -161,19 +180,15 @@ export default function GoalSimulator({ onCreateGoal, isCreating, onSuccess }: G
         investInPortfolio,
         expectedInterestRate: investInPortfolio ? expectedInterestRate : undefined,
       });
-      
-      // Track goal created
+
       analytics.trackGoalCreated(
-        name.trim(),
-        finalCategory,
-        targetAmount,
-        currentAmount,
-        deadline,
-        investInPortfolio,
+        name.trim(), finalCategory, targetAmount,
+        currentAmount, deadline, investInPortfolio,
       );
-      
-      // Close modal and reset form on success
+
+      // Reset form
       setShowInfoModal(false);
+      setCurrentStep(1);
       setName('');
       setTargetAmount(200000);
       setCurrentAmount(0);
@@ -185,631 +200,304 @@ export default function GoalSimulator({ onCreateGoal, isCreating, onSuccess }: G
       setShowCustomInput(false);
       setInvestInPortfolio(false);
       setExpectedInterestRate(8);
-      
-      // Call success callback
+
       onSuccess?.();
     } catch (error) {
-      // Error handling is done in the parent component
       console.error('Error creating goal:', error);
     }
   };
 
-  const handleCategorySelect = (catId: string) => {
-    setCategory(catId);
-    if (catId === 'custom') {
-      setShowCustomInput(true);
-    } else {
-      setShowCustomInput(false);
-      setCustomCategory('');
-    }
+  // Animation variants for step transitions
+  const slideVariants = {
+    enter: (dir: number) => ({
+      x: dir > 0 ? 60 : -60,
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (dir: number) => ({
+      x: dir > 0 ? -60 : 60,
+      opacity: 0,
+    }),
   };
-  
-  // Handle target amount editing
-  const handleTargetAmountClick = () => {
-    setEditingTargetAmount(targetAmount.toString());
-    setIsEditingTargetAmount(true);
-  };
-  
-  const handleTargetAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Only allow numbers
-    const value = e.target.value.replace(/[^\d]/g, '');
-    setEditingTargetAmount(value);
-  };
-  
-  const handleTargetAmountBlur = () => {
-    const value = Number(editingTargetAmount);
-    if (value >= 500 && value <= 2000000) {
-      setTargetAmount(value);
-    }
-    setIsEditingTargetAmount(false);
-  };
-  
-  const handleTargetAmountKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleTargetAmountBlur();
-    } else if (e.key === 'Escape') {
-      setIsEditingTargetAmount(false);
-    }
-  };
-  
-  // Handle time editing
-  const handleTimeClick = () => {
-    const currentValue = timeUnit === 'months' ? months : years;
-    setEditingTime(currentValue.toString());
-    setIsEditingTime(true);
-  };
-  
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/[^\d]/g, '');
-    setEditingTime(value);
-  };
-  
-  const handleTimeBlur = () => {
-    const value = Number(editingTime);
-    if (timeUnit === 'months') {
-      if (value >= 1 && value <= 360) {
-        setMonths(value);
-        // Also update years to match
-        setYears(Math.round(value / 12));
-      }
-    } else {
-      if (value >= 1 && value <= 30) {
-        setYears(value);
-        setMonths(value * 12);
-      }
-    }
-    setIsEditingTime(false);
-  };
-  
-  const handleTimeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleTimeBlur();
-    } else if (e.key === 'Escape') {
-      setIsEditingTime(false);
-    }
-  };
-  
-  // Handle time unit toggle
-  const handleTimeUnitChange = (unit: 'years' | 'months') => {
-    if (unit !== timeUnit) {
-      setTimeUnit(unit);
-      if (unit === 'months') {
-        setMonths(years * 12);
-      } else {
-        setYears(Math.round(months / 12) || 1);
-      }
-    }
-  };
-  
-  const selectedCategory = GOAL_CATEGORIES.find(c => c.id === category);
-  const CategoryIcon = selectedCategory?.icon || Wallet;
+
+  // Scroll indicator logic
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollHint, setShowScrollHint] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) { setShowScrollHint(false); return; }
+    const hasMore = el.scrollHeight - el.scrollTop - el.clientHeight > 12;
+    setShowScrollHint(hasMore);
+  }, []);
+
+  useEffect(() => {
+    checkScroll();
+  }, [currentStep, checkScroll]);
+
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(checkScroll);
+    ro.observe(el);
+    // Also observe children changes via MutationObserver
+    const mo = new MutationObserver(checkScroll);
+    mo.observe(el, { childList: true, subtree: true, attributes: true });
+    return () => { ro.disconnect(); mo.disconnect(); };
+  }, [checkScroll]);
 
   return (
-    <Card className="p-6 lg:p-8">
-      <div className="flex items-center gap-3 mb-6">
-        <div 
-          className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: 'linear-gradient(135deg, #C1DDFF 0%, #69ADFF 100%)' }}
-        >
-          <TrendingUp className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h2 
-            className="text-xl font-bold"
-            style={{ 
-              color: '#303150',
-              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-            }}
+    <Card className="p-0 overflow-hidden h-full lg:max-h-[600px] flex flex-col">
+      {/* Header with gradient top bar */}
+      <div
+        className="px-6 pt-6 pb-5 lg:px-8 lg:pt-8 flex-shrink-0"
+        style={{ borderBottom: '1px solid #F7F7F8' }}
+      >
+        <div className="flex items-center gap-3 mb-5">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, #C1DDFF 0%, #69ADFF 100%)' }}
           >
-            סימולטור יעדים
-          </h2>
-          <p style={{ color: '#7E7F90', fontSize: '0.875rem' }}>
-            תכנן את היעד הפיננסי שלך
-          </p>
-        </div>
-      </div>
-      
-      {/* Top row - Name and Initial Amount */}
-      <div className="grid lg:grid-cols-2 gap-6 mb-6">
-        {/* Left - Goal name */}
-        <div>
-          <label 
-            className="block text-sm font-medium mb-2"
-            style={{ color: '#7E7F90' }}
-          >
-            שם היעד
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="לדוגמה: קניית דירה לילד"
-            className="w-full px-4 py-3 rounded-xl border transition-colors focus:outline-none focus:ring-2 focus:ring-[#69ADFF]"
-            style={{ 
-              borderColor: '#E8E8ED',
-              color: '#303150',
-              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-            }}
-          />
-        </div>
-        
-        {/* Right - Initial amount */}
-        <div>
-          <label 
-            className="block text-sm font-medium mb-2"
-            style={{ color: '#7E7F90' }}
-          >
-            סכום התחלתי
-          </label>
-          <div className="relative">
-            <span 
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-sm"
-              style={{ color: '#7E7F90' }}
-            >
-              ₪
-            </span>
-            <input
-              type="number"
-              min={0}
-              max={targetAmount}
-              step={1}
-              value={currentAmount || ''}
-              onChange={(e) => setCurrentAmount(Math.min(Number(e.target.value), targetAmount))}
-              placeholder="0"
-              className="w-full py-3 pl-8 pr-4 rounded-xl border transition-colors focus:outline-none focus:ring-2 focus:ring-[#69ADFF] tabular-nums hide-spinner"
-              style={{ 
-                borderColor: '#E8E8ED',
-                color: '#303150',
-                textAlign: 'right',
-                direction: 'ltr',
-              }}
-            />
+            <TrendingUp className="w-5 h-5 text-white" />
           </div>
-        </div>
-      </div>
-      
-      {/* Second row - Category on left; Amounts/Sliders on right */}
-      <div className="grid lg:grid-cols-2 gap-6 mb-8">
-        {/* Left side - Category */}
-        <div>
-          <label 
-            className="block text-sm font-medium mb-2"
-            style={{ color: '#7E7F90' }}
-          >
-            קטגוריה
-          </label>
-          <div className="grid grid-cols-4 gap-2">
-            {GOAL_CATEGORIES.map((cat) => {
-              const Icon = cat.icon;
-              const isSelected = category === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => handleCategorySelect(cat.id)}
-                  className="flex flex-col items-center gap-1 p-3 rounded-xl transition-all"
-                  style={{
-                    backgroundColor: isSelected ? 'rgba(105, 173, 255, 0.15)' : '#F7F7F8',
-                    border: isSelected ? '2px solid #69ADFF' : '2px solid transparent',
-                  }}
-                >
-                  <Icon 
-                    className="w-5 h-5"
-                    style={{ color: isSelected ? '#69ADFF' : '#7E7F90' }}
-                  />
-                  <span 
-                    className="text-xs text-center"
-                    style={{ color: isSelected ? '#69ADFF' : '#7E7F90' }}
-                  >
-                    {cat.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          {showCustomInput && (
-            <div className="mt-3">
-              <input
-                type="text"
-                value={customCategory}
-                onChange={(e) => setCustomCategory(e.target.value)}
-                placeholder="הזן קטגוריה מותאמת אישית"
-                className="w-full px-4 py-3 rounded-xl border transition-colors focus:outline-none focus:ring-2 focus:ring-[#69ADFF]"
-                style={{ 
-                  borderColor: '#E8E8ED',
-                  color: '#303150',
-                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-                }}
-              />
-            </div>
-          )}
-        </div>
-        
-        {/* Right side - Amounts/Sliders */}
-        <div className="space-y-4">
-          {/* Target amount slider */}
           <div>
-            <div className="flex justify-between items-center mb-2">
-              <label 
-                className="text-sm font-medium"
-                style={{ color: '#7E7F90' }}
-              >
-                סכום היעד
-              </label>
-              {isEditingTargetAmount ? (
-                <div className="relative">
-                  <span 
-                    className="absolute left-2 top-1/2 -translate-y-1/2 text-sm font-medium"
-                    style={{ color: '#7E7F90' }}
-                  >
-                    ₪
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={editingTargetAmount}
-                    onChange={handleTargetAmountChange}
-                    onBlur={handleTargetAmountBlur}
-                    onKeyDown={handleTargetAmountKeyDown}
-                    autoFocus
-                    className="w-32 py-1 pl-6 pr-2 text-lg font-bold tabular-nums rounded-lg border-2 text-left focus:outline-none"
-                    style={{ 
-                      borderColor: '#69ADFF',
-                      color: '#303150',
-                      direction: 'ltr',
-                    }}
-                  />
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleTargetAmountClick}
-                  className="text-lg font-bold tabular-nums px-2 py-1 rounded-lg transition-all hover:bg-[#F7F7F8] cursor-pointer"
-                  style={{ color: '#303150' }}
-                  title="לחץ לעריכה ידנית"
-                >
-                  {formatCurrency(targetAmount)}
-                </button>
-              )}
-            </div>
-            <input
-              type="range"
-              min={5000}
-              max={2000000}
-              step={5000}
-              value={targetAmount}
-              onChange={(e) => setTargetAmount(Number(e.target.value))}
-              className="w-full h-2 rounded-full appearance-none cursor-pointer"
+            <h2
+              className="text-xl font-bold"
               style={{
-                background: `linear-gradient(to left, #69ADFF 0%, #69ADFF ${((targetAmount - 5000) / (2000000 - 5000)) * 100}%, #F7F7F8 ${((targetAmount - 5000) / (2000000 - 5000)) * 100}%, #F7F7F8 100%)`,
-              }}
-            />
-            <div className="flex justify-between text-xs mt-1" style={{ color: '#BDBDCB' }}>
-              <span>₪5,000</span>
-              <span>₪2,000,000</span>
-            </div>
-          </div>
-          
-          {/* Time slider with toggle */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <div className="flex items-center gap-2">
-                <label 
-                  className="text-sm font-medium"
-                  style={{ color: '#7E7F90' }}
-                >
-                  טווח זמן
-                </label>
-                {/* Toggle between years and months */}
-                <div 
-                  className="flex rounded-lg p-0.5"
-                  style={{ backgroundColor: '#F7F7F8' }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleTimeUnitChange('years')}
-                    className="px-2 py-0.5 text-xs rounded-md transition-all"
-                    style={{
-                      backgroundColor: timeUnit === 'years' ? 'white' : 'transparent',
-                      color: timeUnit === 'years' ? '#303150' : '#7E7F90',
-                      boxShadow: timeUnit === 'years' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
-                    }}
-                  >
-                    שנים
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleTimeUnitChange('months')}
-                    className="px-2 py-0.5 text-xs rounded-md transition-all"
-                    style={{
-                      backgroundColor: timeUnit === 'months' ? 'white' : 'transparent',
-                      color: timeUnit === 'months' ? '#303150' : '#7E7F90',
-                      boxShadow: timeUnit === 'months' ? '0 1px 2px rgba(0,0,0,0.1)' : 'none',
-                    }}
-                  >
-                    חודשים
-                  </button>
-                </div>
-              </div>
-              {isEditingTime ? (
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={editingTime}
-                  onChange={handleTimeChange}
-                  onBlur={handleTimeBlur}
-                  onKeyDown={handleTimeKeyDown}
-                  autoFocus
-                  className="w-20 py-1 px-2 text-lg font-bold tabular-nums rounded-lg border-2 text-center focus:outline-none"
-                  style={{ 
-                    borderColor: '#69ADFF',
-                    color: '#303150',
-                    direction: 'ltr',
-                  }}
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleTimeClick}
-                  className="text-lg font-bold tabular-nums px-2 py-1 rounded-lg transition-all hover:bg-[#F7F7F8] cursor-pointer"
-                  style={{ color: '#303150' }}
-                  title="לחץ לעריכה ידנית"
-                >
-                  {timeUnit === 'months' ? `${months} חודשים` : `${years} שנים`}
-                </button>
-              )}
-            </div>
-            {timeUnit === 'years' ? (
-              <>
-                <input
-                  type="range"
-                  min={1}
-                  max={30}
-                  step={1}
-                  value={years}
-                  onChange={(e) => {
-                    const newYears = Number(e.target.value);
-                    setYears(newYears);
-                    setMonths(newYears * 12);
-                  }}
-                  className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to left, #69ADFF 0%, #69ADFF ${((years - 1) / 29) * 100}%, #F7F7F8 ${((years - 1) / 29) * 100}%, #F7F7F8 100%)`,
-                  }}
-                />
-                <div className="flex justify-between text-xs mt-1" style={{ color: '#BDBDCB' }}>
-                  <span>שנה</span>
-                  <span>30 שנים</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <input
-                  type="range"
-                  min={1}
-                  max={360}
-                  step={1}
-                  value={months}
-                  onChange={(e) => {
-                    const newMonths = Number(e.target.value);
-                    setMonths(newMonths);
-                    setYears(Math.round(newMonths / 12) || 1);
-                  }}
-                  className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to left, #69ADFF 0%, #69ADFF ${((months - 1) / 359) * 100}%, #F7F7F8 ${((months - 1) / 359) * 100}%, #F7F7F8 100%)`,
-                  }}
-                />
-                <div className="flex justify-between text-xs mt-1" style={{ color: '#BDBDCB' }}>
-                  <span>חודש</span>
-                  <span>360 חודשים</span>
-                </div>
-              </>
-            )}
-          </div>
-          
-          {/* Portfolio Investment Checkbox */}
-          <div 
-            className="rounded-xl p-4 transition-all"
-            style={{ 
-              backgroundColor: investInPortfolio ? 'rgba(13, 186, 204, 0.08)' : '#F7F7F8',
-              border: investInPortfolio ? '2px solid #0DBACC' : '2px solid transparent',
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setInvestInPortfolio(!investInPortfolio)}
-              className="w-full flex items-center gap-3"
-            >
-              <div 
-                className="w-5 h-5 rounded flex items-center justify-center transition-all flex-shrink-0"
-                style={{
-                  backgroundColor: investInPortfolio ? '#0DBACC' : 'white',
-                  border: investInPortfolio ? 'none' : '2px solid #BDBDCB',
-                }}
-              >
-                {investInPortfolio && <Check className="w-3 h-3 text-white" />}
-              </div>
-              <div className="flex-1 text-right">
-                <p 
-                  className="text-sm font-medium"
-                  style={{ color: investInPortfolio ? '#0DBACC' : '#303150' }}
-                >
-                  הפקדה לתיק מסחר עצמאי
-                </p>
-                <p 
-                  className="text-xs"
-                  style={{ color: '#7E7F90' }}
-                >
-                  השקעה עם ריבית דריבית צפויה
-                </p>
-              </div>
-              <TrendingUp 
-                className="w-5 h-5 flex-shrink-0"
-                style={{ color: investInPortfolio ? '#0DBACC' : '#BDBDCB' }}
-              />
-            </button>
-            
-            {/* Interest Rate Slider - shown when portfolio investment is enabled */}
-            {investInPortfolio && (
-              <div className="mt-4 pt-4 border-t" style={{ borderColor: 'rgba(13, 186, 204, 0.2)' }}>
-                <div className="flex justify-between items-center mb-2">
-                  <label 
-                    className="text-sm font-medium"
-                    style={{ color: '#0DBACC' }}
-                  >
-                    ריבית צפויה שנתית
-                  </label>
-                  <span 
-                    className="text-lg font-bold tabular-nums"
-                    style={{ color: '#0DBACC' }}
-                  >
-                    {expectedInterestRate}%
-                  </span>
-                </div>
-                <input
-                  type="range"
-                  min={4}
-                  max={20}
-                  step={0.5}
-                  value={expectedInterestRate}
-                  onChange={(e) => setExpectedInterestRate(Number(e.target.value))}
-                  className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to left, #0DBACC 0%, #0DBACC ${((expectedInterestRate - 4) / 16) * 100}%, rgba(13, 186, 204, 0.2) ${((expectedInterestRate - 4) / 16) * 100}%, rgba(13, 186, 204, 0.2) 100%)`,
-                  }}
-                />
-                <div className="flex justify-between text-xs mt-1" style={{ color: '#7E7F90' }}>
-                  <span>4%</span>
-                  <span>20%</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      
-      {/* Bottom section - Summary & Chart side by side, then Button */}
-      <div className="space-y-4">
-        {/* Summary and Chart in one row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Summary - Monthly contribution */}
-          <div 
-            className="rounded-2xl p-4"
-            style={{ backgroundColor: investInPortfolio ? 'rgba(13, 186, 204, 0.08)' : '#F7F7F8' }}
-          >
-            <p 
-              className="text-xs mb-1"
-              style={{ color: '#7E7F90' }}
-            >
-              הפרשה חודשית נדרשת
-            </p>
-            <div 
-              className="text-2xl font-bold tabular-nums mb-1"
-              style={{ 
-                color: investInPortfolio ? '#0DBACC' : '#303150',
+                color: '#303150',
                 fontFamily: 'var(--font-nunito), system-ui, sans-serif',
               }}
             >
-              {formatCurrency(monthlyContribution)}
-            </div>
-            <p 
-              className="text-xs"
-              style={{ color: '#7E7F90' }}
-            >
-              למשך {effectiveMonths} חודשים ({Math.round(effectiveMonths / 12 * 10) / 10} שנים)
+              סימולטור יעדים
+            </h2>
+            <p style={{ color: '#7E7F90', fontSize: '0.8125rem' }}>
+              {STEPS[currentStep - 1].subtitle}
             </p>
-            
-            {/* Savings indicator when using portfolio */}
-            {investInPortfolio && monthlySavings > 0 && (
-              <div 
-                className="mt-2 pt-2 border-t flex items-center gap-2"
-                style={{ borderColor: 'rgba(13, 186, 204, 0.2)' }}
-              >
-                <TrendingDown className="w-4 h-4" style={{ color: '#0DBACC' }} />
-                <p className="text-xs" style={{ color: '#0DBACC' }}>
-                  חיסכון של {formatCurrency(monthlySavings)} בחודש עם ריבית {expectedInterestRate}%
-                </p>
-              </div>
-            )}
-          </div>
-          
-          {/* Chart */}
-          <div 
-            className="rounded-2xl p-4"
-            style={{ backgroundColor: '#F7F7F8' }}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <p 
-                className="text-xs"
-                style={{ color: '#7E7F90' }}
-              >
-                תחזית חיסכון
-              </p>
-              {investInPortfolio && (
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#69ADFF' }} />
-                    <span className="text-xs" style={{ color: '#7E7F90' }}>ללא ריבית</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#0DBACC' }} />
-                    <span className="text-xs" style={{ color: '#7E7F90' }}>עם ריבית</span>
-                  </div>
-                </div>
-              )}
-            </div>
-            <ResponsiveContainer width="100%" height={80}>
-              <AreaChart data={projectionData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                <defs>
-                  <linearGradient id="goalGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#69ADFF" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#69ADFF" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="interestGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0DBACC" stopOpacity={0.4} />
-                    <stop offset="100%" stopColor="#0DBACC" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                {/* Base value (without interest) */}
-                <Area
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#69ADFF"
-                  strokeWidth={2}
-                  fill="url(#goalGradient)"
-                />
-                {/* Value with interest - shown on top when portfolio is enabled */}
-                {investInPortfolio && (
-                  <Area
-                    type="monotone"
-                    dataKey="valueWithInterest"
-                    stroke="#0DBACC"
-                    strokeWidth={2}
-                    fill="url(#interestGradient)"
-                  />
-                )}
-              </AreaChart>
-            </ResponsiveContainer>
           </div>
         </div>
-        
-        {/* Action button */}
-        <button
-          onClick={handleSubmit}
-          disabled={!name.trim() || (category === 'custom' && !customCategory.trim()) || isCreating}
-          className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{
-            backgroundColor: (name.trim() && (category !== 'custom' || customCategory.trim())) ? '#69ADFF' : '#BDBDCB',
-            color: 'white',
-            fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-          }}
-        >
-          {isCreating ? 'יוצר יעד...' : 'הוסף יעד'}
-          <Plus className="w-5 h-5" />
-        </button>
+
+        {/* Step Indicator */}
+        <div className="flex items-center justify-center gap-0">
+          {STEPS.map((step, idx) => {
+            const StepIcon = step.icon;
+            const isActive = currentStep === step.id;
+            const isCompleted = currentStep > step.id;
+            const isClickable = step.id < currentStep || (step.id > currentStep && isStepValid(currentStep));
+
+            return (
+              <div key={step.id} className="flex items-center">
+                {/* Step circle */}
+                <button
+                  type="button"
+                  onClick={() => goToStep(step.id)}
+                  disabled={!isClickable && !isActive}
+                  className="flex flex-col items-center gap-1.5 transition-all duration-200 group"
+                  style={{ minWidth: '72px' }}
+                >
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300"
+                    style={{
+                      background: isActive
+                        ? 'linear-gradient(135deg, #69ADFF 0%, #0DBACC 100%)'
+                        : isCompleted
+                          ? '#0DBACC'
+                          : '#F7F7F8',
+                      boxShadow: isActive ? '0 4px 12px rgba(105, 173, 255, 0.35)' : 'none',
+                      transform: isActive ? 'scale(1.1)' : 'scale(1)',
+                    }}
+                  >
+                    <StepIcon
+                      className="w-4 h-4"
+                      style={{ color: isActive || isCompleted ? 'white' : '#BDBDCB' }}
+                    />
+                  </div>
+                  <span
+                    className="text-xs font-medium transition-colors duration-200"
+                    style={{
+                      color: isActive ? '#303150' : isCompleted ? '#0DBACC' : '#BDBDCB',
+                    }}
+                  >
+                    {step.label}
+                  </span>
+                </button>
+
+                {/* Connector line */}
+                {idx < STEPS.length - 1 && (
+                  <div
+                    className="h-[2px] transition-all duration-500 mx-1"
+                    style={{
+                      width: '40px',
+                      backgroundColor: isCompleted ? '#0DBACC' : '#E8E8ED',
+                      marginBottom: '20px',
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
-      
+
+      {/* Step Content — flex-1 to fill available height */}
+      <div className="relative flex-1 min-h-0">
+        <div
+          ref={scrollContainerRef}
+          onScroll={checkScroll}
+          className="px-6 py-6 lg:px-8 h-full overflow-y-auto"
+        >
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={currentStep}
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+            >
+              {currentStep === 1 && (
+                <GoalSimulatorIdentity
+                  name={name}
+                  onNameChange={setName}
+                  category={category}
+                  onCategoryChange={handleCategorySelect}
+                  customCategory={customCategory}
+                  onCustomCategoryChange={setCustomCategory}
+                  showCustomInput={showCustomInput}
+                />
+              )}
+
+              {currentStep === 2 && (
+                <GoalSimulatorParams
+                  targetAmount={targetAmount}
+                  onTargetAmountChange={setTargetAmount}
+                  currentAmount={currentAmount}
+                  onCurrentAmountChange={setCurrentAmount}
+                  years={years}
+                  months={months}
+                  timeUnit={timeUnit}
+                  onYearsChange={setYears}
+                  onMonthsChange={setMonths}
+                  onTimeUnitChange={handleTimeUnitChange}
+                  investInPortfolio={investInPortfolio}
+                  onInvestChange={setInvestInPortfolio}
+                  expectedInterestRate={expectedInterestRate}
+                  onRateChange={setExpectedInterestRate}
+                />
+              )}
+
+              {currentStep === 3 && (
+                <GoalSimulatorResults
+                  monthlyContribution={monthlyContribution}
+                  effectiveMonths={effectiveMonths}
+                  investInPortfolio={investInPortfolio}
+                  expectedInterestRate={expectedInterestRate}
+                  monthlySavings={monthlySavings}
+                  projectionData={projectionData}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Scroll indicator */}
+        <AnimatePresence>
+          {showScrollHint && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="absolute bottom-0 left-0 right-0 pointer-events-none flex flex-col items-center pb-1"
+              style={{
+                background: 'linear-gradient(to top, rgba(255,255,255,0.95) 40%, rgba(255,255,255,0) 100%)',
+                height: '48px',
+              }}
+            >
+              <motion.div
+                animate={{ y: [0, 5, 0] }}
+                transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                className="mt-auto"
+              >
+                <ChevronsDown className="w-5 h-5" style={{ color: '#BDBDCB' }} strokeWidth={2} />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Navigation Footer */}
+      <div
+        className="px-6 py-4 lg:px-8 flex items-center gap-3 flex-shrink-0"
+        style={{ borderTop: '1px solid #F7F7F8' }}
+      >
+        {/* Back button */}
+        {currentStep > 1 ? (
+          <button
+            type="button"
+            onClick={goBack}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-medium transition-all duration-200 hover:bg-[#F7F7F8] active:scale-[0.97]"
+            style={{
+              color: '#7E7F90',
+              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+            }}
+          >
+            <ArrowRight className="w-4 h-4" />
+            חזרה
+          </button>
+        ) : (
+          <div />
+        )}
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Forward / Submit */}
+        {currentStep < 3 ? (
+          <button
+            type="button"
+            onClick={goNext}
+            disabled={!isStepValid(currentStep)}
+            className="flex items-center gap-1.5 px-6 py-2.5 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:scale-[1.02] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
+            style={{
+              backgroundColor: isStepValid(currentStep) ? '#69ADFF' : '#BDBDCB',
+              color: 'white',
+              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+            }}
+          >
+            הבא
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!isStep1Valid || isCreating}
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-medium transition-all duration-200 hover:shadow-md hover:scale-[1.02] active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-none"
+            style={{
+              background: (isStep1Valid && !isCreating) ? 'linear-gradient(135deg, #0DBACC 0%, #69ADFF 100%)' : '#BDBDCB',
+              color: 'white',
+              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+            }}
+          >
+            {isCreating ? (
+              <>
+                יוצר יעד...
+                <Loader2 className="w-4 h-4 animate-spin" />
+              </>
+            ) : (
+              <>
+                הוסף יעד
+                <Plus className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        )}
+      </div>
+
       {/* Info Modal */}
       <GoalCreationInfoModal
         isOpen={showInfoModal}
@@ -822,4 +510,3 @@ export default function GoalSimulator({ onCreateGoal, isCreating, onSuccess }: G
     </Card>
   );
 }
-

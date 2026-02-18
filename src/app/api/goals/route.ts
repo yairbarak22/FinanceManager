@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
-import { calculateMonthlyContribution } from '@/lib/goalCalculations';
+import { calculateMonthlyContribution, calculateMonthlyContributionWithInterest } from '@/lib/goalCalculations';
 
 // Goal category color
 const GOAL_CATEGORY_COLOR = '#0DBACC';
@@ -89,13 +89,27 @@ export async function POST(request: NextRequest) {
     }
 
     const goalName = body.name.trim();
-    
+
     // Calculate monthly contribution for the recurring transaction
-    const monthlyContributionAmount = calculateMonthlyContribution(
-      body.targetAmount,
-      currentAmount,
-      deadline
-    );
+    // If investInPortfolio is true, use interest-adjusted calculation (compound interest)
+    let monthlyContributionAmount: number;
+    if (body.investInPortfolio && body.expectedInterestRate > 0) {
+      const monthsRemaining = Math.max(1, Math.round(
+        (deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30.44)
+      ));
+      monthlyContributionAmount = calculateMonthlyContributionWithInterest(
+        body.targetAmount,
+        currentAmount,
+        body.expectedInterestRate,
+        monthsRemaining
+      );
+    } else {
+      monthlyContributionAmount = calculateMonthlyContribution(
+        body.targetAmount,
+        currentAmount,
+        deadline
+      );
+    }
 
     // Use Prisma transaction to create everything atomically
     const result = await prisma.$transaction(async (tx) => {

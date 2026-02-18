@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Target, Loader2 } from 'lucide-react';
 import { useGoals, useCreateGoal, useUpdateGoal, useDeleteGoal } from '@/hooks/useGoals';
-import { GoalSimulator, GoalCard, GoalModal } from '@/components/goals';
+import { GoalSimulator, GoalCard, GoalModal, GoalQuickTemplates } from '@/components/goals';
 import { AppLayout } from '@/components/layout';
 import { SectionHeader } from '@/components/dashboard';
 import Card from '@/components/ui/Card';
@@ -54,6 +54,8 @@ export default function GoalsPage() {
     deadline: string;
     category: string;
     icon: string;
+    investInPortfolio?: boolean;
+    expectedInterestRate?: number;
   }) => {
     await createGoal.mutateAsync(goalData);
     // Track goal created
@@ -63,7 +65,7 @@ export default function GoalsPage() {
       goalData.targetAmount,
       goalData.currentAmount,
       goalData.deadline,
-      false, // investInPortfolio - default from basic create
+      goalData.investInPortfolio ?? false,
     );
   };
 
@@ -87,6 +89,37 @@ export default function GoalsPage() {
     analytics.trackGoalDeleted(deletingGoal.id, deletingGoal.name);
     await deleteGoal.mutateAsync(deletingGoal.id);
     setDeletingGoal(null);
+  };
+
+  const handleQuickCreate = async (data: {
+    name: string;
+    category: string;
+    targetAmount: number;
+    years: number;
+  }) => {
+    const deadline = new Date();
+    deadline.setFullYear(deadline.getFullYear() + data.years);
+    const deadlineStr = deadline.toISOString();
+
+    await createGoal.mutateAsync({
+      name: data.name,
+      targetAmount: data.targetAmount,
+      currentAmount: 0,
+      deadline: deadlineStr,
+      category: data.category,
+      icon: data.category,
+    });
+
+    analytics.trackGoalCreated(
+      data.name,
+      data.category,
+      data.targetAmount,
+      0,
+      deadlineStr,
+      false,
+    );
+
+    toast.success('היעד נוסף בהצלחה!');
   };
 
   return (
@@ -162,14 +195,30 @@ export default function GoalsPage() {
         <section>
           <SectionHeader
             title="הוסף יעד חדש"
-            subtitle="השתמש בסימולטור כדי לתכנן יעד פיננסי חדש ולחשב את ההפרשה החודשית הנדרשת"
+            subtitle="בחר מתבנית מוכנה או צור יעד מותאם אישית"
           />
-          
-          <GoalSimulator 
-            onCreateGoal={handleCreateGoal}
-            isCreating={createGoal.isPending}
-            onSuccess={() => toast.success('היעד נוסף בהצלחה!')}
-          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch lg:h-[600px]">
+            {/* RIGHT (RTL first) — Quick Templates */}
+            <div className="lg:col-span-4 h-full">
+              <GoalQuickTemplates
+                onQuickCreate={handleQuickCreate}
+                isCreating={createGoal.isPending}
+                onCustomClick={() => {
+                  // Scroll to simulator
+                  document.getElementById('goal-simulator')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }}
+              />
+            </div>
+            {/* LEFT (RTL second) — Wizard */}
+            <div className="lg:col-span-8 h-full" id="goal-simulator">
+              <GoalSimulator
+                onCreateGoal={handleCreateGoal}
+                isCreating={createGoal.isPending}
+                onSuccess={() => toast.success('היעד נוסף בהצלחה!')}
+              />
+            </div>
+          </div>
         </section>
 
       {/* Edit Modal */}
