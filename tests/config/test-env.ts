@@ -193,7 +193,7 @@ export function validateTestEnvironment(): TestEnvironment {
  * Force NODE_ENV=test. Call this at the very beginning of test setup.
  */
 export function forceTestEnvironment(): void {
-  process.env.NODE_ENV = 'test';
+  (process.env as { NODE_ENV?: string }).NODE_ENV = 'test';
 }
 
 /**

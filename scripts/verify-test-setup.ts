@@ -98,7 +98,7 @@ function validateEnvironmentVariables(): void {
   header('Phase 1: Environment Variables');
 
   // NODE_ENV
-  process.env.NODE_ENV = 'test'; // Force for this verification script
+  (process.env as { NODE_ENV?: string }).NODE_ENV = 'test'; // Force for this verification script
   recordPass('NODE_ENV = test');
 
   // NEON_API_KEY

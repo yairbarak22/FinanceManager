@@ -12,7 +12,7 @@ async function globalSetup(config: FullConfig): Promise<void> {
   console.log('\n=== Playwright E2E Global Setup ===\n');
 
   // Force test environment
-  process.env.NODE_ENV = 'test';
+  (process.env as { NODE_ENV?: string }).NODE_ENV = 'test';
   process.env.TEST_TYPE = 'e2e';
 
   // Check if we need to create a Neon branch
