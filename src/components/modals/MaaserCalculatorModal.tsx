@@ -450,13 +450,15 @@ export default function MaaserCalculatorModal({
                             }}
                           >
                             <span
-                              className="absolute top-0.5 rounded-full bg-white shadow transition-transform duration-200"
+                              className="absolute rounded-full bg-white shadow transition-transform duration-200"
                               style={{
                                 width: '1.25rem',
                                 height: '1.25rem',
+                                top: '0.125rem',
+                                left: '0.125rem',
                                 transform: isObligated
-                                  ? 'translateX(0.375rem)'
-                                  : 'translateX(1.375rem)',
+                                  ? 'translateX(1.25rem)'
+                                  : 'translateX(0)',
                               }}
                             />
                           </button>
