@@ -153,6 +153,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate filename (path traversal prevention)
+    // Already safe via UUID-based storedName, but defense-in-depth
+    if (file.name.includes('..') || file.name.includes('/') || file.name.includes('\\') || file.name.includes('\0')) {
+      return NextResponse.json(
+        { error: 'שם קובץ לא תקין' },
+        { status: 400 }
+      );
+    }
+
     // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(

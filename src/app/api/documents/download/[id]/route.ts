@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth, withIdAndUserId } from '@/lib/authHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
+import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 
 // GET - Download document securely via proxy (blob URL never exposed to client)
 export async function GET(
@@ -60,6 +61,18 @@ export async function GET(
     }
 
     const blobData = await blobResponse.arrayBuffer();
+
+    // Audit log: document downloaded (non-blocking - don't slow down the download)
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.DATA_VIEW,
+      entityType: 'Document',
+      entityId: id,
+      metadata: { filename: document.filename, mimeType: document.mimeType },
+      ipAddress,
+      userAgent,
+    });
 
     // Return the file with proper headers
     return new NextResponse(blobData, {

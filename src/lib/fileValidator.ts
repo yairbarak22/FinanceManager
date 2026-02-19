@@ -84,14 +84,14 @@ export function validateExcelFile(
 ): string | null {
   // 1. Size validation
   if (!validateFileSize(size)) {
-    console.log('[FileValidator] Size validation FAILED:', size);
+    console.log('[FileValidator] EXCEL_FILE_TOO_LARGE: size=%d', size);
     return 'גודל הקובץ חורג מהמותר (מקסימום 10MB)';
   }
   console.log('[FileValidator] Size validation PASSED');
 
   // 2. MIME type validation
   if (!validateExcelMimeType(mimeType)) {
-    console.log('[FileValidator] MIME validation FAILED:', mimeType);
+    console.log('[FileValidator] EXCEL_INVALID_MIME: mimeType=%s', mimeType);
     return 'סוג הקובץ אינו נתמך. נא להעלות קובץ Excel בלבד';
   }
   console.log('[FileValidator] MIME validation PASSED');
@@ -99,7 +99,7 @@ export function validateExcelFile(
   // 3. Magic bytes validation (critical security check)
   if (!validateExcelSignature(buffer)) {
     const magicBytes = buffer.slice(0, 4).toString('hex');
-    console.log('[FileValidator] Magic bytes validation FAILED:', magicBytes);
+    console.log('[FileValidator] EXCEL_INVALID_MAGIC_BYTES: bytes=%s', magicBytes);
     return 'הקובץ אינו תקין. ודא שזהו קובץ Excel אמיתי';
   }
   console.log('[FileValidator] Magic bytes validation PASSED');
@@ -143,22 +143,26 @@ const MAGIC_BYTES: Record<string, { offset: number; bytes: number[] }[]> = {
   ],
 };
 
-// Dangerous patterns in Office documents
+// Dangerous patterns in Office documents (OOXML ZIP filenames)
+// NOTE: 'embeddings' and 'oleObject' were removed because they appear in legitimate
+// documents with embedded charts, Excel tables, or PDF attachments - common in financial docs.
 const OFFICE_DANGEROUS_PATTERNS = [
-  'vbaProject.bin',  // VBA macros
-  'activeX',         // ActiveX controls
-  'embeddings',      // Embedded OLE objects
-  'oleObject',       // OLE objects
+  'vbaProject.bin',  // VBA macros (actual code execution)
+  'activeX',         // ActiveX controls (code execution)
 ];
 
-// Dangerous patterns in PDFs
-const PDF_DANGEROUS_PATTERNS = [
+// PDF patterns that MUST be blocked (actual code execution vectors)
+const PDF_BLOCK_PATTERNS = [
   '/JavaScript',     // JavaScript actions
   '/JS',             // JavaScript shorthand
   '/Launch',         // Launch external applications
-  '/OpenAction',     // Auto-execute on open
-  '/AA',             // Additional actions
-  '/EmbeddedFile',   // Embedded files (potential malware)
+];
+
+// PDF patterns that are suspicious but common in legitimate PDFs (log only, don't block)
+const PDF_WARN_PATTERNS = [
+  '/OpenAction',     // Auto-execute on open (extremely common - sets initial view/zoom)
+  '/AA',             // Additional actions (page-level actions, often benign)
+  '/EmbeddedFile',   // Embedded files (can be legitimate attachments)
 ];
 
 export interface ValidationResult {
@@ -185,11 +189,35 @@ function validateMagicBytes(buffer: Buffer, mimeType: string): boolean {
   });
 }
 
+// Image dimension limits
+// 15000x15000 supports up to 600 DPI scans of A3 paper (largest common document format)
+// 200 million pixel limit prevents decompression bombs from small files that expand to huge images
+const MAX_IMAGE_DIMENSION = 15000;  // Max width or height in pixels
+const MAX_IMAGE_PIXELS = 200_000_000;  // Max total pixels (width * height)
+
 /**
  * Re-encode image to strip any malicious metadata/content
+ * Also validates image dimensions to prevent decompression bombs
  */
 async function sanitizeImage(buffer: Buffer, mimeType: string): Promise<Buffer> {
   const image = sharp(buffer);
+
+  // Check image dimensions before processing (prevents decompression bombs)
+  const metadata = await image.metadata();
+  const width = metadata.width || 0;
+  const height = metadata.height || 0;
+
+  if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
+    throw new Error(
+      `IMAGE_TOO_LARGE: תמונה גדולה מדי (${width}x${height}). מקסימום: ${MAX_IMAGE_DIMENSION}x${MAX_IMAGE_DIMENSION} פיקסלים.`
+    );
+  }
+
+  if (width * height > MAX_IMAGE_PIXELS) {
+    throw new Error(
+      `IMAGE_TOO_MANY_PIXELS: תמונה מכילה יותר מדי פיקסלים (${(width * height / 1_000_000).toFixed(1)}MP). מקסימום: ${MAX_IMAGE_PIXELS / 1_000_000}MP.`
+    );
+  }
 
   // Strip all metadata
   image.rotate(); // Auto-rotate based on EXIF, then...
@@ -207,21 +235,43 @@ async function sanitizeImage(buffer: Buffer, mimeType: string): Promise<Buffer> 
   return buffer;
 }
 
+// Maximum size for individual files within OOXML ZIP (prevents XML entity expansion attacks)
+const MAX_OOXML_ENTRY_SIZE = 50 * 1024 * 1024; // 50MB per entry
+
 /**
  * Check Office documents (OOXML - docx, xlsx) for macros/dangerous content
+ * Also validates individual ZIP entry sizes to prevent XML entity expansion attacks
  */
 async function validateOfficeDocument(buffer: Buffer): Promise<ValidationResult> {
   try {
     const zip = await JSZip.loadAsync(buffer);
 
-    // Check all files in the ZIP for dangerous patterns
-    for (const filename of Object.keys(zip.files)) {
+    // Check all files in the ZIP for dangerous patterns and size limits
+    for (const [filename, zipEntry] of Object.entries(zip.files)) {
+      // Skip directories
+      if (zipEntry.dir) continue;
+
       const lowerFilename = filename.toLowerCase();
+
+      // Check for dangerous patterns (macros, ActiveX)
       for (const pattern of OFFICE_DANGEROUS_PATTERNS) {
         if (lowerFilename.includes(pattern.toLowerCase())) {
+          console.warn('[FileValidator] OOXML_DANGEROUS_CONTENT: pattern=%s, file=%s', pattern, filename);
           return {
             isValid: false,
             error: `קובץ Office מכיל תוכן פוטנציאלית מסוכן (${pattern}). אנא שמור כ-PDF והעלה שוב.`,
+          };
+        }
+      }
+
+      // Check XML file sizes to prevent entity expansion (XML bombs)
+      if (lowerFilename.endsWith('.xml') || lowerFilename.endsWith('.rels')) {
+        const content = await zipEntry.async('uint8array');
+        if (content.length > MAX_OOXML_ENTRY_SIZE) {
+          console.warn('[FileValidator] OOXML_XML_TOO_LARGE: file=%s, size=%d', filename, content.length);
+          return {
+            isValid: false,
+            error: 'קובץ Office מכיל תוכן XML גדול מדי. אנא בדוק את הקובץ.',
           };
         }
       }
@@ -229,9 +279,10 @@ async function validateOfficeDocument(buffer: Buffer): Promise<ValidationResult>
 
     return { isValid: true, sanitizedBuffer: buffer };
   } catch (error) {
+    console.error('[FileValidator] OOXML_PARSE_ERROR:', error);
     return {
       isValid: false,
-      error: 'שגיאה בבדיקת קובץ Office',
+      error: 'שגיאה בבדיקת קובץ Office. ודא שהקובץ תקין.',
     };
   }
 }
@@ -239,17 +290,21 @@ async function validateOfficeDocument(buffer: Buffer): Promise<ValidationResult>
 /**
  * Check legacy Office documents (DOC, XLS) for OLE macros
  * These are OLE compound documents - we can't easily parse them,
- * so we do a basic check for VBA macro signatures
+ * so we do a basic check for VBA macro signatures.
+ * 
+ * NOTE: Short strings like "VBA" (3 chars) can appear in any binary stream by chance,
+ * causing false positives. We use longer, more specific patterns that only appear
+ * in actual VBA macro projects within OLE compound documents.
  */
 async function validateLegacyOfficeDocument(buffer: Buffer): Promise<ValidationResult> {
   // Check for VBA macro signature in the binary content
   const content = buffer.toString('binary');
 
   const vbaPatterns = [
-    'VBA',               // VBA project
-    'Macros',            // Macros folder
-    '_VBA_PROJECT_CUR',  // VBA project
-    'ThisDocument',      // Common VBA entry point
+    '_VBA_PROJECT',      // VBA project stream (specific OLE stream name)
+    '_VBA_PROJECT_CUR',  // VBA project current version
+    'VBA/Macros',        // VBA macros folder path within OLE
+    'ThisDocument',      // Common VBA entry point (Word)
     'Auto_Open',         // Auto-execute macro
     'AutoOpen',          // Auto-execute macro
     'AutoExec',          // Auto-execute macro
@@ -259,6 +314,7 @@ async function validateLegacyOfficeDocument(buffer: Buffer): Promise<ValidationR
 
   for (const pattern of vbaPatterns) {
     if (content.includes(pattern)) {
+      console.warn(`[FileValidator] Legacy Office blocked: contains "${pattern}"`);
       return {
         isValid: false,
         error: 'קובץ Office מכיל מאקרו. אנא שמור כ-PDF או DOCX/XLSX ללא מאקרו והעלה שוב.',
@@ -271,21 +327,30 @@ async function validateLegacyOfficeDocument(buffer: Buffer): Promise<ValidationR
 
 /**
  * Check PDF for JavaScript and other dangerous content
+ * 
+ * IMPORTANT: /OpenAction is NOT blocked because it's present in almost every legitimate PDF
+ * (used for setting initial view/zoom). Only actual code execution vectors are blocked:
+ * /JavaScript, /JS, and /Launch.
  */
 async function validatePDF(buffer: Buffer): Promise<ValidationResult> {
   // Convert to string for pattern matching (ASCII parts of PDF)
   const content = buffer.toString('binary');
 
-  for (const pattern of PDF_DANGEROUS_PATTERNS) {
+  // Check for patterns that MUST be blocked (code execution vectors)
+  for (const pattern of PDF_BLOCK_PATTERNS) {
     if (content.includes(pattern)) {
-      // Check if it's actually actionable (not just in a comment)
-      // Simple heuristic: if the pattern appears, flag it
-      if (pattern === '/OpenAction' || pattern === '/JavaScript' || pattern === '/JS') {
-        return {
-          isValid: false,
-          error: 'קובץ PDF מכיל JavaScript או פעולות אוטומטיות. אנא הדפס ל-PDF מחדש ללא תוכן פעיל.',
-        };
-      }
+      console.warn(`[FileValidator] PDF blocked: contains ${pattern}`);
+      return {
+        isValid: false,
+        error: 'קובץ PDF מכיל JavaScript או פעולות מסוכנות. אנא הדפס ל-PDF מחדש ללא תוכן פעיל.',
+      };
+    }
+  }
+
+  // Log warnings for suspicious but commonly legitimate patterns (don't block)
+  for (const pattern of PDF_WARN_PATTERNS) {
+    if (content.includes(pattern)) {
+      console.log(`[FileValidator] PDF warning (allowed): contains ${pattern}`);
     }
   }
 
@@ -302,6 +367,7 @@ export async function validateAndSanitizeFile(
 ): Promise<ValidationResult> {
   // Layer 2: Magic bytes validation
   if (!validateMagicBytes(buffer, mimeType)) {
+    console.warn('[FileValidator] DOC_INVALID_MAGIC_BYTES: mimeType=%s, bytes=%s', mimeType, buffer.slice(0, 4).toString('hex'));
     return {
       isValid: false,
       error: 'תוכן הקובץ לא תואם לסוג הקובץ המוצהר. אנא העלה קובץ תקין.',
@@ -311,11 +377,19 @@ export async function validateAndSanitizeFile(
   // Layer 3: Type-specific validation and sanitization
   try {
     switch (mimeType) {
-      // Images - re-encode to strip malicious content
+      // Images - validate dimensions and re-encode to strip malicious content
       case 'image/jpeg':
       case 'image/png': {
-        const sanitized = await sanitizeImage(buffer, mimeType);
-        return { isValid: true, sanitizedBuffer: sanitized };
+        try {
+          const sanitized = await sanitizeImage(buffer, mimeType);
+          return { isValid: true, sanitizedBuffer: sanitized };
+        } catch (imgError) {
+          const message = imgError instanceof Error ? imgError.message : 'שגיאה בעיבוד התמונה';
+          // Extract user-friendly message (after the error code prefix)
+          const userMessage = message.includes(': ') ? message.split(': ').slice(1).join(': ') : message;
+          console.error('[FileValidator] Image validation failed:', message);
+          return { isValid: false, error: userMessage };
+        }
       }
 
       // Modern Office documents (OOXML)
@@ -340,7 +414,7 @@ export async function validateAndSanitizeFile(
         return { isValid: true, sanitizedBuffer: buffer };
     }
   } catch (error) {
-    console.error('File validation error:', error);
+    console.error('[FileValidator] VALIDATION_UNEXPECTED_ERROR: mimeType=%s', mimeType, error);
     return {
       isValid: false,
       error: 'שגיאה בבדיקת הקובץ. אנא נסה שוב.',

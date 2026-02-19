@@ -38,9 +38,17 @@ export function sanitizeCellValue(val: unknown): string | number | null {
   // 2. Remove formula injection prefixes (CSV/Formula Injection prevention)
   // Excel formulas start with: = + - @
   // Also check for: \t \r (tab/carriage return injection)
+  // IMPORTANT: Don't strip '-' or '+' when followed by a digit (e.g. "-500", "+300")
+  // These are legitimate negative/positive numbers, especially from HTML-based bank exports
+  // where there's no rawAmountData fallback.
   if (str.length > 0) {
     const firstChar = str[0];
-    if (['=', '+', '-', '@', '\t', '\r'].includes(firstChar)) {
+    if (firstChar === '-' || firstChar === '+') {
+      // Only strip if NOT followed by a digit or decimal point (i.e., not a number)
+      if (str.length < 2 || !/[\d.,]/.test(str[1])) {
+        str = str.slice(1);
+      }
+    } else if (['=', '@', '\t', '\r'].includes(firstChar)) {
       str = str.slice(1); // Remove first character
     }
   }
