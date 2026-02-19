@@ -39,6 +39,7 @@ model User {
   marketingEvents       MarketingEvent[]       // Marketing email events
   createdCampaigns      MarketingCampaign[]    // Campaigns created by this admin
   createdTemplates      EmailTemplate[]        // Templates created by this admin
+  maaserPreferences     MaaserPreference[]     // Maaser/Chomesh income preferences
 }
 
 model Account {
@@ -385,6 +386,25 @@ model MerchantCategoryMap {
 
   @@unique([userId, merchantName])
   @@index([userId])
+}
+
+// ============================================
+// MAASER PREFERENCES - Income obligation tracking for Maaser/Chomesh
+// ============================================
+model MaaserPreference {
+  id              String   @id @default(cuid())
+  userId          String
+  incomeSource    String   // תיאור ההכנסה (לזיהוי מדויק)
+  incomeCategory  String?  // קטגוריית ההכנסה (salary, bonus, etc.)
+  isObligated     Boolean  @default(true) // האם חייב במעשר/חומש
+  calculationType String   @default("maaser") // "maaser" (10%) | "chomesh" (20%)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, incomeSource]) // מניעת כפילויות לפי משתמש ומקור הכנסה
+  @@index([userId])
+  @@index([userId, incomeCategory])
 }
 
 // ============================================

@@ -28,6 +28,7 @@ import DocumentsModal from '@/components/modals/DocumentsModal';
 import ProfileModal from '@/components/ProfileModal';
 import AccountSettings from '@/components/AccountSettings';
 import { QuickAddModal } from '@/components/quick-add';
+import MaaserCalculatorModal from '@/components/modals/MaaserCalculatorModal';
 import {
   Transaction,
   RecurringTransaction,
@@ -87,6 +88,7 @@ export default function DashboardPage() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isLiabilityTypeSelectionOpen, setIsLiabilityTypeSelectionOpen] = useState(false);
   const [isGemachFormOpen, setIsGemachFormOpen] = useState(false);
+  const [isMaaserModalOpen, setIsMaaserModalOpen] = useState(false);
 
   // Edit state
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
@@ -953,6 +955,7 @@ export default function DashboardPage() {
                   customIncomeCategories={incomeCats.custom}
                   selectedCategory={selectedCategory}
                   onClearCategoryFilter={handleClearCategoryFilter}
+                  onOpenMaaserCalculator={() => setIsMaaserModalOpen(true)}
                 />
               </Card>
             </div>
@@ -1103,6 +1106,14 @@ export default function DashboardPage() {
           });
         }}
         onAddCategory={addCustomCategory}
+      />
+
+      <MaaserCalculatorModal
+        isOpen={isMaaserModalOpen}
+        onClose={() => setIsMaaserModalOpen(false)}
+        transactions={transactions}
+        recurringTransactions={recurringTransactions}
+        selectedMonth={selectedMonth === 'all' || selectedMonth === 'custom' ? currentMonth : selectedMonth}
       />
 
       <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />

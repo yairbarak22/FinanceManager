@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, ChevronDown, Check, Loader2, Filter, Search, Tag } from 'lucide-react';
+import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, ChevronDown, Check, Loader2, Filter, Search, Tag, Calculator } from 'lucide-react';
 import { Transaction } from '@/lib/types';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { getCategoryInfo, expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
@@ -33,6 +33,7 @@ interface RecentTransactionsProps {
   customIncomeCategories?: CategoryInfo[];
   selectedCategory?: string | null;
   onClearCategoryFilter?: () => void;
+  onOpenMaaserCalculator?: () => void;
 }
 
 export default function RecentTransactions({
@@ -46,7 +47,8 @@ export default function RecentTransactions({
   customExpenseCategories = [],
   customIncomeCategories = [],
   selectedCategory = null,
-  onClearCategoryFilter
+  onClearCategoryFilter,
+  onOpenMaaserCalculator,
 }: RecentTransactionsProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; description: string }>({
     isOpen: false,
@@ -381,6 +383,16 @@ export default function RecentTransactions({
                 >
                   <CheckSquare className="w-4 h-4" strokeWidth={1.5} />
                   בחירה
+                </button>
+              )}
+              {onOpenMaaserCalculator && (
+                <button
+                  onClick={onOpenMaaserCalculator}
+                  className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
+                  style={{ color: '#7E7F90' }}
+                >
+                  <Calculator className="w-4 h-4" strokeWidth={1.5} />
+                  מעשרות
                 </button>
               )}
               <button
