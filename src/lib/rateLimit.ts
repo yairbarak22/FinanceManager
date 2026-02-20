@@ -53,6 +53,35 @@ export const RATE_LIMITS = {
 };
 
 // ============================================================================
+// IP-BASED RATE LIMITING
+// ============================================================================
+
+/**
+ * Per-endpoint rate limit presets for IP-based limiting.
+ * These are stricter than user-based limits because they protect
+ * against unauthenticated abuse and IP-level attacks.
+ */
+export const IP_RATE_LIMITS = {
+  // File upload - very strict per IP
+  upload: { maxRequests: 15, windowSeconds: 60 } as RateLimitConfig,
+
+  // File download - moderate per IP
+  download: { maxRequests: 30, windowSeconds: 60 } as RateLimitConfig,
+
+  // Transaction import - very strict per IP (heavy processing)
+  import: { maxRequests: 8, windowSeconds: 60 } as RateLimitConfig,
+
+  // Contact form - already IP-limited in the endpoint
+  contact: { maxRequests: 5, windowSeconds: 60 } as RateLimitConfig,
+
+  // Auth endpoints - very strict per IP
+  auth: { maxRequests: 10, windowSeconds: 60 } as RateLimitConfig,
+
+  // General API - moderate per IP
+  api: { maxRequests: 200, windowSeconds: 60 } as RateLimitConfig,
+};
+
+// ============================================================================
 // UPSTASH REDIS RATE LIMITER (Production)
 // ============================================================================
 
@@ -300,35 +329,6 @@ export function getClientIp(headers: Headers): string {
     'unknown'
   );
 }
-
-// ============================================================================
-// IP-BASED RATE LIMITING
-// ============================================================================
-
-/**
- * Per-endpoint rate limit presets for IP-based limiting.
- * These are stricter than user-based limits because they protect
- * against unauthenticated abuse and IP-level attacks.
- */
-export const IP_RATE_LIMITS = {
-  // File upload - very strict per IP
-  upload: { maxRequests: 15, windowSeconds: 60 } as RateLimitConfig,
-
-  // File download - moderate per IP
-  download: { maxRequests: 30, windowSeconds: 60 } as RateLimitConfig,
-
-  // Transaction import - very strict per IP (heavy processing)
-  import: { maxRequests: 8, windowSeconds: 60 } as RateLimitConfig,
-
-  // Contact form - already IP-limited in the endpoint
-  contact: { maxRequests: 5, windowSeconds: 60 } as RateLimitConfig,
-
-  // Auth endpoints - very strict per IP
-  auth: { maxRequests: 10, windowSeconds: 60 } as RateLimitConfig,
-
-  // General API - moderate per IP
-  api: { maxRequests: 200, windowSeconds: 60 } as RateLimitConfig,
-};
 
 /**
  * Check rate limit using both user ID and IP address.
