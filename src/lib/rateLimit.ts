@@ -92,6 +92,23 @@ function initializeUpstash(): boolean {
       );
     }
 
+    // Also register IP-based rate limiters (different thresholds than user-based)
+    for (const [type, rateConfig] of Object.entries(IP_RATE_LIMITS)) {
+      const key = `ip_${type}`;
+      rateLimiters.set(
+        key,
+        new Ratelimit({
+          redis: redisClient,
+          limiter: Ratelimit.slidingWindow(
+            rateConfig.maxRequests,
+            `${rateConfig.windowSeconds} s`
+          ),
+          analytics: true,
+          prefix: `ratelimit:${key}`,
+        })
+      );
+    }
+
     console.log('✅ Upstash Redis rate limiting initialized');
     return true;
   } catch (error) {
@@ -107,11 +124,20 @@ async function checkRateLimitUpstash(
   identifier: string,
   rateLimitConfig: RateLimitConfig
 ): Promise<RateLimitResult> {
-  // Find matching preset type
-  const presetType = Object.entries(RATE_LIMITS).find(
+  // Find matching preset type — search user-based presets first, then IP-based
+  let presetType = Object.entries(RATE_LIMITS).find(
     ([_, cfg]) => cfg.maxRequests === rateLimitConfig.maxRequests &&
                   cfg.windowSeconds === rateLimitConfig.windowSeconds
   )?.[0];
+
+  if (!presetType) {
+    // Check IP-based presets (stored with ip_ prefix)
+    const ipMatch = Object.entries(IP_RATE_LIMITS).find(
+      ([_, cfg]) => cfg.maxRequests === rateLimitConfig.maxRequests &&
+                    cfg.windowSeconds === rateLimitConfig.windowSeconds
+    )?.[0];
+    if (ipMatch) presetType = `ip_${ipMatch}`;
+  }
 
   if (!presetType || !rateLimiters) {
     throw new Error('Rate limiter not initialized or invalid config');
