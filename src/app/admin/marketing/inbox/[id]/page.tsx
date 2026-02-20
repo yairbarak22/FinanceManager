@@ -17,6 +17,7 @@ import {
 import EmailPreview from '@/components/admin/EmailPreview';
 import RichTextEditor from '@/components/admin/RichTextEditor';
 import { SENDER_ADDRESSES } from '@/lib/inbox/constants';
+import { apiFetch } from '@/lib/utils';
 
 interface InboxMessage {
   id: string;
@@ -81,12 +82,8 @@ export default function MessageThreadPage({
     setSendResult(null);
 
     try {
-      const res = await fetch(`/api/admin/inbox/${id}/reply`, {
+      const res = await apiFetch(`/api/admin/inbox/${id}/reply`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Protection': '1',
-        },
         body: JSON.stringify({
           content: replyContent,
           replyFromAddress,
@@ -120,12 +117,8 @@ export default function MessageThreadPage({
     if (!message) return;
     setActionLoading(true);
     try {
-      const res = await fetch(`/api/admin/inbox/${id}`, {
+      const res = await apiFetch(`/api/admin/inbox/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Protection': '1',
-        },
         body: JSON.stringify(updates),
       });
       if (!res.ok) throw new Error('Failed to update');
@@ -140,9 +133,8 @@ export default function MessageThreadPage({
   const deleteMessage = async () => {
     if (!confirm('למחוק את ההודעה?')) return;
     try {
-      const res = await fetch(`/api/admin/inbox/${id}`, {
+      const res = await apiFetch(`/api/admin/inbox/${id}`, {
         method: 'DELETE',
-        headers: { 'X-CSRF-Protection': '1' },
       });
       if (!res.ok) throw new Error('Failed to delete');
       router.push('/admin/marketing/inbox');

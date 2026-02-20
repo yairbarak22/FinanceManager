@@ -3,6 +3,15 @@ import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { config as appConfig } from './lib/config';
 import { logAuditEvent, AuditAction, getRequestInfo } from './lib/auditLog';
+import {
+  CSRF_COOKIE_NAME,
+  CSRF_HEADER_NAME,
+  CSRF_LEGACY_HEADER,
+  CSRF_TOKEN_MAX_AGE,
+  generateCsrfToken,
+  isValidCsrfToken,
+  isValidOrigin,
+} from './lib/csrf';
 
 // Cookie name for signup source tracking
 const SIGNUP_SOURCE_COOKIE = 'signup_source';
@@ -10,6 +19,27 @@ const SIGNUP_SOURCE_COOKIE = 'signup_source';
 function isAdmin(email: string | null | undefined): boolean {
   if (!email) return false;
   return appConfig.adminEmails.includes(email.toLowerCase());
+}
+
+/**
+ * Attach a CSRF cookie to the response if the user is authenticated
+ * and does not already have one. Called on every response we return.
+ */
+function attachCsrfCookie(
+  res: NextResponse,
+  req: NextRequest,
+  isAuthenticated: boolean,
+): void {
+  if (!isAuthenticated) return;
+  if (req.cookies.get(CSRF_COOKIE_NAME)) return; // already has one, don't rotate
+  const token = generateCsrfToken();
+  res.cookies.set(CSRF_COOKIE_NAME, token, {
+    httpOnly: false,                                    // JS must read it
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',                                 // the actual protection
+    path: '/',
+    maxAge: CSRF_TOKEN_MAX_AGE,
+  });
 }
 
 export async function middleware(request: NextRequest) {
@@ -61,6 +91,7 @@ export async function middleware(request: NextRequest) {
         sameSite: 'lax',
       });
     }
+    attachCsrfCookie(response, request, !!token);
     return response;
   }
 
@@ -85,6 +116,7 @@ export async function middleware(request: NextRequest) {
           sameSite: 'lax',
         });
       }
+      attachCsrfCookie(response, request, true);
       return response;
     }
   }
@@ -107,17 +139,29 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // SECURITY: CSRF Protection for API routes
-  // Require custom header for all non-safe HTTP methods
+  // SECURITY: CSRF Protection for API routes (Double Submit Cookie + Origin check)
+  // Require valid CSRF token OR legacy header for all non-safe HTTP methods
   const isSafeMethod = ['GET', 'HEAD', 'OPTIONS'].includes(request.method);
   const isApiRoute = pathname.startsWith('/api/');
   const isAuthRoute = pathname.startsWith('/api/auth/');
   const isWebhookRoute = pathname === '/api/webhook/receive' || pathname === '/api/webhooks/resend';
-    const isPublicMarketingRoute = pathname === '/api/marketing/unsubscribe' || pathname === '/api/marketing/unsubscribe-email';
+  const isPublicMarketingRoute = pathname === '/api/marketing/unsubscribe' || pathname === '/api/marketing/unsubscribe-email';
 
   if (!isSafeMethod && isApiRoute && !isAuthRoute && !isWebhookRoute && !isPublicMarketingRoute) {
-    const csrfHeader = request.headers.get('X-CSRF-Protection');
-    if (csrfHeader !== '1') {
+    const newToken    = request.headers.get(CSRF_HEADER_NAME);          // X-CSRF-Token
+    const legacyToken = request.headers.get(CSRF_LEGACY_HEADER);        // X-CSRF-Protection
+    const cookieToken = request.cookies.get(CSRF_COOKIE_NAME)?.value;
+
+    const newTokenValid    = isValidCsrfToken(newToken, cookieToken);
+    const legacyTokenValid = legacyToken === '1'; // backward compat (remove in stage B)
+
+    const originValid = isValidOrigin(
+      request.headers.get('Origin'),
+      request.headers.get('Referer'),
+      appConfig.nextAuthUrl,
+    );
+
+    if ((!newTokenValid && !legacyTokenValid) || !originValid) {
       // Audit log: CSRF violation
       const { ipAddress, userAgent } = getRequestInfo(request.headers);
       logAuditEvent({
@@ -126,7 +170,10 @@ export async function middleware(request: NextRequest) {
         metadata: {
           path: pathname,
           method: request.method,
-          header: csrfHeader || 'missing',
+          newTokenPresent: !!newToken,
+          legacyTokenPresent: !!legacyToken,
+          cookiePresent: !!cookieToken,
+          originValid,
         },
         ipAddress,
         userAgent,
@@ -135,7 +182,7 @@ export async function middleware(request: NextRequest) {
       return new NextResponse(
         JSON.stringify({
           error: 'CSRF protection required',
-          details: 'Missing or invalid X-CSRF-Protection header'
+          details: 'Invalid or missing CSRF token'
         }),
         {
           status: 403,
@@ -179,6 +226,9 @@ export async function middleware(request: NextRequest) {
       sameSite: 'lax',
     });
   }
+
+  // Attach CSRF cookie for authenticated users
+  attachCsrfCookie(response, request, !!token);
 
   return response;
 }

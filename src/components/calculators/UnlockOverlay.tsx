@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, Send, Loader2, Gift, CheckCircle, Calculator, Users, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { apiFetch } from '@/lib/utils';
 
 interface UnlockOverlayProps {
   onInviteSent: () => void;
@@ -38,12 +39,8 @@ export default function UnlockOverlay({ onInviteSent, pendingInvites = 0 }: Unlo
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/calculators/invite', {
+      const response = await apiFetch('/api/calculators/invite', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'X-CSRF-Protection': '1',
-        },
         body: JSON.stringify({ email: email.trim() }),
       });
 

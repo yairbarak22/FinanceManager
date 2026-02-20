@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { liabilityTypes as defaultLiabilityTypes } from '@/lib/categories';
 import { trackMixpanelEvent } from '@/lib/mixpanel';
+import { apiFetch } from '@/lib/utils';
 
 /**
  * Onboarding Tour Steps
@@ -202,12 +203,8 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
 
     // First, fill any empty steps with demo data
     try {
-      const fillResponse = await fetch('/api/onboarding/fill-empty-steps', {
+      const fillResponse = await apiFetch('/api/onboarding/fill-empty-steps', {
         method: 'POST',
-        headers: {
-          'X-CSRF-Protection': '1',
-          'Content-Type': 'application/json',
-        },
       });
       
       if (fillResponse.ok) {
@@ -230,13 +227,9 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     while (!success && attempts < maxAttempts) {
       attempts++;
       try {
-        // IMPORTANT: Must include X-CSRF-Protection header for POST requests
-        const response = await fetch('/api/user/onboarding', { 
+        // IMPORTANT: Must include CSRF headers for POST requests (apiFetch handles this)
+        const response = await apiFetch('/api/user/onboarding', { 
           method: 'POST',
-          headers: {
-            'X-CSRF-Protection': '1',
-            'Content-Type': 'application/json',
-          },
         });
         
         if (response.ok) {
@@ -436,9 +429,8 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     
     try {
       if (currentStepId === 'profile') {
-        const res = await fetch('/api/profile', {
+        const res = await apiFetch('/api/profile', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
             ageRange: wizardData.ageRange || '26-35',
             employmentType: wizardData.employmentType || 'employee',
@@ -448,9 +440,8 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
         });
         if (res.ok) successMessage = 'הפרופיל עודכן בהצלחה!';
       } else if (currentStepId === 'assets') {
-        const res = await fetch('/api/assets', {
+        const res = await apiFetch('/api/assets', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
             name: wizardData.assetName || 'נכס חדש',
             category: wizardData.assetCategory || 'savings_account', // Default from categories.ts
@@ -465,9 +456,8 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
           const liabilityCategory = defaultLiabilityTypes.find(c => c.id === liabilityType);
           const liabilityName = liabilityCategory?.nameHe || 'הלוואה';
           
-          const res = await fetch('/api/liabilities', {
+          const res = await apiFetch('/api/liabilities', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
             body: JSON.stringify({
               name: liabilityName,
               type: liabilityType,
@@ -482,9 +472,8 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
           successMessage = 'דילגת על הוספת התחייבויות';
         }
       } else if (currentStepId === 'income') {
-        const res = await fetch('/api/recurring', {
+        const res = await apiFetch('/api/recurring', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
             type: 'income',
             name: wizardData.incomeName || 'הכנסה חודשית',
@@ -494,9 +483,8 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
         });
         if (res.ok) successMessage = 'ההכנסה נוספה בהצלחה!';
       } else if (currentStepId === 'expenses') {
-        const res = await fetch('/api/transactions', {
+        const res = await apiFetch('/api/transactions', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
             type: 'expense',
             description: wizardData.expenseName || 'הוצאה',

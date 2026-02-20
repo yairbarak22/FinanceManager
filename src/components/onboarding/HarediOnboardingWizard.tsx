@@ -32,6 +32,7 @@ import {
 } from '@/lib/categories';
 import { OnboardingStep, StepField } from './stepsConfig';
 import { harediOnboardingSteps } from './harediStepsConfig';
+import { apiFetch } from '@/lib/utils';
 import { trackMixpanelEvent } from '@/lib/mixpanel';
 
 /**
@@ -383,9 +384,8 @@ export default function HarediOnboardingWizard() {
       };
 
       if (stepId === 'haredi-asset') {
-        const response = await fetch('/api/assets', {
+        const response = await apiFetch('/api/assets', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
             name: wizardData.assetName || 'נכס חדש',
             category: wizardData.assetCategory || 'savings_account',
@@ -404,9 +404,8 @@ export default function HarediOnboardingWizard() {
         const liabilityCategory = defaultLiabilityTypes.find(c => c.id === liabilityType);
         const liabilityName = liabilityCategory?.nameHe || 'הלוואה';
 
-        const response = await fetch('/api/liabilities', {
+        const response = await apiFetch('/api/liabilities', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
             name: liabilityName,
             type: liabilityType,
@@ -424,9 +423,8 @@ export default function HarediOnboardingWizard() {
         }
       } else if (stepId === 'haredi-income-expense') {
         // Two API calls: income (recurring) + expense (transaction)
-        const incomeResponse = await fetch('/api/recurring', {
+        const incomeResponse = await apiFetch('/api/recurring', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
             type: 'income',
             name: wizardData.incomeName || 'הכנסה חודשית',
@@ -435,9 +433,8 @@ export default function HarediOnboardingWizard() {
           }),
         });
 
-        const expenseResponse = await fetch('/api/transactions', {
+        const expenseResponse = await apiFetch('/api/transactions', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
             type: 'expense',
             description: wizardData.expenseName || 'הוצאה',
@@ -458,9 +455,8 @@ export default function HarediOnboardingWizard() {
           }
         }
       } else if (stepId === 'haredi-goal') {
-        const response = await fetch('/api/goals', {
+        const response = await apiFetch('/api/goals', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
             name: wizardData.goalName || 'יעד חדש',
             targetAmount: parseFloat((wizardData.goalTargetAmount || '100000').replace(/,/g, '')),
@@ -503,12 +499,8 @@ export default function HarediOnboardingWizard() {
     setIsLoadingDemoData(true);
     
     try {
-      const response = await fetch('/api/onboarding/demo-data', {
+      const response = await apiFetch('/api/onboarding/demo-data', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Protection': '1',
-        },
       });
 
       if (response.ok) {

@@ -114,12 +114,26 @@ export function validateActiveMonths(activeMonths: unknown): string | null {
 }
 
 // ============================================================================
-// CSRF-Protected Fetch Wrapper
+// CSRF-Protected Fetch Wrapper (Double Submit Cookie Pattern)
 // ============================================================================
 
+import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from './csrf';
+
+/** Read CSRF token from the non-httpOnly cookie (client-side only). */
+function readCsrfCookie(): string | null {
+  if (typeof document === 'undefined') return null; // SSR guard
+  const entry = document.cookie
+    .split('; ')
+    .find(row => row.startsWith(`${CSRF_COOKIE_NAME}=`));
+  return entry ? decodeURIComponent(entry.split('=')[1]) : null;
+}
+
 /**
- * Fetch wrapper that automatically adds CSRF protection header
- * Use this instead of raw fetch() for all API calls
+ * Fetch wrapper that automatically adds CSRF protection headers.
+ * Sends both the new X-CSRF-Token (from cookie) and the legacy
+ * X-CSRF-Protection: '1' header for backward compatibility.
+ *
+ * Use this instead of raw fetch() for all API calls.
  *
  * @example
  * const data = await apiFetch('/api/transactions', {
@@ -144,6 +158,10 @@ export async function apiFetch(
     // For FormData: only add CSRF header, let browser handle Content-Type
     const headers = new Headers(options?.headers);
     if (!isSafeMethod) {
+      // NEW: send the real per-session token
+      const csrfToken = readCsrfCookie();
+      if (csrfToken) headers.set(CSRF_HEADER_NAME, csrfToken);
+      // LEGACY: keep old header during migration (remove after stage B)
       headers.set('X-CSRF-Protection', '1');
     }
     return fetch(url, {
@@ -155,6 +173,10 @@ export async function apiFetch(
     const headers = new Headers(options?.headers);
 
     if (!isSafeMethod) {
+      // NEW: send the real per-session token
+      const csrfToken = readCsrfCookie();
+      if (csrfToken) headers.set(CSRF_HEADER_NAME, csrfToken);
+      // LEGACY: keep old header during migration (remove after stage B)
       headers.set('X-CSRF-Protection', '1');
     }
 

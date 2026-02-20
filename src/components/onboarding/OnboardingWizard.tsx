@@ -33,6 +33,7 @@ import {
 } from '@/lib/categories';
 import { onboardingSteps, OnboardingStep, StepField } from './stepsConfig';
 import { trackMixpanelEvent } from '@/lib/mixpanel';
+import { apiFetch } from '@/lib/utils';
 
 /**
  * Convert CategoryInfo array to options format for select dropdowns
@@ -449,12 +450,8 @@ export default function OnboardingWizard() {
       };
 
       if (stepId === 'profile') {
-        response = await fetch('/api/profile', {
+        response = await apiFetch('/api/profile', {
           method: 'PUT',
-          headers: { 
-            'Content-Type': 'application/json',
-            'X-CSRF-Protection': '1',
-          },
           body: JSON.stringify({
             ageRange: wizardData.ageRange || '26-35',
             employmentType: wizardData.employmentType || 'employee',
@@ -473,9 +470,8 @@ export default function OnboardingWizard() {
           console.error('[Onboarding] Profile update failed:', response.status);
         }
       } else if (stepId === 'assets') {
-        response = await fetch('/api/assets', {
+        response = await apiFetch('/api/assets', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
             name: wizardData.assetName || 'נכס חדש',
             category: wizardData.assetCategory || 'savings_account', // Default from categories.ts
@@ -496,9 +492,8 @@ export default function OnboardingWizard() {
           const liabilityCategory = defaultLiabilityTypes.find(c => c.id === liabilityType);
           const liabilityName = liabilityCategory?.nameHe || 'הלוואה';
           
-          response = await fetch('/api/liabilities', {
+          response = await apiFetch('/api/liabilities', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
             body: JSON.stringify({
               name: liabilityName,
               type: liabilityType,
@@ -518,9 +513,8 @@ export default function OnboardingWizard() {
           showSuccessNotification('דילגת על הוספת התחייבויות');
         }
       } else if (stepId === 'income') {
-        response = await fetch('/api/recurring', {
+        response = await apiFetch('/api/recurring', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
             type: 'income',
             name: wizardData.incomeName || 'הכנסה חודשית',
@@ -535,9 +529,8 @@ export default function OnboardingWizard() {
           console.error('[Onboarding] Income add failed:', response.status);
         }
       } else if (stepId === 'expenses') {
-        response = await fetch('/api/transactions', {
+        response = await apiFetch('/api/transactions', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Protection': '1' },
           body: JSON.stringify({
             type: 'expense',
             description: wizardData.expenseName || 'הוצאה',
@@ -593,12 +586,8 @@ export default function OnboardingWizard() {
     setIsLoadingDemoData(true);
     
     try {
-      const response = await fetch('/api/onboarding/demo-data', {
+      const response = await apiFetch('/api/onboarding/demo-data', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Protection': '1',
-        },
       });
 
       if (response.ok) {

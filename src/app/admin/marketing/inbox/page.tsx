@@ -19,6 +19,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import EmailPreview from '@/components/admin/EmailPreview';
+import { apiFetch } from '@/lib/utils';
 
 interface InboxMessage {
   id: string;
@@ -130,12 +131,8 @@ export default function InboxPage() {
   ) => {
     setActionLoading(id);
     try {
-      const res = await fetch(`/api/admin/inbox/${id}`, {
+      const res = await apiFetch(`/api/admin/inbox/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Protection': '1',
-        },
         body: JSON.stringify(updates),
       });
       if (!res.ok) throw new Error('Failed to update');
@@ -171,9 +168,8 @@ export default function InboxPage() {
     if (!confirm('למחוק את ההודעה?')) return;
     setActionLoading(id);
     try {
-      const res = await fetch(`/api/admin/inbox/${id}`, {
+      const res = await apiFetch(`/api/admin/inbox/${id}`, {
         method: 'DELETE',
-        headers: { 'X-CSRF-Protection': '1' },
       });
       if (!res.ok) throw new Error('Failed to delete');
       setMessages((prev) => prev.filter((m) => m.id !== id));

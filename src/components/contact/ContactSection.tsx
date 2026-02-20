@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import { CONTACT_FORM_LIMITS, ContactCategory, VALID_CATEGORIES } from '@/lib/contactValidation';
+import { apiFetch } from '@/lib/utils';
 
 // ============================================================================
 // TYPES
@@ -126,12 +127,8 @@ export default function ContactSection() {
     setErrorMessage('');
 
     try {
-      const response = await fetch('/api/contact', {
+      const response = await apiFetch('/api/contact', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-Protection': '1',
-        },
         body: JSON.stringify({
           category: form.category,
           subject: form.subject,

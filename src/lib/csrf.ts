@@ -1,0 +1,92 @@
+/**
+ * CSRF Protection Utilities — Double Submit Cookie Pattern
+ *
+ * Flow:
+ *  1. Middleware sets a non-httpOnly cookie "csrf-token" for authenticated users
+ *  2. Client JS reads the cookie and sends it as X-CSRF-Token header
+ *  3. Middleware compares cookie ↔ header with timingSafeEqual
+ *
+ * Why httpOnly=false: We NEED JS to read it (that's the pattern).
+ * Why SameSite=Strict: cross-site browser won't send the cookie → attacker
+ *   can't forge the header → attack fails.
+ */
+
+import crypto from 'crypto';
+
+export const CSRF_COOKIE_NAME    = 'csrf-token';
+export const CSRF_HEADER_NAME    = 'X-CSRF-Token';
+export const CSRF_LEGACY_HEADER  = 'X-CSRF-Protection'; // kept for backward compat
+export const CSRF_TOKEN_BYTES    = 32;                   // → 64 hex chars
+export const CSRF_TOKEN_MAX_AGE  = 60 * 60 * 24;        // 24 h in seconds
+
+/**
+ * Generate a cryptographically random CSRF token (64-char hex string).
+ */
+export function generateCsrfToken(): string {
+  return crypto.randomBytes(CSRF_TOKEN_BYTES).toString('hex');
+}
+
+/**
+ * Timing-safe comparison of header token vs cookie token.
+ * Returns true only when both are identical non-empty strings.
+ */
+export function isValidCsrfToken(
+  headerToken: string | null | undefined,
+  cookieToken: string | null | undefined,
+): boolean {
+  if (!headerToken || !cookieToken) return false;
+  if (headerToken.length !== cookieToken.length) return false;
+  try {
+    return crypto.timingSafeEqual(
+      Buffer.from(headerToken, 'utf8'),
+      Buffer.from(cookieToken, 'utf8'),
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Validate the request Origin (with Referer fallback) against the app URL.
+ * Handles production, localhost (dev), and Vercel preview deployments.
+ *
+ * If neither Origin nor Referer is present we allow the request —
+ * same-origin browser navigations may omit both headers, and the
+ * SameSite cookie already prevents cross-site attacks.
+ */
+export function isValidOrigin(
+  origin: string | null,
+  referer: string | null,
+  appUrl: string,
+): boolean {
+  const allowedOrigin = new URL(appUrl).origin; // e.g. "https://neto.co.il"
+
+  function matches(candidate: string): boolean {
+    if (candidate === allowedOrigin) return true;
+    // Development: allow localhost
+    if (
+      process.env.NODE_ENV !== 'production' &&
+      (candidate.startsWith('http://localhost') ||
+        candidate.startsWith('http://127.0.0.1'))
+    ) {
+      return true;
+    }
+    // Vercel preview deployments (same Vercel account)
+    if (candidate.endsWith('.vercel.app')) return true;
+    return false;
+  }
+
+  if (origin) return matches(origin);
+
+  if (referer) {
+    try {
+      return matches(new URL(referer).origin);
+    } catch {
+      return false;
+    }
+  }
+
+  // No Origin / Referer → allow (SameSite cookie is the real guard)
+  return true;
+}
+
