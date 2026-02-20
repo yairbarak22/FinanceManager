@@ -40,6 +40,7 @@
   "exclude": [
     "node_modules",
     "scripts/**/*",
-    "tests/**/*"
+    "tests/**/*",
+    "src/**/__tests__/**/*"
   ]
 }

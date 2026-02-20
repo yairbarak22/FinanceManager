@@ -40,6 +40,7 @@ model User {
   createdCampaigns      MarketingCampaign[]    // Campaigns created by this admin
   createdTemplates      EmailTemplate[]        // Templates created by this admin
   maaserPreferences     MaaserPreference[]     // Maaser/Chomesh income preferences
+  quarantinedFiles      QuarantinedFile[]      // Files in quarantine awaiting review
 }
 
 model Account {
@@ -438,6 +439,11 @@ enum AuditAction {
   RATE_LIMITED
   UNAUTHORIZED_ACCESS
   CSRF_VIOLATION
+  SUSPICIOUS_ACTIVITY
+  WEBHOOK_REJECTED
+  FILE_QUARANTINED
+  FILE_QUARANTINE_APPROVED
+  FILE_QUARANTINE_REJECTED
 }
 
 model AuditLog {
@@ -588,4 +594,41 @@ model InboxMessage {
   @@index([isArchived])
   @@index([createdAt])
   @@index([direction])
+}
+
+// ============================================
+// QUARANTINE - Suspicious file storage
+// ============================================
+
+enum QuarantineStatus {
+  PENDING    // Awaiting review
+  APPROVED   // Admin approved - safe
+  REJECTED   // Admin rejected - dangerous
+  AUTO_CLEAN // Automatically approved after scan
+}
+
+model QuarantinedFile {
+  id           String           @id @default(cuid())
+  filename     String           // Original filename (sanitized)
+  storedName   String           // Name in quarantine storage
+  url          String?          // Vercel Blob URL in quarantine directory
+  mimeType     String
+  size         Int
+  userId       String           // Uploader's user ID
+  reason       String           // Why it was quarantined (e.g., "VBA macro detected")
+  reasonCode   String?          // Machine-readable code (e.g., "PDF_JAVASCRIPT")
+  status       QuarantineStatus @default(PENDING)
+  entityType   String?          // Original entity type (asset/liability)
+  entityId     String?          // Original entity ID
+  reviewedAt   DateTime?
+  reviewedBy   String?          // Admin user ID who reviewed
+  reviewNotes  String?          // Optional notes from admin
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }

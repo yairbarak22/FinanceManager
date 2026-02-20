@@ -189,6 +189,66 @@ export function createPathTraversalFilename(): string {
   return '../../../etc/passwd';
 }
 
+/**
+ * Create a PDF buffer with many embedded file markers.
+ * Simulates a PDF with excessive embedded files.
+ */
+export function createPDFWithManyEmbeddedFiles(count: number): Buffer {
+  let pdf = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>
+endobj
+`;
+  // Add embedded file references
+  for (let i = 0; i < count; i++) {
+    pdf += `${4 + i} 0 obj\n<< /Type /EmbeddedFile /Subtype /application#2Fpdf >>\nendobj\n`;
+  }
+  pdf += `xref\n0 ${4 + count}\ntrailer\n<< /Size ${4 + count} /Root 1 0 R >>\nstartxref\n0\n%%EOF`;
+  return Buffer.from(pdf);
+}
+
+/**
+ * Create a PDF buffer with excessive cross-reference objects.
+ * This simulates a PDF bomb with many objects.
+ */
+export function createPDFWithManyObjects(count: number): Buffer {
+  let pdf = `%PDF-1.4\n`;
+  for (let i = 1; i <= count; i++) {
+    pdf += `${i} 0 obj\n<< /Type /Null >>\nendobj\n`;
+  }
+  pdf += `xref\n0 ${count + 1}\ntrailer\n<< /Size ${count + 1} /Root 1 0 R >>\nstartxref\n0\n%%EOF`;
+  return Buffer.from(pdf);
+}
+
+/**
+ * Create a PDF with /JS shorthand for JavaScript.
+ */
+export function createPDFWithJS(): Buffer {
+  return Buffer.from(`%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [] /Count 0 >>
+endobj
+3 0 obj
+<< /JS (app.alert\\('evil'\\)) >>
+endobj
+xref
+0 4
+trailer
+<< /Size 4 /Root 1 0 R >>
+startxref
+0
+%%EOF`);
+}
+
 export function resetDocumentFactory(): void {
   documentCounter = 0;
 }

@@ -10,7 +10,7 @@ import { requireAuth } from '@/lib/authHelpers';
 import { openai } from '@ai-sdk/openai';
 import { generateText } from 'ai';
 import * as XLSX from 'xlsx';
-import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
+import { checkRateLimitWithIp, getClientIp, RATE_LIMITS, IP_RATE_LIMITS } from '@/lib/rateLimit';
 import { validateExcelFile } from '@/lib/fileValidator';
 import { sanitizeExcelData } from '@/lib/excelSanitizer';
 
@@ -1275,8 +1275,15 @@ export async function POST(request: NextRequest) {
     if (authResult.error) return authResult.error;
     userId = authResult.userId;
 
-    // Rate limiting for import endpoint (heavy operation)
-    const rateLimitResult = await checkRateLimit(`import:${userId}`, RATE_LIMITS.import);
+    // Rate limiting for import endpoint (heavy operation) - user + IP based
+    const clientIp = getClientIp(request.headers);
+    const rateLimitResult = await checkRateLimitWithIp(
+      userId,
+      clientIp,
+      RATE_LIMITS.import,
+      IP_RATE_LIMITS.import,
+      'import',
+    );
     
     if (!rateLimitResult.success) {
       return NextResponse.json(

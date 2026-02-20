@@ -10,6 +10,29 @@
 import sharp from 'sharp';
 import JSZip from 'jszip';
 
+// pdf-parse is loaded lazily because it pulls in pdfjs-dist which requires
+// canvas/DOM APIs that are unavailable during Next.js server-side build.
+// When unavailable, we fall back to pattern matching (which is sufficient for
+// blocking /JavaScript, /Launch, /JS, and counting embedded files/xref entries).
+type PdfParseResult = { numpages: number; info?: Record<string, unknown> };
+type PdfParseFn = (buffer: Buffer, options?: { max?: number }) => Promise<PdfParseResult>;
+
+let _pdfParse: PdfParseFn | null = null;
+let _pdfParseLoadAttempted = false;
+
+function getPdfParse(): PdfParseFn | null {
+  if (_pdfParseLoadAttempted) return _pdfParse;
+  _pdfParseLoadAttempted = true;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    _pdfParse = require('pdf-parse') as PdfParseFn;
+  } catch {
+    console.warn('[FileValidator] pdf-parse not available, using pattern matching only');
+    _pdfParse = null;
+  }
+  return _pdfParse;
+}
+
 // ====================
 // EXCEL-SPECIFIC VALIDATION (Security Layer #1 for imports)
 // ====================
@@ -325,15 +348,162 @@ async function validateLegacyOfficeDocument(buffer: Buffer): Promise<ValidationR
   return { isValid: true, sanitizedBuffer: buffer };
 }
 
+// ============================================================================
+// PDF ADVANCED VALIDATION
+// ============================================================================
+
+// Maximum pages for a legitimate financial document
+const MAX_PDF_PAGES = 2000;
+
+// Maximum PDF file size for parsing (prevents memory exhaustion)
+const MAX_PDF_PARSE_SIZE = 50 * 1024 * 1024; // 50MB
+
+// Maximum number of embedded files allowed
+const MAX_PDF_EMBEDDED_FILES = 10;
+
+// Maximum cross-reference stream count (prevents crafted PDFs with excessive objects)
+const MAX_PDF_XREF_ENTRIES = 500_000;
+
+/**
+ * Validate PDF structure using pdf-parse.
+ * Checks for:
+ * - Valid PDF structure (parseable)
+ * - PDF bombs (excessive pages or objects)
+ * - Embedded files count
+ *
+ * Returns { isValid, error?, warnings? }
+ * If parsing fails, falls back to allowing the file with a warning (backward compat).
+ */
+async function validatePDFStructure(buffer: Buffer): Promise<{
+  isValid: boolean;
+  error?: string;
+  warnings?: string[];
+}> {
+  const warnings: string[] = [];
+
+  // Skip structural validation for very large files (they'll still get pattern-checked)
+  if (buffer.length > MAX_PDF_PARSE_SIZE) {
+    warnings.push('PDF_LARGE_FILE: file too large for structural analysis');
+    return { isValid: true, warnings };
+  }
+
+  // Embedded file count check — lightweight string scan, doesn't need pdf-parse
+  const embeddedFileCount = countPDFEmbeddedFiles(buffer);
+  if (embeddedFileCount > MAX_PDF_EMBEDDED_FILES) {
+    console.warn('[FileValidator] PDF_TOO_MANY_EMBEDDED: count=%d', embeddedFileCount);
+    return {
+      isValid: false,
+      error: `קובץ PDF מכיל יותר מדי קבצים מוטבעים (${embeddedFileCount}). מקסימום: ${MAX_PDF_EMBEDDED_FILES}.`,
+    };
+  }
+
+  if (embeddedFileCount > 0) {
+    warnings.push(`PDF contains ${embeddedFileCount} embedded file(s)`);
+  }
+
+  // Try pdf-parse for deep structural validation (page count, etc.)
+  const parseFn = getPdfParse();
+  if (parseFn) {
+    try {
+      const data = await parseFn(buffer, {
+        // Don't render pages - just parse structure
+        max: 0,
+      });
+
+      // Check page count (prevent PDF bombs with thousands of pages)
+      if (data.numpages > MAX_PDF_PAGES) {
+        console.warn('[FileValidator] PDF_TOO_MANY_PAGES: pages=%d', data.numpages);
+        return {
+          isValid: false,
+          error: `קובץ PDF מכיל יותר מדי עמודים (${data.numpages}). מקסימום: ${MAX_PDF_PAGES} עמודים.`,
+        };
+      }
+
+      return { isValid: true, warnings };
+    } catch (parseError) {
+      // Parsing failed - this could be a malformed PDF or one with features pdf-parse doesn't handle.
+      // For backward compatibility, we allow it but log a warning.
+      // The pattern-matching validation below will still catch dangerous content.
+      const msg = parseError instanceof Error ? parseError.message : String(parseError);
+      console.warn('[FileValidator] PDF_PARSE_FALLBACK: parser failed, using pattern matching only:', msg);
+      warnings.push(`PDF_PARSE_FALLBACK: ${msg}`);
+      return { isValid: true, warnings };
+    }
+  }
+
+  // pdf-parse not available — rely on embedded file count (already done above)
+  // and pattern matching (done in validatePDF after this call)
+  warnings.push('PDF_PARSE_UNAVAILABLE: using pattern matching only');
+  return { isValid: true, warnings };
+}
+
+/**
+ * Count embedded files in a PDF by scanning for /EmbeddedFile entries.
+ * This is a lightweight heuristic that doesn't require full parsing.
+ */
+function countPDFEmbeddedFiles(buffer: Buffer): number {
+  const content = buffer.toString('binary');
+  let count = 0;
+  let searchFrom = 0;
+  while (true) {
+    const idx = content.indexOf('/EmbeddedFile', searchFrom);
+    if (idx === -1) break;
+    count++;
+    searchFrom = idx + '/EmbeddedFile'.length;
+  }
+  return count;
+}
+
+/**
+ * Count cross-reference entries to detect PDF bombs with excessive object streams.
+ */
+function countPDFXrefEntries(buffer: Buffer): number {
+  const content = buffer.toString('binary');
+  // Count "obj" declarations (e.g. "1 0 obj")
+  const matches = content.match(/\d+\s+\d+\s+obj/g);
+  return matches ? matches.length : 0;
+}
+
 /**
  * Check PDF for JavaScript and other dangerous content
  * 
  * IMPORTANT: /OpenAction is NOT blocked because it's present in almost every legitimate PDF
  * (used for setting initial view/zoom). Only actual code execution vectors are blocked:
  * /JavaScript, /JS, and /Launch.
+ *
+ * Enhanced with:
+ * - PDF structure validation (pdf-parse)
+ * - PDF bomb detection (page count, xref entries)
+ * - Embedded file count limits
  */
 async function validatePDF(buffer: Buffer): Promise<ValidationResult> {
-  // Convert to string for pattern matching (ASCII parts of PDF)
+  // Layer 1: Structural validation (pdf-parse)
+  const structureResult = await validatePDFStructure(buffer);
+  if (!structureResult.isValid) {
+    return {
+      isValid: false,
+      error: structureResult.error,
+    };
+  }
+
+  // Log any warnings from structural validation
+  if (structureResult.warnings?.length) {
+    for (const w of structureResult.warnings) {
+      console.log(`[FileValidator] PDF structural warning: ${w}`);
+    }
+  }
+
+  // Layer 2: Check for excessive cross-reference objects (PDF bomb indicator)
+  const xrefCount = countPDFXrefEntries(buffer);
+  if (xrefCount > MAX_PDF_XREF_ENTRIES) {
+    console.warn('[FileValidator] PDF_XREF_BOMB: xref entries=%d', xrefCount);
+    return {
+      isValid: false,
+      error: 'קובץ PDF מכיל יותר מדי אובייקטים. ייתכן שהקובץ פגום או זדוני.',
+    };
+  }
+
+  // Layer 3: Pattern matching for dangerous content
   const content = buffer.toString('binary');
 
   // Check for patterns that MUST be blocked (code execution vectors)

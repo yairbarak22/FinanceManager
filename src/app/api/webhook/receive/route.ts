@@ -8,6 +8,7 @@ import { Resend } from 'resend';
 import { isValidEmail, escapeHtml } from '@/lib/contactValidation';
 import { prisma } from '@/lib/prisma';
 import { generateThreadId, extractEmailAddress as extractEmail } from '@/lib/inbox/constants';
+import { validateWebhookSecurity } from '@/lib/webhookSecurity';
 
 // Lazy initialization of Resend client
 let resendClient: Resend | null = null;
@@ -282,6 +283,18 @@ export async function POST(request: NextRequest) {
   try {
     if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FORWARD_TO) {
       return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
+    }
+
+    // Pre-check: timestamp + nonce validation (before consuming body)
+    const svixId = request.headers.get('svix-id');
+    const svixTimestamp = request.headers.get('svix-timestamp');
+    const securityCheck = await validateWebhookSecurity(svixId, svixTimestamp);
+    if (!securityCheck.valid) {
+      console.warn('[Webhook] Security check failed:', securityCheck.reason);
+      return NextResponse.json(
+        { error: `Webhook rejected: ${securityCheck.reason}` },
+        { status: 401 },
+      );
     }
 
     const verification = await verifyWebhookSignature(request);

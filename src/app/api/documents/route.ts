@@ -4,7 +4,8 @@ import { put } from '@vercel/blob';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, withUserId, getSharedUserIds } from '@/lib/authHelpers';
 import { validateAndSanitizeFile } from '@/lib/fileValidator';
-import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
+import { checkRateLimit, checkRateLimitWithIp, getClientIp, RATE_LIMITS, IP_RATE_LIMITS } from '@/lib/rateLimit';
+import { quarantineFile } from '@/lib/quarantine';
 
 // Allowed file types
 const ALLOWED_TYPES = [
@@ -108,8 +109,15 @@ export async function POST(request: NextRequest) {
     const { userId, error } = await requireAuth();
     if (error) return error;
 
-    // Rate limiting for file uploads (strict)
-    const rateLimitResult = await checkRateLimit(`upload:${userId}`, RATE_LIMITS.upload);
+    // Rate limiting for file uploads (strict) - user + IP based
+    const clientIp = getClientIp(request.headers);
+    const rateLimitResult = await checkRateLimitWithIp(
+      userId,
+      clientIp,
+      RATE_LIMITS.upload,
+      IP_RATE_LIMITS.upload,
+      'upload',
+    );
     if (!rateLimitResult.success) {
       return NextResponse.json(
         { error: 'יותר מדי העלאות. אנא המתן ונסה שוב.' },
@@ -195,10 +203,37 @@ export async function POST(request: NextRequest) {
     const validationResult = await validateAndSanitizeFile(fileBuffer, file.type);
 
     if (!validationResult.isValid) {
-      return NextResponse.json(
-        { error: validationResult.error },
-        { status: 400 }
-      );
+      // Quarantine the suspicious file instead of just rejecting
+      try {
+        const qResult = await quarantineFile(
+          fileBuffer,
+          file.name,
+          file.type,
+          userId,
+          validationResult.error || 'Validation failed',
+          validationResult.error?.includes('JavaScript') ? 'PDF_JAVASCRIPT'
+            : validationResult.error?.includes('מאקרו') ? 'MACRO_DETECTED'
+            : validationResult.error?.includes('מוטבעים') ? 'EMBEDDED_FILES'
+            : 'VALIDATION_FAILED',
+          entityType,
+          entityId,
+        );
+        return NextResponse.json(
+          {
+            error: validationResult.error,
+            quarantined: true,
+            quarantineId: qResult.quarantineId,
+            message: 'הקובץ הועבר לבידוד לבדיקה. מנהל המערכת יבדוק אותו.',
+          },
+          { status: 400 },
+        );
+      } catch (quarantineError) {
+        console.error('[Documents] Quarantine failed, rejecting file:', quarantineError);
+        return NextResponse.json(
+          { error: validationResult.error },
+          { status: 400 },
+        );
+      }
     }
 
     // Use sanitized buffer if available (e.g., re-encoded images)

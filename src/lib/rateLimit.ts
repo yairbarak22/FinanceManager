@@ -274,3 +274,98 @@ export function getClientIp(headers: Headers): string {
     'unknown'
   );
 }
+
+// ============================================================================
+// IP-BASED RATE LIMITING
+// ============================================================================
+
+/**
+ * Per-endpoint rate limit presets for IP-based limiting.
+ * These are stricter than user-based limits because they protect
+ * against unauthenticated abuse and IP-level attacks.
+ */
+export const IP_RATE_LIMITS = {
+  // File upload - very strict per IP
+  upload: { maxRequests: 15, windowSeconds: 60 } as RateLimitConfig,
+
+  // File download - moderate per IP
+  download: { maxRequests: 30, windowSeconds: 60 } as RateLimitConfig,
+
+  // Transaction import - very strict per IP (heavy processing)
+  import: { maxRequests: 8, windowSeconds: 60 } as RateLimitConfig,
+
+  // Contact form - already IP-limited in the endpoint
+  contact: { maxRequests: 5, windowSeconds: 60 } as RateLimitConfig,
+
+  // Auth endpoints - very strict per IP
+  auth: { maxRequests: 10, windowSeconds: 60 } as RateLimitConfig,
+
+  // General API - moderate per IP
+  api: { maxRequests: 200, windowSeconds: 60 } as RateLimitConfig,
+};
+
+/**
+ * Check rate limit using both user ID and IP address.
+ * Both checks must pass for the request to be allowed.
+ *
+ * This provides two layers of protection:
+ * 1. User-based: prevents a single user from abusing (even across IPs)
+ * 2. IP-based: prevents a single IP from abusing (even across users)
+ *
+ * @param userId - The authenticated user's ID
+ * @param ipAddress - The client IP address (from getClientIp)
+ * @param userRateLimitConfig - Rate limit config for the user-based check
+ * @param ipRateLimitConfig - Rate limit config for the IP-based check (defaults to IP_RATE_LIMITS.api)
+ * @param endpoint - Optional endpoint name for clearer audit logging
+ * @returns The most restrictive RateLimitResult (if either fails, returns failure)
+ */
+export async function checkRateLimitWithIp(
+  userId: string,
+  ipAddress: string,
+  userRateLimitConfig: RateLimitConfig,
+  ipRateLimitConfig?: RateLimitConfig,
+  endpoint?: string,
+): Promise<RateLimitResult> {
+  const prefix = endpoint || 'api';
+
+  // Check user-based rate limit
+  const userResult = await checkRateLimit(
+    `${prefix}:user:${userId}`,
+    userRateLimitConfig,
+  );
+
+  if (!userResult.success) {
+    return userResult;
+  }
+
+  // Check IP-based rate limit
+  const ipConfig = ipRateLimitConfig || IP_RATE_LIMITS.api;
+  const ipResult = await checkRateLimit(
+    `${prefix}:ip:${ipAddress}`,
+    ipConfig,
+  );
+
+  if (!ipResult.success) {
+    // Log IP-based rate limit hit with extra context
+    logAuditEvent({
+      userId,
+      action: AuditAction.RATE_LIMITED,
+      metadata: {
+        type: 'ip_rate_limit',
+        endpoint: prefix,
+        ipAddress,
+        limit: ipResult.limit,
+        resetTime: new Date(ipResult.resetTime).toISOString(),
+      },
+    });
+    return ipResult;
+  }
+
+  // Return the most restrictive remaining count
+  return {
+    success: true,
+    limit: Math.min(userResult.limit, ipResult.limit),
+    remaining: Math.min(userResult.remaining, ipResult.remaining),
+    resetTime: Math.min(userResult.resetTime, ipResult.resetTime),
+  };
+}

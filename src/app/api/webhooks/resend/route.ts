@@ -8,6 +8,7 @@ import { Resend } from 'resend';
 import { config } from '@/lib/config';
 import { prisma } from '@/lib/prisma';
 import { MarketingEventType } from '@prisma/client';
+import { validateWebhookSecurity } from '@/lib/webhookSecurity';
 
 // Lazy initialization
 let resendClient: Resend | null = null;
@@ -164,6 +165,18 @@ async function syncCampaignStats(campaignId: string): Promise<void> {
  */
 export async function POST(request: NextRequest) {
   try {
+    // Pre-check: timestamp + nonce validation (before consuming body)
+    const svixId = request.headers.get('svix-id');
+    const svixTimestamp = request.headers.get('svix-timestamp');
+    const securityCheck = await validateWebhookSecurity(svixId, svixTimestamp);
+    if (!securityCheck.valid) {
+      console.warn('[Marketing Webhook] Security check failed:', securityCheck.reason);
+      return NextResponse.json(
+        { error: `Webhook rejected: ${securityCheck.reason}` },
+        { status: 401 },
+      );
+    }
+
     // Verify webhook signature
     const verification = await verifyWebhookSignature(request);
     if (!verification.valid || !verification.payload) {
