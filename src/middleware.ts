@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { config as appConfig } from './lib/config';
-import { logAuditEvent, AuditAction, getRequestInfo } from './lib/auditLog';
 import {
   CSRF_COOKIE_NAME,
   CSRF_HEADER_NAME,
@@ -12,6 +11,47 @@ import {
   isValidCsrfToken,
   isValidOrigin,
 } from './lib/csrf';
+
+/**
+ * Edge-safe request info extraction (no Prisma dependency).
+ * Mirrors getRequestInfo from auditLog.ts but safe for Edge Runtime.
+ */
+function getRequestInfo(headers: Headers): { ipAddress: string; userAgent: string } {
+  return {
+    ipAddress:
+      headers.get('x-real-ip') ||
+      headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      headers.get('cf-connecting-ip') ||
+      'unknown',
+    userAgent: headers.get('user-agent') || 'unknown',
+  };
+}
+
+/**
+ * Edge-safe audit log — writes to console (visible in Vercel logs).
+ * PrismaClient cannot run in Edge Runtime, so we log structured JSON
+ * instead of writing to the database. For persistent audit trails,
+ * the API route handlers still use the Prisma-based logAuditEvent.
+ */
+function logAuditEventEdge(params: {
+  userId?: string | null;
+  action: string;
+  metadata?: Record<string, unknown>;
+  ipAddress?: string;
+  userAgent?: string;
+}): void {
+  console.warn(
+    JSON.stringify({
+      level: 'audit',
+      action: params.action,
+      userId: params.userId ?? null,
+      metadata: params.metadata,
+      ip: params.ipAddress,
+      ua: params.userAgent?.substring(0, 200),
+      ts: new Date().toISOString(),
+    }),
+  );
+}
 
 // Cookie name for signup source tracking
 const SIGNUP_SOURCE_COOKIE = 'signup_source';
@@ -162,11 +202,11 @@ export async function middleware(request: NextRequest) {
     );
 
     if ((!newTokenValid && !legacyTokenValid) || !originValid) {
-      // Audit log: CSRF violation
+      // Audit log: CSRF violation (edge-safe, no Prisma)
       const { ipAddress, userAgent } = getRequestInfo(request.headers);
-      logAuditEvent({
+      logAuditEventEdge({
         userId: token?.sub,
-        action: AuditAction.CSRF_VIOLATION,
+        action: 'CSRF_VIOLATION',
         metadata: {
           path: pathname,
           method: request.method,
@@ -195,18 +235,18 @@ export async function middleware(request: NextRequest) {
   // SECURITY: Block non-admin users from /admin/* routes
   if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
     if (!isAdmin(token.email as string)) {
-      // Audit log: Unauthorized admin access attempt
-      const { ipAddress, userAgent } = getRequestInfo(request.headers);
-      logAuditEvent({
+      // Audit log: Unauthorized admin access attempt (edge-safe, no Prisma)
+      const { ipAddress: adminIp, userAgent: adminUa } = getRequestInfo(request.headers);
+      logAuditEventEdge({
         userId: token?.sub,
-        action: AuditAction.UNAUTHORIZED_ACCESS,
+        action: 'UNAUTHORIZED_ACCESS',
         metadata: {
           path: pathname,
           email: token?.email,
           attemptedResource: 'admin',
         },
-        ipAddress,
-        userAgent,
+        ipAddress: adminIp,
+        userAgent: adminUa,
       });
 
       // Return 403 Forbidden for non-admin users
