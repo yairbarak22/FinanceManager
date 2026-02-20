@@ -3,6 +3,7 @@ import {
   generateCsrfToken,
   isValidCsrfToken,
   isValidOrigin,
+  normalizeDomain,
   CSRF_COOKIE_NAME,
   CSRF_HEADER_NAME,
   CSRF_LEGACY_HEADER,
@@ -89,13 +90,38 @@ describe('isValidCsrfToken', () => {
 });
 
 // ============================================================================
+// normalizeDomain
+// ============================================================================
+describe('normalizeDomain', () => {
+  it('strips www. prefix', () => {
+    expect(normalizeDomain('www.myneto.co.il')).toBe('myneto.co.il');
+  });
+
+  it('leaves non-www domains unchanged', () => {
+    expect(normalizeDomain('myneto.co.il')).toBe('myneto.co.il');
+  });
+
+  it('does not strip non-www subdomains', () => {
+    expect(normalizeDomain('api.myneto.co.il')).toBe('api.myneto.co.il');
+  });
+
+  it('does not strip www from the middle of hostname', () => {
+    expect(normalizeDomain('notwww.example.com')).toBe('notwww.example.com');
+  });
+
+  it('handles localhost', () => {
+    expect(normalizeDomain('localhost')).toBe('localhost');
+  });
+});
+
+// ============================================================================
 // isValidOrigin
 // ============================================================================
 describe('isValidOrigin', () => {
-  const appUrl = 'https://neto.co.il';
+  const appUrl = 'https://www.myneto.co.il';
 
   it('allows matching production origin', () => {
-    expect(isValidOrigin('https://neto.co.il', null, appUrl)).toBe(true);
+    expect(isValidOrigin('https://www.myneto.co.il', null, appUrl)).toBe(true);
   });
 
   it('rejects different origin', () => {
@@ -103,11 +129,11 @@ describe('isValidOrigin', () => {
   });
 
   it('rejects subdomain spoofing', () => {
-    expect(isValidOrigin('https://neto.co.il.evil.com', null, appUrl)).toBe(false);
+    expect(isValidOrigin('https://myneto.co.il.evil.com', null, appUrl)).toBe(false);
   });
 
   it('rejects different protocol', () => {
-    expect(isValidOrigin('http://neto.co.il', null, appUrl)).toBe(false);
+    expect(isValidOrigin('http://myneto.co.il', null, appUrl)).toBe(false);
   });
 
   it('allows localhost in non-production (test) environment', () => {
@@ -124,7 +150,7 @@ describe('isValidOrigin', () => {
   });
 
   it('allows Vercel preview deployment URLs', () => {
-    expect(isValidOrigin('https://neto-abc123.vercel.app', null, appUrl)).toBe(true);
+    expect(isValidOrigin('https://myneto-abc123.vercel.app', null, appUrl)).toBe(true);
   });
 
   it('allows any vercel.app subdomain', () => {
@@ -132,7 +158,7 @@ describe('isValidOrigin', () => {
   });
 
   it('falls back to Referer when Origin is null', () => {
-    expect(isValidOrigin(null, 'https://neto.co.il/dashboard', appUrl)).toBe(true);
+    expect(isValidOrigin(null, 'https://www.myneto.co.il/dashboard', appUrl)).toBe(true);
   });
 
   it('rejects bad Referer origin', () => {
@@ -149,7 +175,44 @@ describe('isValidOrigin', () => {
 
   it('works with appUrl that includes a path', () => {
     // Shouldn't happen in practice but make sure origin extraction works
-    expect(isValidOrigin('https://neto.co.il', null, 'https://neto.co.il/app')).toBe(true);
+    expect(isValidOrigin('https://www.myneto.co.il', null, 'https://www.myneto.co.il/app')).toBe(true);
+  });
+});
+
+// ============================================================================
+// isValidOrigin — www vs non-www
+// ============================================================================
+describe('isValidOrigin — www vs non-www', () => {
+  it('allows www origin when appUrl has no www', () => {
+    expect(isValidOrigin('https://www.myneto.co.il', null, 'https://myneto.co.il')).toBe(true);
+  });
+
+  it('allows non-www origin when appUrl has www', () => {
+    expect(isValidOrigin('https://myneto.co.il', null, 'https://www.myneto.co.il')).toBe(true);
+  });
+
+  it('allows www origin matching www appUrl', () => {
+    expect(isValidOrigin('https://www.myneto.co.il', null, 'https://www.myneto.co.il')).toBe(true);
+  });
+
+  it('allows non-www origin matching non-www appUrl', () => {
+    expect(isValidOrigin('https://myneto.co.il', null, 'https://myneto.co.il')).toBe(true);
+  });
+
+  it('allows www Referer when appUrl has no www', () => {
+    expect(isValidOrigin(null, 'https://www.myneto.co.il/dashboard', 'https://myneto.co.il')).toBe(true);
+  });
+
+  it('rejects non-www subdomain spoofing (evil.myneto.co.il)', () => {
+    expect(isValidOrigin('https://evil.myneto.co.il', null, 'https://myneto.co.il')).toBe(false);
+  });
+
+  it('rejects domain suffix spoofing (myneto.co.il.evil.com)', () => {
+    expect(isValidOrigin('https://myneto.co.il.evil.com', null, 'https://myneto.co.il')).toBe(false);
+  });
+
+  it('rejects http when appUrl uses https (www variant)', () => {
+    expect(isValidOrigin('http://www.myneto.co.il', null, 'https://www.myneto.co.il')).toBe(false);
   });
 });
 

@@ -79,15 +79,15 @@ describe('isValidOrigin — attack scenarios', () => {
   });
 
   it('blocks origin with matching prefix but different domain', () => {
-    // e.g. neto.co.il.evil.com
+    // e.g. myneto.co.il.evil.com
     expect(
-      isValidOrigin('https://neto.co.il.evil.com', null, 'https://neto.co.il')
+      isValidOrigin('https://myneto.co.il.evil.com', null, 'https://www.myneto.co.il')
     ).toBe(false);
   });
 
   it('blocks http when app uses https', () => {
     expect(
-      isValidOrigin('http://neto.co.il', null, 'https://neto.co.il')
+      isValidOrigin('http://myneto.co.il', null, 'https://www.myneto.co.il')
     ).toBe(false);
   });
 });
@@ -96,7 +96,7 @@ describe('isValidOrigin — attack scenarios', () => {
 // Vercel preview deployments
 // ============================================================================
 describe('isValidOrigin — Vercel previews', () => {
-  const appUrl = 'https://neto.co.il';
+  const appUrl = 'https://www.myneto.co.il';
 
   it('allows any *.vercel.app origin', () => {
     expect(isValidOrigin('https://my-branch-abc123.vercel.app', null, appUrl)).toBe(true);

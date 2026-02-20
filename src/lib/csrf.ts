@@ -70,8 +70,19 @@ export function isValidCsrfToken(
 }
 
 /**
+ * Normalize a hostname by stripping the "www." prefix.
+ * Only removes the leading "www." — other subdomains are NOT normalized.
+ * This ensures that www.myneto.co.il and myneto.co.il are treated as equivalent
+ * while evil.myneto.co.il is still rejected.
+ */
+export function normalizeDomain(hostname: string): string {
+  return hostname.startsWith('www.') ? hostname.slice(4) : hostname;
+}
+
+/**
  * Validate the request Origin (with Referer fallback) against the app URL.
- * Handles production, localhost (dev), and Vercel preview deployments.
+ * Handles production, localhost (dev), Vercel preview deployments,
+ * and www vs non-www domain variants.
  *
  * If neither Origin nor Referer is present we allow the request —
  * same-origin browser navigations may omit both headers, and the
@@ -82,21 +93,47 @@ export function isValidOrigin(
   referer: string | null,
   appUrl: string,
 ): boolean {
-  const allowedOrigin = new URL(appUrl).origin; // e.g. "https://neto.co.il"
+  const allowedUrl = new URL(appUrl);
 
   function matches(candidate: string): boolean {
-    if (candidate === allowedOrigin) return true;
-    // Development: allow localhost
-    if (
-      process.env.NODE_ENV !== 'production' &&
-      (candidate.startsWith('http://localhost') ||
-        candidate.startsWith('http://127.0.0.1'))
-    ) {
-      return true;
+    try {
+      const candidateUrl = new URL(candidate);
+
+      // Protocol must always match (https vs http)
+      if (candidateUrl.protocol !== allowedUrl.protocol) {
+        // Development: allow http://localhost and http://127.0.0.1
+        if (
+          process.env.NODE_ENV !== 'production' &&
+          (candidateUrl.hostname === 'localhost' ||
+            candidateUrl.hostname === '127.0.0.1')
+        ) {
+          return true;
+        }
+        return false;
+      }
+
+      // Normalize domains: treat www.myneto.co.il === myneto.co.il
+      const candidateDomain = normalizeDomain(candidateUrl.hostname);
+      const allowedDomain = normalizeDomain(allowedUrl.hostname);
+
+      if (candidateDomain === allowedDomain) return true;
+
+      // Development: allow localhost / 127.0.0.1
+      if (
+        process.env.NODE_ENV !== 'production' &&
+        (candidateUrl.hostname === 'localhost' ||
+          candidateUrl.hostname === '127.0.0.1')
+      ) {
+        return true;
+      }
+
+      // Vercel preview deployments (same Vercel account)
+      if (candidateUrl.hostname.endsWith('.vercel.app')) return true;
+
+      return false;
+    } catch {
+      return false;
     }
-    // Vercel preview deployments (same Vercel account)
-    if (candidate.endsWith('.vercel.app')) return true;
-    return false;
   }
 
   if (origin) return matches(origin);
