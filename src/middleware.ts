@@ -11,6 +11,7 @@ import {
   isValidCsrfToken,
   isValidOrigin,
 } from './lib/csrf';
+import { generateCspNonce, buildCspHeader } from './lib/csp';
 
 /**
  * Edge-safe request info extraction (no Prisma dependency).
@@ -59,6 +60,29 @@ const SIGNUP_SOURCE_COOKIE = 'signup_source';
 function isAdmin(email: string | null | undefined): boolean {
   if (!email) return false;
   return appConfig.adminEmails.includes(email.toLowerCase());
+}
+
+/**
+ * Create a NextResponse.next() that carries the CSP nonce in both:
+ *   - request headers (so server components can read it via headers())
+ *   - response headers (the actual CSP header sent to the browser)
+ */
+function nextWithCsp(request: NextRequest): NextResponse {
+  const nonce = generateCspNonce();
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set('Content-Security-Policy', buildCspHeader(nonce));
+  return response;
+}
+
+/**
+ * Attach CSP header to a redirect response (nonce not needed for redirects,
+ * but CSP on the redirect response prevents inline script injection).
+ */
+function attachCspToRedirect(res: NextResponse): void {
+  const nonce = generateCspNonce();
+  res.headers.set('Content-Security-Policy', buildCspHeader(nonce));
 }
 
 /**
@@ -124,6 +148,7 @@ export async function middleware(request: NextRequest) {
       redirectUrl.searchParams.set('callbackUrl', callbackUrl);
     }
     response = NextResponse.redirect(redirectUrl);
+    attachCspToRedirect(response);
     if (source) {
       response.cookies.set(SIGNUP_SOURCE_COOKIE, source, {
         path: '/',
@@ -138,7 +163,7 @@ export async function middleware(request: NextRequest) {
   // Landing page: unauthenticated users see it, authenticated users go to dashboard
   if (pathname === '/') {
     if (!token) {
-      response = NextResponse.next();
+      response = nextWithCsp(request);
       if (source && !request.cookies.get(SIGNUP_SOURCE_COOKIE)) {
         response.cookies.set(SIGNUP_SOURCE_COOKIE, source, {
           path: '/',
@@ -149,6 +174,7 @@ export async function middleware(request: NextRequest) {
       return response;
     } else {
       response = NextResponse.redirect(new URL('/dashboard', request.url));
+      attachCspToRedirect(response);
       if (source) {
         response.cookies.set(SIGNUP_SOURCE_COOKIE, source, {
           path: '/',
@@ -169,6 +195,7 @@ export async function middleware(request: NextRequest) {
       landingUrl.searchParams.set('source', source);
     }
     response = NextResponse.redirect(landingUrl);
+    attachCspToRedirect(response);
     if (source) {
       response.cookies.set(SIGNUP_SOURCE_COOKIE, source, {
         path: '/',
@@ -261,7 +288,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Set signup source cookie if present in URL
-  response = NextResponse.next();
+  response = nextWithCsp(request);
   if (source && !request.cookies.get(SIGNUP_SOURCE_COOKIE)) {
     response.cookies.set(SIGNUP_SOURCE_COOKIE, source, {
       path: '/',
@@ -293,6 +320,6 @@ export const config = {
      * - /_next/image (image optimization)
      * - /favicon.ico, /images, /screenshots (static assets)
      */
-    '/((?!invite|api/auth|api/webhook|api/marketing/unsubscribe|_next/static|_next/image|favicon.ico|images|screenshots).*)',
+    '/((?!invite|api/auth|api/webhook|api/csp-report|api/marketing/unsubscribe|_next/static|_next/image|favicon.ico|images|screenshots).*)',
   ],
 };

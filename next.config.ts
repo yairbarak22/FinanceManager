@@ -1,7 +1,5 @@
 import type { NextConfig } from "next";
 
-const isDev = process.env.NODE_ENV === 'development';
-
 const nextConfig: NextConfig = {
   async headers() {
     return [
@@ -28,42 +26,30 @@ const nextConfig: NextConfig = {
             key: 'Strict-Transport-Security',
             value: 'max-age=31536000; includeSubDomains; preload'
           },
-          
-          // Content Security Policy
+
+          // Cross-Origin headers
           {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://web-sdk.smartlook.com https://www.googletagmanager.com https://cdn.mxpnl.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: https: blob:",
-              "font-src 'self' data: https://fonts.gstatic.com",
-              [
-                "connect-src 'self'",
-                "https://accounts.google.com",
-                "https://api.openai.com",
-                "https://*.vercel-storage.com",
-                "https://*.smartlook.com",
-                "https://*.smartlook.cloud",
-                "https://*.eu.smartlook.cloud",
-                "wss://*.smartlook.com",
-                "wss://*.smartlook.cloud",
-                "wss://*.eu.smartlook.cloud",
-                "https://*.google-analytics.com",
-                "https://analytics.google.com",
-                "https://*.googletagmanager.com",
-                "https://*.mixpanel.com",
-                "https://*.mxpnl.com",
-                ...(isDev ? ["http://localhost:*", "ws://localhost:*"] : []),
-              ].join(' '),
-              "worker-src 'self' blob:",
-              "frame-src 'self' https://accounts.google.com",
-              "frame-ancestors 'none'",
-              "form-action 'self'",
-              "base-uri 'self'",
-              "object-src 'none'",
-            ].join('; ')
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin-allow-popups' // Allows Google OAuth popup
           },
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'unsafe-none' // Required: Smartlook/Google SDKs don't send CORP headers
+          },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'same-origin'
+          },
+          {
+            key: 'X-Permitted-Cross-Domain-Policies',
+            value: 'none'
+          },
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'off'
+          },
+
+          // CSP is set dynamically in middleware with per-request nonce
         ],
       },
     ];

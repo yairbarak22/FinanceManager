@@ -2,8 +2,9 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
-import { validateActiveMonths } from '@/lib/utils';
 import { autoLinkGoalToRecurring } from './[id]/route';
+import { validateRequest } from '@/lib/validateRequest';
+import { createRecurringSchema } from '@/lib/validationSchemas';
 
 export async function GET() {
   try {
@@ -42,50 +43,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'יותר מדי בקשות' }, { status: 429 });
     }
 
-    const body = await request.json();
-    
-    // Validate required fields
-    if (!body.type || !['income', 'expense'].includes(body.type)) {
-      return NextResponse.json({ error: 'Type must be "income" or "expense"' }, { status: 400 });
-    }
-    
-    if (typeof body.amount !== 'number' || body.amount <= 0) {
-      return NextResponse.json({ error: 'Amount must be a positive number' }, { status: 400 });
-    }
-    
-    if (!body.category || typeof body.category !== 'string') {
-      return NextResponse.json({ error: 'Category is required' }, { status: 400 });
-    }
-    
-    if (body.category.length > 50) {
-      return NextResponse.json({ error: 'Category too long (max 50 characters)' }, { status: 400 });
-    }
-    
-    if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
-    }
-    
-    if (body.name.length > 100) {
-      return NextResponse.json({ error: 'Name too long (max 100 characters)' }, { status: 400 });
-    }
+    const { data, errorResponse } = await validateRequest(request, createRecurringSchema);
+    if (errorResponse) return errorResponse;
 
-    // Validate activeMonths if provided
-    if (body.activeMonths !== undefined) {
-      const activeMonthsError = validateActiveMonths(body.activeMonths);
-      if (activeMonthsError) {
-        return NextResponse.json({ error: activeMonthsError }, { status: 400 });
-      }
-    }
-    
     const recurring = await prisma.recurringTransaction.create({
       data: {
         userId,
-        type: body.type,
-        amount: body.amount,
-        category: body.category,
-        name: body.name.trim(),
-        isActive: body.isActive ?? true,
-        activeMonths: body.activeMonths ?? null,
+        type: data.type,
+        amount: data.amount,
+        category: data.category,
+        name: data.name,
+        isActive: data.isActive ?? true,
+        activeMonths: data.activeMonths ?? undefined,
       },
     });
     

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Heebo, Inter, Nunito } from "next/font/google";
 import Script from "next/script";
+import { headers } from "next/headers";
 import Providers from "@/components/Providers";
 import { OnboardingProvider } from "@/context/OnboardingContext";
 import { AccessibilityProvider } from "@/context/AccessibilityContext";
@@ -110,11 +111,13 @@ export const metadata: Metadata = {
   category: 'finance',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get('x-nonce') ?? '';
+
   return (
     <html lang="he" dir="rtl">
       <head>
@@ -122,6 +125,7 @@ export default function RootLayout({
         <Script
           id="smartlook-init"
           strategy="afterInteractive"
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
               window.smartlook||(function(d) {
@@ -170,7 +174,7 @@ export default function RootLayout({
               {children}
               <OnboardingLayer />
             </OnboardingProvider>
-            <Analytics />
+            <Analytics nonce={nonce} />
             <CookieConsent />
             <AccessibilityStatement />
           </AccessibilityProvider>

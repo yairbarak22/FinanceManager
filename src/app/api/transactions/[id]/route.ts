@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccountId, checkPermission } from '@/lib/authHelpers';
 import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 import { recalculateDeadline } from '@/lib/goalCalculations';
+import { validateRequest } from '@/lib/validateRequest';
+import { updateTransactionSchema } from '@/lib/validationSchemas';
 
 // Helper function to find a goal by category ID (handles both default and custom categories)
 async function findGoalByCategory(userId: string, categoryId: string) {
@@ -94,52 +96,21 @@ export async function PUT(
     if (!editPermission.allowed) return editPermission.error!;
 
     const { id } = await params;
-    const body = await request.json();
+
+    const { data, errorResponse } = await validateRequest(request, updateTransactionSchema);
+    if (errorResponse) return errorResponse;
 
     // Use shared account to allow editing records from all members
     const sharedWhere = await withSharedAccountId(id, userId);
 
     // Build update data object with only provided fields (partial update support)
-    // SECURITY: Validate each field before updating
     const updateData: Record<string, unknown> = {};
 
-    if (body.type !== undefined) {
-      if (!['income', 'expense'].includes(body.type)) {
-        return NextResponse.json({ error: 'Invalid type. Must be "income" or "expense"' }, { status: 400 });
-      }
-      updateData.type = body.type;
-    }
-
-    if (body.amount !== undefined) {
-      if (typeof body.amount !== 'number' || body.amount <= 0) {
-        return NextResponse.json({ error: 'Amount must be a positive number' }, { status: 400 });
-      }
-      updateData.amount = body.amount;
-    }
-
-    if (body.category !== undefined) {
-      if (typeof body.category !== 'string' || body.category.trim().length === 0) {
-        return NextResponse.json({ error: 'Category must be a non-empty string' }, { status: 400 });
-      }
-      if (body.category.length > 50) {
-        return NextResponse.json({ error: 'Category too long (max 50 characters)' }, { status: 400 });
-      }
-      updateData.category = body.category.trim();
-    }
-
-    if (body.description !== undefined) {
-      if (typeof body.description !== 'string' || body.description.trim().length === 0) {
-        return NextResponse.json({ error: 'Description must be a non-empty string' }, { status: 400 });
-      }
-      if (body.description.length > 500) {
-        return NextResponse.json({ error: 'Description too long (max 500 characters)' }, { status: 400 });
-      }
-      updateData.description = body.description.trim();
-    }
-
-    if (body.date !== undefined) {
-      updateData.date = new Date(body.date);
-    }
+    if (data.type !== undefined) updateData.type = data.type;
+    if (data.amount !== undefined) updateData.amount = data.amount;
+    if (data.category !== undefined) updateData.category = data.category;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.date !== undefined) updateData.date = new Date(data.date);
 
     const result = await prisma.transaction.updateMany({
       where: sharedWhere,
@@ -152,9 +123,9 @@ export async function PUT(
 
     // Handle updating existing transactions from same merchant if requested
     let updatedTransactionsCount = 0;
-    if (body.updateExistingTransactions === true && body.category !== undefined && body.merchantName) {
+    if (data.updateExistingTransactions === true && data.category !== undefined && data.merchantName) {
       // Normalize the merchant name for matching (consistent with merchant category mapping)
-      const normalizedMerchantName = String(body.merchantName).toLowerCase().trim();
+      const normalizedMerchantName = String(data.merchantName).toLowerCase().trim();
       
       // Update all transactions with matching normalized description (excluding current transaction)
       const updateResult = await prisma.transaction.updateMany({
@@ -167,7 +138,7 @@ export async function PUT(
           },
         },
         data: {
-          category: body.category.trim(),
+          category: data.category,
         },
       });
       
@@ -185,15 +156,15 @@ export async function PUT(
     if (transaction && transaction.type === 'expense') {
       try {
         // If category changed, remove amount from old goal and add to new goal
-        if (body.category !== undefined && body.originalCategory && body.category !== body.originalCategory) {
+        if (data.category !== undefined && data.originalCategory && data.category !== data.originalCategory) {
           // Remove from old goal
-          await adjustGoalAmount(userId, body.originalCategory, -(body.originalAmount || transaction.amount));
+          await adjustGoalAmount(userId, data.originalCategory, -(data.originalAmount || transaction.amount));
           // Add to new goal
-          await adjustGoalAmount(userId, body.category.trim(), transaction.amount);
+          await adjustGoalAmount(userId, data.category, transaction.amount);
         }
         // If only amount changed (same category), adjust the difference
-        else if (body.amount !== undefined && body.originalAmount !== undefined && body.amount !== body.originalAmount) {
-          const amountDelta = body.amount - body.originalAmount;
+        else if (data.amount !== undefined && data.originalAmount !== undefined && data.amount !== data.originalAmount) {
+          const amountDelta = data.amount - data.originalAmount;
           await adjustGoalAmount(userId, transaction.category, amountDelta);
         }
       } catch (goalError) {

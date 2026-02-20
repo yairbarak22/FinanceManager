@@ -7,7 +7,11 @@ import { initMixpanel, identifyUser } from '@/lib/mixpanel';
 
 const GA_MEASUREMENT_ID = 'G-RBSC0M8FV3';
 
-export default function Analytics() {
+interface AnalyticsProps {
+  nonce?: string;
+}
+
+export default function Analytics({ nonce }: AnalyticsProps) {
   const [consentGiven, setConsentGiven] = useState<boolean | null>(null);
   const { data: session, status } = useSession();
 
@@ -59,10 +63,12 @@ export default function Analytics() {
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
             strategy="afterInteractive"
+            nonce={nonce}
           />
           <Script
             id="google-analytics"
             strategy="afterInteractive"
+            nonce={nonce}
             dangerouslySetInnerHTML={{
               __html: `
                 window.dataLayer = window.dataLayer || [];

@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { recalculateDeadline } from '@/lib/goalCalculations';
+import { validateRequest } from '@/lib/validateRequest';
+import { createTransactionSchema } from '@/lib/validationSchemas';
 
 // Helper function to find a goal by category ID (handles both default and custom categories)
 async function findGoalByCategory(userId: string, categoryId: string) {
@@ -169,52 +171,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'יותר מדי בקשות. אנא המתן ונסה שוב.' }, { status: 429 });
     }
 
-    const body = await request.json();
-    
-    // Validate required fields
-    if (!body.type || !['income', 'expense'].includes(body.type)) {
-      return NextResponse.json({ error: 'Invalid type. Must be "income" or "expense"' }, { status: 400 });
-    }
-    
-    if (typeof body.amount !== 'number' || body.amount <= 0) {
-      return NextResponse.json({ error: 'Amount must be a positive number' }, { status: 400 });
-    }
-    
-    if (!body.category || typeof body.category !== 'string') {
-      return NextResponse.json({ error: 'Category is required' }, { status: 400 });
-    }
-    
-    if (body.category.length > 50) {
-      return NextResponse.json({ error: 'Category too long (max 50 characters)' }, { status: 400 });
-    }
-    
-    if (!body.description || typeof body.description !== 'string') {
-      return NextResponse.json({ error: 'Description is required' }, { status: 400 });
-    }
-    
-    if (body.description.length > 500) {
-      return NextResponse.json({ error: 'Description too long (max 500 characters)' }, { status: 400 });
-    }
-    
-    if (!body.date) {
-      return NextResponse.json({ error: 'Date is required' }, { status: 400 });
-    }
-    
+    const { data, errorResponse } = await validateRequest(request, createTransactionSchema);
+    if (errorResponse) return errorResponse;
+
     const transaction = await prisma.transaction.create({
       data: {
         userId,
-        type: body.type,
-        amount: body.amount,
-        category: body.category.trim(),
-        description: body.description.trim(),
-        date: new Date(body.date),
+        type: data.type,
+        amount: data.amount,
+        category: data.category,
+        description: data.description,
+        date: new Date(data.date),
       },
     });
 
     // If this is an expense with a category matching a goal, update the goal
-    if (body.type === 'expense') {
+    if (data.type === 'expense') {
       try {
-        await updateGoalFromTransaction(userId, body.category.trim(), body.amount);
+        await updateGoalFromTransaction(userId, data.category, data.amount);
       } catch (goalError) {
         // Log but don't fail the transaction creation
         console.error('Error updating goal from transaction:', goalError);
