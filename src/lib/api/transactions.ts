@@ -1,4 +1,6 @@
 // API functions for transactions
+import { apiFetch } from '@/lib/utils';
+
 export interface Transaction {
   id: string;
   amount: number;
@@ -40,7 +42,7 @@ export async function fetchTransactions(filters?: TransactionFilters): Promise<T
   if (filters?.category) params.append('category', filters.category);
   
   const url = `/api/transactions${params.toString() ? `?${params}` : ''}`;
-  const response = await fetch(url);
+  const response = await apiFetch(url);
   
   if (!response.ok) {
     throw new Error('Failed to fetch transactions');
@@ -51,7 +53,7 @@ export async function fetchTransactions(filters?: TransactionFilters): Promise<T
 
 // Create a new transaction
 export async function createTransaction(input: CreateTransactionInput): Promise<Transaction> {
-  const response = await fetch('/api/transactions', {
+  const response = await apiFetch('/api/transactions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
@@ -66,7 +68,7 @@ export async function createTransaction(input: CreateTransactionInput): Promise<
 
 // Update an existing transaction
 export async function updateTransaction({ id, ...data }: UpdateTransactionInput): Promise<Transaction> {
-  const response = await fetch(`/api/transactions/${id}`, {
+  const response = await apiFetch(`/api/transactions/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -81,7 +83,7 @@ export async function updateTransaction({ id, ...data }: UpdateTransactionInput)
 
 // Delete a transaction
 export async function deleteTransaction(id: string): Promise<void> {
-  const response = await fetch(`/api/transactions/${id}`, {
+  const response = await apiFetch(`/api/transactions/${id}`, {
     method: 'DELETE',
   });
   

@@ -1,4 +1,6 @@
 // API functions for recurring transactions
+import { apiFetch } from '@/lib/utils';
+
 export interface RecurringTransaction {
   id: string;
   name: string;
@@ -44,7 +46,7 @@ export async function fetchRecurringTransactions(filters?: RecurringFilters): Pr
   if (filters?.isActive !== undefined) params.append('isActive', String(filters.isActive));
   
   const url = `/api/recurring${params.toString() ? `?${params}` : ''}`;
-  const response = await fetch(url);
+  const response = await apiFetch(url);
   
   if (!response.ok) {
     throw new Error('Failed to fetch recurring transactions');
@@ -55,7 +57,7 @@ export async function fetchRecurringTransactions(filters?: RecurringFilters): Pr
 
 // Create a new recurring transaction
 export async function createRecurringTransaction(input: CreateRecurringInput): Promise<RecurringTransaction> {
-  const response = await fetch('/api/recurring', {
+  const response = await apiFetch('/api/recurring', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
@@ -70,7 +72,7 @@ export async function createRecurringTransaction(input: CreateRecurringInput): P
 
 // Update an existing recurring transaction
 export async function updateRecurringTransaction({ id, ...data }: UpdateRecurringInput): Promise<RecurringTransaction> {
-  const response = await fetch(`/api/recurring/${id}`, {
+  const response = await apiFetch(`/api/recurring/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -85,7 +87,7 @@ export async function updateRecurringTransaction({ id, ...data }: UpdateRecurrin
 
 // Delete a recurring transaction
 export async function deleteRecurringTransaction(id: string): Promise<void> {
-  const response = await fetch(`/api/recurring/${id}`, {
+  const response = await apiFetch(`/api/recurring/${id}`, {
     method: 'DELETE',
   });
   

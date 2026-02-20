@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Upload, FileText, AlertCircle, CheckCircle2, Loader2, Download } from 'lucide-react';
+import { apiFetch } from '@/lib/utils';
 
 interface ImportResult {
   success: boolean;
@@ -145,7 +146,7 @@ export function ImportPortfolioDialog({ isOpen, onClose, onSuccess }: ImportPort
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const response = await fetch('/api/portfolio/import', {
+      const response = await apiFetch('/api/portfolio/import', {
         method: 'POST',
         body: formData,
       });

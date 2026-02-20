@@ -1,4 +1,6 @@
 // API functions for assets
+import { apiFetch } from '@/lib/utils';
+
 export interface Asset {
   id: string;
   name: string;
@@ -36,7 +38,7 @@ export async function fetchAssets(filters?: AssetFilters): Promise<Asset[]> {
   if (filters?.category) params.append('category', filters.category);
   
   const url = `/api/assets${params.toString() ? `?${params}` : ''}`;
-  const response = await fetch(url);
+  const response = await apiFetch(url);
   
   if (!response.ok) {
     throw new Error('Failed to fetch assets');
@@ -47,7 +49,7 @@ export async function fetchAssets(filters?: AssetFilters): Promise<Asset[]> {
 
 // Create a new asset
 export async function createAsset(input: CreateAssetInput): Promise<Asset> {
-  const response = await fetch('/api/assets', {
+  const response = await apiFetch('/api/assets', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
@@ -62,7 +64,7 @@ export async function createAsset(input: CreateAssetInput): Promise<Asset> {
 
 // Update an existing asset
 export async function updateAsset({ id, ...data }: UpdateAssetInput): Promise<Asset> {
-  const response = await fetch(`/api/assets/${id}`, {
+  const response = await apiFetch(`/api/assets/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -77,7 +79,7 @@ export async function updateAsset({ id, ...data }: UpdateAssetInput): Promise<As
 
 // Delete an asset
 export async function deleteAsset(id: string): Promise<void> {
-  const response = await fetch(`/api/assets/${id}`, {
+  const response = await apiFetch(`/api/assets/${id}`, {
     method: 'DELETE',
   });
   
@@ -89,7 +91,7 @@ export async function deleteAsset(id: string): Promise<void> {
 // Fetch asset history
 export async function fetchAssetHistory(assetId?: string): Promise<{ date: string; value: number }[]> {
   const url = assetId ? `/api/assets/history?assetId=${assetId}` : '/api/assets/history';
-  const response = await fetch(url);
+  const response = await apiFetch(url);
   
   if (!response.ok) {
     throw new Error('Failed to fetch asset history');

@@ -1,4 +1,6 @@
 // API functions for liabilities
+import { apiFetch } from '@/lib/utils';
+
 export interface Liability {
   id: string;
   name: string;
@@ -40,7 +42,7 @@ export async function fetchLiabilities(filters?: LiabilityFilters): Promise<Liab
   if (filters?.category) params.append('category', filters.category);
   
   const url = `/api/liabilities${params.toString() ? `?${params}` : ''}`;
-  const response = await fetch(url);
+  const response = await apiFetch(url);
   
   if (!response.ok) {
     throw new Error('Failed to fetch liabilities');
@@ -51,7 +53,7 @@ export async function fetchLiabilities(filters?: LiabilityFilters): Promise<Liab
 
 // Create a new liability
 export async function createLiability(input: CreateLiabilityInput): Promise<Liability> {
-  const response = await fetch('/api/liabilities', {
+  const response = await apiFetch('/api/liabilities', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
@@ -66,7 +68,7 @@ export async function createLiability(input: CreateLiabilityInput): Promise<Liab
 
 // Update an existing liability
 export async function updateLiability({ id, ...data }: UpdateLiabilityInput): Promise<Liability> {
-  const response = await fetch(`/api/liabilities/${id}`, {
+  const response = await apiFetch(`/api/liabilities/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -81,7 +83,7 @@ export async function updateLiability({ id, ...data }: UpdateLiabilityInput): Pr
 
 // Delete a liability
 export async function deleteLiability(id: string): Promise<void> {
-  const response = await fetch(`/api/liabilities/${id}`, {
+  const response = await apiFetch(`/api/liabilities/${id}`, {
     method: 'DELETE',
   });
   
