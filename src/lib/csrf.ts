@@ -9,9 +9,12 @@
  * Why httpOnly=false: We NEED JS to read it (that's the pattern).
  * Why SameSite=Strict: cross-site browser won't send the cookie → attacker
  *   can't forge the header → attack fails.
+ *
+ * NOTE: This file is imported by middleware.ts which runs in Edge Runtime.
+ *       We use the global Web Crypto API (not Node.js 'crypto' module).
  */
 
-import crypto from 'crypto';
+// No Node.js imports — use global Web Crypto API (Edge Runtime compatible)
 
 export const CSRF_COOKIE_NAME    = 'csrf-token';
 export const CSRF_HEADER_NAME    = 'X-CSRF-Token';
@@ -21,14 +24,33 @@ export const CSRF_TOKEN_MAX_AGE  = 60 * 60 * 24;        // 24 h in seconds
 
 /**
  * Generate a cryptographically random CSRF token (64-char hex string).
+ * Uses Web Crypto API (crypto.getRandomValues) for Edge Runtime compatibility.
  */
 export function generateCsrfToken(): string {
-  return crypto.randomBytes(CSRF_TOKEN_BYTES).toString('hex');
+  const bytes = new Uint8Array(CSRF_TOKEN_BYTES);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+/**
+ * Timing-safe comparison of two Uint8Arrays.
+ * Constant-time: always iterates through ALL bytes regardless of mismatch.
+ */
+function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a[i] ^ b[i];
+  }
+  return result === 0;
 }
 
 /**
  * Timing-safe comparison of header token vs cookie token.
  * Returns true only when both are identical non-empty strings.
+ * Uses Web Crypto compatible TextEncoder instead of Node.js Buffer.
  */
 export function isValidCsrfToken(
   headerToken: string | null | undefined,
@@ -37,9 +59,10 @@ export function isValidCsrfToken(
   if (!headerToken || !cookieToken) return false;
   if (headerToken.length !== cookieToken.length) return false;
   try {
-    return crypto.timingSafeEqual(
-      Buffer.from(headerToken, 'utf8'),
-      Buffer.from(cookieToken, 'utf8'),
+    const encoder = new TextEncoder();
+    return timingSafeEqual(
+      encoder.encode(headerToken),
+      encoder.encode(cookieToken),
     );
   } catch {
     return false;
@@ -89,4 +112,3 @@ export function isValidOrigin(
   // No Origin / Referer → allow (SameSite cookie is the real guard)
   return true;
 }
-
