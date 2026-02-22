@@ -468,7 +468,8 @@ model AuditLog {
 // ============================================
 model SecurityEnrichment {
   id          String   @id @default(cuid())
-  symbol      String   @unique // מפתח הצלבה ל-EOD (למשל: "1159250.TA")
+  symbol      String   @unique // מפתח הצלבה ל-EOD (למשל: "ISCD.TA")
+  isin        String?  // ISIN code containing Israeli security number (e.g., "IL0011574030")
   nameHe      String   // השם הרשמי בעברית (למשל: "מגדל (4D) ת"א 125")
   shortNameHe String?  // שם ידידותי לתצוגה בטבלאות צפופות
   sectorHe    String   // סקטור מפורט בעברית (למשל: "מניות - תל אביב 125")
@@ -476,7 +477,8 @@ model SecurityEnrichment {
   updatedAt   DateTime @updatedAt
 
   @@index([symbol])
-  @@index([nameHe]) // אופטימיזציה לחיפוש בעברית
+  @@index([isin])
+  @@index([nameHe])
 }
 
 // ============================================

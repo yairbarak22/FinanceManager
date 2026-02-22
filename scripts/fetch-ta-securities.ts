@@ -224,6 +224,7 @@ interface EODExchangeSymbol {
 
 interface SecurityEnrichmentData {
   symbol: string;
+  isin: string | null;
   nameHe: string;
   shortNameHe: string | null;
   sectorHe: string;
@@ -329,6 +330,7 @@ function transformSecurities(securities: EODExchangeSymbol[]): SecurityEnrichmen
     
     return {
       symbol,
+      isin: s.Isin || null,
       nameHe: translatedName,
       shortNameHe: shortName !== translatedName ? shortName : null,
       sectorHe,
@@ -358,6 +360,7 @@ async function saveToDatabase(securities: SecurityEnrichmentData[]): Promise<{ c
         await prisma.securityEnrichment.update({
           where: { symbol: data.symbol },
           data: {
+            isin: data.isin,
             nameHe: data.nameHe,
             shortNameHe: data.shortNameHe,
             sectorHe: data.sectorHe,
@@ -369,6 +372,7 @@ async function saveToDatabase(securities: SecurityEnrichmentData[]): Promise<{ c
         await prisma.securityEnrichment.create({
           data: {
             symbol: data.symbol,
+            isin: data.isin,
             nameHe: data.nameHe,
             shortNameHe: data.shortNameHe,
             sectorHe: data.sectorHe,

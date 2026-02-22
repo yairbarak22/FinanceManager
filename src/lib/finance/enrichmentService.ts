@@ -134,6 +134,22 @@ export function enrichQuoteData(
 }
 
 /**
+ * Search for a security by Israeli security number (found inside ISIN).
+ * ISIN format: IL00XXXXXXX0 where XXXXXXX is the security number.
+ */
+export async function searchBySecurityNumber(securityNumber: string): Promise<SecurityEnrichment | null> {
+  try {
+    const result = await prisma.securityEnrichment.findFirst({
+      where: { isin: { contains: securityNumber } },
+    });
+    return result;
+  } catch (error) {
+    console.error(`[EnrichmentService] Error searching by security number "${securityNumber}":`, error);
+    return null;
+  }
+}
+
+/**
  * Check if a symbol is Israeli based on enrichment existence
  */
 export async function isIsraeliSecurity(symbol: string): Promise<boolean> {

@@ -22,7 +22,7 @@ import type {
   HistoricalPrice,
   AssetType,
 } from '../types';
-import { getEnrichment, enrichQuoteData } from '../enrichmentService';
+import { getEnrichment, enrichQuoteData, searchBySecurityNumber } from '../enrichmentService';
 
 const EOD_API_TOKEN = process.env.EOD_API_TOKEN || '';
 const EOD_BASE_URL = 'https://eodhistoricaldata.com/api';
@@ -443,22 +443,32 @@ export class EODProvider implements MarketDataProvider {
     // Determine currency
     const currency: 'USD' | 'ILS' = isIsraeli ? 'ILS' : 'USD';
 
+    // Israeli stocks on TASE are quoted in agorot (1/100 shekel).
+    // ETFs and funds are quoted in shekels.
+    const mappedType = mapEODType(assetInfo.type);
+    const isAgorot = isIsraeli && mappedType === 'stock';
+    let adjustedPrice = priceData.price;
+    if (isAgorot) {
+      adjustedPrice = priceData.price / 100;
+      console.log(`[EOD] Converted ${symbol} from agorot: ${priceData.price} → ₪${adjustedPrice}`);
+    }
+
     // Calculate ILS price
-    let priceILS = priceData.price;
+    let priceILS = adjustedPrice;
     if (currency === 'USD') {
       const exchangeRate = await this.getUsdIlsRate();
-      priceILS = priceData.price * exchangeRate;
+      priceILS = adjustedPrice * exchangeRate;
     }
 
     const baseQuote: AssetData = {
-      symbol: symbol.toUpperCase().split('.')[0], // Clean symbol for display
+      symbol: symbol.toUpperCase().split('.')[0],
       name: assetInfo.name,
-      price: priceData.price,
+      price: adjustedPrice,
       priceILS,
       currency,
       changePercent: Math.round(priceData.changePercent * 100) / 100,
       provider: 'EOD',
-      type: isCrypto ? 'crypto' : mapEODType(assetInfo.type),
+      type: isCrypto ? 'crypto' : mappedType,
     };
 
     // Enrich with Hebrew data if available
@@ -514,18 +524,32 @@ export class EODProvider implements MarketDataProvider {
       const isIsraeliSecurityNumber = /^\d{6,9}$/.test(query.trim());
       let results: EODSearchResult[] = [];
 
-      // Standard search
-      const standardResults = await this.fetchEOD<EODSearchResult[]>(`search/${encodeURIComponent(query)}`);
-      if (Array.isArray(standardResults)) {
-        results = standardResults;
+      // For Israeli security numbers, check enrichment DB FIRST
+      if (isIsraeliSecurityNumber) {
+        const enrichment = await searchBySecurityNumber(query);
+        if (enrichment) {
+          const eodSymbol = enrichment.symbol.replace(/\.TA$/i, '');
+          results.push({
+            Code: eodSymbol,
+            Name: enrichment.nameHe,
+            Exchange: 'TA',
+            Type: enrichment.assetType === 'Stock' ? 'Common Stock' : enrichment.assetType,
+            Currency: 'ILS',
+          });
+          console.log(`[EOD] Enrichment DB mapped ${query} → ${enrichment.symbol} (${enrichment.nameHe})`);
+        }
       }
 
-      // If Israeli security number with no results, search TA exchange for ETFs/Funds
-      if (isIsraeliSecurityNumber && results.length === 0) {
-        console.log(`[EOD] Israeli security number detected: ${query}, searching TA exchange...`);
+      // Standard search (skip if enrichment already found an exact match)
+      if (results.length === 0) {
+        const standardResults = await this.fetchEOD<EODSearchResult[]>(`search/${encodeURIComponent(query)}`);
+        if (Array.isArray(standardResults)) {
+          results = standardResults;
+        }
+      }
 
-        // Try searching TA exchange for common fund patterns
-        // Extract potential keywords from common Israeli fund names
+      // If still nothing for Israeli number, try TA exchange
+      if (isIsraeliSecurityNumber && results.length === 0) {
         const taResults = await this.searchTAExchange(query);
         if (taResults.length > 0) {
           results = taResults;

@@ -406,6 +406,7 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset, exchangeRate = DEF
                                 value={result.symbol}
                                 onSelect={() => handleSelectStock(result)}
                                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-[#F7F7F8] transition-colors data-[selected=true]:bg-[#F7F7F8]"
+                                dir="ltr"
                               >
                                 {/* Logo / Flag Badge */}
                                 <div className="w-10 h-10 rounded-xl bg-[#F7F7F8] flex items-center justify-center overflow-hidden flex-shrink-0 relative">
@@ -423,35 +424,6 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset, exchangeRate = DEF
                                   )}
                                 </div>
 
-                                {/* Info */}
-                                <div className={`flex-1 min-w-0 ${isHebrew ? 'text-right' : 'text-right'}`} dir={isHebrew ? 'rtl' : 'ltr'}>
-                                  <div className="flex items-center gap-2 justify-end">
-                                    <span className="font-semibold text-[#303150]">{result.symbol}</span>
-                                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                                      countryInfo.isIsraeli
-                                        ? 'bg-[#C1DDFF] text-[#69ADFF]'
-                                        : 'bg-[#F7F7F8] text-[#7E7F90]'
-                                    }`}>
-                                      {countryInfo.label}
-                                    </span>
-                                    {/* Israeli enrichment badge */}
-                                    {result.isEnriched && (
-                                      <div
-                                        className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
-                                        style={{ 
-                                          backgroundColor: '#74ACEF',
-                                          color: '#FFFFFF',
-                                        }}
-                                      >
-                                        🇮🇱
-                                      </div>
-                                    )}
-                                  </div>
-                                  <p className={`text-sm text-[#7E7F90] truncate ${isHebrew ? 'font-medium' : ''}`}>
-                                    {displayName}
-                                  </p>
-                                </div>
-
                                 {/* Price */}
                                 {result.priceILS > 0 && (
                                   <div className="text-left flex-shrink-0">
@@ -463,6 +435,21 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset, exchangeRate = DEF
                                     </p>
                                   </div>
                                 )}
+
+                                {/* Info */}
+                                <div className="flex-1 min-w-0 text-right">
+                                  <div className="flex items-center gap-2 justify-end">
+                                    <span className="font-semibold text-[#303150]">{result.symbol}</span>
+                                    {!countryInfo.isIsraeli && (
+                                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#F7F7F8] text-[#7E7F90]">
+                                        {countryInfo.label}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className={`text-sm text-[#7E7F90] truncate ${isHebrew ? 'font-medium' : ''}`} dir={isHebrew ? 'rtl' : 'ltr'}>
+                                    {displayName}
+                                  </p>
+                                </div>
                               </Command.Item>
                             </motion.div>
                           );
@@ -506,27 +493,12 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset, exchangeRate = DEF
                     {(() => {
                       const countryInfo = getCountryInfo(selectedStock.symbol);
                       return (
-                        <div className="flex items-center gap-3 p-3 bg-[#F7F7F8] rounded-xl mb-4">
-                          <div className="w-12 h-12 rounded-xl bg-white border border-[#E8E8ED] flex items-center justify-center">
+                        <div className="flex items-center gap-3 p-3 bg-[#F7F7F8] rounded-xl mb-4" dir="ltr">
+                          <div className="w-12 h-12 rounded-xl bg-white border border-[#E8E8ED] flex items-center justify-center flex-shrink-0">
                             <span className="text-2xl">{countryInfo.flag}</span>
                           </div>
-                          <div className="flex-1 text-right">
-                            <div className="flex items-center gap-2">
-                              <p className="font-bold text-[#303150]">{selectedStock.symbol}</p>
-                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                                countryInfo.isIsraeli
-                                  ? 'bg-[#C1DDFF] text-[#69ADFF]'
-                                  : 'bg-[#F7F7F8] text-[#7E7F90]'
-                              }`}>
-                                {countryInfo.label}
-                              </span>
-                            </div>
-                            <p className={`text-sm text-[#7E7F90] truncate ${selectedStock.nameHe ? 'font-medium' : ''}`} dir={selectedStock.nameHe ? 'rtl' : 'ltr'}>
-                              {selectedStock.nameHe || selectedStock.name}
-                            </p>
-                          </div>
                           {quoteData && (
-                            <div className="text-left">
+                            <div className="text-left flex-shrink-0">
                               <p className="font-semibold text-[#303150]">
                                 ₪{quoteData.priceILS.toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                               </p>
@@ -535,6 +507,19 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset, exchangeRate = DEF
                               </p>
                             </div>
                           )}
+                          <div className="flex-1 text-right">
+                            <div className="flex items-center gap-2 justify-end">
+                              <p className="font-bold text-[#303150]">{selectedStock.symbol}</p>
+                              {!countryInfo.isIsraeli && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#F7F7F8] text-[#7E7F90]">
+                                  {countryInfo.label}
+                                </span>
+                              )}
+                            </div>
+                            <p className={`text-sm text-[#7E7F90] truncate ${selectedStock.nameHe ? 'font-medium' : ''}`} dir={selectedStock.nameHe ? 'rtl' : 'ltr'}>
+                              {selectedStock.nameHe || selectedStock.name}
+                            </p>
+                          </div>
                         </div>
                       );
                     })()}
