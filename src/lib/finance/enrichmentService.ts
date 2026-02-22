@@ -16,6 +16,7 @@ export interface SecurityEnrichment {
   shortNameHe: string | null;
   sectorHe: string;
   assetType: string;
+  currency: string | null;
   updatedAt: Date;
 }
 

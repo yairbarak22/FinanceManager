@@ -474,6 +474,7 @@ model SecurityEnrichment {
   shortNameHe String?  // שם ידידותי לתצוגה בטבלאות צפופות
   sectorHe    String   // סקטור מפורט בעברית (למשל: "מניות - תל אביב 125")
   assetType   String   // סוג: ETF, Mutual Fund, Stock, Bond
+  currency    String?  // מטבע מ-EOD: ILA (אגורות), ILS (שקלים), USD
   updatedAt   DateTime @updatedAt
 
   @@index([symbol])

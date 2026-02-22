@@ -443,14 +443,16 @@ export class EODProvider implements MarketDataProvider {
     // Determine currency
     const currency: 'USD' | 'ILS' = isIsraeli ? 'ILS' : 'USD';
 
-    // Israeli stocks on TASE are quoted in agorot (1/100 shekel).
-    // ETFs and funds are quoted in shekels.
+    // Agorot detection: use actual currency from enrichment DB.
+    // EOD marks Israeli securities as ILA (agorot) or ILS (shekels).
+    // ~96% of TA securities are ILA, so default to agorot for unknown Israeli securities.
     const mappedType = mapEODType(assetInfo.type);
-    const isAgorot = isIsraeli && mappedType === 'stock';
+    const enrichmentCurrency = enrichment?.currency?.toUpperCase();
+    const isAgorot = isIsraeli && enrichmentCurrency !== 'ILS' && enrichmentCurrency !== 'USD';
     let adjustedPrice = priceData.price;
     if (isAgorot) {
       adjustedPrice = priceData.price / 100;
-      console.log(`[EOD] Converted ${symbol} from agorot: ${priceData.price} → ₪${adjustedPrice}`);
+      console.log(`[EOD] Converted ${symbol} from agorot (currency=${enrichmentCurrency || 'unknown'}): ${priceData.price} → ₪${adjustedPrice}`);
     }
 
     // Calculate ILS price

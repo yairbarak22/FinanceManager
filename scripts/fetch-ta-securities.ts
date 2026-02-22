@@ -229,6 +229,7 @@ interface SecurityEnrichmentData {
   shortNameHe: string | null;
   sectorHe: string;
   assetType: string;
+  currency: string | null;
   needsReview?: boolean;
   originalName?: string;
 }
@@ -286,7 +287,7 @@ function filterSecurities(
   securities: EODExchangeSymbol[],
   types?: string[]
 ): EODExchangeSymbol[] {
-  const defaultTypes = ['ETF', 'Fund', 'Common Stock', 'Preferred Stock'];
+  const defaultTypes = ['ETF', 'Fund', 'Common Stock', 'Preferred Stock', 'Bond'];
   const filterTypes = types || defaultTypes;
   
   const filtered = securities.filter(s => filterTypes.includes(s.Type));
@@ -335,6 +336,7 @@ function transformSecurities(securities: EODExchangeSymbol[]): SecurityEnrichmen
       shortNameHe: shortName !== translatedName ? shortName : null,
       sectorHe,
       assetType,
+      currency: s.Currency || null,
       needsReview: review,
       originalName: s.Name,
     };
@@ -365,6 +367,7 @@ async function saveToDatabase(securities: SecurityEnrichmentData[]): Promise<{ c
             shortNameHe: data.shortNameHe,
             sectorHe: data.sectorHe,
             assetType: data.assetType,
+            currency: data.currency,
           },
         });
         updated++;
@@ -377,6 +380,7 @@ async function saveToDatabase(securities: SecurityEnrichmentData[]): Promise<{ c
             shortNameHe: data.shortNameHe,
             sectorHe: data.sectorHe,
             assetType: data.assetType,
+            currency: data.currency,
           },
         });
         created++;
