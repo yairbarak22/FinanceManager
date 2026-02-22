@@ -3,7 +3,6 @@
 import { useMemo } from 'react';
 import {
   ChevronLeft,
-  CheckCircle2,
   Play,
   Lock,
   BookOpen,
@@ -50,9 +49,13 @@ function getCompletedCount(lessons: Lesson[]): number {
 }
 
 /** Status icon for the chapter row */
-function ChapterStatusIcon({ status, isActive }: { status: Lesson['status']; isActive: boolean }) {
+function ChapterStatusIcon({ status, isActive, index }: { status: Lesson['status']; isActive: boolean; index: number }) {
   if (status === 'completed') {
-    return <CheckCircle2 className="w-4 h-4 text-[#0DBACC] flex-shrink-0" strokeWidth={1.75} />;
+    return (
+      <div className="w-4 h-4 rounded-full bg-[#0DBACC]/12 flex items-center justify-center flex-shrink-0">
+        <span className="text-[0.5625rem] font-bold text-[#0DBACC]">{index}</span>
+      </div>
+    );
   }
   if (status === 'locked') {
     return <Lock className="w-4 h-4 text-[#BDBDCB] flex-shrink-0" strokeWidth={1.75} />;
@@ -89,7 +92,7 @@ function ChapterDot({
         className={`${base} bg-[#0DBACC]/12 cursor-pointer transition-transform duration-150 hover:scale-110`}
         title={`פרק ${index}`}
       >
-        <CheckCircle2 className="w-3.5 h-3.5 text-[#0DBACC]" strokeWidth={2} />
+        <span className="text-[0.6875rem] font-bold text-[#0DBACC]">{index}</span>
       </button>
     );
   }
@@ -246,7 +249,7 @@ export default function CourseChapterAccordion({
                       {duration}
                     </p>
                   </div>
-                  <ChapterStatusIcon status={lesson?.status ?? 'locked'} isActive={!!isActive} />
+                  <ChapterStatusIcon status={lesson?.status ?? 'locked'} isActive={!!isActive} index={chapterIdx + 1} />
                 </button>
               );
             })}

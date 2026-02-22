@@ -20,7 +20,7 @@ export default function CoursesSection() {
   });
 
   const [activeTab, setActiveTab] = useState<CourseTab>('files');
-  const [isPlaylistCollapsed, setIsPlaylistCollapsed] = useState(true);
+  const [isPlaylistCollapsed, setIsPlaylistCollapsed] = useState(false);
 
   const { activeLesson, activeChapter } = useMemo(() => {
     for (const ch of course.chapters) {
