@@ -1,4 +1,5 @@
 export { default as QuickAddFab } from './QuickAddFab';
+export { default as QuickAddHeaderButton } from './QuickAddHeaderButton';
 export { default as QuickAddModal } from './QuickAddModal';
 export { default as TransactionQuickForm } from './TransactionQuickForm';
 export { default as AssetQuickForm } from './AssetQuickForm';

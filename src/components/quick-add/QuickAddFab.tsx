@@ -145,7 +145,7 @@ export default function QuickAddFab() {
   return (
     <AnimatePresence>
       {shouldShow && (
-        <div className="fixed bottom-6 left-6 z-50">
+        <div className="md:hidden fixed bottom-6 left-6 z-50">
           {/* Subtle pulse glow ring */}
           <motion.div
             className="absolute inset-0 rounded-full"

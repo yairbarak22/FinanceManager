@@ -16,6 +16,7 @@ import {
   Menu,
 } from 'lucide-react';
 import ProgressBell from '@/components/haredi/ProgressBell';
+import { QuickAddHeaderButton } from '@/components/quick-add';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { useAccessibility } from '@/context/AccessibilityContext';
 import { useSidebar } from '@/context/SidebarContext';
@@ -138,6 +139,9 @@ export default function MinimalHeader({
 
             {/* Progress Bell - visible for Haredi users (self-manages visibility) */}
             <ProgressBell />
+
+            {/* Quick Add - desktop only */}
+            <QuickAddHeaderButton />
 
             {/* Accessibility Button - All screens */}
             <button
