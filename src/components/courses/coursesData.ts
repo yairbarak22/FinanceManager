@@ -10,6 +10,7 @@ export interface Lesson {
   duration: string; // e.g. "12:30"
   status: LessonStatus;
   badge?: LessonBadgeType;
+  videoUrl?: string; // bunny.net iframe embed URL
 }
 
 export interface Chapter {
@@ -43,51 +44,50 @@ export interface Course {
 
 export const mockCourse: Course = {
   id: 'course-1',
-  title: 'ניהול כסף חכם - קורס מקיף',
-  description: 'למדו כיצד לנהל את הכסף שלכם בצורה חכמה, לחסוך יותר ולהשקיע נכון לעתיד.',
+  title: 'המסלול הבטוח: מחיסכון להשקעה חכמה (ב-4 צעדים)',
+  description: 'קורס מעשי שמסביר איך לעבור מחיסכון בבנק להשקעה חכמה. ללא מושגים באוויר, עם דגש על אחריות כלכלית ודאגה לעתיד המשפחה.',
   author: {
-    name: 'יאיר ברק',
-    title: 'יועץ פיננסי מוסמך',
-    initials: 'יב',
+    name: 'מערכת myNETO',
+    title: '',
+    initials: 'mN',
   },
   chapters: [
     {
       id: 'ch-1',
-      title: 'יסודות ניהול פיננסי',
-      icon: 'BookOpen',
+      title: 'כדור השלג של הכסף',
+      icon: 'Snowflake',
       lessons: [
-        { id: 'l-1', title: 'מבוא לניהול כספים אישי', duration: '8:45', status: 'completed', badge: 'FREE' },
-        { id: 'l-2', title: 'הבנת הכנסות והוצאות', duration: '12:30', status: 'completed', badge: 'BEGINNER' },
-        { id: 'l-3', title: 'בניית תקציב חודשי', duration: '15:20', status: 'completed' },
-        { id: 'l-4', title: 'מעקב אחר הוצאות יומיומיות', duration: '10:15', status: 'active', badge: 'BEGINNER' },
+        { id: 'l-1', title: 'למה חיסכון בבנק כבר לא מספיק?', duration: '8:45', status: 'completed', badge: 'FREE', videoUrl: 'https://iframe.mediadelivery.net/embed/603432/f45955da-6080-4000-9fcf-a68296c17ac8?autoplay=false&loop=false&muted=false&preload=true&responsive=true' },
       ],
     },
     {
       id: 'ch-2',
-      title: 'חיסכון והשקעות',
-      icon: 'TrendingUp',
+      title: 'סוד ה-S&P 500',
+      icon: 'BarChart3',
       lessons: [
-        { id: 'l-5', title: 'עקרונות החיסכון', duration: '11:00', status: 'available', badge: 'INTERMEDIATE' },
-        { id: 'l-6', title: 'סוגי חשבונות חיסכון', duration: '9:30', status: 'available' },
-        { id: 'l-7', title: 'מבוא להשקעות בשוק ההון', duration: '18:45', status: 'available', badge: 'INTERMEDIATE' },
-        { id: 'l-8', title: 'פיזור סיכונים ותיק השקעות', duration: '14:20', status: 'locked', badge: 'PREMIUM' },
+        { id: 'l-2', title: 'למה הסטטיסטיקה מנצחת את המומחים?', duration: '12:30', status: 'completed', badge: 'BEGINNER', videoUrl: 'https://iframe.mediadelivery.net/embed/603432/e7cdbc45-650f-4a85-bd19-39b09cee83e5?autoplay=false&loop=false&muted=false&preload=true&responsive=true' },
       ],
     },
     {
       id: 'ch-3',
-      title: 'תכנון פיננסי מתקדם',
-      icon: 'Target',
+      title: 'תכל׳ס - פתיחת חשבון',
+      icon: 'UserCheck',
       lessons: [
-        { id: 'l-9', title: 'הגדרת יעדים פיננסיים', duration: '13:10', status: 'locked' },
-        { id: 'l-10', title: 'ביטוחים ורשת ביטחון', duration: '16:40', status: 'locked', badge: 'PREMIUM' },
-        { id: 'l-11', title: 'תכנון פרישה ופנסיה', duration: '20:00', status: 'locked', badge: 'PREMIUM' },
+        { id: 'l-3', title: 'פותחים חשבון באלטשולר שחם (צעד אחר צעד)', duration: '15:20', status: 'completed', badge: 'BEGINNER', videoUrl: 'https://iframe.mediadelivery.net/embed/603432/fbb27781-4823-46d2-93ef-cebd6317c75d?autoplay=false&loop=false&muted=false&preload=true&responsive=true' },
+      ],
+    },
+    {
+      id: 'ch-4',
+      title: 'טייס אוטומטי',
+      icon: 'Zap',
+      lessons: [
+        { id: 'l-4', title: 'בחירת המסלול והוראת הקבע', duration: '10:15', status: 'available', badge: 'INTERMEDIATE' },
       ],
     },
   ],
   attachedFiles: [
-    { id: 'f-1', name: 'תבנית תקציב חודשי.xlsx', type: 'xlsx', size: '1.2 MB' },
-    { id: 'f-2', name: 'מדריך השקעות למתחילים.pdf', type: 'pdf', size: '3.8 MB' },
-    { id: 'f-3', name: 'רשימת בדיקה פיננסית.pdf', type: 'pdf', size: '0.5 MB' },
-    { id: 'f-4', name: 'מצגת סיכום הקורס.pptx', type: 'pptx', size: '5.1 MB' },
+    { id: 'f-1', name: 'מדריך פתיחת חשבון - צעד אחר צעד.pdf', type: 'pdf', size: '1.8 MB' },
+    { id: 'f-2', name: 'טבלת חישוב ריבית דריבית.xlsx', type: 'xlsx', size: '0.9 MB' },
+    { id: 'f-3', name: 'סיכום הקורס - 4 הצעדים.pdf', type: 'pdf', size: '0.5 MB' },
   ],
 };

@@ -1,0 +1,26 @@
+name: Cleanup Stale Branches
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  workflow_dispatch:       # Manual trigger
+
+jobs:
+  cleanup:
+    name: Delete Stale Test Branches
+    runs-on: ubuntu-latest
+    if: ${{ vars.NEON_PROJECT_ID != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+
+      - name: Cleanup Stale Branches
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+        run: npx tsx scripts/cleanup-stale-branches.ts
+

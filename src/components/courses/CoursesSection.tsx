@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { ArrowLeft, BookOpen, Clock } from 'lucide-react';
+import { ArrowLeft, BookOpen, Clock, PieChart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import VideoPlayer from './VideoPlayer';
 import CourseChapterAccordion from './CourseChapterAccordion';
@@ -94,7 +94,7 @@ export default function CoursesSection() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-[0.8125rem] text-[#7E7F90]">
               <BookOpen className="w-4 h-4 text-[#69ADFF]" strokeWidth={1.75} />
-              <span>{totalLessons} שיעורים</span>
+              <span>{totalLessons} פרקים</span>
             </div>
             <div className="flex items-center gap-2 text-[0.8125rem] text-[#7E7F90]">
               <Clock className="w-4 h-4 text-[#0DBACC]" strokeWidth={1.75} />
@@ -114,18 +114,8 @@ export default function CoursesSection() {
         {/* Author + next lesson */}
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{
-                background: 'linear-gradient(135deg, #69ADFF, #9F7FE0)',
-                padding: '2px',
-              }}
-            >
-              <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                <span className="text-[0.8125rem] font-bold text-[#69ADFF]">
-                  {course.author.initials}
-                </span>
-              </div>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm flex-shrink-0">
+              <PieChart className="w-5 h-5 text-white" strokeWidth={2.5} />
             </div>
             <div>
               <p className="text-[0.8125rem] font-bold text-[#303150]">
@@ -145,7 +135,7 @@ export default function CoursesSection() {
               whileTap={{ scale: 0.98 }}
               className="btn-primary flex items-center gap-2 text-[0.8125rem] font-bold"
             >
-              <span>שיעור הבא</span>
+              <span>פרק הבא</span>
               <ArrowLeft className="w-4 h-4" />
             </motion.button>
           )}

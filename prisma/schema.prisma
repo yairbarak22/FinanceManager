@@ -39,6 +39,7 @@ model User {
   marketingEvents       MarketingEvent[]       // Marketing email events
   createdCampaigns      MarketingCampaign[]    // Campaigns created by this admin
   createdTemplates      EmailTemplate[]        // Templates created by this admin
+  emailSequences        EmailSequence[]        // Drip email sequences
 }
 
 model Account {
@@ -94,17 +95,18 @@ model Transaction {
 }
 
 model RecurringTransaction {
-  id        String          @id @default(cuid())
-  userId    String
-  type      String
-  amount    Float
-  category  String
-  name      String
-  isActive  Boolean         @default(true)
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  goal      FinancialGoal?
+  id           String          @id @default(cuid())
+  userId       String
+  type         String
+  amount       Float
+  category     String
+  name         String
+  isActive     Boolean         @default(true)
+  activeMonths Json?           // JSON array of "YYYY-MM" strings, null = all months
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal         FinancialGoal?
 
   @@index([userId])
   @@index([userId, isActive])
@@ -533,6 +535,34 @@ model EmailTemplate {
 
   @@index([createdBy])
   @@index([category])
+}
+
+// ============================================
+// EMAIL SEQUENCES - Drip campaign automation
+// ============================================
+enum EmailSequenceStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+model EmailSequence {
+  id           String              @id @default(cuid())
+  userId       String
+  sequenceType String              // e.g. 'course-intro'
+  currentStep  Int                 @default(0)
+  status       EmailSequenceStatus @default(ACTIVE)
+  sendHour     Int                 @default(10) // Hour in Israel time (0-23) to send emails
+  startedAt    DateTime            @default(now())
+  lastSentAt   DateTime?
+  nextSendAt   DateTime?
+  completedAt  DateTime?
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sequenceType])
+  @@index([status, nextSendAt])
+  @@index([userId])
 }
 
 // ============================================
