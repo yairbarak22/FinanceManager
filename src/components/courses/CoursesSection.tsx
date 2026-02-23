@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import VideoPlayer from './VideoPlayer';
 import CourseChapterAccordion from './CourseChapterAccordion';
 import CourseTabBar, { type CourseTab } from './CourseTabBar';
+import AltshulerCTA from './AltshulerCTA';
 import { mockCourse } from './coursesData';
 
 export default function CoursesSection() {
@@ -110,6 +111,9 @@ export default function CoursesSection() {
           lessonNumber={currentLessonIndex + 1}
           totalLessons={totalLessons}
         />
+
+        {/* Altshuler CTA - show for lessons 3 and 4 */}
+        {(activeLessonId === 'l-3' || activeLessonId === 'l-4') && <AltshulerCTA />}
 
         {/* Author + next lesson */}
         <div className="flex items-center justify-between flex-wrap gap-4">

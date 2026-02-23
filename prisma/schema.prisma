@@ -40,6 +40,8 @@ model User {
   createdCampaigns      MarketingCampaign[]    // Campaigns created by this admin
   createdTemplates      EmailTemplate[]        // Templates created by this admin
   emailSequences        EmailSequence[]        // Drip email sequences
+  maaserPreferences     MaaserPreference[]     // Maaser/Chomesh income preferences
+  quarantinedFiles      QuarantinedFile[]      // Files in quarantine awaiting review
 }
 
 model Account {
@@ -389,6 +391,25 @@ model MerchantCategoryMap {
 }
 
 // ============================================
+// MAASER PREFERENCES - Income obligation tracking for Maaser/Chomesh
+// ============================================
+model MaaserPreference {
+  id              String   @id @default(cuid())
+  userId          String
+  incomeSource    String
+  incomeCategory  String?
+  isObligated     Boolean  @default(true)
+  calculationType String   @default("maaser")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, incomeSource])
+  @@index([userId])
+  @@index([userId, incomeCategory])
+}
+
+// ============================================
 // AUDIT LOG - Security & Activity Tracking
 // ============================================
 enum AuditAction {
@@ -419,6 +440,11 @@ enum AuditAction {
   RATE_LIMITED
   UNAUTHORIZED_ACCESS
   CSRF_VIOLATION
+  SUSPICIOUS_ACTIVITY
+  WEBHOOK_REJECTED
+  FILE_QUARANTINED
+  FILE_QUARANTINE_APPROVED
+  FILE_QUARANTINE_REJECTED
 }
 
 model AuditLog {
@@ -443,15 +469,18 @@ model AuditLog {
 // ============================================
 model SecurityEnrichment {
   id          String   @id @default(cuid())
-  symbol      String   @unique // מפתח הצלבה ל-EOD (למשל: "1159250.TA")
+  symbol      String   @unique // מפתח הצלבה ל-EOD (למשל: "ISCD.TA")
+  isin        String?  // ISIN code containing Israeli security number (e.g., "IL0011574030")
   nameHe      String   // השם הרשמי בעברית (למשל: "מגדל (4D) ת"א 125")
   shortNameHe String?  // שם ידידותי לתצוגה בטבלאות צפופות
   sectorHe    String   // סקטור מפורט בעברית (למשל: "מניות - תל אביב 125")
   assetType   String   // סוג: ETF, Mutual Fund, Stock, Bond
+  currency    String?  // מטבע מ-EOD: ILA (אגורות), ILS (שקלים), USD
   updatedAt   DateTime @updatedAt
 
   @@index([symbol])
-  @@index([nameHe]) // אופטימיזציה לחיפוש בעברית
+  @@index([isin])
+  @@index([nameHe])
 }
 
 // ============================================
@@ -597,4 +626,41 @@ model InboxMessage {
   @@index([isArchived])
   @@index([createdAt])
   @@index([direction])
+}
+
+// ============================================
+// QUARANTINE - Suspicious file storage
+// ============================================
+
+enum QuarantineStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  AUTO_CLEAN
+}
+
+model QuarantinedFile {
+  id           String           @id @default(cuid())
+  filename     String
+  storedName   String
+  url          String?
+  mimeType     String
+  size         Int
+  userId       String
+  reason       String
+  reasonCode   String?
+  status       QuarantineStatus @default(PENDING)
+  entityType   String?
+  entityId     String?
+  reviewedAt   DateTime?
+  reviewedBy   String?
+  reviewNotes  String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }

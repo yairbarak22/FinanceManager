@@ -171,27 +171,38 @@ export const courseSequenceEmails: SequenceEmail[] = [
             <div class="body-text" style="font-family:'Heebo',sans-serif;font-size:16px;color:#4A4A5A;line-height:1.9;">
               <p style="margin:0 0 16px 0;">שלום ${userName},</p>
               <p style="margin:0 0 16px 0;">
-                לפני שבוע ביקשנו ממך לעשות משהו שהרבה אנשים בורחים ממנו: להזין את הנתונים שלך למערכת ולראות את המציאות הכלכלית בעיניים.
+                ביקשנו ממך להזין את הנתונים שלך למערכת ולראות את המציאות הכלכלית כמו שהיא.
               </p>
               <p style="margin:0 0 16px 0;">
-                כשרואים את המספרים השחורים על גבי המסך, נופלת ההבנה הכואבת. הרי כולנו רוצים לחתן את הילדים בכבוד ולתת להם נקודת פתיחה טובה. אבל כשעושים את החשבון הפשוט, מבינים שחיסכון חודשי רגיל בבנק פשוט לא יביא אותנו לשם. עד שהילדים יגדלו, הכסף הזה יישחק והמחירים ימשיכו לטפס.
+                כולנו רוצים לתת לילדים נקודת פתיחה טובה.
               </p>
               <p style="margin:0 0 16px 0;">
-                אבל בשביל זה בדיוק אנחנו כאן. עכשיו, אחרי שמיפינו את המצב הקיים, הגיע הזמן להתחיל לבנות את הפתרון.
+                אבל כשעושים את החשבון הפשוט – חיסכון חודשי רגיל בבנק לא יביא אותנו לשם.<br>
+                עד שהילדים יגדלו, הכסף יישחק והמחירים ימשיכו לטפס.
+              </p>
+              <p style="margin:0 0 16px 0;">
+                <strong style="color:#303150;">בשביל זה בדיוק אנחנו כאן.</strong><br>
+                אחרי שמיפינו את המצב הקיים, הגיע הזמן לבנות את הפתרון.
               </p>
               <p style="margin:0 0 16px 0;">
                 כפי שהבטחנו, פתחנו עבורך את הגישה לקורס <strong style="color:#303150;">"המסלול הבטוח"</strong>.
-                בפרק הראשון לא נדבר על מניות ולא על מושגים מפוצצים, אלא על העיקרון היחיד שיכול להפוך חיסכון קטן לסכום משמעותי: אפקט "כדור השלג" של הכסף.
+              </p>
+              <p style="margin:0 0 16px 0;">
+                בפרק הראשון נדבר על העיקרון היחיד שהופך חיסכון קטן לסכום משמעותי:<br>
+                <strong style="color:#303150;">אפקט "כדור השלג" של הכסף.</strong>
+              </p>
+              <p style="margin:0 0 16px 0;">
+                בלי מושגים מסובכים. בלי מניות. רק עיקרון אחד פשוט.
               </p>
             </div>
           </td>
         </tr>
-        ${ctaButton('לצפייה בפרק 1: למה חיסכון בבנק כבר לא מספיק? (8:45 דקות)', ctaUrl, '#69ADFF')}
+        ${ctaButton('צפייה בפרק 1 (3:24 דק׳)', ctaUrl, '#69ADFF')}
         <tr>
           <td style="padding:20px 32px 0 32px;">
             <p style="font-family:'Heebo',sans-serif;font-size:15px;color:#4A4A5A;line-height:1.8;margin:0;">
               צפייה מועילה,<br>
-              <strong style="color:#303150;">צוות myNETO.</strong>
+              <strong style="color:#303150;">צוות myNETO</strong>
             </p>
           </td>
         </tr>`,
@@ -202,7 +213,7 @@ export const courseSequenceEmails: SequenceEmail[] = [
   // ── Email 2: הפתרון השקול ──
   {
     step: 1,
-    subject: 'השקעות זה קזינו? לא אם עובדים נכון.',
+    subject: 'השקעות זה קזינו? לא בהכרח.',
     preheader: 'למה הסטטיסטיקה מנצחת את המומחים.',
     buildHtml: (userName, ctaUrl) =>
       baseWrapper(
@@ -215,26 +226,31 @@ export const courseSequenceEmails: SequenceEmail[] = [
             <div class="body-text" style="font-family:'Heebo',sans-serif;font-size:16px;color:#4A4A5A;line-height:1.9;">
               <p style="margin:0 0 16px 0;">שלום ${userName},</p>
               <p style="margin:0 0 16px 0;">
-                אחרי הסרטון הראשון, סביר להניח שהבנת שחייבים לעשות מעשה כדי לא לתת לכסף להעלות אבק בבנק. אבל כאן בדיוק מתעורר החשש הטבעי – מי אמר ששוק ההון הוא מקום בטוח? הרי זה נראה כמו הימור.
+                אחרי הסרטון הראשון, כנראה שהבנת שצריך לעשות מעשה.<br>
+                אבל כאן מתעורר החשש הטבעי – <strong style="color:#303150;">שוק ההון נראה כמו הימור.</strong>
               </p>
               <p style="margin:0 0 16px 0;">
-                זו בדיוק הסיבה שרוב האנשים נשארים מאחור. הם חושבים שהשקעה דורשת לעקוב אחרי חדשות כלכליות או "לנחש" מתי לקנות ומתי למכור.
+                רוב האנשים חושבים שהשקעה דורשת לעקוב אחרי חדשות כלכליות או "לנחש" מתי לקנות ומתי למכור.
               </p>
               <p style="margin:0 0 16px 0;">
-                בפרק השני של המדריך אנחנו מנפצים את המיתוס הזה. אנחנו מסבירים מהו מדד ה-S&amp;P 500, ולמה הדרך האחראית, המיושבת והבטוחה ביותר להשקיע לאורך זמן, היא פשוט להפסיק לנסות "להיות חכמים" ולתת לסטטיסטיקה הכלכלית העולמית לעבוד בשבילנו.
+                <strong style="color:#303150;">זה לא נכון.</strong>
               </p>
               <p style="margin:0 0 16px 0;">
-                ההשתדלות הכלכלית שלנו לא צריכה להיות דרמטית, היא פשוט צריכה להיות <strong style="color:#303150;">עקבית</strong>.
+                בפרק השני אנחנו מסבירים מהו מדד ה-S&amp;P 500, ולמה הדרך הבטוחה ביותר להשקיע לאורך זמן היא פשוט <strong style="color:#303150;">להפסיק לנסות להיות חכמים</strong> – ולתת לסטטיסטיקה לעבוד בשבילנו.
+              </p>
+              <p style="margin:0 0 24px 0;">
+                ההשתדלות הכלכלית שלנו לא צריכה להיות דרמטית.<br>
+                היא פשוט צריכה להיות <strong style="color:#303150;">עקבית</strong>.
               </p>
             </div>
           </td>
         </tr>
-        ${ctaButton('לצפייה בפרק 2: סוד ה-S&P 500 (12:30 דקות)', ctaUrl, '#0DBACC')}
+        ${ctaButton('צפייה בפרק 2 (3:41 דק׳)', ctaUrl, '#0DBACC')}
         <tr>
           <td style="padding:20px 32px 0 32px;">
             <p style="font-family:'Heebo',sans-serif;font-size:15px;color:#4A4A5A;line-height:1.8;margin:0;">
               שלך,<br>
-              <strong style="color:#303150;">צוות myNETO.</strong>
+              <strong style="color:#303150;">צוות myNETO</strong>
             </p>
           </td>
         </tr>`,
@@ -245,8 +261,8 @@ export const courseSequenceEmails: SequenceEmail[] = [
   // ── Email 3: תכל'ס ──
   {
     step: 2,
-    subject: 'פותחים חשבון מסחר (צעד-אחר-צעד)',
-    preheader: 'מדריך מעשי לפתיחת חשבון – קליק אחר קליק.',
+    subject: 'פותחים חשבון מסחר – צעד אחר צעד',
+    preheader: 'מדריך מעשי לפתיחת חשבון. קליק אחר קליק.',
     buildHtml: (userName, ctaUrl) =>
       baseWrapper(
         `
@@ -258,25 +274,30 @@ export const courseSequenceEmails: SequenceEmail[] = [
             <div class="body-text" style="font-family:'Heebo',sans-serif;font-size:16px;color:#4A4A5A;line-height:1.9;">
               <p style="margin:0 0 16px 0;">שלום ${userName},</p>
               <p style="margin:0 0 16px 0;">
-                החלק הכי קשה בתהליכים פיננסיים הוא המעבר מ"להבין מה נכון לעשות" אל הביצוע בפועל. הרבה פעמים, מה שעוצר אותנו זו הביורוקרטיה. מאיפה מתחילים? איזה טפסים צריך?
+                הגענו לשלב שבו רוב האנשים נתקעים:<br>
+                <strong style="color:#303150;">המעבר מ"להבין" אל "לעשות".</strong>
               </p>
               <p style="margin:0 0 16px 0;">
-                אנחנו ב-myNETO לא משאירים אותך עם תיאוריות. ברגע שהגדרנו במערכת את היעדים למשפחה, צריך לפתוח את הכלים שיביאו אותנו אליהם.
+                מאיפה מתחילים? איזה טפסים? איפה לוחצים?
               </p>
               <p style="margin:0 0 16px 0;">
-                בפרק השלישי, בנינו עבורך מדריך מעשי לחלוטין. קליק אחר קליק. אנחנו מראים לך על המסך בדיוק איך לפתוח חשבון מסחר עצמאי באלטשולר שחם, בלי לצאת מהבית. כדי שזה יהיה אפילו פשוט יותר, צירפנו מתחת לסרטון קובץ PDF מסודר שמלווה אותך בכל שלב בדרך.
+                בפרק השלישי בנינו מדריך מעשי לחלוטין.<br>
+                אנחנו מראים על המסך, קליק אחר קליק, בדיוק איך לפתוח חשבון מסחר באלטשולר שחם – בלי לצאת מהבית.
               </p>
               <p style="margin:0 0 16px 0;">
-                קח לעצמך 15 דקות שקטות מול המחשב, ובוא נצא לדרך.
+                מתחת לסרטון יש גם <strong style="color:#303150;">קובץ PDF</strong> מסודר שמלווה אותך בכל שלב.
+              </p>
+              <p style="margin:0 0 16px 0;">
+                קח 5 דקות שקטות מול המחשב, ובוא נצא לדרך.
               </p>
             </div>
           </td>
         </tr>
-        ${ctaButton('לצפייה בפרק 3 ופתיחת החשבון המעשי (15:20 דקות)', ctaUrl, '#7C6FE0')}
+        ${ctaButton('צפייה בפרק 3 + המדריך המעשי (4:24 דק׳)', ctaUrl, '#7C6FE0')}
         <tr>
           <td style="padding:20px 32px 0 32px;">
             <p style="font-family:'Heebo',sans-serif;font-size:15px;color:#4A4A5A;line-height:1.8;margin:0;">
-              <strong style="color:#303150;">צוות myNETO.</strong>
+              <strong style="color:#303150;">צוות myNETO</strong>
             </p>
           </td>
         </tr>`,
@@ -284,42 +305,46 @@ export const courseSequenceEmails: SequenceEmail[] = [
       ),
   },
 
-  // ── Email 4: טיפול בהתנגדות ──
+  // ── Email 4: תזכורת ──
   {
     step: 3,
-    subject: 'האם החשבון שלך כבר פתוח?',
-    preheader: 'כל חודש שאנחנו דוחים – זה חודש שהכסף מפסיד.',
+    subject: 'החשבון שלך כבר פתוח?',
+    preheader: 'כל חודש שדוחים – זה חודש שהכסף מפסיד.',
     buildHtml: (userName, ctaUrl) =>
       baseWrapper(
         `
         <tr>
           <td class="content-cell" style="padding:24px 32px 0 32px;">
             <h1 class="hero-title" style="font-family:'Heebo',sans-serif;font-size:26px;font-weight:800;color:#303150;margin:0 0 20px 0;line-height:1.4;">
-              האם החשבון שלך כבר פתוח?
+              החשבון שלך כבר פתוח?
             </h1>
             <div class="body-text" style="font-family:'Heebo',sans-serif;font-size:16px;color:#4A4A5A;line-height:1.9;">
               <p style="margin:0 0 16px 0;">שלום ${userName},</p>
               <p style="margin:0 0 16px 0;">
-                אם צפית בפרק השלישי וכבר פתחת את תיק המסחר שלך – מזל טוב. עשית עכשיו את הצעד המשמעותי ביותר בדרך לביטחון הכלכלי של המשפחה שלך.
+                אם כבר פתחת את התיק – <strong style="color:#303150;">מזל טוב.</strong> עשית את הצעד הכי משמעותי.
               </p>
               <p style="margin:0 0 16px 0;">
-                אם עדיין לא עשית את זה, אני כותב לך כדי להזכיר שהזמן שעובר הוא המחיר הכי יקר שאנחנו משלמים. כל חודש שאנחנו דוחים את פתיחת התיק, זה חודש שהכסף שלנו יושב בחוץ ומפסיד את הזמן שיכול היה לעבוד בו עבורנו ולייצר את "כדור השלג" שדיברנו עליו בפרק הראשון.
+                אם עדיין לא – שורה אחת חשובה:
               </p>
               <p style="margin:0 0 16px 0;">
-                הטכנולוגיה של היום הפכה את פתיחת החשבון לתהליך פשוט שלא דורש התרוצצויות. הכל מוסבר בצורה ברורה במדריך המצורף לסרטון השלישי. אין טעם לחכות ל"זמן המושלם", כי אין זמן כזה.
+                <strong style="color:#303150;">כל חודש שדוחים, זה חודש שהכסף לא עובד בשבילך.</strong>
               </p>
               <p style="margin:0 0 16px 0;">
-                בעוד כמה ימים אשלח לך את הפרק האחרון שיסגור את המעגל, אבל כדי שהוא יהיה רלוונטי עבורך, החשבון שלך חייב להיות מוכן.
+                פתיחת החשבון לוקחת כמה דקות מהמחשב.<br>
+                הכל מוסבר בסרטון ובמדריך ה-PDF שצירפנו.
+              </p>
+              <p style="margin:0 0 16px 0;">
+                בעוד כמה ימים נשלח את הפרק האחרון – אבל כדי שהוא יהיה רלוונטי, <strong style="color:#303150;">החשבון שלך צריך להיות מוכן.</strong>
               </p>
             </div>
           </td>
         </tr>
-        ${ctaButton('לחזרה לפרק 3 והשלמת פתיחת החשבון', ctaUrl, '#F59E0B')}
+        ${ctaButton('לפרק 3 + פתיחת החשבון', ctaUrl, '#F59E0B')}
         <tr>
           <td style="padding:20px 32px 0 32px;">
             <p style="font-family:'Heebo',sans-serif;font-size:15px;color:#4A4A5A;line-height:1.8;margin:0;">
               בשורות טובות,<br>
-              <strong style="color:#303150;">צוות myNETO.</strong>
+              <strong style="color:#303150;">צוות myNETO</strong>
             </p>
           </td>
         </tr>`,
@@ -330,7 +355,7 @@ export const courseSequenceEmails: SequenceEmail[] = [
   // ── Email 5: טייס אוטומטי ──
   {
     step: 4,
-    subject: 'ההרגל שבונה עתיד (הפרק האחרון בסדרה)',
+    subject: 'הפרק האחרון: ההרגל שבונה עתיד',
     preheader: 'איך מכניסים הכל לטייס אוטומטי.',
     buildHtml: (userName, ctaUrl) =>
       baseWrapper(
@@ -343,26 +368,34 @@ export const courseSequenceEmails: SequenceEmail[] = [
             <div class="body-text" style="font-family:'Heebo',sans-serif;font-size:16px;color:#4A4A5A;line-height:1.9;">
               <p style="margin:0 0 16px 0;">שלום ${userName},</p>
               <p style="margin:0 0 16px 0;">
-                הגענו לישורת האחרונה. יש לך תיק מסחר, אתה מבין לאן הכסף הולך, ויש לך מטרה ברורה מול העיניים שניסחנו יחד במערכת.
+                יש לך תיק מסחר.<br>
+                אתה מבין לאן הכסף הולך.<br>
+                יש לך מטרה ברורה.
               </p>
               <p style="margin:0 0 16px 0;">
-                השלב האחרון הוא לדאוג שלא נצטרך לחשוב על זה יותר מדי. אנחנו חיים בשגרה עמוסה, ואם נסמוך על הזיכרון שלנו שניכנס כל חודש למערכת ונעביר כסף, אנחנו ניפול.
+                <strong style="color:#303150;">עכשיו צריך לדאוג שזה יעבוד לבד.</strong>
               </p>
               <p style="margin:0 0 16px 0;">
-                בפרק הרביעי והאחרון אנחנו מסבירים איך מכניסים את הכל ל"טייס אוטומטי". איך מגדירים הוראת קבע ישירות לתיק ההשקעות ובוחרים את המסלול הנכון. זוהי הפעולה המנצחת שיוצרת יישוב הדעת אמיתי. אתה חי את חייך, מגדל את הילדים בשלווה, והמערכת שבנית פועלת עבורך ברקע בכל חודש מחדש.
+                אנחנו חיים בשגרה עמוסה. אם נסמוך על הזיכרון שלנו להעביר כסף כל חודש – זה לא יעבוד.
+              </p>
+              <p style="margin:0 0 16px 0;">
+                בפרק האחרון אנחנו מראים איך מגדירים <strong style="color:#303150;">הוראת קבע</strong> ישירות לתיק ההשקעות, ואיך בוחרים את המסלול הנכון.
+              </p>
+              <p style="margin:0 0 16px 0;">
+                אתה חי את חייך, מגדל את הילדים בשלווה – והמערכת שבנית פועלת ברקע כל חודש מחדש.
               </p>
             </div>
           </td>
         </tr>
-        ${ctaButton('לצפייה בפרק 4: בחירת המסלול והוראת הקבע', ctaUrl, '#10B981')}
+        ${ctaButton('צפייה בפרק 4: המסלול והוראת הקבע', ctaUrl, '#10B981')}
         <tr>
           <td style="padding:20px 32px 0 32px;">
-            <p style="font-family:'Heebo',sans-serif;font-size:16px;color:#4A4A5A;line-height:1.9;margin:0 0 8px 0;">
-              מאחלים לך שהצעדים האלו יהוו את התשתית לרווחה הכלכלית של המשפחה שלך לשנים רבות.
+            <p style="font-family:'Heebo',sans-serif;font-size:15px;color:#4A4A5A;line-height:1.8;margin:0 0 8px 0;">
+              שהצעדים האלו יהוו תשתית לרווחה הכלכלית של המשפחה שלך.
             </p>
             <p style="font-family:'Heebo',sans-serif;font-size:15px;color:#4A4A5A;line-height:1.8;margin:0;">
               שלך,<br>
-              <strong style="color:#303150;">צוות myNETO.</strong>
+              <strong style="color:#303150;">צוות myNETO</strong>
             </p>
           </td>
         </tr>`,

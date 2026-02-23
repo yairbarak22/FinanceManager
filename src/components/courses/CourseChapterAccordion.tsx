@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Chapter, Lesson } from './coursesData';
+import AltshulerSidebarCTA from './AltshulerSidebarCTA';
 
 const chapterIcons: Record<string, typeof BookOpen> = {
   BookOpen,
@@ -193,6 +194,7 @@ export default function CourseChapterAccordion({
       <div className="flex-1 overflow-y-auto scrollbar-ghost">
         {isCollapsed ? (
           /* ===== COLLAPSED: chapter number dots ===== */
+          <>
           <div className="flex flex-col items-center gap-1.5 py-3">
             {chapters.map((chapter, idx) => {
               const lesson = chapter.lessons[0];
@@ -213,8 +215,11 @@ export default function CourseChapterAccordion({
               );
             })}
           </div>
+          <AltshulerSidebarCTA isCollapsed={true} />
+        </>
         ) : (
           /* ===== EXPANDED: flat chapter list ===== */
+          <>
           <div className="py-1">
             {chapters.map((chapter, chapterIdx) => {
               const Icon = chapterIcons[chapter.icon] || BookOpen;
@@ -254,6 +259,8 @@ export default function CourseChapterAccordion({
               );
             })}
           </div>
+          <AltshulerSidebarCTA isCollapsed={false} />
+        </>
         )}
       </div>
     </motion.aside>
