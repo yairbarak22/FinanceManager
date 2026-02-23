@@ -60,7 +60,7 @@ export const mockCourse: Course = {
       title: 'כדור השלג של הכסף',
       icon: 'Snowflake',
       lessons: [
-        { id: 'l-1', title: 'למה חיסכון בבנק כבר לא מספיק?', duration: '03:24', status: 'completed', badge: 'FREE', videoUrl: 'https://iframe.mediadelivery.net/embed/603432/f45955da-6080-4000-9fcf-a68296c17ac8?autoplay=false&loop=false&muted=false&preload=true&responsive=true', attachedFiles: [] },
+        { id: 'l-1', title: 'למה חיסכון בבנק כבר לא מספיק?', duration: '03:24', status: 'active', badge: 'FREE', videoUrl: 'https://iframe.mediadelivery.net/embed/603432/f45955da-6080-4000-9fcf-a68296c17ac8?autoplay=false&loop=false&muted=false&preload=true&responsive=true', attachedFiles: [] },
       ],
     },
     {
@@ -72,7 +72,7 @@ export const mockCourse: Course = {
           id: 'l-2',
           title: 'למה הסטטיסטיקה מנצחת את המומחים?',
           duration: '03:41',
-          status: 'completed',
+          status: 'active',
           badge: 'BEGINNER',
           videoUrl: 'https://iframe.mediadelivery.net/embed/603432/e7cdbc45-650f-4a85-bd19-39b09cee83e5?autoplay=false&loop=false&muted=false&preload=true&responsive=true',
           attachedFiles: [
@@ -95,7 +95,7 @@ export const mockCourse: Course = {
       title: 'תכל׳ס - פתיחת חשבון',
       icon: 'UserCheck',
       lessons: [
-        { id: 'l-3', title: 'פותחים חשבון באלטשולר שחם (צעד אחר צעד)', duration: '04:24', status: 'completed', badge: 'BEGINNER', videoUrl: 'https://iframe.mediadelivery.net/embed/603432/fbb27781-4823-46d2-93ef-cebd6317c75d?autoplay=false&loop=false&muted=false&preload=true&responsive=true', attachedFiles: [] },
+        { id: 'l-3', title: 'פותחים חשבון באלטשולר שחם (צעד אחר צעד)', duration: '04:24', status: 'active', badge: 'BEGINNER', videoUrl: 'https://iframe.mediadelivery.net/embed/603432/fbb27781-4823-46d2-93ef-cebd6317c75d?autoplay=false&loop=false&muted=false&preload=true&responsive=true', attachedFiles: [] },
       ],
     },
     {

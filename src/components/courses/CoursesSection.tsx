@@ -16,13 +16,9 @@ const PARTNER_URL =
 export default function CoursesSection() {
   const course = mockCourse;
 
-  const [activeLessonId, setActiveLessonId] = useState(() => {
-    for (const ch of course.chapters) {
-      const active = ch.lessons.find((l) => l.status === 'active');
-      if (active) return active.id;
-    }
-    return course.chapters[0]?.lessons[0]?.id ?? '';
-  });
+  const [activeLessonId, setActiveLessonId] = useState(
+    () => course.chapters[0]?.lessons[0]?.id ?? '',
+  );
 
   const [activeTab, setActiveTab] = useState<CourseTab>('files');
   const [isPlaylistCollapsed, setIsPlaylistCollapsed] = useState(false);
@@ -72,17 +68,19 @@ export default function CoursesSection() {
 
   const { trackVideoLessonViewed, trackOpenTradingAccountClicked } = useAnalytics();
 
+  const markAsWatched = (lessonId: string) => {
+    setWatchedLessonIds((prev) => {
+      if (prev.has(lessonId)) return prev;
+      const next = new Set(prev);
+      next.add(lessonId);
+      try { localStorage.setItem(WATCHED_KEY, JSON.stringify([...next])); } catch { /* noop */ }
+      return next;
+    });
+  };
+
   useEffect(() => {
     if (activeLesson?.videoUrl) {
       trackVideoLessonViewed(activeLesson.id, activeLesson.title, activeChapter.title, currentLessonIndex);
-
-      setWatchedLessonIds((prev) => {
-        if (prev.has(activeLesson.id)) return prev;
-        const next = new Set(prev);
-        next.add(activeLesson.id);
-        try { localStorage.setItem(WATCHED_KEY, JSON.stringify([...next])); } catch { /* noop */ }
-        return next;
-      });
     }
   }, [activeLessonId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -92,11 +90,17 @@ export default function CoursesSection() {
   }, [currentLessonIndex, allLessons]);
 
   const handleSelectLesson = (lessonId: string) => {
+    if (lessonId !== activeLessonId) {
+      markAsWatched(activeLessonId);
+    }
     setActiveLessonId(lessonId);
   };
 
   const handleNextLesson = () => {
-    if (nextLesson) setActiveLessonId(nextLesson.id);
+    if (nextLesson) {
+      markAsWatched(activeLessonId);
+      setActiveLessonId(nextLesson.id);
+    }
   };
 
   return (
