@@ -20,6 +20,9 @@ import TransactionModal from '@/components/modals/TransactionModal';
 import RecurringModal from '@/components/modals/RecurringModal';
 import AssetModal from '@/components/modals/AssetModal';
 import LiabilityModal from '@/components/modals/LiabilityModal';
+import LiabilityTypeSelectionModal from '@/components/modals/LiabilityTypeSelectionModal';
+import MortgageModal from '@/components/modals/MortgageModal';
+import GemachFormModal from '@/components/modals/GemachFormModal';
 import AmortizationModal from '@/components/modals/AmortizationModal';
 import ImportModal from '@/components/modals/ImportModal';
 import DocumentsModal from '@/components/modals/DocumentsModal';
@@ -82,6 +85,9 @@ export default function DashboardPage() {
   const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false);
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [isLiabilityModalOpen, setIsLiabilityModalOpen] = useState(false);
+  const [isLiabilityTypeSelectionOpen, setIsLiabilityTypeSelectionOpen] = useState(false);
+  const [isMortgageModalOpen, setIsMortgageModalOpen] = useState(false);
+  const [isGemachFormOpen, setIsGemachFormOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isMaaserModalOpen, setIsMaaserModalOpen] = useState(false);
 
@@ -89,6 +95,7 @@ export default function DashboardPage() {
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [editingLiability, setEditingLiability] = useState<Liability | null>(null);
+  const [editingMortgage, setEditingMortgage] = useState<Liability | null>(null);
 
   // Amortization modal state
   const [isAmortizationModalOpen, setIsAmortizationModalOpen] = useState(false);
@@ -633,6 +640,50 @@ export default function DashboardPage() {
     }
   };
 
+  // Mortgage handler
+  const handleAddMortgage = async (data: Record<string, unknown>) => {
+    const isEdit = !!editingMortgage;
+    try {
+      const url = isEdit ? `/api/liabilities/${editingMortgage!.id}` : '/api/liabilities';
+      const method = isEdit ? 'PUT' : 'POST';
+      const res = await apiFetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to save mortgage');
+      }
+      setEditingMortgage(null);
+      await fetchData();
+      toast.success(isEdit ? 'המשכנתא עודכנה בהצלחה' : 'המשכנתא נוספה בהצלחה');
+    } catch (error) {
+      console.error('Error saving mortgage:', error);
+      toast.error(error instanceof Error ? error.message : 'שגיאה בשמירת משכנתא');
+    }
+  };
+
+  // Gemach handler
+  const handleCreateGemach = async (data: Record<string, unknown>) => {
+    try {
+      const res = await apiFetch('/api/gemach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to save');
+      }
+      await fetchData();
+      toast.success('תוכנית גמ״ח נוספה בהצלחה');
+    } catch (error) {
+      console.error('Error saving gemach:', error);
+      toast.error(error instanceof Error ? error.message : 'שגיאה בשמירת תוכנית גמ״ח');
+    }
+  };
+
   // Liability handlers
   const handleAddLiability = async (data: Omit<Liability, 'id' | 'createdAt' | 'updatedAt'>) => {
     const isNewLiability = !editingLiability;
@@ -798,11 +849,16 @@ export default function DashboardPage() {
                   selectedMonth={selectedMonth}
                   onAdd={() => {
                     setEditingLiability(null);
-                    setIsLiabilityModalOpen(true);
+                    setIsLiabilityTypeSelectionOpen(true);
                   }}
                   onEdit={(liability) => {
-                    setEditingLiability(liability);
-                    setIsLiabilityModalOpen(true);
+                    if (liability.isMortgage) {
+                      setEditingMortgage(liability);
+                      setIsMortgageModalOpen(true);
+                    } else {
+                      setEditingLiability(liability);
+                      setIsLiabilityModalOpen(true);
+                    }
                   }}
                   onDelete={handleDeleteLiability}
                   onViewAmortization={(liability) => {
@@ -947,6 +1003,37 @@ export default function DashboardPage() {
         liability={editingLiability}
         liabilityTypes={liabilityCats}
         onAddCategory={(name) => addCustomCategory(name, 'liability')}
+      />
+
+      <LiabilityTypeSelectionModal
+        isOpen={isLiabilityTypeSelectionOpen}
+        onClose={() => setIsLiabilityTypeSelectionOpen(false)}
+        onSelectLoan={() => {
+          setEditingLiability(null);
+          setIsLiabilityModalOpen(true);
+        }}
+        onSelectMortgage={() => {
+          setIsMortgageModalOpen(true);
+        }}
+        onSelectGemach={() => {
+          setIsGemachFormOpen(true);
+        }}
+      />
+
+      <MortgageModal
+        isOpen={isMortgageModalOpen}
+        onClose={() => {
+          setIsMortgageModalOpen(false);
+          setEditingMortgage(null);
+        }}
+        onSave={handleAddMortgage}
+        mortgage={editingMortgage}
+      />
+
+      <GemachFormModal
+        isOpen={isGemachFormOpen}
+        onClose={() => setIsGemachFormOpen(false)}
+        onSave={handleCreateGemach}
       />
 
       <AmortizationModal

@@ -1,4 +1,4 @@
-import { AmortizationRow, Liability } from './types';
+import { AmortizationRow, Liability, MortgageTrack } from './types';
 
 /**
  * Calculate monthly payment for Spitzer (שפיצר) loan
@@ -222,5 +222,28 @@ export function getRemainingBalance(liability: Liability, asOfDate?: Date): numb
   
   const currentRow = schedule[currentMonth - 1];
   return currentRow ? currentRow.balance : 0;
+}
+
+export function calculateTrackMonthlyPayment(
+  amount: number,
+  interestRate: number,
+  termMonths: number,
+  method: 'spitzer' | 'equal_principal' = 'spitzer'
+): number {
+  if (termMonths <= 0 || amount <= 0) return 0;
+  if (method === 'spitzer') {
+    return calculateSpitzerPayment(amount, interestRate, termMonths);
+  }
+  const monthlyRate = interestRate / 100 / 12;
+  const principalPayment = amount / termMonths;
+  return principalPayment + (amount * monthlyRate);
+}
+
+export function calculateMortgageTotalAmount(tracks: MortgageTrack[]): number {
+  return tracks.reduce((sum, t) => sum + t.amount, 0);
+}
+
+export function calculateMortgageTotalMonthlyPayment(tracks: MortgageTrack[]): number {
+  return tracks.reduce((sum, t) => sum + t.monthlyPayment, 0);
 }
 

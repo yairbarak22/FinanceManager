@@ -184,13 +184,34 @@ model Liability {
   linkage             String   @default("none") // none | index | foreign
   isActiveInCashFlow  Boolean  @default(true)
   gemachId            String?  // UUID linking to paired Asset (null for regular liabilities)
+  isMortgage          Boolean  @default(false)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tracks              MortgageTrack[]
 
   @@index([userId])
   @@index([userId, type])
   @@index([gemachId])
+}
+
+model MortgageTrack {
+  id              String    @id @default(cuid())
+  liabilityId     String
+  trackType       String
+  amount          Float
+  termMonths      Int
+  termYears       Int?
+  interestRate    Float
+  loanMethod      String    @default("spitzer")
+  monthlyPayment  Float
+  order           Int
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  liability       Liability @relation(fields: [liabilityId], references: [id], onDelete: Cascade)
+
+  @@index([liabilityId])
+  @@index([liabilityId, order])
 }
 
 model NetWorthHistory {

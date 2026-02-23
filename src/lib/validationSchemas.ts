@@ -76,6 +76,41 @@ export const updateLiabilitySchema = z.object({
   remainingAmount: nonNegativeAmount.optional(),
 });
 
+// --- Mortgage schemas ---
+
+export const createMortgageSchema = z.object({
+  name: shortString(100),
+  startDate: isoDate,
+  note: z.string().max(500).optional(),
+  tracks: z.array(z.object({
+    trackType: shortString(50),
+    amount: positiveAmount,
+    termMonths: z.number().int().min(1),
+    termYears: z.number().int().min(1).optional(),
+    interestRate: z.number().min(0).max(100),
+    loanMethod: z.enum(['spitzer', 'equal_principal']).default('spitzer'),
+    monthlyPayment: nonNegativeAmount,
+    order: z.number().int().min(0),
+  })).min(1, 'חייב לפחות מסלול אחד'),
+});
+
+export const updateMortgageSchema = z.object({
+  isMortgage: z.literal(true),
+  name: shortString(100),
+  startDate: isoDate,
+  note: z.string().max(500).optional(),
+  tracks: z.array(z.object({
+    trackType: shortString(50),
+    amount: positiveAmount,
+    termMonths: z.number().int().min(1),
+    termYears: z.number().int().min(1).optional(),
+    interestRate: z.number().min(0).max(100),
+    loanMethod: z.enum(['spitzer', 'equal_principal']).default('spitzer'),
+    monthlyPayment: nonNegativeAmount,
+    order: z.number().int().min(0),
+  })).min(1, 'חייב לפחות מסלול אחד'),
+});
+
 // --- Goal schemas ---
 
 export const createGoalSchema = z.object({

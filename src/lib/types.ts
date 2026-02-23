@@ -85,8 +85,32 @@ export interface Liability {
   linkage?: 'none' | 'index' | 'foreign'; // הצמדה (אין / מדד / מט"ח)
   isActiveInCashFlow?: boolean; // האם פעיל בתזרים החודשי (ברירת מחדל: true)
   gemachId?: string; // UUID linking to paired Asset (null for regular liabilities)
+  isMortgage?: boolean;
+  tracks?: MortgageTrack[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface MortgageTrack {
+  id: string;
+  liabilityId: string;
+  trackType: string;
+  amount: number;
+  termMonths: number;
+  termYears?: number;
+  interestRate: number;
+  loanMethod: 'spitzer' | 'equal_principal';
+  monthlyPayment: number;
+  order: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MortgageData {
+  name: string;
+  startDate: string;
+  note?: string;
+  tracks: Omit<MortgageTrack, 'id' | 'liabilityId' | 'createdAt' | 'updatedAt'>[];
 }
 
 // שורה בלוח סילוקין
