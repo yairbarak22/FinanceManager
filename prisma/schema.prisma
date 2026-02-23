@@ -188,7 +188,6 @@ model Liability {
   isActiveInCashFlow  Boolean  @default(true)
   isMortgage          Boolean  @default(false)
   gemachId            String?  // UUID linking to paired Asset (null for regular liabilities)
-  isMortgage          Boolean  @default(false)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
