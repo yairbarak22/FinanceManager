@@ -225,6 +225,15 @@ export function useAnalytics() {
     trackEvent('Transaction Edited');
   }, []);
 
+  // Video courses
+  const trackVideoLessonViewed = useCallback((lessonId: string, lessonTitle: string, chapterTitle: string, lessonIndex: number) => {
+    trackEvent('Video Lesson Viewed', { lesson_id: lessonId, lesson_title: lessonTitle, chapter_title: chapterTitle, lesson_index: lessonIndex });
+  }, []);
+
+  const trackOpenTradingAccountClicked = useCallback((source: string) => {
+    trackEvent('Open Trading Account Clicked', { source });
+  }, []);
+
   return {
     // Page
     trackPageView,
@@ -274,5 +283,8 @@ export function useAnalytics() {
     trackInvestmentGuideViewed,
     trackInvestmentPortfolioViewed,
     trackIBIButtonClicked,
+    // Video courses
+    trackVideoLessonViewed,
+    trackOpenTradingAccountClicked,
   };
 }

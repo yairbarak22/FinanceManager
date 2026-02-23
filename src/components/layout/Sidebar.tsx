@@ -18,6 +18,7 @@ import {
   Target,
   Calculator,
   GraduationCap,
+  PlayCircle,
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -67,12 +68,11 @@ function buildNavItems(isHaredi: boolean): NavItem[] {
       icon: TrendingUp,
       iconBg: 'bg-sky-100',
       iconColor: 'text-sky-600',
-      ...(isHaredi ? {
-        subItems: [
-          { id: 'investments-guide', label: 'הדרכה', path: '/investments/guide', icon: GraduationCap },
-          { id: 'investments-portfolio', label: 'תיק מסחר עצמאי', path: '/investments', icon: TrendingUp },
-        ],
-      } : {}),
+      subItems: [
+        { id: 'investments-guide', label: 'הדרכה', path: '/investments/guide', icon: GraduationCap },
+        { id: 'courses', label: 'קורס וידאו', path: '/courses', icon: PlayCircle },
+        { id: 'investments-portfolio', label: 'תיק מסחר עצמאי', path: '/investments', icon: TrendingUp },
+      ],
     },
     { 
       id: 'goals', 
@@ -112,7 +112,7 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
   const { isCollapsed, isMobileOpen, closeMobileSidebar } = useSidebar();
   const { startTour } = useOnboarding();
   const [expandedMenu, setExpandedMenu] = useState<string | null>(
-    pathname.startsWith('/help') || pathname.startsWith('/calculators')
+    pathname.startsWith('/help') || pathname.startsWith('/calculators') || pathname.startsWith('/courses')
       ? 'help'
       : pathname.startsWith('/investments')
         ? 'investments'
@@ -123,7 +123,7 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
 
   // Keep submenus expanded on relevant pages
   useEffect(() => {
-    if ((pathname.startsWith('/calculators-haredi') || pathname.startsWith('/calculators') || pathname.startsWith('/help')) && expandedMenu !== 'help') {
+    if ((pathname.startsWith('/calculators-haredi') || pathname.startsWith('/calculators') || pathname.startsWith('/help') || pathname.startsWith('/courses')) && expandedMenu !== 'help') {
       setExpandedMenu('help');
     }
     if (pathname.startsWith('/investments') && expandedMenu !== 'investments') {
@@ -180,8 +180,8 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
     if (item.subItems) {
       // Also match calculators-haredi under the help/calculators parent
       if (item.id === 'help' && pathname.startsWith('/calculators-haredi')) return true;
-      // Match investments sub-routes
-      if (item.id === 'investments' && pathname.startsWith('/investments')) return true;
+      // Match investments sub-routes and courses
+      if (item.id === 'investments' && (pathname.startsWith('/investments') || pathname.startsWith('/courses'))) return true;
       return pathname.startsWith(item.path.split('?')[0]);
     }
     return pathname === item.path;
