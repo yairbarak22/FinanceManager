@@ -68,12 +68,11 @@ function buildNavItems(isHaredi: boolean): NavItem[] {
       icon: TrendingUp,
       iconBg: 'bg-sky-100',
       iconColor: 'text-sky-600',
-      ...(isHaredi ? {
-        subItems: [
-          { id: 'investments-guide', label: 'הדרכה', path: '/investments/guide', icon: GraduationCap },
-          { id: 'investments-portfolio', label: 'תיק מסחר עצמאי', path: '/investments', icon: TrendingUp },
-        ],
-      } : {}),
+      subItems: [
+        { id: 'investments-guide', label: 'הדרכה', path: '/investments/guide', icon: GraduationCap },
+        { id: 'courses', label: 'קורס וידאו', path: '/courses', icon: PlayCircle },
+        { id: 'investments-portfolio', label: 'תיק מסחר עצמאי', path: '/investments', icon: TrendingUp },
+      ],
     },
     { 
       id: 'goals', 
@@ -93,7 +92,6 @@ function buildNavItems(isHaredi: boolean): NavItem[] {
       subItems: [
         { id: 'general-knowledge', label: 'ידע כללי', path: '/help', icon: BookOpen },
         { id: 'calculators', label: 'מחשבונים', path: '/calculators', icon: Calculator }, // path overridden dynamically for Haredi users
-        { id: 'courses', label: 'קורס וידאו', path: '/courses', icon: PlayCircle },
       ],
     },
     { 
@@ -181,9 +179,9 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
     if (item.path === '/dashboard' && pathname === '/') return true;
     if (item.subItems) {
       // Also match calculators-haredi under the help/calculators parent
-      if (item.id === 'help' && (pathname.startsWith('/calculators-haredi') || pathname.startsWith('/courses'))) return true;
-      // Match investments sub-routes
-      if (item.id === 'investments' && pathname.startsWith('/investments')) return true;
+      if (item.id === 'help' && pathname.startsWith('/calculators-haredi')) return true;
+      // Match investments sub-routes and courses
+      if (item.id === 'investments' && (pathname.startsWith('/investments') || pathname.startsWith('/courses'))) return true;
       return pathname.startsWith(item.path.split('?')[0]);
     }
     return pathname === item.path;

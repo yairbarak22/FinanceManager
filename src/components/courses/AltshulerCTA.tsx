@@ -4,16 +4,16 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExternalLink, Check, ChevronDown, TrendingUp } from 'lucide-react';
 import Card from '@/components/ui/Card';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 const PARTNER_URL =
   'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=Myneto&utm_medium=Link';
 
 const benefits = [
-  { prefix: 'גם', text: 'פתיחת חשבון מ-', highlight: '5,000 ₪', suffix: 'בלבד' },
-  { prefix: 'גם', text: '', highlight: '200 ₪', suffix: 'מתנת הצטרפות בכל פתיחת חשבון' },
-  { prefix: 'גם', text: 'קורס היכרות עם שוק ההון', highlight: 'בחינם', suffix: '' },
+  { text: 'פתיחת חשבון מ-', highlight: '5,000 ₪', suffix: 'בלבד' },
+  { text: '', highlight: '200 ₪', suffix: 'מתנת הצטרפות בכל פתיחת חשבון' },
+  { text: 'קורס היכרות עם שוק ההון', highlight: 'בחינם', suffix: '' },
   {
-    prefix: 'גם',
     text: 'שיעורי הדרכה בלייב על הצעדים הראשונים במערכת',
     highlight: 'בחינם',
     suffix: '',
@@ -22,6 +22,7 @@ const benefits = [
 
 export default function AltshulerCTA() {
   const [isOpen, setIsOpen] = useState(false);
+  const { trackOpenTradingAccountClicked } = useAnalytics();
 
   return (
     <motion.div
@@ -113,7 +114,6 @@ export default function AltshulerCTA() {
                         <Check className="w-3 h-3 text-[#0DBACC]" strokeWidth={2.5} />
                       </div>
                       <p className="text-[0.8125rem] sm:text-[0.875rem] text-[#7E7F90] leading-relaxed">
-                        <span className="font-semibold text-[#0DBACC]">{b.prefix} </span>
                         {b.text && <span>{b.text}</span>}
                         <span className="font-bold text-[#303150] mx-0.5">{b.highlight}</span>
                         {b.suffix && <span>{b.suffix}</span>}
@@ -127,6 +127,7 @@ export default function AltshulerCTA() {
                   href={PARTNER_URL}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackOpenTradingAccountClicked('course_cta')}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className="btn-primary flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-medium text-[0.875rem] text-white cursor-pointer"
@@ -137,6 +138,9 @@ export default function AltshulerCTA() {
 
                 <p className="text-center text-[0.75rem] text-[#BDBDCB] mt-3">
                   ההטבות בתוקף לפותחי חשבון דרך MyNeto בלבד
+                </p>
+                <p className="text-center text-[0.625rem] text-[#BDBDCB]/70 mt-2 leading-relaxed">
+                  האמור אינו מהווה ייעוץ השקעות או שיווק השקעות ואינו תחליף לייעוץ אישי. מערכת myNETO אינה בעלת רישיון ייעוץ השקעות.
                 </p>
               </div>
             </motion.div>

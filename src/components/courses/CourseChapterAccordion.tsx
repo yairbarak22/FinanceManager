@@ -3,7 +3,6 @@
 import { useMemo } from 'react';
 import {
   ChevronLeft,
-  Play,
   Lock,
   BookOpen,
   TrendingUp,
@@ -34,6 +33,7 @@ interface CourseChapterAccordionProps {
   onSelectLesson: (lessonId: string, chapterId: string) => void;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  watchedLessonIds: Set<string>;
 }
 
 function getChapterDuration(lessons: Lesson[]): string {
@@ -45,25 +45,22 @@ function getChapterDuration(lessons: Lesson[]): string {
   return `${mins} דק׳`;
 }
 
-function getCompletedCount(lessons: Lesson[]): number {
-  return lessons.filter((l) => l.status === 'completed').length;
-}
 
 /** Status icon for the chapter row */
-function ChapterStatusIcon({ status, isActive, index }: { status: Lesson['status']; isActive: boolean; index: number }) {
-  if (status === 'completed') {
+function ChapterStatusIcon({ status, isActive, index, watched }: { status: Lesson['status']; isActive: boolean; index: number; watched: boolean }) {
+  if (status === 'locked') {
+    return <Lock className="w-4 h-4 text-[#BDBDCB] flex-shrink-0" strokeWidth={1.75} />;
+  }
+  if (watched) {
     return (
       <div className="w-4 h-4 rounded-full bg-[#0DBACC]/12 flex items-center justify-center flex-shrink-0">
         <span className="text-[0.5625rem] font-bold text-[#0DBACC]">{index}</span>
       </div>
     );
   }
-  if (status === 'locked') {
-    return <Lock className="w-4 h-4 text-[#BDBDCB] flex-shrink-0" strokeWidth={1.75} />;
-  }
   return (
     <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 ${isActive ? 'bg-[#69ADFF]' : 'bg-[#69ADFF]/12'}`}>
-      <Play className={`w-[7px] h-[7px] ms-px ${isActive ? 'text-white' : 'text-[#69ADFF]'}`} fill={isActive ? 'white' : '#69ADFF'} />
+      <span className={`text-[0.5625rem] font-bold ${isActive ? 'text-[#69ADFF]' : 'text-[#69ADFF]'}`}>{index}</span>
     </div>
   );
 }
@@ -75,16 +72,25 @@ function ChapterDot({
   index,
   onClick,
   disabled,
+  watched,
 }: {
   status: Lesson['status'];
   isActive: boolean;
   index: number;
   onClick: () => void;
   disabled: boolean;
+  watched: boolean;
 }) {
   const base = 'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0';
 
-  if (status === 'completed') {
+  if (status === 'locked') {
+    return (
+      <div className={`${base} bg-[#F7F7F8] opacity-50`} title={`פרק ${index}`}>
+        <Lock className="w-3 h-3 text-[#BDBDCB]" strokeWidth={1.75} />
+      </div>
+    );
+  }
+  if (watched) {
     return (
       <button
         type="button"
@@ -95,13 +101,6 @@ function ChapterDot({
       >
         <span className="text-[0.6875rem] font-bold text-[#0DBACC]">{index}</span>
       </button>
-    );
-  }
-  if (status === 'locked') {
-    return (
-      <div className={`${base} bg-[#F7F7F8] opacity-50`} title={`פרק ${index}`}>
-        <Lock className="w-3 h-3 text-[#BDBDCB]" strokeWidth={1.75} />
-      </div>
     );
   }
   return (
@@ -128,16 +127,17 @@ export default function CourseChapterAccordion({
   onSelectLesson,
   isCollapsed,
   onToggleCollapse,
+  watchedLessonIds,
 }: CourseChapterAccordionProps) {
-  const totalCompleted = useMemo(
-    () => chapters.reduce((sum, ch) => sum + getCompletedCount(ch.lessons), 0),
-    [chapters],
+  const totalWatched = useMemo(
+    () => chapters.reduce((sum, ch) => sum + ch.lessons.filter((l) => watchedLessonIds.has(l.id)).length, 0),
+    [chapters, watchedLessonIds],
   );
   const totalLessons = useMemo(
     () => chapters.reduce((sum, ch) => sum + ch.lessons.length, 0),
     [chapters],
   );
-  const overallProgress = totalLessons > 0 ? totalCompleted / totalLessons : 0;
+  const overallProgress = totalLessons > 0 ? totalWatched / totalLessons : 0;
 
   return (
     <motion.aside
@@ -173,7 +173,7 @@ export default function CourseChapterAccordion({
         <div className="px-4 py-3 border-b border-[#F7F7F8]">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[0.6875rem] text-[#BDBDCB]">
-              {totalCompleted}/{totalLessons} פרקים
+              {totalWatched}/{totalLessons} פרקים
             </span>
             <span className="text-[0.6875rem] font-semibold text-[#69ADFF]">
               {Math.round(overallProgress * 100)}%
@@ -208,6 +208,7 @@ export default function CourseChapterAccordion({
                   isActive={!!isActive}
                   index={idx + 1}
                   disabled={isLocked}
+                  watched={!!lesson && watchedLessonIds.has(lesson.id)}
                   onClick={() =>
                     lesson && !isLocked && onSelectLesson(lesson.id, chapter.id)
                   }
@@ -254,7 +255,7 @@ export default function CourseChapterAccordion({
                       {duration}
                     </p>
                   </div>
-                  <ChapterStatusIcon status={lesson?.status ?? 'locked'} isActive={!!isActive} index={chapterIdx + 1} />
+                  <ChapterStatusIcon status={lesson?.status ?? 'locked'} isActive={!!isActive} index={chapterIdx + 1} watched={!!lesson && watchedLessonIds.has(lesson.id)} />
                 </button>
               );
             })}

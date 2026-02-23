@@ -14,7 +14,9 @@ import {
   PanelRightOpen,
   Accessibility,
   Menu,
+  HelpCircle,
 } from 'lucide-react';
+import SupportModal from '@/components/layout/SupportModal';
 import ProgressBell from '@/components/haredi/ProgressBell';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { useAccessibility } from '@/context/AccessibilityContext';
@@ -53,6 +55,7 @@ export default function MinimalHeader({
   const { openAccessibility } = useAccessibility();
   const { isCollapsed, toggleSidebar, openMobileSidebar } = useSidebar();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -68,6 +71,7 @@ export default function MinimalHeader({
   const { name, email, image } = session?.user || {};
 
   return (
+    <>
     <header className="sticky top-0 z-40 bg-white border-b border-slate-100">
       <div className="px-4 lg:px-6">
         <div className="flex items-center justify-between h-14">
@@ -138,6 +142,17 @@ export default function MinimalHeader({
 
             {/* Progress Bell - visible for Haredi users (self-manages visibility) */}
             <ProgressBell />
+
+            {/* Help / Support Button */}
+            <button
+              type="button"
+              onClick={() => setIsSupportModalOpen(true)}
+              className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-lg hover:bg-slate-50"
+              aria-label="עזרה ותמיכה"
+              title="עזרה"
+            >
+              <HelpCircle className="w-[18px] h-[18px]" strokeWidth={1.75} />
+            </button>
 
             {/* Accessibility Button - All screens */}
             <button
@@ -258,5 +273,11 @@ export default function MinimalHeader({
         </div>
       </div>
     </header>
+
+    <SupportModal
+      isOpen={isSupportModalOpen}
+      onClose={() => setIsSupportModalOpen(false)}
+    />
+    </>
   );
 }

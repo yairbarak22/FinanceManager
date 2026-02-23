@@ -63,6 +63,8 @@ export interface SendSequenceStepParams {
   userId: string;
   step: number;
   userName: string;
+  subjectOverride?: string;
+  contentOverride?: string;
 }
 
 export async function sendSequenceStepEmail(
@@ -78,22 +80,28 @@ export async function sendSequenceStepEmail(
     return { error: `Invalid sequence step: ${params.step}` };
   }
 
-  const html = buildSequenceEmailHtml(
-    params.step,
-    params.userName,
-    config.nextAuthUrl,
-  );
+  let html: string | null;
+  if (params.contentOverride) {
+    html = params.contentOverride;
+  } else {
+    html = buildSequenceEmailHtml(
+      params.step,
+      params.userName,
+      config.nextAuthUrl,
+    );
+  }
   if (!html) {
     return { error: 'Failed to build email HTML' };
   }
 
   const htmlWithUnsubscribe = addUnsubscribeLink(html, params.userId);
+  const subject = params.subjectOverride || template.subject;
 
   try {
     const result = await resend.emails.send({
-      from: 'myneto <admin@myneto.co.il>',
+      from: 'myneto <invest@myneto.co.il>',
       to: params.to,
-      subject: template.subject,
+      subject,
       html: htmlWithUnsubscribe,
       tags: [
         { name: 'sequence_type', value: 'course-intro' },

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import { Paperclip, StickyNote, MessageCircle, FileText, FileSpreadsheet, FileIcon, Presentation, Download } from 'lucide-react';
+import { Paperclip, StickyNote, MessageCircle, FileText, FileSpreadsheet, FileIcon, Presentation, Download, ExternalLink, Lightbulb } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Card from '@/components/ui/Card';
 import type { AttachedFile } from './coursesData';
@@ -19,6 +19,7 @@ const fileTypeIcons: Record<string, typeof FileText> = {
   xlsx: FileSpreadsheet,
   docx: FileIcon,
   pptx: Presentation,
+  link: ExternalLink,
 };
 
 const fileTypeStyles: Record<string, { icon: string; bg: string }> = {
@@ -26,15 +27,17 @@ const fileTypeStyles: Record<string, { icon: string; bg: string }> = {
   xlsx: { icon: 'text-[#0DBACC]', bg: 'bg-[#0DBACC]/10' },
   docx: { icon: 'text-[#69ADFF]', bg: 'bg-[#69ADFF]/10' },
   pptx: { icon: 'text-[#E9A800]', bg: 'bg-[#E9A800]/10' },
+  link: { icon: 'text-[#69ADFF]', bg: 'bg-[#69ADFF]/10' },
 };
 
 interface CourseTabBarProps {
   activeTab: CourseTab;
   onTabChange: (tab: CourseTab) => void;
   files: AttachedFile[];
+  notes?: string[];
 }
 
-export default function CourseTabBar({ activeTab, onTabChange, files }: CourseTabBarProps) {
+export default function CourseTabBar({ activeTab, onTabChange, files, notes }: CourseTabBarProps) {
   const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
   const [indicatorStyle, setIndicatorStyle] = useState({ width: 0, left: 0 });
 
@@ -86,9 +89,14 @@ export default function CourseTabBar({ activeTab, onTabChange, files }: CourseTa
               {files.map((file) => {
                 const TypeIcon = fileTypeIcons[file.type] || FileIcon;
                 const style = fileTypeStyles[file.type] || { icon: 'text-[#7E7F90]', bg: 'bg-[#F7F7F8]' };
+                const isLink = file.type === 'link' && file.url;
+                const ActionIcon = isLink ? ExternalLink : Download;
                 return (
-                  <div
+                  <a
                     key={file.id}
+                    href={file.url}
+                    target={isLink ? '_blank' : undefined}
+                    rel={isLink ? 'noopener noreferrer' : undefined}
                     className="group flex items-center gap-4 p-3 rounded-xl hover:bg-[#F7F7F8] transition-colors duration-200 cursor-pointer"
                   >
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${style.bg}`}>
@@ -100,23 +108,44 @@ export default function CourseTabBar({ activeTab, onTabChange, files }: CourseTa
                     </div>
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <div className="w-8 h-8 rounded-lg bg-[#69ADFF]/8 flex items-center justify-center">
-                        <Download className="w-3.5 h-3.5 text-[#69ADFF]" strokeWidth={1.75} />
+                        <ActionIcon className="w-3.5 h-3.5 text-[#69ADFF]" strokeWidth={1.75} />
                       </div>
                     </div>
-                  </div>
+                  </a>
                 );
               })}
             </div>
           )}
 
           {activeTab === 'notes' && (
-            <div className="flex flex-col items-center justify-center h-[13rem]">
-              <div className="w-12 h-12 rounded-xl bg-[#F7F7F8] flex items-center justify-center mb-3">
-                <StickyNote className="w-5 h-5 text-[#BDBDCB]" strokeWidth={1.75} />
-              </div>
-              <p className="text-[0.8125rem] font-medium text-[#7E7F90]">אין הערות עדיין</p>
-              <p className="text-[0.75rem] text-[#BDBDCB] mt-1">הערות שתוסיפו יופיעו כאן</p>
-            </div>
+            <>
+              {notes && notes.length > 0 ? (
+                <div className="space-y-3">
+                  {notes.map((note, i) => (
+                    <div
+                      key={i}
+                      className="flex gap-3 p-4 rounded-xl"
+                      style={{ backgroundColor: 'rgba(105, 173, 255, 0.06)', border: '1px solid rgba(105, 173, 255, 0.12)' }}
+                    >
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(105, 173, 255, 0.12)' }}>
+                        <Lightbulb className="w-4 h-4 text-[#69ADFF]" strokeWidth={1.75} />
+                      </div>
+                      <p className="text-[0.8125rem] text-[#303150] leading-relaxed whitespace-pre-line" style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
+                        {note}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[13rem]">
+                  <div className="w-12 h-12 rounded-xl bg-[#F7F7F8] flex items-center justify-center mb-3">
+                    <StickyNote className="w-5 h-5 text-[#BDBDCB]" strokeWidth={1.75} />
+                  </div>
+                  <p className="text-[0.8125rem] font-medium text-[#7E7F90]">אין הערות עדיין</p>
+                  <p className="text-[0.75rem] text-[#BDBDCB] mt-1">הערות שתוסיפו יופיעו כאן</p>
+                </div>
+              )}
+            </>
           )}
 
           {activeTab === 'questions' && (

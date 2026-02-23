@@ -577,17 +577,19 @@ enum EmailSequenceStatus {
 }
 
 model EmailSequence {
-  id           String              @id @default(cuid())
-  userId       String
-  sequenceType String              // e.g. 'course-intro'
-  currentStep  Int                 @default(0)
-  status       EmailSequenceStatus @default(ACTIVE)
-  sendHour     Int                 @default(10) // Hour in Israel time (0-23) to send emails
-  startedAt    DateTime            @default(now())
-  lastSentAt   DateTime?
-  nextSendAt   DateTime?
-  completedAt  DateTime?
-  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String              @id @default(cuid())
+  userId           String
+  sequenceType     String              // e.g. 'course-intro'
+  currentStep      Int                 @default(0)
+  status           EmailSequenceStatus @default(ACTIVE)
+  sendHour         Int                 @default(10) // Hour in Israel time (0-23) to send emails
+  subjectOverrides Json?               // { "0": "custom subject", "1": "..." } per step
+  contentOverrides Json?               // { "0": "<html>...", "1": "<html>..." } per step
+  startedAt        DateTime            @default(now())
+  lastSentAt       DateTime?
+  nextSendAt       DateTime?
+  completedAt      DateTime?
+  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, sequenceType])
   @@index([status, nextSendAt])

@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { computeNextSendAt } from '@/app/api/cron/send-sequences/route';
+import { sendSequenceStepEmail } from '@/lib/emails/courseSequenceSender';
+
+const INTERVAL_DAYS = 3;
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,10 +21,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { userIds, sequenceType, sendHour } = body as {
+    const { userIds, sequenceType, sendHour, subjectOverrides, contentOverrides, sendFirstImmediately } = body as {
       userIds?: string[];
       sequenceType?: string;
       sendHour?: number;
+      subjectOverrides?: Record<string, string>;
+      contentOverrides?: Record<string, string>;
+      sendFirstImmediately?: boolean;
     };
 
     if (!sequenceType) {
@@ -43,6 +49,9 @@ export async function POST(request: NextRequest) {
       ? sendHour
       : 10;
 
+    const hasSubjectOverrides = subjectOverrides && Object.keys(subjectOverrides).length > 0;
+    const hasContentOverrides = contentOverrides && Object.keys(contentOverrides).length > 0;
+
     const users = await prisma.user.findMany({
       where: {
         id: { in: userIds },
@@ -62,13 +71,24 @@ export async function POST(request: NextRequest) {
       where: {
         userId: { in: users.map((u) => u.id) },
         sequenceType,
-        status: 'ACTIVE',
       },
-      select: { userId: true },
+      select: { userId: true, status: true, id: true },
     });
-    const existingUserIds = new Set(existing.map((e) => e.userId));
 
-    const newUsers = users.filter((u) => !existingUserIds.has(u.id));
+    const activeUserIds = new Set(
+      existing.filter((e) => e.status === 'ACTIVE').map((e) => e.userId),
+    );
+    const inactiveIds = existing
+      .filter((e) => e.status !== 'ACTIVE')
+      .map((e) => e.id);
+
+    if (inactiveIds.length > 0) {
+      await prisma.emailSequence.deleteMany({
+        where: { id: { in: inactiveIds } },
+      });
+    }
+
+    const newUsers = users.filter((u) => !activeUserIds.has(u.id));
 
     if (newUsers.length === 0) {
       return NextResponse.json(
@@ -77,28 +97,58 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const firstSendAt = computeNextSendAt(hour, 0);
+    const now = new Date();
+    const firstSendAt = sendFirstImmediately
+      ? computeNextSendAt(hour, INTERVAL_DAYS)
+      : computeNextSendAt(hour, 0);
 
     const created = await prisma.emailSequence.createMany({
       data: newUsers.map((u) => ({
         userId: u.id,
         sequenceType,
-        currentStep: 0,
+        currentStep: sendFirstImmediately ? 1 : 0,
         status: 'ACTIVE' as const,
         sendHour: hour,
         nextSendAt: firstSendAt,
+        lastSentAt: sendFirstImmediately ? now : null,
+        ...(hasSubjectOverrides ? { subjectOverrides } : {}),
+        ...(hasContentOverrides ? { contentOverrides } : {}),
       })),
       skipDuplicates: true,
     });
 
+    let immediatelySent = 0;
+    let immediatelyFailed = 0;
+
+    if (sendFirstImmediately && created.count > 0) {
+      for (const u of newUsers) {
+        if (activeUserIds.has(u.id)) continue;
+        const result = await sendSequenceStepEmail({
+          to: u.email,
+          userId: u.id,
+          step: 0,
+          userName: u.name || 'משתמש',
+          subjectOverride: hasSubjectOverrides ? subjectOverrides['0'] : undefined,
+          contentOverride: hasContentOverrides ? contentOverrides['0'] : undefined,
+        });
+        if ('error' in result) {
+          immediatelyFailed++;
+          console.error(`[Sequence] Immediate send failed for ${u.email}: ${result.error}`);
+        } else {
+          immediatelySent++;
+        }
+      }
+    }
+
     console.log(
-      `[Sequence] Admin ${userId} started ${created.count} sequences (type: ${sequenceType}, sendHour: ${hour})`,
+      `[Sequence] Admin ${userId} started ${created.count} sequences (type: ${sequenceType}, sendHour: ${hour}, immediate: ${sendFirstImmediately ?? false})`,
     );
 
     return NextResponse.json({
       created: created.count,
-      skippedExisting: existingUserIds.size,
+      skippedExisting: activeUserIds.size,
       total: users.length,
+      ...(sendFirstImmediately ? { immediatelySent, immediatelyFailed } : {}),
     });
   } catch (err) {
     console.error('[Sequence Start] Error:', err);

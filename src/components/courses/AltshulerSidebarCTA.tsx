@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExternalLink, Check, ChevronDown, TrendingUp } from 'lucide-react';
+import { useAnalytics } from '@/hooks/useAnalytics';
 
 const PARTNER_URL =
   'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=Myneto&utm_medium=Link';
@@ -20,6 +21,7 @@ interface AltshulerSidebarCTAProps {
 
 export default function AltshulerSidebarCTA({ isCollapsed }: AltshulerSidebarCTAProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { trackOpenTradingAccountClicked } = useAnalytics();
 
   if (isCollapsed) {
     return (
@@ -28,6 +30,7 @@ export default function AltshulerSidebarCTA({ isCollapsed }: AltshulerSidebarCTA
           href={PARTNER_URL}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackOpenTradingAccountClicked('course_sidebar')}
           className="w-8 h-8 rounded-full bg-[#0DBACC]/10 flex items-center justify-center transition-transform duration-150 hover:scale-110"
           title="פתיחת חשבון מסחר באלטשולר שחם"
         >
@@ -116,11 +119,16 @@ export default function AltshulerSidebarCTA({ isCollapsed }: AltshulerSidebarCTA
                 href={PARTNER_URL}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackOpenTradingAccountClicked('course_sidebar')}
                 className="btn-primary flex items-center justify-center gap-1.5 w-full py-2 rounded-xl font-medium text-[0.75rem] text-white"
               >
                 <span>פתיחת חשבון</span>
                 <ExternalLink className="w-3 h-3" strokeWidth={2} />
               </a>
+
+              <p className="text-center text-[0.5625rem] text-[#BDBDCB]/70 mt-2 leading-relaxed">
+                אינו מהווה ייעוץ השקעות. myNETO אינה בעלת רישיון ייעוץ.
+              </p>
             </div>
           </motion.div>
         )}

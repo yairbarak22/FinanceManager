@@ -105,11 +105,18 @@ export async function GET(request: NextRequest) {
         continue;
       }
 
+      const subjectOvr = seq.subjectOverrides as Record<string, string> | null;
+      const subjectOverride = subjectOvr?.[String(seq.currentStep)] || undefined;
+      const contentOvr = seq.contentOverrides as Record<string, string> | null;
+      const contentOverride = contentOvr?.[String(seq.currentStep)] || undefined;
+
       const result = await sendSequenceStepEmail({
         to: seq.user.email,
         userId: seq.user.id,
         step: seq.currentStep,
         userName: seq.user.name || 'משתמש',
+        subjectOverride,
+        contentOverride,
       });
 
       if ('error' in result) {
