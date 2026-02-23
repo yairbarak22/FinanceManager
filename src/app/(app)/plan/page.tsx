@@ -1,9 +1,7 @@
 'use client';
 
 import { AppLayout } from '@/components/layout';
-import { PlanProvider } from '@/context/PlanContext';
 import { useMonth } from '@/context/MonthContext';
-import BlueprintContainer from '@/components/plan/BlueprintContainer';
 
 export default function PlanPage() {
   const {
@@ -15,21 +13,20 @@ export default function PlanPage() {
   } = useMonth();
 
   return (
-    <PlanProvider>
-      <AppLayout
-        pageTitle="תוכנית עבודה"
-        pageSubtitle="The Blueprint"
-        selectedMonth={selectedMonth}
-        onMonthChange={setSelectedMonth}
-        allMonths={allMonths}
-        monthsWithData={monthsWithData}
-        currentMonth={currentMonth}
-        showMonthFilter={false}
-        showQuickAddFab={false}
-      >
-        <BlueprintContainer />
-      </AppLayout>
-    </PlanProvider>
+    <AppLayout
+      pageTitle="תוכנית עבודה"
+      pageSubtitle="The Blueprint"
+      selectedMonth={selectedMonth}
+      onMonthChange={setSelectedMonth}
+      allMonths={allMonths}
+      monthsWithData={monthsWithData}
+      currentMonth={currentMonth}
+      showMonthFilter={false}
+      showQuickAddFab={false}
+    >
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <p className="text-[#BDBDCB] text-[0.9375rem]">בקרוב...</p>
+      </div>
+    </AppLayout>
   );
 }
-
