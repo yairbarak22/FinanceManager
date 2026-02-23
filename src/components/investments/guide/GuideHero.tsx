@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Clock, ChevronDown } from 'lucide-react';
+import { Clock, ChevronDown, Info } from 'lucide-react';
 
 // ============================================================================
 // Types
@@ -11,6 +11,7 @@ interface GuideHeroProps {
   currentStep: number;
   totalSteps: number;
   onScrollToContent: () => void;
+  onStepClick?: (stepNum: number) => void;
 }
 
 // ============================================================================
@@ -29,7 +30,7 @@ const stepLabels = [
 // Component
 // ============================================================================
 
-export default function GuideHero({ currentStep, totalSteps, onScrollToContent }: GuideHeroProps) {
+export default function GuideHero({ currentStep, totalSteps, onScrollToContent, onStepClick }: GuideHeroProps) {
   return (
     <div className="space-y-8">
       {/* Hero Content */}
@@ -51,6 +52,10 @@ export default function GuideHero({ currentStep, totalSteps, onScrollToContent }
           <Clock className="w-4 h-4" />
           <span>5 דקות קריאה ששוות 300,000 ש״ח</span>
         </div>
+        <div className="flex items-center justify-center gap-1.5 text-[11px] text-[#BDBDCB]">
+          <Info className="w-3.5 h-3.5 flex-shrink-0" />
+          <span>המידע להלן הינו חומר לקריאה בלבד ואינו מהווה ייעוץ פיננסי</span>
+        </div>
       </motion.div>
 
       {/* Progress Bar */}
@@ -68,9 +73,14 @@ export default function GuideHero({ currentStep, totalSteps, onScrollToContent }
             const isCurrent = currentStep === stepNum;
 
             return (
-              <div key={stepNum} className="flex-1 space-y-1.5">
+              <button
+                key={stepNum}
+                type="button"
+                onClick={() => onStepClick?.(stepNum)}
+                className="flex-1 space-y-1.5 cursor-pointer group"
+              >
                 {/* Bar */}
-                <div className="h-1.5 rounded-full bg-[#F7F7F8] overflow-hidden">
+                <div className="h-1.5 rounded-full bg-[#F7F7F8] overflow-hidden group-hover:bg-[#E8E8ED] transition-colors">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: isActive ? '100%' : '0%' }}
@@ -85,16 +95,16 @@ export default function GuideHero({ currentStep, totalSteps, onScrollToContent }
                   />
                 </div>
                 {/* Label */}
-                <p className={`text-[10px] lg:text-xs text-center font-medium ${
+                <p className={`text-[10px] lg:text-xs text-center font-medium transition-colors ${
                   isCurrent
                     ? 'text-[#0DBACC]'
                     : isActive
-                      ? 'text-[#7E7F90]'
-                      : 'text-[#BDBDCB]'
+                      ? 'text-[#7E7F90] group-hover:text-[#303150]'
+                      : 'text-[#BDBDCB] group-hover:text-[#7E7F90]'
                 }`}>
                   {label}
                 </p>
-              </div>
+              </button>
             );
           })}
         </div>

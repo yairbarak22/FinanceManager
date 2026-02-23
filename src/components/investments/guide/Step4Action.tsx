@@ -1,12 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
-import { ArrowLeft, MessageCircle, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, PlayCircle } from 'lucide-react';
 import Card from '@/components/ui/Card';
-import { useAnalytics } from '@/hooks/useAnalytics';
-import { apiFetch } from '@/lib/utils';
-import ContactModal from './ContactModal';
+import Link from 'next/link';
 
 // ============================================================================
 // Types
@@ -23,44 +21,12 @@ interface Step4ActionProps {
 export default function Step4Action({ onInView }: Step4ActionProps) {
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: false, amount: 0.3 });
-  const analytics = useAnalytics();
-  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
-  const [guideStatus, setGuideStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle');
 
-  // Trigger onInView when section comes into view (must be in useEffect to avoid setState during render)
   useEffect(() => {
     if (isInView) {
       onInView();
     }
   }, [isInView, onInView]);
-
-  const handleRequestGuide = async () => {
-    if (guideStatus === 'loading' || guideStatus === 'sent') return;
-
-    setGuideStatus('loading');
-    analytics.trackIBIButtonClicked(0);
-
-    try {
-      const res = await apiFetch('/api/investments/send-guide', {
-        method: 'POST',
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        if (res.status === 401) {
-          // User not logged in - redirect to login
-          window.location.href = '/';
-          return;
-        }
-        throw new Error(data.error || 'Failed');
-      }
-
-      setGuideStatus('sent');
-    } catch {
-      setGuideStatus('error');
-      setTimeout(() => setGuideStatus('idle'), 3000);
-    }
-  };
 
   return (
     <motion.div
@@ -145,67 +111,30 @@ export default function Step4Action({ onInView }: Step4ActionProps) {
         </div>
       </Card>
 
-      {/* CTA Section */}
+      {/* Video Course CTA */}
       <Card className="overflow-hidden bg-gradient-to-br from-[#0DBACC] to-[#0DBACC]/80" padding="none">
         <div className="p-6 lg:p-8 space-y-5 text-white" dir="rtl">
           <div className="space-y-2">
-            <h3 className="text-lg font-bold">מוכנים להתחיל?</h3>
+            <div className="flex items-center gap-2">
+              <PlayCircle className="w-5 h-5 text-white/90" />
+              <h3 className="text-lg font-bold">מוכנים להתחיל?</h3>
+            </div>
             <p className="text-sm text-white/80 leading-relaxed">
-              הגיע הזמן לפעול. 
-              פתיחת חשבון לוקחת 10 דקות ואפשר להתחיל גם עם 300 ש&quot;ח בחודש.
+              להתחלה פשוטה ובטוחה הכנו לך קורס וידאו קצר שייקח אותך יד ביד — 
+              מפתיחת חשבון ועד ההשקעה הראשונה שלך. בלי סיבוכים, בלי מילים גדולות.
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Primary CTA */}
-            <button
-              onClick={handleRequestGuide}
-              disabled={guideStatus === 'loading' || guideStatus === 'sent'}
-              className="flex items-center justify-center gap-2 bg-white text-[#0DBACC] px-6 py-3 rounded-xl font-semibold text-sm
-                         hover:bg-white/90 transition-all duration-200 shadow-lg shadow-black/10 cursor-pointer
-                         disabled:opacity-80 disabled:cursor-not-allowed"
-            >
-              {guideStatus === 'loading' ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>שולח...</span>
-                </>
-              ) : guideStatus === 'sent' ? (
-                <>
-                  <Check className="w-4 h-4" />
-                  <span>המדריך נשלח למייל שלך!</span>
-                </>
-              ) : guideStatus === 'error' ? (
-                <span>שגיאה, נסו שוב</span>
-              ) : (
-                <>
-                  <span>לחץ כאן וקבל בחינם מדריך מפורט צעד אחרי צעד לפתיחת חשבון</span>
-                  <ArrowLeft className="w-4 h-4" />
-                </>
-              )}
-            </button>
-
-            {/* Secondary CTA */}
-            <button
-              onClick={() => {
-                analytics.trackIBIButtonClicked(0);
-                setIsContactModalOpen(true);
-              }}
-              className="flex items-center justify-center gap-2 bg-white/20 text-white px-6 py-3 rounded-xl font-medium text-sm
-                         hover:bg-white/30 transition-all duration-200 border border-white/30 cursor-pointer"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span>עדיין חושש? דבר איתנו</span>
-            </button>
-          </div>
+          <Link
+            href="/courses"
+            className="flex items-center justify-center gap-2 bg-white text-[#0DBACC] px-6 py-3.5 rounded-xl font-semibold text-sm
+                       hover:bg-white/90 transition-all duration-200 shadow-lg shadow-black/10 w-full"
+          >
+            <span>לצפייה בקורס הוידאו</span>
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
         </div>
       </Card>
-
-      {/* Contact Modal */}
-      <ContactModal
-        isOpen={isContactModalOpen}
-        onClose={() => setIsContactModalOpen(false)}
-      />
     </motion.div>
   );
 }

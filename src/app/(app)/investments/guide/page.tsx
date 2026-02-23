@@ -64,6 +64,7 @@ export default function InvestmentGuidePage() {
 
   // Refs for scroll targets
   const contentRef = useRef<HTMLDivElement>(null);
+  const backgroundRef = useRef<HTMLDivElement>(null);
   const step1Ref = useRef<HTMLDivElement>(null);
   const step2Ref = useRef<HTMLDivElement>(null);
   const step3Ref = useRef<HTMLDivElement>(null);
@@ -103,6 +104,13 @@ export default function InvestmentGuidePage() {
   // Scroll to content
   const handleScrollToContent = useCallback(() => {
     contentRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  // Scroll to a specific step when clicking the progress bar
+  const handleStepClick = useCallback((stepNum: number) => {
+    const refs = [backgroundRef, step1Ref, step2Ref, step3Ref, step4Ref];
+    const target = refs[stepNum - 1];
+    target?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
   // Step in-view handlers (5 steps: background + 4 guide steps)
@@ -152,12 +160,15 @@ export default function InvestmentGuidePage() {
           currentStep={currentStep}
           totalSteps={5}
           onScrollToContent={handleScrollToContent}
+          onStepClick={handleStepClick}
         />
 
         {/* Guide Content */}
         <div ref={contentRef} className="space-y-16">
           {/* Background: What is investing, compound interest, passive investing */}
-          <StepBackground onInView={handleBackgroundInView} />
+          <div ref={backgroundRef}>
+            <StepBackground onInView={handleBackgroundInView} />
+          </div>
           <ScrollToNext targetRef={step1Ref} label="למה זה עובד?" />
 
           {/* Step 1: Why it works */}
