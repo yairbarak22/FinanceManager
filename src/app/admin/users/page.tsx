@@ -16,7 +16,9 @@ import {
   Receipt,
   Calendar,
   UserPlus,
-  Activity
+  Activity,
+  ChevronDown,
+  MousePointerClick
 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
 import { SensitiveData } from '@/components/common/SensitiveData';
@@ -54,6 +56,21 @@ interface AdminStats {
   };
 }
 
+interface CtaClickUser {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
+  clickCount: number;
+  lastClickedAt: string;
+}
+
+interface CtaClickData {
+  totalClicks: number;
+  uniqueUsers: number;
+  users: CtaClickUser[];
+}
+
 export default function AdminUsersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -62,6 +79,8 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAccessDenied, setIsAccessDenied] = useState(false);
+  const [ctaData, setCtaData] = useState<CtaClickData | null>(null);
+  const [showCtaUsers, setShowCtaUsers] = useState(false);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -76,7 +95,7 @@ export default function AdminUsersPage() {
   }, [session, status]);
 
   const fetchData = async () => {
-    await Promise.all([fetchUsers(), fetchStats()]);
+    await Promise.all([fetchUsers(), fetchStats(), fetchCtaClicks()]);
   };
 
   const fetchStats = async () => {
@@ -120,6 +139,18 @@ export default function AdminUsersPage() {
       setError('שגיאה בטעינת המשתמשים');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCtaClicks = async () => {
+    try {
+      const res = await apiFetch('/api/admin/stats/cta-clicks');
+      if (res.ok) {
+        const data = await res.json();
+        setCtaData(data);
+      }
+    } catch {
+      console.error('Failed to fetch CTA click stats');
     }
   };
 
@@ -294,7 +325,7 @@ export default function AdminUsersPage() {
             <Users className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500" />
             סטטיסטיקות משתמשים
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
             <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-100 shadow-sm">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -336,8 +367,70 @@ export default function AdminUsersPage() {
                 </div>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setShowCtaUsers((v) => !v)}
+              className="bg-white rounded-xl p-3 sm:p-4 border border-gray-100 shadow-sm cursor-pointer hover:bg-[#F7F7F8] transition-colors text-right"
+            >
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#0DBACC]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <MousePointerClick className="w-4 h-4 sm:w-5 sm:h-5 text-[#0DBACC]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{ctaData?.uniqueUsers ?? 0}</p>
+                  <p className="text-xs sm:text-sm text-gray-500">לחצו על פתיחת חשבון</p>
+                </div>
+                <ChevronDown className={`w-4 h-4 text-[#BDBDCB] transition-transform duration-200 flex-shrink-0 ${showCtaUsers ? 'rotate-180' : ''}`} />
+              </div>
+            </button>
           </div>
         </div>
+
+        {showCtaUsers && ctaData && ctaData.users.length > 0 && (
+          <div className="mb-4 sm:mb-6">
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
+              <h3 className="text-sm sm:text-base font-semibold text-[#303150] mb-4 flex items-center gap-2">
+                <MousePointerClick className="w-4 h-4 text-[#0DBACC]" />
+                משתמשים שלחצו על פתיחת חשבון מסחר
+                <span className="text-xs text-[#7E7F90] font-normal">({ctaData.totalClicks} לחיצות סה״כ)</span>
+              </h3>
+              <div className="divide-y divide-gray-100">
+                {ctaData.users.map((ctaUser) => (
+                  <div key={ctaUser.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                    {ctaUser.image ? (
+                      <img
+                        src={ctaUser.image}
+                        alt={ctaUser.name || 'User'}
+                        className="w-9 h-9 rounded-full flex-shrink-0"
+                        data-sl="mask"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-full bg-[#0DBACC]/10 flex items-center justify-center flex-shrink-0">
+                        <User className="w-4 h-4 text-[#0DBACC]" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <SensitiveData as="p" className="text-sm font-medium text-[#303150] truncate">
+                        {ctaUser.name || 'ללא שם'}
+                      </SensitiveData>
+                      <SensitiveData as="p" className="text-xs text-[#7E7F90] truncate">
+                        {ctaUser.email || ''}
+                      </SensitiveData>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#0DBACC]/10 text-[#0DBACC]">
+                        {ctaUser.clickCount} {ctaUser.clickCount === 1 ? 'לחיצה' : 'לחיצות'}
+                      </span>
+                      <span className="text-[11px] text-[#BDBDCB]">
+                        {new Date(ctaUser.lastClickedAt).toLocaleDateString('he-IL', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Error State */}
         {error && (

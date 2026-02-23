@@ -44,6 +44,7 @@ model User {
   quarantinedFiles      QuarantinedFile[]      // Files in quarantine awaiting review
   createdGroups         UserGroup[]            // User groups created by this admin
   groupMemberships      UserGroupMember[]      // User groups this user belongs to
+  ctaClicks             CtaClick[]             // CTA click tracking
 }
 
 model Account {
@@ -646,6 +647,20 @@ model UserGroupMember {
   @@unique([groupId, userId])
   @@index([groupId])
   @@index([userId])
+}
+
+// ============================================
+// CTA CLICK TRACKING - Track trading account CTA clicks
+// ============================================
+model CtaClick {
+  id        String   @id @default(cuid())
+  userId    String
+  source    String   // 'course_header' | 'course_cta' | 'course_sidebar'
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 // ============================================

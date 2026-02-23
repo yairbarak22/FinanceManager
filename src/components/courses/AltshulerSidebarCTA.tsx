@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExternalLink, Check, ChevronDown, TrendingUp } from 'lucide-react';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { trackCtaClickServer } from '@/lib/utils';
 
 const PARTNER_URL =
   'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=Myneto&utm_medium=Link';
@@ -30,7 +31,7 @@ export default function AltshulerSidebarCTA({ isCollapsed }: AltshulerSidebarCTA
           href={PARTNER_URL}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => trackOpenTradingAccountClicked('course_sidebar')}
+          onClick={() => { trackOpenTradingAccountClicked('course_sidebar'); trackCtaClickServer('course_sidebar'); }}
           className="w-8 h-8 rounded-full bg-[#0DBACC]/10 flex items-center justify-center transition-transform duration-150 hover:scale-110"
           title="פתיחת חשבון מסחר באלטשולר שחם"
         >
@@ -119,7 +120,7 @@ export default function AltshulerSidebarCTA({ isCollapsed }: AltshulerSidebarCTA
                 href={PARTNER_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => trackOpenTradingAccountClicked('course_sidebar')}
+                onClick={() => { trackOpenTradingAccountClicked('course_sidebar'); trackCtaClickServer('course_sidebar'); }}
                 className="btn-primary flex items-center justify-center gap-1.5 w-full py-2 rounded-xl font-medium text-[0.75rem] text-white"
               >
                 <span>פתיחת חשבון</span>

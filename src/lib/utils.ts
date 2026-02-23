@@ -224,3 +224,9 @@ export async function apiRequest<T = unknown>(
   return response.json();
 }
 
+export function trackCtaClickServer(source: string) {
+  apiFetch('/api/track/cta-click', {
+    method: 'POST',
+    body: JSON.stringify({ source }),
+  }).catch(() => {});
+}

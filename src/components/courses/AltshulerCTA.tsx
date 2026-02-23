@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ExternalLink, Check, ChevronDown, TrendingUp } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { trackCtaClickServer } from '@/lib/utils';
 
 const PARTNER_URL =
   'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=Myneto&utm_medium=Link';
@@ -127,7 +128,7 @@ export default function AltshulerCTA() {
                   href={PARTNER_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() => trackOpenTradingAccountClicked('course_cta')}
+                  onClick={() => { trackOpenTradingAccountClicked('course_cta'); trackCtaClickServer('course_cta'); }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   className="btn-primary flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-medium text-[0.875rem] text-white cursor-pointer"

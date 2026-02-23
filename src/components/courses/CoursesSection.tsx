@@ -9,6 +9,7 @@ import CourseTabBar, { type CourseTab } from './CourseTabBar';
 import AltshulerCTA from './AltshulerCTA';
 import { mockCourse } from './coursesData';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { trackCtaClickServer } from '@/lib/utils';
 
 const PARTNER_URL =
   'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=Myneto&utm_medium=Link';
@@ -146,7 +147,7 @@ export default function CoursesSection() {
               href={PARTNER_URL}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => trackOpenTradingAccountClicked('course_header')}
+              onClick={() => { trackOpenTradingAccountClicked('course_header'); trackCtaClickServer('course_header'); }}
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
               whileHover={{ scale: 1.08 }}
