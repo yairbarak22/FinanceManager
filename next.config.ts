@@ -57,7 +57,7 @@ const nextConfig: NextConfig = {
                 ...(isDev ? ["http://localhost:*", "ws://localhost:*"] : []),
               ].join(' '),
               "worker-src 'self' blob:",
-              "frame-src 'self' https://accounts.google.com https://iframe.mediadelivery.net",
+              "frame-src 'self' https://accounts.google.com https://iframe.mediadelivery.net https://www.youtube.com https://youtube.com",
               "frame-ancestors 'none'",
               "form-action 'self'",
               "base-uri 'self'",

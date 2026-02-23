@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 
 export interface SegmentFilter {
-  type: 'all' | 'freeOnly' | 'inactiveDays' | 'hasProfile' | 'noTransactionsThisMonth' | 'haredi' | 'manual' | 'csv' | 'custom';
+  type: 'all' | 'freeOnly' | 'inactiveDays' | 'hasProfile' | 'noTransactionsThisMonth' | 'haredi' | 'manual' | 'csv' | 'custom' | 'group';
   // For inactiveDays
   days?: number;
   // For manual selection
@@ -16,6 +16,8 @@ export interface SegmentFilter {
   csvEmails?: string[];
   // For custom
   customFilter?: Prisma.UserWhereInput;
+  // For group
+  groupId?: string;
 }
 
 /**
@@ -161,6 +163,30 @@ export async function getSegmentUsers(
         return [];
       }
 
+    case 'group':
+      if (!segmentFilter.groupId) {
+        console.warn('[Segment] Group ID not provided');
+        return [];
+      }
+      try {
+        const groupMembers = await prisma.userGroupMember.findMany({
+          where: { groupId: segmentFilter.groupId },
+          include: {
+            user: {
+              select: { id: true, email: true, name: true, isMarketingSubscribed: true },
+            },
+          },
+        });
+        return groupMembers
+          .filter((m) => m.user.isMarketingSubscribed)
+          .map((m) => ({ id: m.user.id, email: m.user.email, name: m.user.name }));
+      } catch (error) {
+        console.error('[Segment] Error fetching group members', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return [];
+      }
+
     case 'custom':
       // Custom filter - merge with base filter
       if (segmentFilter.customFilter) {
@@ -256,14 +282,20 @@ export async function countSegmentUsers(segmentFilter: SegmentFilter): Promise<n
       break;
 
     case 'csv':
-      // For CSV, return the total count of emails (including external ones)
       if (segmentFilter.csvEmails && segmentFilter.csvEmails.length > 0) {
-        // Return total count (existing + external)
-        // Note: This counts all CSV emails, including those not in the system
         return segmentFilter.csvEmails.length;
       } else {
         return 0;
       }
+
+    case 'group':
+      if (!segmentFilter.groupId) return 0;
+      return prisma.userGroupMember.count({
+        where: {
+          groupId: segmentFilter.groupId,
+          user: { isMarketingSubscribed: true },
+        },
+      });
 
     case 'custom':
       if (segmentFilter.customFilter) {
@@ -290,7 +322,7 @@ export function validateSegmentFilter(filter: unknown): filter is SegmentFilter 
     return false;
   }
 
-  const validTypes = ['all', 'freeOnly', 'inactiveDays', 'hasProfile', 'noTransactionsThisMonth', 'haredi', 'manual', 'csv', 'custom'];
+  const validTypes = ['all', 'freeOnly', 'inactiveDays', 'hasProfile', 'noTransactionsThisMonth', 'haredi', 'manual', 'csv', 'custom', 'group'];
   if (!validTypes.includes(f.type)) {
     console.warn('[Segment Validation] Invalid filter type', { type: f.type, validTypes });
     return false;
@@ -321,6 +353,14 @@ export function validateSegmentFilter(filter: unknown): filter is SegmentFilter 
     // Validate all IDs are strings
     if (!f.selectedUserIds.every((id: unknown) => typeof id === 'string' && id.length > 0)) {
       console.warn('[Segment Validation] selectedUserIds must contain only non-empty strings');
+      return false;
+    }
+  }
+
+  // Validate group
+  if (f.type === 'group') {
+    if (!f.groupId || typeof f.groupId !== 'string') {
+      console.warn('[Segment Validation] Group type requires groupId string');
       return false;
     }
   }

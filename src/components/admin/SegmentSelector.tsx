@@ -1,11 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, UserCheck, Clock, FileText, CreditCard, UserCog, Upload, UsersRound } from 'lucide-react';
+import { Users, UserCheck, Clock, FileText, CreditCard, UserCog, Upload, UsersRound, FolderOpen } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
 import UserSelector from './UserSelector';
 import CsvUploader from './CsvUploader';
 import type { SegmentFilter } from '@/lib/marketing/segment';
+
+interface GroupOption {
+  id: string;
+  name: string;
+  _count: { members: number };
+}
 
 interface SegmentSelectorProps {
   value: SegmentFilter;
@@ -16,9 +22,21 @@ interface SegmentSelectorProps {
 export default function SegmentSelector({ value, onChange, onCountChange }: SegmentSelectorProps) {
   const [userCount, setUserCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [groups, setGroups] = useState<GroupOption[]>([]);
+  const [groupsLoading, setGroupsLoading] = useState(false);
 
   useEffect(() => {
-    // Skip API call for manual and csv (they have their own counts)
+    if (value.type === 'group' && groups.length === 0) {
+      setGroupsLoading(true);
+      apiFetch('/api/admin/user-groups')
+        .then((res) => res.json())
+        .then((data) => setGroups(data.groups || []))
+        .catch(() => {})
+        .finally(() => setGroupsLoading(false));
+    }
+  }, [value.type]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     if (value.type === 'manual' || value.type === 'csv') {
       if (value.type === 'manual') {
         const count = (value.selectedUserIds || []).length;
@@ -107,6 +125,12 @@ export default function SegmentSelector({ value, onChange, onCountChange }: Segm
       label: 'בחירה ידנית',
       icon: UserCog,
       description: 'בחר משתמשים אחד אחד',
+    },
+    {
+      id: 'group',
+      label: 'קבוצה שמורה',
+      icon: FolderOpen,
+      description: 'בחר קבוצת משתמשים שמורה',
     },
     {
       id: 'csv',
@@ -215,6 +239,45 @@ export default function SegmentSelector({ value, onChange, onCountChange }: Segm
               });
             }}
           />
+        </div>
+      )}
+
+      {/* Group selection */}
+      {value.type === 'group' && (
+        <div>
+          {groupsLoading ? (
+            <div className="text-center py-6 text-sm text-[#7E7F90]">טוען קבוצות...</div>
+          ) : groups.length === 0 ? (
+            <div className="text-center py-6 bg-[#F7F7F8] rounded-xl">
+              <Users className="w-8 h-8 text-[#BDBDCB] mx-auto mb-2" />
+              <p className="text-sm text-[#7E7F90]">אין קבוצות שמורות</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {groups.map((group) => {
+                const isSelected = value.groupId === group.id;
+                return (
+                  <button
+                    key={group.id}
+                    type="button"
+                    onClick={() => onChange({ type: 'group', groupId: group.id })}
+                    className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all text-right ${
+                      isSelected
+                        ? 'border-[#69ADFF] bg-[#69ADFF]/5'
+                        : 'border-[#E8E8ED] bg-white hover:border-[#69ADFF]/50'
+                    }`}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium ${isSelected ? 'text-[#303150]' : 'text-[#7E7F90]'}`}>
+                        {group.name}
+                      </p>
+                      <p className="text-xs text-[#BDBDCB]">{group._count.members} חברים</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

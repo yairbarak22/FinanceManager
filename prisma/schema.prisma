@@ -42,6 +42,8 @@ model User {
   emailSequences        EmailSequence[]        // Drip email sequences
   maaserPreferences     MaaserPreference[]     // Maaser/Chomesh income preferences
   quarantinedFiles      QuarantinedFile[]      // Files in quarantine awaiting review
+  createdGroups         UserGroup[]            // User groups created by this admin
+  groupMemberships      UserGroupMember[]      // User groups this user belongs to
 }
 
 model Account {
@@ -184,6 +186,7 @@ model Liability {
   hasInterestRebate   Boolean  @default(false)
   linkage             String   @default("none") // none | index | foreign
   isActiveInCashFlow  Boolean  @default(true)
+  isMortgage          Boolean  @default(false)
   gemachId            String?  // UUID linking to paired Asset (null for regular liabilities)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
@@ -593,6 +596,35 @@ model EmailSequence {
 
   @@unique([userId, sequenceType])
   @@index([status, nextSendAt])
+  @@index([userId])
+}
+
+// ============================================
+// USER GROUPS - Saved user lists for sequences & campaigns
+// ============================================
+model UserGroup {
+  id          String            @id @default(cuid())
+  name        String
+  description String?
+  createdBy   String
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  creator     User              @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  members     UserGroupMember[]
+
+  @@index([createdBy])
+}
+
+model UserGroupMember {
+  id      String   @id @default(cuid())
+  groupId String
+  userId  String
+  addedAt DateTime @default(now())
+  group   UserGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([groupId])
   @@index([userId])
 }
 
