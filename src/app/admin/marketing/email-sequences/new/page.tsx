@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowRight,
   Send,
@@ -13,17 +13,41 @@ import {
   Eye,
   Clock,
   Code,
+  Users,
+  UserCog,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
 import UserSelector from '@/components/admin/UserSelector';
+import GroupSelector from '@/components/admin/GroupSelector';
 import EmailPreview from '@/components/admin/EmailPreview';
 import { courseSequenceEmails, stepCtaPaths } from '@/lib/emails/courseSequenceTemplates';
 
 export default function NewEmailSequencePage() {
   const { status: sessionStatus } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
+  const [selectionMode, setSelectionMode] = useState<'manual' | 'group'>('manual');
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const groupId = searchParams.get('groupId');
+    if (groupId) {
+      setSelectionMode('group');
+      (async () => {
+        try {
+          const res = await apiFetch(`/api/admin/user-groups/${groupId}`);
+          if (res.ok) {
+            const data = await res.json();
+            const userIds = (data.group.members || []).map((m: { userId: string }) => m.userId);
+            setSelectedGroupId(groupId);
+            setSelectedUserIds(userIds);
+          }
+        } catch { /* noop */ }
+      })();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [loading, setLoading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [previewStep, setPreviewStep] = useState(0);
@@ -180,13 +204,52 @@ export default function NewEmailSequencePage() {
             בחירת משתמשים
           </h2>
           <p className="text-sm text-[#7E7F90] mb-4">
-            בחר את המשתמשים שיקבלו את סדרת המיילים. רק משתמשים עם מנוי שיווקי
-            פעיל יופיעו.
+            בחר את המשתמשים שיקבלו את סדרת המיילים.
           </p>
-          <UserSelector
-            selectedUserIds={selectedUserIds}
-            onChange={setSelectedUserIds}
-          />
+
+          {/* Mode Toggle */}
+          <div className="flex gap-2 mb-4">
+            <button
+              type="button"
+              onClick={() => { setSelectionMode('manual'); setSelectedGroupId(null); setSelectedUserIds([]); }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                selectionMode === 'manual'
+                  ? 'bg-[#69ADFF]/10 text-[#69ADFF] border border-[#69ADFF]/30'
+                  : 'bg-[#F7F7F8] text-[#7E7F90] border border-transparent hover:border-[#E8E8ED]'
+              }`}
+            >
+              <UserCog className="w-3.5 h-3.5" />
+              בחירה ידנית
+            </button>
+            <button
+              type="button"
+              onClick={() => { setSelectionMode('group'); setSelectedUserIds([]); }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                selectionMode === 'group'
+                  ? 'bg-[#69ADFF]/10 text-[#69ADFF] border border-[#69ADFF]/30'
+                  : 'bg-[#F7F7F8] text-[#7E7F90] border border-transparent hover:border-[#E8E8ED]'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              קבוצה שמורה
+            </button>
+          </div>
+
+          {selectionMode === 'manual' ? (
+            <UserSelector
+              selectedUserIds={selectedUserIds}
+              onChange={setSelectedUserIds}
+            />
+          ) : (
+            <GroupSelector
+              selectedGroupId={selectedGroupId}
+              onChange={(groupId, userIds) => {
+                setSelectedGroupId(groupId);
+                setSelectedUserIds(userIds);
+              }}
+            />
+          )}
+
           {selectedUserIds.length > 0 && (
             <p className="text-sm text-[#69ADFF] font-semibold mt-3">
               {selectedUserIds.length} משתמשים נבחרו

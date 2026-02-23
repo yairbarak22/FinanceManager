@@ -186,6 +186,7 @@ model Liability {
   hasInterestRebate   Boolean  @default(false)
   linkage             String   @default("none") // none | index | foreign
   isActiveInCashFlow  Boolean  @default(true)
+  isMortgage          Boolean  @default(false)
   gemachId            String?  // UUID linking to paired Asset (null for regular liabilities)
   isMortgage          Boolean  @default(false)
   createdAt           DateTime @default(now())

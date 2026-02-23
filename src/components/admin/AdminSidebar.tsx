@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { Users, Mail, Shield, LogOut, ChevronDown, BarChart3, FileText, List, LayoutDashboard, Inbox, X, Timer } from 'lucide-react';
+import { Users, Mail, Shield, LogOut, ChevronDown, BarChart3, FileText, List, LayoutDashboard, Inbox, X, Timer, FolderOpen } from 'lucide-react';
 import { SensitiveData } from '@/components/common/SensitiveData';
 
 interface SubNavItem {
@@ -64,6 +64,12 @@ const navItems: NavItem[] = [
         label: 'סדרות מיילים',
         path: '/admin/marketing/email-sequences',
         icon: Timer,
+      },
+      {
+        id: 'marketing-groups',
+        label: 'קבוצות',
+        path: '/admin/marketing/user-groups',
+        icon: FolderOpen,
       },
       {
         id: 'marketing-logs',
