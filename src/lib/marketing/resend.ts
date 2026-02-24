@@ -111,9 +111,65 @@ export async function sendCampaignEmail(
   }
 }
 
+const CONCURRENCY = 2;
+const DELAY_BETWEEN_PAIRS_MS = 600;
+const RETRY_DELAY_MS = 2000;
+const MAX_RETRIES = 3;
+
 /**
- * Send batch emails (up to 100 per batch)
- * Resend supports up to 100 recipients per batch
+ * Send a single email with retry on 429 (rate limit)
+ */
+async function sendSingleWithRetry(
+  resend: Resend,
+  email: { to: string; subject: string; html: string; campaignId: string; userId: string | null },
+): Promise<{ email: string; id?: string; error?: string }> {
+  const htmlWithUnsubscribe = addUnsubscribeLink(email.html, email.userId, email.to);
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const result = await resend.emails.send({
+        from: 'myneto <admin@myneto.co.il>',
+        to: email.to,
+        subject: email.subject,
+        html: htmlWithUnsubscribe,
+        tags: [
+          { name: 'campaign_id', value: email.campaignId },
+          { name: 'user_id', value: email.userId || 'external' },
+          { name: 'type', value: 'marketing' },
+        ],
+      });
+
+      if (result.error) {
+        const msg = result.error.message || '';
+        const isRateLimit = msg.toLowerCase().includes('rate') || msg.includes('429') || msg.includes('Too many');
+        if (isRateLimit && attempt < MAX_RETRIES) {
+          const backoff = RETRY_DELAY_MS * (attempt + 1);
+          console.warn(`[Marketing] Rate limited on ${email.to}, retrying in ${backoff}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+          await new Promise((r) => setTimeout(r, backoff));
+          continue;
+        }
+        return { email: email.to, error: msg || 'Failed to send' };
+      }
+
+      return { email: email.to, id: result.data?.id };
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      const isRateLimit = msg.toLowerCase().includes('rate') || msg.includes('429');
+      if (isRateLimit && attempt < MAX_RETRIES) {
+        const backoff = RETRY_DELAY_MS * (attempt + 1);
+        console.warn(`[Marketing] Rate limited on ${email.to}, retrying in ${backoff}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+        await new Promise((r) => setTimeout(r, backoff));
+        continue;
+      }
+      return { email: email.to, error: msg };
+    }
+  }
+
+  return { email: email.to, error: 'Max retries exceeded' };
+}
+
+/**
+ * Send batch emails with rate limiting (max 2 req/s to stay within Resend limits)
  */
 export async function sendBatchEmails(
   emails: Array<{ to: string; subject: string; html: string; campaignId: string; userId: string | null }>
@@ -123,59 +179,26 @@ export async function sendBatchEmails(
     return emails.map((e) => ({ email: e.to, error: 'Resend API key not configured' }));
   }
 
-  // Resend batch API allows up to 100 emails
-  const BATCH_SIZE = 100;
   const results: Array<{ email: string; id?: string; error?: string }> = [];
 
-  for (let i = 0; i < emails.length; i += BATCH_SIZE) {
-    const batch = emails.slice(i, i + BATCH_SIZE);
-    
-    try {
-      // Send each email individually (Resend doesn't have a true batch API)
-      // But we can parallelize for better performance
-      const batchResults = await Promise.allSettled(
-        batch.map(async (email) => {
-          const htmlWithUnsubscribe = addUnsubscribeLink(email.html, email.userId, email.to);
-          const result = await resend.emails.send({
-            from: 'myneto <admin@myneto.co.il>',
-            to: email.to,
-            subject: email.subject,
-            html: htmlWithUnsubscribe,
-            tags: [
-              { name: 'campaign_id', value: email.campaignId },
-              { name: 'user_id', value: email.userId || 'external' },
-              { name: 'type', value: 'marketing' },
-            ],
-          });
+  for (let i = 0; i < emails.length; i += CONCURRENCY) {
+    const chunk = emails.slice(i, i + CONCURRENCY);
 
-          if (result.error) {
-            return { email: email.to, error: result.error.message || 'Failed to send' };
-          }
-          return { email: email.to, id: result.data?.id };
-        })
-      );
+    const chunkResults = await Promise.allSettled(
+      chunk.map((email) => sendSingleWithRetry(resend, email))
+    );
 
-      // Process results
-      batchResults.forEach((result, index) => {
-        if (result.status === 'fulfilled') {
-          results.push(result.value);
-        } else {
-          results.push({ email: batch[index].to, error: result.reason?.message || 'Unknown error' });
-        }
-      });
-
-      // Rate limiting: wait a bit between batches to avoid hitting limits
-      if (i + BATCH_SIZE < emails.length) {
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay
+    for (let j = 0; j < chunkResults.length; j++) {
+      const r = chunkResults[j];
+      if (r.status === 'fulfilled') {
+        results.push(r.value);
+      } else {
+        results.push({ email: chunk[j].to, error: r.reason?.message || 'Unknown error' });
       }
-    } catch (error) {
-      // If batch fails, mark all as failed
-      batch.forEach((email) => {
-        results.push({
-          email: email.to,
-          error: error instanceof Error ? error.message : 'Batch send failed',
-        });
-      });
+    }
+
+    if (i + CONCURRENCY < emails.length) {
+      await new Promise((r) => setTimeout(r, DELAY_BETWEEN_PAIRS_MS));
     }
   }
 

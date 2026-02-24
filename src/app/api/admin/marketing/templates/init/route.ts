@@ -5,8 +5,8 @@ import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { defaultTemplates } from '@/lib/marketing/defaultTemplates';
 
 /**
- * POST - Initialize default system templates
- * Idempotent: only creates templates that don't already exist (by name)
+ * POST - Initialize & sync default system templates
+ * Creates new templates and updates existing ones when content/subject changed in code
  */
 export async function POST() {
   try {
@@ -21,52 +21,79 @@ export async function POST() {
       );
     }
 
-    // Check which templates already exist
     const existingTemplates = await prisma.emailTemplate.findMany({
       where: { isSystem: true },
-      select: { name: true },
+      select: { id: true, name: true, subject: true, content: true, description: true, category: true },
     });
-    const existingNames = new Set(existingTemplates.map((t) => t.name));
+    const existingByName = new Map(existingTemplates.map((t) => [t.name, t]));
 
-    // Filter out templates that already exist
-    const templatesToCreate = defaultTemplates.filter(
-      (t) => !existingNames.has(t.name)
+    let created = 0;
+    let updated = 0;
+
+    const results = await Promise.all(
+      defaultTemplates.map(async (t) => {
+        const existing = existingByName.get(t.name);
+
+        if (!existing) {
+          created++;
+          return prisma.emailTemplate.create({
+            data: {
+              name: t.name,
+              subject: t.subject,
+              content: t.content,
+              description: t.description,
+              category: t.category,
+              isSystem: true,
+              createdBy: userId,
+            },
+            include: {
+              creator: { select: { id: true, name: true, email: true } },
+            },
+          });
+        }
+
+        const needsUpdate =
+          existing.subject !== t.subject ||
+          existing.content !== t.content ||
+          existing.description !== t.description ||
+          existing.category !== t.category;
+
+        if (needsUpdate) {
+          updated++;
+          return prisma.emailTemplate.update({
+            where: { id: existing.id },
+            data: {
+              subject: t.subject,
+              content: t.content,
+              description: t.description,
+              category: t.category,
+            },
+            include: {
+              creator: { select: { id: true, name: true, email: true } },
+            },
+          });
+        }
+
+        return null;
+      })
     );
 
-    if (templatesToCreate.length === 0) {
+    const changedTemplates = results.filter(Boolean);
+
+    if (changedTemplates.length === 0) {
       return NextResponse.json({
-        message: 'כל תבניות ברירת המחדל כבר קיימות',
+        message: 'כל התבניות מעודכנות',
         created: 0,
+        updated: 0,
         templates: [],
       });
     }
 
-    // Create missing templates
-    const createdTemplates = await Promise.all(
-      templatesToCreate.map((t) =>
-        prisma.emailTemplate.create({
-          data: {
-            name: t.name,
-            subject: t.subject,
-            content: t.content,
-            description: t.description,
-            category: t.category,
-            isSystem: true,
-            createdBy: userId,
-          },
-          include: {
-            creator: {
-              select: { id: true, name: true, email: true },
-            },
-          },
-        })
-      )
-    );
-
     return NextResponse.json({
-      message: `נוצרו ${createdTemplates.length} תבניות ברירת מחדל`,
-      created: createdTemplates.length,
-      templates: createdTemplates,
+      message: `${created > 0 ? `נוצרו ${created} תבניות` : ''}${created > 0 && updated > 0 ? ', ' : ''}${updated > 0 ? `עודכנו ${updated} תבניות` : ''}`,
+      created,
+      updated,
+      templates: changedTemplates,
     });
   } catch (error) {
     console.error('Error initializing templates:', error);

@@ -14,6 +14,7 @@ import {
   Sparkles,
   Filter,
   CheckCircle2,
+  RefreshCw,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
 import { categoryLabels } from '@/lib/marketing/defaultTemplates';
@@ -184,6 +185,21 @@ export default function TemplatesPage() {
               )}
               <span className="hidden sm:inline">טען תבניות מוכנות</span>
               <span className="sm:hidden">טען</span>
+            </button>
+          )}
+          {hasSystemTemplates && (
+            <button
+              onClick={handleLoadDefaults}
+              disabled={loadingDefaults}
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#F7F7F8] text-[#7E7F90] rounded-xl hover:bg-[#E8E8ED] transition-colors disabled:opacity-50 text-xs sm:text-sm"
+            >
+              {loadingDefaults ? (
+                <div className="w-4 h-4 border-2 border-[#7E7F90] border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+              <span className="hidden sm:inline">טען תבניות עדכניות</span>
+              <span className="sm:hidden">עדכן</span>
             </button>
           )}
           <button

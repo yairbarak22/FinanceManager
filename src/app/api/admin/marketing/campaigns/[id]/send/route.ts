@@ -143,13 +143,17 @@ export async function POST(
 
     // Prepare emails
     // Handle both regular users and external emails (from CSV)
-    const emails = users.map((user) => ({
-      to: user.email,
-      subject: campaign.subject,
-      html: campaign.content,
-      campaignId: campaign.id,
-      userId: user.id.startsWith('external-') ? null : user.id, // null for external emails
-    }));
+    // Replace [שם המשתמש] with the actual user name per recipient
+    const emails = users.map((user) => {
+      const displayName = user.name || 'משתמש';
+      return {
+        to: user.email,
+        subject: campaign.subject.replace(/\[שם המשתמש\]/g, displayName),
+        html: campaign.content.replace(/\[שם המשתמש\]/g, displayName),
+        campaignId: campaign.id,
+        userId: user.id.startsWith('external-') ? null : user.id, // null for external emails
+      };
+    });
 
     // Send emails in background (don't wait for completion)
     // This allows the API to return quickly

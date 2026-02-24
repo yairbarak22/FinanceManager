@@ -479,6 +479,151 @@ const simpleTextTemplate: DefaultTemplate = {
 };
 
 // ─────────────────────────────────────────────────────────────
+// Template 7: Course Lesson 1 Promotion
+// ─────────────────────────────────────────────────────────────
+const courseLesson1Template: DefaultTemplate = {
+  name: 'פרסום שיעור 1',
+  subject: '{{title}}',
+  description: 'תבנית לפרסום פרק 1 בסדרת הסרטונים "המסלול הבטוח". כוללת הודעה אישית עם שם המשתמש, תיאור הפרק וכפתור צפייה.',
+  category: 'promotional',
+  content: `<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>myneto</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800&display=swap');
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Heebo','Segoe UI',Tahoma,Arial,sans-serif; direction:rtl; }
+    @media only screen and (max-width:600px) {
+      .container { width:100% !important; padding:16px !important; }
+      .content-cell { padding:28px 20px !important; }
+      .hero-title { font-size:22px !important; }
+      .body-text { font-size:15px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#F0F0F3;font-family:'Heebo','Segoe UI',Tahoma,Arial,sans-serif;direction:rtl;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F0F0F3;">
+    <tr>
+      <td align="center" style="padding:40px 16px;">
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+          <tr>
+            <td align="center" style="padding:0 0 28px 0;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="font-family:'Heebo',sans-serif;font-size:26px;font-weight:800;color:#303150;letter-spacing:-0.5px;">
+                    my<span style="color:#69ADFF;">NETO</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;border-radius:24px;overflow:hidden;box-shadow:0 2px 24px rgba(0,0,0,0.06);">
+                <tr>
+                  <td style="background:#69ADFF;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+                </tr>
+                <tr>
+                  <td style="padding:28px 32px 0 32px;">
+                    
+                  </td>
+                </tr>
+                
+        <tr>
+          <td class="content-cell" style="padding:24px 32px 0 32px;">
+            <h1 class="hero-title" style="font-family:'Heebo',sans-serif;font-size:26px;font-weight:800;color:#303150;margin:0 0 20px 0;line-height:1.4;">
+              הצעד הבא בדרך ליעדים שלך
+            </h1>
+            <div class="body-text" style="font-family:'Heebo',sans-serif;font-size:16px;color:#4A4A5A;line-height:1.9;">
+               <p style="margin:0 0 16px 0;">שלום [שם המשתמש],</p>
+              
+              <p style="margin:0 0 16px 0;">
+                הזנת את הנתונים שלך למערכת – וזה צעד ראשון וחשוב בדרך לעשות סדר אמיתי במספרים.
+              </p>
+              
+              <p style="margin:0 0 16px 0;">
+                אנחנו עובדים כל הזמן על שדרוג הפלטפורמה, ובעזרת השם, בהמשך השבוע תעלה למערכת אפשרות חדשה: <strong style="color:#303150;">הפקת דוחות סיכום חודשיים.</strong>
+              </p>
+              
+              <p style="margin:0 0 16px 0;">
+                הדוחות האלו ינתחו באופן אוטומטי לחלוטין – באמצעות טכנולוגיית AI מתקדמת – את תזרים המזומנים שלך ואת קצב ההתקדמות ליעדים שהגדרת (הכל כמובן נשאר פרטי ומוצפן, רק לעיניך).
+              </p>
+              
+              <p style="margin:0 0 16px 0;">
+                <strong style="color:#303150;">ובינתיים?</strong><br>
+                עד שהפיצ'ר החדש יעלה והמדריך המלא לפתיחת תיק מסחר יישלח אליך, לא רצינו שתחכה.
+              </p>
+              
+              <p style="margin:0 0 16px 0;">
+                פתחנו עבורך גישה מיידית לפרק הראשון בסדרת הסרטונים שלנו – <strong style="color:#303150;">"המסלול הבטוח"</strong>.
+              </p>
+              
+              <p style="margin:0 0 16px 0;">
+                כולנו חולמים לחתן את הילדים בכבוד ולחיות במנוחת הנפש. בפרק הראשון נדבר על העיקרון היחיד שהופך גם חיסכון קטן לסכום כסף משמעותי שגדל מעצמו:<br>
+                <strong style="color:#303150;">אפקט "כדור השלג" של הכסף.</strong>
+              </p>
+              
+              <p style="margin:0 0 16px 0;">
+                בלי מושגים מסובכים, בלי מילים מפוצצות. רק עיקרון אחד פשוט שחובה להכיר.
+              </p>
+            </div>
+          </td>
+        </tr>
+        
+  <tr>
+    <td style="padding:8px 32px 0 32px;text-align:center;">
+      <a href="https://www.myneto.co.il/courses?lesson=l-1" style="display:inline-block;background:#69ADFF;color:#FFFFFF;font-family:'Heebo',sans-serif;font-size:15px;font-weight:700;text-decoration:none;padding:14px 36px;border-radius:12px;letter-spacing:0.2px;">
+        צפייה בפרק 1 (3:24 דק׳)
+      </a>
+    </td>
+  </tr>
+        <tr>
+          <td style="padding:20px 32px 0 32px;">
+            <p style="font-family:'Heebo',sans-serif;font-size:15px;color:#4A4A5A;line-height:1.8;margin:0;">
+              צפייה מועילה,<br>
+              <strong style="color:#303150;">צוות myNETO</strong>
+            </p>
+          </td>
+        </tr>
+                <tr>
+                  <td style="padding:8px 32px 28px 32px;">
+                    
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:20px 0 8px 0;">
+    <tr><td style="width:20%;padding:0 2px;"><div style="height:4px;border-radius:2px;background:#69ADFF;"></div></td><td style="width:20%;padding:0 2px;"><div style="height:4px;border-radius:2px;background:#E8E8ED;"></div></td><td style="width:20%;padding:0 2px;"><div style="height:4px;border-radius:2px;background:#E8E8ED;"></div></td><td style="width:20%;padding:0 2px;"><div style="height:4px;border-radius:2px;background:#E8E8ED;"></div></td><td style="width:20%;padding:0 2px;"><div style="height:4px;border-radius:2px;background:#E8E8ED;"></div></td></tr>
+  </table>
+
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 0 0 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="text-align:center;padding:16px;">
+                    <p style="font-family:'Heebo',sans-serif;font-size:12px;color:#BDBDCB;margin:0;line-height:1.8;">
+                      קיבלת מייל זה כי נרשמת ל-myNETO<br>
+                      &copy; 2026 myNETO. כל הזכויות שמורות.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+};
+
+// ─────────────────────────────────────────────────────────────
 // Export all templates
 // ─────────────────────────────────────────────────────────────
 export const defaultTemplates: DefaultTemplate[] = [
@@ -488,6 +633,7 @@ export const defaultTemplates: DefaultTemplate[] = [
   productLaunchTemplate,
   eventInvitationTemplate,
   simpleTextTemplate,
+  courseLesson1Template,
 ];
 
 /**
@@ -508,6 +654,7 @@ export const templateVariables = [
   { name: '{{buttonText}}', description: 'טקסט כפתור הפעולה' },
   { name: '{{buttonUrl}}', description: 'קישור כפתור הפעולה' },
   { name: '{{preheader}}', description: 'טקסט תצוגה מקדימה בתיבת הדואר' },
+  { name: '[שם המשתמש]', description: 'שם המשתמש - מוחלף אוטומטית בשליחת קמפיין' },
 ];
 
 /**

@@ -135,15 +135,18 @@ export default function NewCampaignPage() {
 
   const handleTemplateSelect = (templateId: string) => {
     if (selectedTemplateId === templateId) {
-      // Deselect
       setSelectedTemplateId('');
       return;
     }
     setSelectedTemplateId(templateId);
     const template = templates.find((t) => t.id === templateId);
     if (template) {
-      setSubject(template.subject);
       setContent(template.content);
+      if (template.subject && template.subject !== '{{title}}') {
+        setSubject(template.subject);
+      } else {
+        setSubject('');
+      }
     }
   };
 
@@ -503,6 +506,25 @@ export default function NewCampaignPage() {
               </div>
             )}
 
+            {/* Subject field - prominent in step 2 */}
+            <div className={`p-4 rounded-xl border-2 ${!subject || subject === '{{title}}' ? 'border-[#F18AB5] bg-[#F18AB5]/5' : 'border-[#0DBACC] bg-[#0DBACC]/5'}`}>
+              <label className="block text-sm font-bold text-[#303150] mb-2">
+                נושא המייל (מה הנמענים יראו בתיבת הדואר) *
+              </label>
+              <input
+                type="text"
+                value={subject === '{{title}}' ? '' : subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="הקלד כאן את נושא המייל..."
+                className="w-full px-4 py-3 border border-[#E8E8ED] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent text-base"
+              />
+              {(!subject || subject === '{{title}}') && (
+                <p className="text-xs text-[#F18AB5] mt-2 font-medium">
+                  חובה למלא נושא למייל -- זה מה שהנמענים יראו בתיבת הדואר שלהם
+                </p>
+              )}
+            </div>
+
             {/* Split-screen: Editor + Preview */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Editor */}
@@ -559,7 +581,7 @@ export default function NewCampaignPage() {
             </button>
             <button
               onClick={() => setStep(3)}
-              disabled={!content}
+              disabled={!content || !subject || subject === '{{title}}'}
               className="flex items-center gap-2 px-5 py-2.5 lg:px-6 lg:py-3 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm lg:text-base"
             >
               הבא
