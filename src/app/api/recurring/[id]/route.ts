@@ -308,31 +308,37 @@ export async function DELETE(
 
       if (recurringToDelete) {
         // Try to find another active recurring transaction with the same category
+        const sharedUserIds = await getSharedUserIds(userId);
         const alternativeRecurring = await prisma.recurringTransaction.findFirst({
           where: {
-            userId: recurringToDelete.userId,
+            userId: { in: sharedUserIds },
             category: linkedGoal.category,
             type: 'expense',
             isActive: true,
-            id: { not: id }, // Not the one being deleted
+            id: { not: id },
           },
         });
 
         if (alternativeRecurring) {
-          // Link goal to alternative recurring transaction and recalculate deadline
-          const newDeadline = recalculateDeadline(
-            linkedGoal.targetAmount,
-            linkedGoal.currentAmount,
-            alternativeRecurring.amount
-          );
-
-          await prisma.financialGoal.update({
-            where: { id: linkedGoal.id },
-            data: {
-              recurringTransactionId: alternativeRecurring.id,
-              ...(newDeadline ? { deadline: newDeadline } : {}),
-            },
+          const existingLink = await prisma.financialGoal.findUnique({
+            where: { recurringTransactionId: alternativeRecurring.id },
           });
+
+          if (!existingLink) {
+            const newDeadline = recalculateDeadline(
+              linkedGoal.targetAmount,
+              linkedGoal.currentAmount,
+              alternativeRecurring.amount
+            );
+
+            await prisma.financialGoal.update({
+              where: { id: linkedGoal.id },
+              data: {
+                recurringTransactionId: alternativeRecurring.id,
+                ...(newDeadline ? { deadline: newDeadline } : {}),
+              },
+            });
+          }
         }
         // If no alternative found, goal.recurringTransactionId will be set to null by onDelete: SetNull
       }
@@ -359,7 +365,14 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting recurring transaction:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorCode = (error as Record<string, unknown>)?.code;
+    console.error('Error deleting recurring transaction:', {
+      error: errorMessage,
+      code: errorCode,
+      recurringTransactionId: id,
+      userId,
+    });
     return NextResponse.json({ error: 'Failed to delete recurring transaction' }, { status: 500 });
   }
 }
