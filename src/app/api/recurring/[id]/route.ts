@@ -282,15 +282,16 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  let userId: string | undefined;
   try {
-    const { userId, error } = await requireAuth();
-    if (error) return error;
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+    userId = auth.userId;
 
     // Check delete permission for shared accounts
     const deletePermission = await checkPermission(userId, 'canDelete');
     if (!deletePermission.allowed) return deletePermission.error!;
-
-    const { id } = await params;
 
     // Use shared account to allow deleting records from all members
     const sharedWhere = await withSharedAccountId(id, userId);
