@@ -9,7 +9,7 @@ export const periodicReportRequestSchema = z
     year: z.number().int(),
     deliveryMethod: z.enum(['download', 'email']),
     email: z.string().email().optional(),
-    password: z.string().min(4).optional(),
+    password: z.string().min(4),
   })
   .refine(
     (data) => {
@@ -32,12 +32,12 @@ export const periodicReportRequestSchema = z
   .refine(
     (data) => {
       if (data.deliveryMethod === 'email') {
-        return !!data.email && !!data.password;
+        return !!data.email;
       }
       return true;
     },
     {
-      message: 'כתובת אימייל וסיסמה נדרשים לשליחה במייל',
+      message: 'כתובת אימייל נדרשת לשליחה במייל',
       path: ['email'],
     }
   );

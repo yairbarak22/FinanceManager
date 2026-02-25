@@ -433,7 +433,11 @@ export default function PeriodicReportModal({
   }, [selectedYear, calendarType, selectedMonth]);
 
   const handleSubmit = async () => {
-    if (deliveryMethod === 'email' && password.length < 4) {
+    if (password.length === 0) {
+      setError('יש להזין סיסמה להגנת הדוח');
+      return;
+    }
+    if (password.length < 4) {
       setError('הסיסמה חייבת להכיל לפחות 4 תווים');
       return;
     }
@@ -454,8 +458,8 @@ export default function PeriodicReportModal({
         deliveryMethod,
         ...(deliveryMethod === 'email' && {
           email: session?.user?.email || '',
-          password,
         }),
+        password,
       };
 
       const response = await apiFetch('/api/periodic-reports/generate', {
@@ -657,42 +661,40 @@ export default function PeriodicReportModal({
             </div>
           </div>
 
-          {/* Password Input (conditional) */}
-          {deliveryMethod === 'email' && (
-            <div
-              className="rounded-xl p-4"
-              style={{ backgroundColor: '#F7F7F8' }}
-            >
-              <div className="flex items-start gap-2 mb-3">
-                <Lock
-                  className="w-4 h-4 mt-0.5 flex-shrink-0"
-                  style={{ color: '#7E7F90' }}
-                  strokeWidth={1.75}
-                />
-                <p
-                  className="text-xs leading-relaxed"
-                  style={{ color: '#7E7F90' }}
-                >
-                  לשמירה על פרטיותך, הקובץ יינעל בסיסמה.
-                  <br />
-                  בחר/י סיסמה לפתיחת הדוח:
-                </p>
-              </div>
-              <input
-                type="password"
-                className="input"
-                placeholder="סיסמה (לפחות 4 תווים)"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError(null);
-                }}
-                minLength={4}
-                dir="ltr"
-                aria-label="סיסמה להגנת הקובץ"
+          {/* Password Input */}
+          <div
+            className="rounded-xl p-4"
+            style={{ backgroundColor: '#F7F7F8' }}
+          >
+            <div className="flex items-start gap-2 mb-3">
+              <Lock
+                className="w-4 h-4 mt-0.5 flex-shrink-0"
+                style={{ color: '#7E7F90' }}
+                strokeWidth={1.75}
               />
+              <p
+                className="text-xs leading-relaxed"
+                style={{ color: '#7E7F90' }}
+              >
+                הדוח מוגן באמצעות סיסמה.
+                <br />
+                הזן/י סיסמה לנעילת הקובץ:
+              </p>
             </div>
-          )}
+            <input
+              type="password"
+              className="input"
+              placeholder="הזן סיסמה (לפחות 4 תווים)"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError(null);
+              }}
+              minLength={4}
+              dir="ltr"
+              aria-label="סיסמה להגנת הקובץ"
+            />
+          </div>
 
           {/* Error Message */}
           {error && (

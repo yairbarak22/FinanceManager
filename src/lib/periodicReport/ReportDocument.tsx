@@ -86,7 +86,7 @@ const s = StyleSheet.create({
   brand: { fontWeight: 700, fontSize: 14, color: C.accent },
   titleBlock: { alignItems: 'flex-end', flexShrink: 1 },
   title: { fontWeight: 700, fontSize: 13, color: C.black, textAlign: 'right' },
-  meta: { fontSize: 8, color: C.mediumGrey, textAlign: 'right', marginTop: 3, alignSelf: 'stretch' as const },
+  meta: { fontSize: 8, color: C.mediumGrey, textAlign: 'right', marginTop: 3 },
 
   // ---- Section Title ----
   sectionWrap: { marginTop: 20 },
@@ -310,8 +310,6 @@ function Header({ periodLabel }: { periodLabel: string }) {
 
   const monthName = periodLabel.split(' ')[0] || periodLabel;
 
-  const metaString = `הופק: ${dateFormatted}`;
-
   return (
     <View style={s.headerBanner} fixed>
       <View style={s.headerRow}>
@@ -320,7 +318,7 @@ function Header({ periodLabel }: { periodLabel: string }) {
           <Text style={s.title}>
             {prepareRtl(`תמונת מצב פיננסית - ${monthName}`)}
           </Text>
-          <Text style={s.meta}>{metaString}</Text>
+          <Text style={s.meta}>{`${dateFormatted} :${prepareRtl('הופק')}`}</Text>
         </View>
       </View>
     </View>

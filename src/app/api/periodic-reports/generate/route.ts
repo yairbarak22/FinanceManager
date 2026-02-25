@@ -98,8 +98,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate PDF with @react-pdf/renderer
-    const pdfPassword =
-      deliveryMethod === 'email' ? parsed.data.password : undefined;
+    const pdfPassword = parsed.data.password;
 
     let pdfBuffer: Buffer = Buffer.from(
       await renderToBuffer(
