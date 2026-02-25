@@ -5,7 +5,7 @@ import {
   getEffectiveMonthlyExpense,
   isLiabilityActiveInCashFlow,
 } from '@/lib/loanCalculations';
-import { getCategoryInfo } from '@/lib/categories';
+import { getCategoryInfo, type CategoryInfo } from '@/lib/categories';
 import {
   calculateGoalStatus,
   calculateMonthlyContribution,
@@ -849,7 +849,7 @@ async function getLastYearCategoryBreakdown(
 
 function convertBreakdownToHebrewNames(
   breakdown: Record<string, number>,
-  customCategoryInfos: { id: string; name: string; nameHe: string; isCustom: boolean }[],
+  customCategoryInfos: CategoryInfo[],
   txType: 'expense' | 'income' = 'expense'
 ): Record<string, number> {
   const result: Record<string, number> = {};
