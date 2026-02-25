@@ -31,6 +31,7 @@ import ProfileModal from '@/components/ProfileModal';
 import AccountSettings from '@/components/AccountSettings';
 import { QuickAddModal } from '@/components/quick-add';
 import MaaserCalculatorModal from '@/components/modals/MaaserCalculatorModal';
+import { PeriodicReportTrigger } from '@/components/PeriodicReportModal';
 import {
   Transaction,
   RecurringTransaction,
@@ -786,6 +787,7 @@ export default function DashboardPage() {
             <SectionHeader
               title="המצב הפיננסי"
               subtitle="השווי הנקי שלך וחלוקת הנכסים"
+              action={<PeriodicReportTrigger />}
             />
             
             {/* 12-column grid: 8 cols for hero, 4 cols for chart */}
