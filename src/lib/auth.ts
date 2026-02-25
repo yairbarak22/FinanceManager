@@ -6,6 +6,7 @@ import { prisma } from './prisma';
 import { config } from './config';
 import { logAuditEvent, AuditAction } from './auditLog';
 import { processCalculatorInvites } from './calculatorInvites';
+import { addSubscriberToMailerLite } from './mailerlite';
 
 // Cookie name for signup source tracking
 const SIGNUP_SOURCE_COOKIE = 'signup_source';
@@ -74,7 +75,15 @@ export const authOptions: NextAuthOptions = {
           await markUserSignupSource(user.id);
         } catch (error) {
           console.error('[Auth] Failed to mark signup source:', error);
-          // Don't block user creation if this fails
+        }
+      }
+
+      // Add to MailerLite mailing list
+      if (user?.email) {
+        try {
+          await addSubscriberToMailerLite(user.email, user.name);
+        } catch (error) {
+          console.error('[Auth] Failed to add user to MailerLite:', error);
         }
       }
     },

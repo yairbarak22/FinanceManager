@@ -32,6 +32,9 @@ interface Config {
   upstashRedisRestUrl?: string;
   upstashRedisRestToken?: string;
 
+  // Email Marketing
+  mailerliteApiToken?: string;
+
   // Environment
   nodeEnv: 'development' | 'production' | 'test';
 }
@@ -102,6 +105,9 @@ function loadConfig(): Config {
     // Rate Limiting (Upstash Redis)
     upstashRedisRestUrl: process.env.UPSTASH_REDIS_REST_URL,
     upstashRedisRestToken: process.env.UPSTASH_REDIS_REST_TOKEN,
+
+    // Email Marketing
+    mailerliteApiToken: process.env.MAILERLITE_API_TOKEN,
 
     // Environment
     nodeEnv: (process.env.NODE_ENV as Config['nodeEnv']) || 'development',
