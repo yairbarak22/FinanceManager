@@ -45,6 +45,7 @@ model User {
   createdGroups         UserGroup[]            // User groups created by this admin
   groupMemberships      UserGroupMember[]      // User groups this user belongs to
   ctaClicks             CtaClick[]             // CTA click tracking
+  monthlyReports        MonthlyReport[]        // Monthly financial reports
 }
 
 model Account {
@@ -732,4 +733,28 @@ model QuarantinedFile {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+}
+
+model MonthlyReport {
+  id                   String   @id @default(cuid())
+  userId               String
+  monthKey             String
+  totalIncome          Float    @default(0)
+  totalExpenses        Float    @default(0)
+  netCashflow          Float    @default(0)
+  netWorth             Float    @default(0)
+  totalAssets          Float    @default(0)
+  totalLiabilities     Float    @default(0)
+  aiInsights           Json?
+  categoryBreakdown    Json?
+  goalsProgress        Json?
+  upcomingObligations  Json?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, monthKey])
+  @@index([userId])
+  @@index([monthKey])
 }
