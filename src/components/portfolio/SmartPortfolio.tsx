@@ -10,6 +10,7 @@ import { PortfolioSummaryHero } from './PortfolioSummaryHero';
 import { SmartInsightsPanel } from './SmartInsightsPanel';
 import { PortfolioSettingsCard } from './PortfolioSettingsCard';
 import { ImportPortfolioDialog } from './ImportPortfolioDialog';
+import { InvestmentsSkeleton } from './InvestmentsSkeleton';
 import SectionHeader from '@/components/dashboard/SectionHeader';
 import { apiFetch } from '@/lib/utils';
 
@@ -886,22 +887,7 @@ export function SmartPortfolio({ className = '' }: SmartPortfolioProps) {
 
   // Loading state
   if (loading && !data) {
-    return (
-      <div
-        className={`min-h-[60vh] flex items-center justify-center ${className}`}
-        style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-      >
-        <div className="flex flex-col items-center gap-4">
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center"
-            style={{ background: 'rgba(105, 173, 255, 0.1)' }}
-          >
-            <RefreshCw className="w-8 h-8 text-[#69ADFF] animate-spin" strokeWidth={1.75} />
-          </div>
-          <p className="text-[#7E7F90] text-[0.9375rem]">טוען נתוני שוק...</p>
-        </div>
-      </div>
-    );
+    return <InvestmentsSkeleton className={className} />;
   }
 
   // Error state

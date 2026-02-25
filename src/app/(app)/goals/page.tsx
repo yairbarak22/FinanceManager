@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Target, Loader2 } from 'lucide-react';
+import { Target } from 'lucide-react';
 import { useGoals, useCreateGoal, useUpdateGoal, useDeleteGoal } from '@/hooks/useGoals';
-import { GoalSimulator, GoalCard, GoalModal, GoalQuickTemplates } from '@/components/goals';
+import { GoalSimulator, GoalCard, GoalModal, GoalQuickTemplates, GoalsSkeleton } from '@/components/goals';
 import { AppLayout } from '@/components/layout';
 import { SectionHeader } from '@/components/dashboard';
 import Card from '@/components/ui/Card';
@@ -146,12 +146,7 @@ export default function GoalsPage() {
           />
           
           {isLoading ? (
-            <Card className="p-8 flex items-center justify-center">
-              <Loader2 
-                className="w-8 h-8 animate-spin"
-                style={{ color: '#69ADFF' }}
-              />
-            </Card>
+            <GoalsSkeleton />
           ) : error ? (
             <Card className="p-8 text-center">
               <p style={{ color: '#F18AB5' }}>שגיאה בטעינת היעדים</p>

@@ -6,7 +6,8 @@ import {
   SectionHeader, 
   NetWorthHeroCard, 
   MonthlySummaryCards,
-  PortfolioList
+  PortfolioList,
+  DashboardSkeleton
 } from '@/components/dashboard';
 import AssetAllocationChart from '@/components/AssetAllocationChart';
 import AssetsSection from '@/components/AssetsSection';
@@ -773,15 +774,7 @@ export default function DashboardPage() {
     >
       {/* Loading State */}
       {isLoading ? (
-        <div className="flex items-center justify-center h-[60vh]">
-          <div className="text-center">
-            <div 
-              className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4"
-              style={{ borderColor: '#69ADFF', borderTopColor: 'transparent' }}
-            />
-            <p style={{ color: 'var(--text-secondary, #7E7F90)' }}>טוען נתונים...</p>
-          </div>
-        </div>
+        <DashboardSkeleton />
       ) : (
         /* Main Dashboard Content - Fincheck Style */
         <div className="space-y-12 pb-12">

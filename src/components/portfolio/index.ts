@@ -10,3 +10,4 @@ export { SectorPieChart } from './SectorPieChart';
 export { AllocationProgressBar } from './AllocationProgressBar';
 export { CurrencyToggle } from './CurrencyToggle';
 export { PortfolioSettingsCard } from './PortfolioSettingsCard';
+export { InvestmentsSkeleton } from './InvestmentsSkeleton';
