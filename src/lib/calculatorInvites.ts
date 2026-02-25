@@ -146,7 +146,7 @@ export async function createCalculatorInvite(
     return { success: false, error: 'משתמש זה כבר רשום ל-NETO' };
   }
 
-  // Rate limit: max 5 invites per day
+  // Rate limit: max 10 invites per day
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
@@ -157,8 +157,8 @@ export async function createCalculatorInvite(
     },
   });
 
-  if (invitesToday >= 5) {
-    return { success: false, error: 'הגעת למגבלת ההזמנות היומית (5 הזמנות ליום)' };
+  if (invitesToday >= 10) {
+    return { success: false, error: 'הגעת למגבלת ההזמנות היומית (10 הזמנות ליום)' };
   }
 
   // Create the invite (expires in 30 days)

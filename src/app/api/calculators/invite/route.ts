@@ -3,6 +3,10 @@ import { requireAuth } from '@/lib/authHelpers';
 import { prisma } from '@/lib/prisma';
 import { createCalculatorInvite } from '@/lib/calculatorInvites';
 import { sendCalculatorInviteEmail } from '@/lib/emails/calculatorInvite';
+import { validateRequest } from '@/lib/validateRequest';
+import { sendFriendInviteSchema } from '@/lib/validationSchemas';
+import { checkRateLimitWithIp, getClientIp, RATE_LIMITS, IP_RATE_LIMITS } from '@/lib/rateLimit';
+import { AuditAction, getRequestInfo, logAuditEvent } from '@/lib/auditLog';
 
 /**
  * POST /api/calculators/invite
@@ -13,12 +17,23 @@ export async function POST(request: Request) {
     const { userId, error } = await requireAuth();
     if (error) return error;
 
-    const { email } = await request.json();
+    const { data, errorResponse } = await validateRequest(request, sendFriendInviteSchema);
+    if (errorResponse) return errorResponse;
+    const { email } = data;
 
-    if (!email || typeof email !== 'string') {
+    const ipAddress = getClientIp(request.headers);
+    const rateLimitResult = await checkRateLimitWithIp(
+      userId,
+      ipAddress,
+      RATE_LIMITS.inviteUserDaily,
+      IP_RATE_LIMITS.inviteDaily,
+      'calculator-invite'
+    );
+
+    if (!rateLimitResult.success) {
       return NextResponse.json(
-        { error: 'נא להזין כתובת אימייל' },
-        { status: 400 }
+        { error: 'הגעת למגבלת ההזמנות היומית. אפשר לנסות שוב מחר.' },
+        { status: 429 }
       );
     }
 
@@ -62,6 +77,22 @@ export async function POST(request: Request) {
       console.error('[API] Failed to send invite email:', emailError);
       // Continue - invite was created successfully
     }
+
+    const requestInfo = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.INVITE_SENT,
+      entityType: 'CalculatorInvite',
+      entityId: result.inviteId,
+      metadata: {
+        channel: 'sidebar',
+        inviteType: 'friend_signup_referral',
+        emailDomain: email.split('@')[1] || 'unknown',
+        emailSent,
+      },
+      ipAddress: requestInfo.ipAddress,
+      userAgent: requestInfo.userAgent,
+    });
 
     return NextResponse.json({
       success: true,

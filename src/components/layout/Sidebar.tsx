@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
@@ -10,7 +10,6 @@ import {
   PieChart,
   ChevronDown,
   X,
-  User,
   UserCog,
   Users,
   Sparkles,
@@ -19,6 +18,7 @@ import {
   Calculator,
   GraduationCap,
   PlayCircle,
+  Loader2,
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,6 +27,7 @@ import { useOnboarding } from '@/context/OnboardingContext';
 import { createPortal } from 'react-dom';
 import { SensitiveData } from '@/components/common/SensitiveData';
 import { trackMixpanelEvent, resetMixpanel } from '@/lib/mixpanel';
+import { apiFetch } from '@/lib/utils';
 
 interface SubNavItem {
   id: string;
@@ -51,7 +52,7 @@ interface SidebarProps {
 }
 
 // Build nav items (investments submenu is dynamic based on Haredi user status)
-function buildNavItems(isHaredi: boolean): NavItem[] {
+function buildNavItems(): NavItem[] {
   return [
     {
       id: 'dashboard',
@@ -135,6 +136,10 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
   }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
   const [mounted, setMounted] = useState(false);
   const [isHarediUser, setIsHarediUser] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
 
   // Fetch signupSource to determine if user is Haredi
   useEffect(() => {
@@ -172,8 +177,48 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
     setExpandedMenu(expandedMenu === itemId ? null : itemId);
   };
 
+  const handleInviteSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const normalizedEmail = inviteEmail.trim().toLowerCase();
+
+    setInviteError(null);
+    setInviteSuccess(null);
+
+    if (!normalizedEmail) {
+      setInviteError('נא להזין כתובת מייל');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      setInviteError('נא להזין כתובת מייל תקינה');
+      return;
+    }
+
+    setIsSendingInvite(true);
+    try {
+      const response = await apiFetch('/api/calculators/invite', {
+        method: 'POST',
+        body: JSON.stringify({ email: normalizedEmail }),
+      });
+
+      const payload = await response.json().catch(() => ({} as { error?: string; message?: string }));
+      if (!response.ok) {
+        setInviteError(payload.error || 'לא הצלחנו לשלוח עכשיו את ההזמנה. נסה שוב בעוד רגע.');
+        return;
+      }
+
+      setInviteSuccess(payload.message || 'ההזמנה נשלחה בהצלחה');
+      setInviteEmail('');
+    } catch {
+      setInviteError('לא הצלחנו לשלוח עכשיו את ההזמנה. נסה שוב בעוד רגע.');
+    } finally {
+      setIsSendingInvite(false);
+    }
+  };
+
   // Build nav items dynamically
-  const navItems = buildNavItems(isHarediUser);
+  const navItems = buildNavItems();
 
   const isItemActive = (item: NavItem) => {
     if (item.path === '/dashboard' && pathname === '/') return true;
@@ -419,32 +464,97 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
 
       {/* Desktop: User Info Footer */}
       {!isMobile && session?.user && (
-        <div className={`py-5 border-t border-slate-100 ${isCollapsed ? 'px-3' : 'px-4'}`}>
+        <div className={`py-5 border-t border-[#F7F7F8] ${isCollapsed ? 'px-3' : 'px-4'}`}>
+          {!isCollapsed && (
+            <div className="px-2 pb-3 mb-3 border-b border-[#F7F7F8]">
+              <p
+                className="text-[13px] font-medium text-[#303150]"
+                style={{ fontFamily: 'var(--font-nunito)' }}
+              >
+           רוצה לעזור לחבר לעשות סדר בכסף?
+              </p>
+              <p
+                className="mt-1 text-xs text-[#7E7F90]"
+                style={{ fontFamily: 'var(--font-nunito)' }}
+              >
+                מכניסים כתובת מייל, שולחים הזמנה אישית,
+                <br />
+                ועוזרים לחבר להתחיל להתנהל נכון פיננסית.
+              </p>
+
+              <form onSubmit={handleInviteSubmit} className="mt-2.5 flex items-center gap-2">
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(event) => {
+                    setInviteEmail(event.target.value);
+                    if (inviteError) setInviteError(null);
+                    if (inviteSuccess) setInviteSuccess(null);
+                  }}
+                  className="flex-1 min-w-0 px-3 py-2.5 rounded-xl border border-[#E8E8ED] bg-[#FFFFFF] text-[#303150] placeholder:text-[#BDBDCB] text-xs focus:outline-none focus:border-[#69ADFF] focus:ring-2 focus:ring-[#69ADFF]/20"
+                  placeholder="מייל של חבר"
+                  autoComplete="email"
+                  aria-label="כתובת מייל של חבר להזמנה"
+                  disabled={isSendingInvite}
+                />
+                <button
+                  type="submit"
+                  disabled={isSendingInvite}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[#E8E8ED] bg-[#F7F7F8] hover:bg-[#ECECF1] text-[#303150] px-3.5 py-2.5 text-xs font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                >
+                  {isSendingInvite ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    'הזמן'
+                  )}
+                </button>
+              </form>
+
+              {inviteError && (
+                <p
+                  className="mt-1.5 text-[11px] text-[#F18AB5]"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                >
+                  {inviteError}
+                </p>
+              )}
+              {inviteSuccess && (
+                <p
+                  className="mt-1.5 text-[11px] text-[#0DBACC]"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                >
+                  {inviteSuccess}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : 'px-2'}`}>
             {session.user.image ? (
               <img
                 src={session.user.image}
                 alt=""
-                className="w-10 h-10 rounded-full ring-2 ring-slate-100 flex-shrink-0"
+                className="w-10 h-10 rounded-full ring-2 ring-[#F7F7F8] flex-shrink-0"
                 title={isCollapsed ? session.user.name || 'משתמש' : undefined}
                 data-sl="mask"
               />
             ) : (
-              <div 
-                className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center flex-shrink-0"
+              <div
+                className="w-10 h-10 rounded-full bg-[#F7F7F8] flex items-center justify-center flex-shrink-0"
                 title={isCollapsed ? session.user.name || 'משתמש' : undefined}
               >
-                <span className="text-slate-600 text-sm font-medium">
+                <span className="text-[#7E7F90] text-sm font-medium">
                   {session.user.name?.[0] || 'U'}
                 </span>
               </div>
             )}
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
-                <SensitiveData as="p" className="text-sm font-medium text-slate-700 truncate">
+                <SensitiveData as="p" className="text-sm font-medium text-[#303150] truncate">
                   {session.user.name || 'משתמש'}
                 </SensitiveData>
-                <SensitiveData as="p" className="text-xs text-slate-400 truncate">
+                <SensitiveData as="p" className="text-xs text-[#7E7F90] truncate">
                   {session.user.email}
                 </SensitiveData>
               </div>

@@ -48,6 +48,9 @@ export const RATE_LIMITS = {
   // Investment guide email per user - strict (sends email to user)
   guideUser: { maxRequests: 3, windowSeconds: 3600 } as RateLimitConfig,
 
+  // Friend invites per user - daily cap
+  inviteUserDaily: { maxRequests: 10, windowSeconds: 24 * 60 * 60 } as RateLimitConfig,
+
   // Admin endpoints - strict limits to prevent abuse if credentials compromised
   admin: { maxRequests: 30, windowSeconds: 60 } as RateLimitConfig,
 };
@@ -79,6 +82,9 @@ export const IP_RATE_LIMITS = {
 
   // General API - moderate per IP
   api: { maxRequests: 200, windowSeconds: 60 } as RateLimitConfig,
+
+  // Friend invites per IP - daily cap
+  inviteDaily: { maxRequests: 30, windowSeconds: 24 * 60 * 60 } as RateLimitConfig,
 };
 
 // ============================================================================

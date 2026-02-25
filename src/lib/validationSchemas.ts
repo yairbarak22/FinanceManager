@@ -123,3 +123,14 @@ export const createGoalSchema = z.object({
   investInPortfolio: z.boolean().optional(),
   expectedInterestRate: z.number().min(0).max(100).optional(),
 });
+
+// --- Invite schemas ---
+
+export const sendFriendInviteSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email('כתובת אימייל לא תקינה')
+    .max(320, 'כתובת אימייל ארוכה מדי'),
+});

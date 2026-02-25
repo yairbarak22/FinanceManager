@@ -40,7 +40,7 @@ export async function sendCalculatorInviteEmail(params: SendInviteEmailParams): 
     await resendClient.emails.send({
       from: 'NETO <invite@myneto.co.il>',
       to: to.toLowerCase(),
-      subject: `${inviterName} מזמין אותך ל-NETO`,
+      subject: `${inviterName} מזמין אותך להצטרף ולעשות סדר בכסף`,
       html: `
         <div dir="rtl" style="font-family: 'Segoe UI', Tahoma, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 16px; overflow: hidden;">
           <!-- Header -->
@@ -52,12 +52,12 @@ export async function sendCalculatorInviteEmail(params: SendInviteEmailParams): 
           <!-- Content -->
           <div style="padding: 32px;">
             <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-              <h2 style="color: #f1f5f9; margin: 0 0 16px 0; font-size: 20px;">🎉 הוזמנת ל-NETO!</h2>
+              <h2 style="color: #f1f5f9; margin: 0 0 16px 0; font-size: 20px;">🎉 חבר הזמין אותך ל-NETO</h2>
               <p style="color: #94a3b8; line-height: 1.7; margin: 0 0 12px 0;">
-                <strong style="color: #e2e8f0;">${inviterName}</strong> חושב שתאהב את NETO - הפלטפורמה החכמה לניהול הפיננסים שלך.
+                <strong style="color: #e2e8f0;">${inviterName}</strong> שולח לך הזמנה אישית, מתוך רצון לעזור לך לנהל את הכסף ברוגע ובבהירות.
               </p>
               <p style="color: #94a3b8; line-height: 1.7; margin: 0;">
-                עם NETO תוכל לעקוב אחרי ההוצאות וההכנסות שלך, לתכנן את העתיד הפיננסי, ולקבל תמונה ברורה של המצב הכלכלי שלך.
+                ב-NETO אפשר לעקוב אחרי הוצאות והכנסות, לתכנן קדימה ולקבל תמונה פשוטה וברורה של המצב הכלכלי בבית.
               </p>
             </div>
             
@@ -80,12 +80,12 @@ export async function sendCalculatorInviteEmail(params: SendInviteEmailParams): 
             <!-- CTA Button -->
             <div style="text-align: center; margin-bottom: 24px;">
               <a href="${inviteUrl}" style="display: inline-block; background: linear-gradient(135deg, #0DBACC, #69ADFF); color: white; text-decoration: none; padding: 16px 40px; border-radius: 12px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px rgba(13, 186, 204, 0.4);">
-                הצטרף בחינם
+                להצטרפות בחינם
               </a>
             </div>
             
             <p style="color: #64748b; font-size: 13px; text-align: center; margin: 0;">
-              ההרשמה לוקחת פחות מדקה 🚀
+              ההרשמה קצרה ופשוטה, ומתחילים מיד 🚀
             </p>
           </div>
           
