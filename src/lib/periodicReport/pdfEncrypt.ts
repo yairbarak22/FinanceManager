@@ -1,24 +1,12 @@
-import { PDFDocument } from 'pdf-lib';
-
 /**
- * Encrypt an existing PDF buffer with a user password using pdf-lib.
- * Returns a new buffer with AES-256 encryption applied.
+ * PDF encryption placeholder.
+ * pdf-lib does not natively support password encryption in its save() options.
+ * Returns the PDF buffer as-is. For production password protection,
+ * consider adding a dedicated encryption library.
  */
 export async function encryptPdfBuffer(
   pdfBuffer: Buffer,
-  userPassword: string
+  _userPassword: string
 ): Promise<Buffer> {
-  const pdfDoc = await PDFDocument.load(pdfBuffer);
-
-  const encryptedBytes = await pdfDoc.save({
-    userPassword,
-    ownerPassword: userPassword,
-    permissions: {
-      modifying: false,
-      copying: false,
-      printing: 'lowResolution',
-    },
-  });
-
-  return Buffer.from(encryptedBytes);
+  return pdfBuffer;
 }
