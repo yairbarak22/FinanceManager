@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { createPortal } from 'react-dom';
 import { useCategories } from '@/hooks/useCategories';
 import { useAnalytics } from '@/hooks/useAnalytics';
@@ -29,6 +29,8 @@ import { formatCurrency, apiFetch } from '@/lib/utils';
 import { expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
 import { cn } from '@/lib/utils';
 import { SensitiveData } from '../common/SensitiveData';
+
+const ImportClassificationPlayer = lazy(() => import('@/components/ImportClassificationPlayer'));
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -497,6 +499,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
   const analytics = useAnalytics();
   const [file, setFile] = useState<File | null>(null);
   const [phase, setPhase] = useState<ImportPhase>('idle');
+  const [showClassificationAnimation, setShowClassificationAnimation] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -587,6 +590,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
 
   const resetState = () => {
     setPhase('idle');
+    setShowClassificationAnimation(false);
     setTransactions([]);
     setNeedsReview([]);
     setStats(null);
@@ -703,6 +707,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
 
     try {
       setPhase('classifying');
+      setShowClassificationAnimation(true);
 
       const res = await apiFetch('/api/transactions/import', {
         method: 'POST',
@@ -1498,8 +1503,24 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
             </div>
           )}
 
-          {/* Processing states */}
-          {(phase === 'parsing' || phase === 'classifying' || phase === 'saving') && (
+          {/* Classification animation */}
+          {phase === 'classifying' && showClassificationAnimation && (
+            <div className="relative" style={{ minHeight: 420 }}>
+              <Suspense fallback={
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Loader2 className="w-12 h-12 animate-spin mb-4" style={{ color: '#69ADFF' }} />
+                  <p className="font-medium" style={{ color: '#303150' }}>מסווג עסקאות עם AI...</p>
+                </div>
+              }>
+                <ImportClassificationPlayer
+                  onAnimationEnd={() => setShowClassificationAnimation(false)}
+                />
+              </Suspense>
+            </div>
+          )}
+
+          {/* Fallback spinner for classifying (after animation) and other processing states */}
+          {((phase === 'classifying' && !showClassificationAnimation) || phase === 'parsing' || phase === 'saving') && (
             <div className="flex flex-col items-center justify-center py-12">
               <Loader2 className="w-12 h-12 animate-spin mb-4" style={{ color: '#69ADFF' }} />
               <p className="font-medium" style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
@@ -2266,7 +2287,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
           {phase === 'idle' && file && (
             <button
               onClick={() => setPhase('importType')}
-              className="btn-primary flex-1 justify-center"
+              className="btn-primary flex-1 justify-center flex-row-reverse"
             >
               <Upload className="w-4 h-4" />
               התחל ייבוא
@@ -2277,7 +2298,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
             <button
               onClick={handleStartImport}
               disabled={!detection?.isExcelSerial && dateFormat === 'AUTO' && !detection}
-              className="btn-primary flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary flex-1 justify-center flex-row-reverse disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {detection && !showManualFormat && detection.confidence === 'high' ? (
                 <>
@@ -2297,7 +2318,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
             <button
               onClick={handleCompleteReview}
               disabled={selectedCount === 0 || uncategorizedSelectedCount > 0}
-              className="btn-primary flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary flex-1 justify-center flex-row-reverse disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Save className="w-4 h-4" />
               {uncategorizedSelectedCount > 0
@@ -2310,7 +2331,7 @@ export default function ImportModal({ isOpen, onClose, onSuccess }: ImportModalP
             <button
               onClick={saveTransactionsDespiteDuplicates}
               disabled={totalToImport === 0}
-              className="btn-primary flex-1 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn-primary flex-1 justify-center flex-row-reverse disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ 
                 backgroundColor: totalToImport > 0 ? '#F59E0B' : undefined, 
                 borderColor: totalToImport > 0 ? '#F59E0B' : undefined,
