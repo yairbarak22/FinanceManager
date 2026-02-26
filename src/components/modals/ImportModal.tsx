@@ -23,6 +23,7 @@ import {
   Calendar,
   ArrowUpDown,
   CreditCard,
+  Search,
 } from 'lucide-react';
 import { formatCurrency, apiFetch } from '@/lib/utils';
 import { expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
@@ -200,7 +201,7 @@ interface DropdownPosition {
   maxHeight: number;
 }
 
-// Custom Category Dropdown component with Portal
+// Custom Category Dropdown component with Portal, search filtering & keyboard nav
 function CategoryDropdown({
   value,
   onChange,
@@ -218,22 +219,61 @@ function CategoryDropdown({
 }) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
-  const [position, setPosition] = useState<DropdownPosition>({ left: 0, width: 0, maxHeight: 256 });
+  const [position, setPosition] = useState<DropdownPosition>({ left: 0, width: 0, maxHeight: 320 });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const selectedCategory = categories.find(c => c.id === value);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
-  // Set mounted for portal
+  // Track whether trigger is visible (not CSS-hidden by responsive layout)
+  const [triggerVisible, setTriggerVisible] = useState(true);
+  useEffect(() => {
+    if (isOpen && triggerRef.current) {
+      setTriggerVisible(triggerRef.current.offsetParent !== null);
+    }
+  }, [isOpen]);
+
+  const filteredCategories = useMemo(() => {
+    if (!searchQuery.trim()) return categories;
+    const q = searchQuery.trim().toLowerCase();
+    return categories.filter(c => c.nameHe.includes(q) || c.name.toLowerCase().includes(q));
+  }, [categories, searchQuery]);
+
+  // Reset search & focus when dropdown opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setSearchQuery('');
+      setFocusedIndex(-1);
+      requestAnimationFrame(() => searchInputRef.current?.focus());
+    }
+  }, [isOpen]);
+
+  // Reset focused index when filtered results change
+  useEffect(() => {
+    setFocusedIndex(-1);
+  }, [searchQuery]);
+
+  // Scroll focused item into view
+  useEffect(() => {
+    if (focusedIndex < 0 || !listRef.current) return;
+    const items = listRef.current.querySelectorAll('[data-cat-item]');
+    items[focusedIndex]?.scrollIntoView({ block: 'nearest' });
+  }, [focusedIndex]);
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Calculate dropdown position
   const updatePosition = useCallback(() => {
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom - 16;
       const spaceAbove = rect.top - 16;
-      const preferredHeight = 256; // max-h-64
+      const preferredHeight = 320;
 
       const openBelow = spaceBelow >= Math.min(preferredHeight, 100) || spaceBelow >= spaceAbove;
 
@@ -257,87 +297,168 @@ function CategoryDropdown({
     }
   }, []);
 
-  // Update position when open
+  // Filter out scroll events originating from the dropdown's own list
+  const handleScroll = useCallback((e: Event) => {
+    if (dropdownRef.current?.contains(e.target as Node)) return;
+    updatePosition();
+  }, [updatePosition]);
+
   useEffect(() => {
     if (isOpen) {
       updatePosition();
       window.addEventListener('resize', updatePosition);
-      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('scroll', handleScroll, true);
       return () => {
         window.removeEventListener('resize', updatePosition);
-        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('scroll', handleScroll, true);
       };
     }
-  }, [isOpen, updatePosition]);
+  }, [isOpen, updatePosition, handleScroll]);
 
-  // Handle click outside
+  // Bounding-rect check instead of contains() -- handles scrollbar and portal edge cases
+  // Skip registration entirely when trigger is CSS-hidden (responsive duplicate)
   useEffect(() => {
     if (!isOpen) return;
+    if (triggerRef.current && triggerRef.current.offsetParent === null) return;
 
     const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      const isOutsideTrigger = triggerRef.current && !triggerRef.current.contains(target);
-      const isOutsideDropdown = dropdownRef.current && !dropdownRef.current.contains(target);
-
-      if (isOutsideTrigger && isOutsideDropdown) {
-        onClose();
+      if (dropdownRef.current) {
+        const rect = dropdownRef.current.getBoundingClientRect();
+        if (
+          e.clientX >= rect.left && e.clientX <= rect.right &&
+          e.clientY >= rect.top && e.clientY <= rect.bottom
+        ) {
+          return;
+        }
       }
-    };
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (triggerRef.current?.contains(e.target as Node)) {
+        return;
+      }
+      onCloseRef.current();
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('keydown', handleEscape);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
-  // Dropdown content rendered via portal
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onClose();
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setFocusedIndex(prev => (prev + 1) % filteredCategories.length);
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFocusedIndex(prev => (prev <= 0 ? filteredCategories.length - 1 : prev - 1));
+      return;
+    }
+    if (e.key === 'Enter' && focusedIndex >= 0 && focusedIndex < filteredCategories.length) {
+      e.preventDefault();
+      onChange(filteredCategories[focusedIndex].id);
+      onClose();
+    }
+  }, [filteredCategories, focusedIndex, onChange, onClose]);
+
   const dropdownContent = (
     <div
       ref={dropdownRef}
-      className="fixed z-[10000] bg-white rounded-xl shadow-lg overflow-y-auto"
+      className="fixed z-[10000] bg-white rounded-xl shadow-lg flex flex-col"
       style={{
         top: position.top,
         bottom: position.bottom,
         left: position.left,
         width: position.width,
         maxHeight: position.maxHeight,
-        border: '1px solid #F7F7F8',
+        border: '1px solid #E8E8ED',
       }}
       dir="rtl"
+      onKeyDown={handleKeyDown}
     >
-      <div className="p-1">
-        {categories.map((cat) => {
-          const isSelected = cat.id === value;
-          return (
-            <button
-              key={cat.id}
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onChange(cat.id);
-                onClose();
-              }}
-              className="w-full px-3 py-2 rounded-lg text-sm font-medium text-right flex items-center justify-between gap-2 transition-colors"
-              style={{
-                backgroundColor: isSelected ? 'rgba(105, 173, 255, 0.15)' : 'transparent',
-                color: isSelected ? '#69ADFF' : '#303150',
-                border: isSelected ? '2px solid rgba(105, 173, 255, 0.4)' : '2px solid transparent',
-                fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-              }}
-            >
-              <span>{cat.nameHe}</span>
-              {isSelected && <Check className="w-4 h-4" style={{ color: '#69ADFF' }} />}
-            </button>
-          );
-        })}
+      {/* Sticky search input */}
+      <div className="p-2 border-b" style={{ borderColor: '#F7F7F8' }}>
+        <div className="relative">
+          <Search
+            className="absolute top-1/2 -translate-y-1/2 start-0 pointer-events-none"
+            style={{ insetInlineStart: '0.625rem', color: '#BDBDCB', width: '0.875rem', height: '0.875rem' }}
+          />
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="חפש קטגוריה..."
+            className="w-full ps-8 pe-3 py-1.5 rounded-lg text-sm outline-none transition-colors"
+            style={{
+              border: '1px solid #E8E8ED',
+              color: '#303150',
+              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+              backgroundColor: '#F7F7F8',
+            }}
+            onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = '#69ADFF'; (e.target as HTMLInputElement).style.backgroundColor = '#FFFFFF'; }}
+            onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = '#E8E8ED'; (e.target as HTMLInputElement).style.backgroundColor = '#F7F7F8'; }}
+          />
+        </div>
       </div>
+
+      {/* Scrollable category list */}
+      <div ref={listRef} className="flex-1 overflow-y-auto scrollbar-import p-1 relative">
+        {filteredCategories.length === 0 ? (
+          <div className="px-3 py-4 text-center">
+            <p className="text-sm" style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
+              לא נמצאו קטגוריות
+            </p>
+          </div>
+        ) : (
+          filteredCategories.map((cat, idx) => {
+            const isSelected = cat.id === value;
+            const isFocused = idx === focusedIndex;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                data-cat-item
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onChange(cat.id);
+                  onClose();
+                }}
+                onMouseEnter={() => setFocusedIndex(idx)}
+                className="w-full px-3 py-2 rounded-lg text-sm font-medium text-right flex items-center justify-between gap-2 transition-colors"
+                style={{
+                  backgroundColor: isSelected
+                    ? 'rgba(105, 173, 255, 0.15)'
+                    : isFocused
+                      ? '#F7F7F8'
+                      : 'transparent',
+                  color: isSelected ? '#69ADFF' : '#303150',
+                  border: isSelected ? '2px solid rgba(105, 173, 255, 0.4)' : '2px solid transparent',
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                }}
+              >
+                <span>{cat.nameHe}</span>
+                {isSelected && <Check className="w-4 h-4" style={{ color: '#69ADFF' }} />}
+              </button>
+            );
+          })
+        )}
+      </div>
+
+      {/* Match count when filtering */}
+      {searchQuery.trim() && filteredCategories.length > 0 && (
+        <div className="px-3 py-1.5 border-t text-center" style={{ borderColor: '#F7F7F8' }}>
+          <span className="text-xs" style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
+            {filteredCategories.length} תוצאות
+          </span>
+        </div>
+      )}
     </div>
   );
 
@@ -365,8 +486,8 @@ function CategoryDropdown({
         )} />
       </button>
 
-      {/* Dropdown via Portal */}
-      {mounted && isOpen && createPortal(dropdownContent, document.body)}
+      {/* Dropdown via Portal -- skip for CSS-hidden responsive duplicates */}
+      {mounted && isOpen && triggerVisible && createPortal(dropdownContent, document.body)}
     </div>
   );
 }
