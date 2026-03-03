@@ -758,3 +758,34 @@ model MonthlyReport {
   @@index([userId])
   @@index([monthKey])
 }
+
+// ============================================
+// GLOBAL MERCHANT STATS - Cross-user consensus classification cache
+// ============================================
+model GlobalMerchantStats {
+  id              String   @id @default(cuid())
+  merchantName    String
+  category        String
+  count           Int      @default(1)
+  isHarediContext Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([merchantName, category, isHarediContext])
+  @@index([merchantName])
+}
+
+// ============================================
+// GLOBAL MERCHANT VOTE - Unique user vote tracking for consensus
+// ============================================
+model GlobalMerchantVote {
+  id              String   @id @default(cuid())
+  merchantName    String
+  category        String
+  isHarediContext Boolean  @default(false)
+  userId          String
+  createdAt       DateTime @default(now())
+
+  @@unique([merchantName, category, isHarediContext, userId])
+  @@index([merchantName, isHarediContext])
+}

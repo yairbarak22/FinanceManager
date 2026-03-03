@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/authHelpers';
+import { superNormalizeMerchantName } from '@/lib/classificationUtils';
 
 // Valid categories (must match categories.ts)
 const VALID_EXPENSE_CATEGORIES = [
@@ -199,6 +200,85 @@ export async function POST(request: NextRequest) {
     if (upsertOperations.length > 0) {
       await prisma.$transaction(upsertOperations);
     }
+
+    // ============================================
+    // UPDATE GLOBAL CONSENSUS (Background, non-blocking)
+    // ============================================
+    // Fire-and-forget: update GlobalMerchantVote + GlobalMerchantStats
+    // so future imports for ALL users benefit from this classification.
+    const globalUserId = userId;
+    void (async () => {
+      try {
+        const user = await prisma.user.findUnique({
+          where: { id: globalUserId },
+          select: { signupSource: true },
+        });
+        const isHarediContext = user?.signupSource === 'prog';
+
+        // Deduplicate: one vote per (normalizedMerchant, category) per request
+        const seenVoteKeys = new Set<string>();
+        const votesToCast: { merchantName: string; category: string }[] = [];
+
+        for (const t of transactions) {
+          const normalized = superNormalizeMerchantName(t.merchantName);
+          if (!normalized || !t.category) continue;
+
+          const voteKey = `${normalized}||${t.category}`;
+          if (seenVoteKeys.has(voteKey)) continue;
+          seenVoteKeys.add(voteKey);
+
+          votesToCast.push({ merchantName: normalized, category: t.category });
+        }
+
+        for (const { merchantName, category } of votesToCast) {
+          // Try to insert unique vote; if already exists, skip
+          try {
+            await prisma.globalMerchantVote.create({
+              data: {
+                merchantName,
+                category,
+                isHarediContext,
+                userId: globalUserId,
+              },
+            });
+
+            // Vote was new → increment the stats counter
+            await prisma.globalMerchantStats.upsert({
+              where: {
+                merchantName_category_isHarediContext: {
+                  merchantName,
+                  category,
+                  isHarediContext,
+                },
+              },
+              create: {
+                merchantName,
+                category,
+                count: 1,
+                isHarediContext,
+              },
+              update: {
+                count: { increment: 1 },
+              },
+            });
+          } catch (voteErr) {
+            // Unique constraint violation = user already voted this combo → skip
+            if (
+              voteErr instanceof Error &&
+              'code' in voteErr &&
+              (voteErr as { code: string }).code === 'P2002'
+            ) {
+              continue;
+            }
+            console.error('[Global Stats] Vote error:', voteErr);
+          }
+        }
+
+        console.log(`[Global Stats] Processed ${votesToCast.length} votes for user ${globalUserId}`);
+      } catch (bgError) {
+        console.error('[Global Stats] Background update failed:', bgError);
+      }
+    })();
 
     return NextResponse.json({
       success: true,

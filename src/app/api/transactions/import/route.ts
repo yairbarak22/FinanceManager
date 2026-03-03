@@ -13,6 +13,7 @@ import * as XLSX from 'xlsx';
 import { checkRateLimitWithIp, getClientIp, RATE_LIMITS, IP_RATE_LIMITS } from '@/lib/rateLimit';
 import { validateExcelFile } from '@/lib/fileValidator';
 import { sanitizeExcelData } from '@/lib/excelSanitizer';
+import { superNormalizeMerchantName, isBlacklistedMerchant, checkGlobalConsensus } from '@/lib/classificationUtils';
 
 // ============================================
 // SECURITY CONSTANTS
@@ -93,6 +94,7 @@ interface ImportResponse {
   stats: {
     total: number;
     cached: number;
+    globalConsensus: number;
     aiClassified: number;
     needsReview: number;
     parseErrors: number;
@@ -126,7 +128,7 @@ const HEADER_KEYWORDS = [
  */
 function findAllHeaderRows(rows: unknown[][]): number[] {
   const MIN_MATCHES = 3; // Minimum keywords to consider a header row
-  const MAX_HEADER_LENGTH = 200; // Skip rows longer than this (likely explanation text)
+  const MAX_HEADER_LENGTH = 500; // Skip rows longer than this (likely explanation text)
   const MIN_NON_EMPTY_CELLS = 2; // Minimum non-empty cells for a valid header
   const headerRows: number[] = [];
   
@@ -223,6 +225,34 @@ function findAllHeaderRows(rows: unknown[][]): number[] {
     if (maxMatches > 0) {
       headerRows.push(bestRowIndex);
     }
+  }
+  
+  // Deduplicate: if two header rows have identical column names,
+  // they represent the same table repeated (common in Israeli credit card exports
+  // that split by card number or billing period). Keep only the first occurrence.
+  if (headerRows.length > 1) {
+    const uniqueHeaders: number[] = [];
+    const seenSignatures = new Set<string>();
+    
+    for (const idx of headerRows) {
+      const row = rows[idx];
+      if (!row) continue;
+      
+      // Build a signature from all non-empty cell values
+      const sig = row
+        .map(cell => String(cell || '').trim().toLowerCase())
+        .filter(s => s.length > 0)
+        .join('|');
+      
+      if (!seenSignatures.has(sig)) {
+        seenSignatures.add(sig);
+        uniqueHeaders.push(idx);
+      } else {
+        console.log('[Header Detection] Skipping duplicate header at row', idx, '(identical to a previous header)');
+      }
+    }
+    
+    return uniqueHeaders;
   }
   
   return headerRows;
@@ -518,14 +548,28 @@ function findColumnsFallback(headerRow: unknown[]): ColumnMapping {
       }
     }
     
-    // Merchant detection
-    if (merchantIndex === -1 && (
-      header.includes('עסק') || header.includes('שם') ||
+    // Merchant detection - skip columns already assigned as date/amount
+    if (merchantIndex === -1 && i !== dateIndex && i !== amountIndex && (
+      header.includes('בית עסק') || header.includes('בית העסק') ||
+      header.includes('שם עסק') || header.includes('שם העסק') ||
       header.includes('תיאור') || header.includes('פרטים') ||
       header.includes('פעולה') || header.includes('פירוט') ||
       header.includes('merchant') || header.includes('description')
     )) {
       merchantIndex = i;
+    }
+  }
+  
+  // Second pass for merchant: if not found with specific patterns, try broader match
+  // but still skip columns already assigned as date/amount
+  if (merchantIndex === -1) {
+    for (let i = 0; i < headerRow.length; i++) {
+      if (i === dateIndex || i === amountIndex) continue;
+      const header = String(headerRow[i] || '').trim().toLowerCase();
+      if (header.includes('שם') || header.includes('עסק')) {
+        merchantIndex = i;
+        break;
+      }
     }
   }
   
@@ -1810,6 +1854,55 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Auto-detect inverted sign convention:
+    // For credit card imports (expenses), most transactions should be expenses.
+    // If >70% are classified as income, the file uses the opposite sign convention
+    // (negative = charge) and we need to flip all types.
+    if (importType === 'expenses' && parsedTransactions.length >= 5) {
+      const incomeCount = parsedTransactions.filter(t => t.type === 'income').length;
+      const incomeRatio = incomeCount / parsedTransactions.length;
+      
+      if (incomeRatio > 0.7) {
+        console.log(`[Import] Detected inverted sign convention: ${(incomeRatio * 100).toFixed(0)}% classified as income in credit card import. Flipping all types.`);
+        for (const t of parsedTransactions) {
+          t.type = t.type === 'income' ? 'expense' : 'income';
+        }
+      }
+    }
+    // Same logic for roundTrip: most transactions from bank account should be expenses
+    if (importType === 'roundTrip' && parsedTransactions.length >= 5) {
+      const expenseCount = parsedTransactions.filter(t => t.type === 'expense').length;
+      const incomeCount = parsedTransactions.filter(t => t.type === 'income').length;
+      
+      // For bank accounts, we expect a mix but not >90% income
+      // (that would indicate inverted signs)
+      if (incomeCount > 0 && incomeCount / parsedTransactions.length > 0.9) {
+        console.log(`[Import] Detected possible inverted sign convention in bank account import: ${(incomeCount / parsedTransactions.length * 100).toFixed(0)}% classified as income. Flipping all types.`);
+        for (const t of parsedTransactions) {
+          t.type = t.type === 'income' ? 'expense' : 'income';
+        }
+      }
+    }
+
+    // Deduplicate: multi-section files (e.g. Discount/Max with multiple cards)
+    // may repeat the same data rows. Remove exact duplicates by (date, merchant, amount, type).
+    if (headerRows.length >= 1 && parsedTransactions.length > 0) {
+      const seen = new Set<string>();
+      const deduped: typeof parsedTransactions = [];
+      for (const t of parsedTransactions) {
+        const key = `${t.date.toISOString()}|${t.merchantName}|${t.amount}|${t.type}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          deduped.push(t);
+        }
+      }
+      if (deduped.length < parsedTransactions.length) {
+        console.log(`[Import] Removed ${parsedTransactions.length - deduped.length} duplicate transactions (same date/merchant/amount/type)`);
+        parsedTransactions.length = 0;
+        parsedTransactions.push(...deduped);
+      }
+    }
+
     // Use the last column mapping for stats (or first if only one table)
     const columnMapping = lastColumnMapping || { dateIndex: -1, amountIndex: -1, merchantIndex: -1, debitIndex: -1, creditIndex: -1, isDualAmount: false };
     const headerRowIndex = headerRows[0];
@@ -1821,7 +1914,8 @@ export async function POST(request: NextRequest) {
         needsReview: [],
         stats: { 
           total: 0, 
-          cached: 0, 
+          cached: 0,
+          globalConsensus: 0,
           aiClassified: 0, 
           needsReview: 0, 
           parseErrors: errors.length,
@@ -1833,90 +1927,180 @@ export async function POST(request: NextRequest) {
     }
 
     // ============================================
-    // PHASE 4: CHECK CACHE
+    // 5-STEP CLASSIFICATION PIPELINE
+    // Step 1: Blacklist  (digital wallets → needsReview)
+    // Step 2: Local Cache (per-user MerchantCategoryMap)
+    // Step 3: Global Consensus (cross-user GlobalMerchantStats)
+    // Step 4: AI Fallback (GPT-4)
+    // Step 5: Apply categories
     // ============================================
+
+    // Build lookup maps
     const uniqueMerchants = [...new Set(parsedTransactions.map(t => t.merchantName))];
-    // Normalize merchant names for cache lookup (lowercase + trim)
     const normalizedMerchants = uniqueMerchants.map(m => m.toLowerCase().trim());
-    
-    // Get cached mappings using NORMALIZED names
+    const superNormalizedMap = new Map<string, string>();
+    for (const m of uniqueMerchants) {
+      superNormalizedMap.set(m, superNormalizeMerchantName(m));
+    }
+
+    // --- STEP 1: Blacklist detection ---
+    const blacklistedMerchants = new Set<string>();
+    for (const m of uniqueMerchants) {
+      if (isBlacklistedMerchant(m)) {
+        blacklistedMerchants.add(m);
+      }
+    }
+    if (blacklistedMerchants.size > 0) {
+      console.log('[IMPORT] Blacklisted merchants (→ review):', blacklistedMerchants.size);
+    }
+
+    // --- STEP 2: Local cache lookup ---
     const cachedMappings = await prisma.merchantCategoryMap.findMany({
       where: {
-            userId,
+        userId,
         merchantName: { in: normalizedMerchants },
-          },
-        });
+      },
+    });
 
-    // Create maps for category and alwaysAsk flag
-    // Note: alwaysAsk field was added in schema update
-    // Cache keys are already normalized (lowercase) from database
     const cacheMap = new Map(cachedMappings.map(m => [m.merchantName, m.category]));
     const alwaysAskMap = new Map(
       cachedMappings
         .filter(m => (m as { alwaysAsk?: boolean }).alwaysAsk === true)
         .map(m => [m.merchantName, true])
     );
-    
-    // Separate known and unknown merchants (excluding alwaysAsk merchants)
-    // Use normalized names for lookup
-    const unknownMerchants = uniqueMerchants.filter(m => {
+
+    // Merchants that still need resolution after blacklist + local cache
+    const afterLocalUnknowns = uniqueMerchants.filter(m => {
+      if (blacklistedMerchants.has(m)) return false; // handled by blacklist
       const normalized = m.toLowerCase().trim();
-      return !cacheMap.has(normalized) || alwaysAskMap.has(normalized);
+      if (alwaysAskMap.has(normalized)) return false; // handled as review
+      if (cacheMap.has(normalized)) return false; // handled by local cache
+      return true;
     });
 
-    // ============================================
-    // PHASE 5: AI CLASSIFICATION (only unknowns)
-    // ============================================
-    // 🔒 SECURITY: Check timeout before expensive AI classification
+    // --- STEP 3: Global consensus lookup ---
     checkTimeout();
-    
+    const globalConsensusMap = new Map<string, string>();
+    if (afterLocalUnknowns.length > 0) {
+      const superNormalizedNames = [...new Set(afterLocalUnknowns.map(m => superNormalizedMap.get(m)!).filter(Boolean))];
+
+      if (superNormalizedNames.length > 0) {
+        // Batch-query global stats for all unresolved merchants
+        const [globalStats, globalVotes] = await Promise.all([
+          prisma.globalMerchantStats.findMany({
+            where: {
+              merchantName: { in: superNormalizedNames },
+              isHarediContext: isHarediUser,
+            },
+          }),
+          prisma.globalMerchantVote.findMany({
+            where: {
+              merchantName: { in: superNormalizedNames },
+              isHarediContext: isHarediUser,
+            },
+            select: { merchantName: true, userId: true },
+          }),
+        ]);
+
+        // Group stats by merchantName
+        const statsByMerchant = new Map<string, { category: string; count: number }[]>();
+        for (const s of globalStats) {
+          const arr = statsByMerchant.get(s.merchantName) || [];
+          arr.push({ category: s.category, count: s.count });
+          statsByMerchant.set(s.merchantName, arr);
+        }
+
+        // Count unique voters per merchant
+        const uniqueVotersByMerchant = new Map<string, Set<string>>();
+        for (const v of globalVotes) {
+          const set = uniqueVotersByMerchant.get(v.merchantName) || new Set();
+          set.add(v.userId);
+          uniqueVotersByMerchant.set(v.merchantName, set);
+        }
+
+        // Evaluate consensus for each unresolved merchant
+        for (const m of afterLocalUnknowns) {
+          const sn = superNormalizedMap.get(m)!;
+          const stats = statsByMerchant.get(sn);
+          if (!stats) continue;
+
+          const uniqueUsers = uniqueVotersByMerchant.get(sn)?.size || 0;
+          const category = checkGlobalConsensus(stats, uniqueUsers);
+          if (category) {
+            globalConsensusMap.set(m, category);
+          }
+        }
+
+        if (globalConsensusMap.size > 0) {
+          console.log('[IMPORT] Global consensus hits:', globalConsensusMap.size);
+        }
+      }
+    }
+
+    // Merchants still unresolved after global consensus
+    const needAIMerchants = afterLocalUnknowns.filter(m => !globalConsensusMap.has(m));
+
+    // --- STEP 4: AI fallback ---
+    checkTimeout();
     const transactionTypes = new Map<string, 'income' | 'expense'>();
     for (const t of parsedTransactions) {
       transactionTypes.set(t.merchantName, t.type);
     }
-    
-    const aiClassifications = unknownMerchants.length > 0
-      ? await classifyMerchantsWithAI(unknownMerchants, transactionTypes, isHarediUser)
+
+    const aiClassifications = needAIMerchants.length > 0
+      ? await classifyMerchantsWithAI(needAIMerchants, transactionTypes, isHarediUser)
       : new Map<string, string | null>();
 
-    // ============================================
-    // PHASE 6: APPLY CATEGORIES
-    // ============================================
+    console.log(`[IMPORT] Pipeline summary: blacklisted=${blacklistedMerchants.size}, localCache=${cacheMap.size - alwaysAskMap.size}, globalConsensus=${globalConsensusMap.size}, aiSent=${needAIMerchants.length}`);
+
+    // --- STEP 5: Apply categories ---
     const classifiedTransactions: ParsedTransaction[] = [];
     const needsReviewTransactions: ParsedTransaction[] = [];
     let cachedCount = 0;
+    let globalConsensusCount = 0;
     let aiClassifiedCount = 0;
 
     for (const transaction of parsedTransactions) {
       const { merchantName } = transaction;
       const normalizedName = merchantName.toLowerCase().trim();
-      
-      // Check if this merchant is marked as "always ask"
-      if (alwaysAskMap.has(normalizedName)) {
-        // Put in review even if we have a cached category
+
+      // 5a. Blacklist → always review
+      if (blacklistedMerchants.has(merchantName)) {
         needsReviewTransactions.push(transaction);
         continue;
       }
-      
-      // Check cache first (using normalized name)
+
+      // 5b. AlwaysAsk → review
+      if (alwaysAskMap.has(normalizedName)) {
+        needsReviewTransactions.push(transaction);
+        continue;
+      }
+
+      // 5c. Local cache
       if (cacheMap.has(normalizedName)) {
         const cachedCategory = cacheMap.get(normalizedName)!;
-        // Validate that cached category matches the transaction type
         if (isCategoryValidForType(cachedCategory, transaction.type, isHarediUser)) {
           transaction.category = cachedCategory;
           classifiedTransactions.push(transaction);
           cachedCount++;
           continue;
-        } else {
-          console.warn(`[IMPORT] Cache category "${cachedCategory}" invalid for ${transaction.type} transaction "${merchantName}", sending to review`);
-          // Fall through to AI or review
         }
       }
-      
-      // Check AI classification
+
+      // 5d. Global consensus
+      const consensusCategory = globalConsensusMap.get(merchantName);
+      if (consensusCategory) {
+        if (isCategoryValidForType(consensusCategory, transaction.type, isHarediUser)) {
+          transaction.category = consensusCategory;
+          classifiedTransactions.push(transaction);
+          globalConsensusCount++;
+          continue;
+        }
+      }
+
+      // 5e. AI classification
       const aiCategory = aiClassifications.get(merchantName);
       if (aiCategory) {
-        // Validate AI category against this specific transaction's type
         if (isCategoryValidForType(aiCategory, transaction.type, isHarediUser)) {
           transaction.category = aiCategory;
           classifiedTransactions.push(transaction);
@@ -1926,13 +2110,11 @@ export async function POST(request: NextRequest) {
           needsReviewTransactions.push(transaction);
         }
       } else {
-        // Needs manual review
         needsReviewTransactions.push(transaction);
       }
     }
 
-    // Save AI classifications to cache (only confident ones)
-    // Normalize merchant names for consistent storage
+    // Save AI classifications to user's local cache
     const newMappings: { userId: string; merchantName: string; category: string }[] = [];
     for (const [merchant, category] of aiClassifications) {
       if (category !== null) {
@@ -1954,6 +2136,7 @@ export async function POST(request: NextRequest) {
       stats: {
         total: parsedTransactions.length,
         cached: cachedCount,
+        globalConsensus: globalConsensusCount,
         aiClassified: aiClassifiedCount,
         needsReview: needsReviewTransactions.length,
         parseErrors: errors.length,
