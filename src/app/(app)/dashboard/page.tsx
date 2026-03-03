@@ -26,6 +26,7 @@ import GemachFormModal from '@/components/modals/GemachFormModal';
 import MortgageModal from '@/components/modals/MortgageModal';
 import AmortizationModal from '@/components/modals/AmortizationModal';
 import ImportModal from '@/components/modals/ImportModal';
+import QuickStartModal from '@/components/modals/QuickStartModal';
 import DocumentsModal from '@/components/modals/DocumentsModal';
 import ProfileModal from '@/components/ProfileModal';
 import AccountSettings from '@/components/AccountSettings';
@@ -93,6 +94,7 @@ export default function DashboardPage() {
   const [isGemachFormOpen, setIsGemachFormOpen] = useState(false);
   const [isMortgageModalOpen, setIsMortgageModalOpen] = useState(false);
   const [isMaaserModalOpen, setIsMaaserModalOpen] = useState(false);
+  const [showQuickStart, setShowQuickStart] = useState(false);
 
   // Edit state
   const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
@@ -283,6 +285,27 @@ export default function DashboardPage() {
 
     checkOnboarding();
   }, [sessionStatus, isLoading, hasCheckedOnboarding, startTour, startHarediTour]);
+
+  // Check quickstart modal
+  useEffect(() => {
+    if (sessionStatus !== 'authenticated' || isLoading) return;
+
+    const checkQuickStart = async () => {
+      try {
+        const res = await apiFetch('/api/user/quickstart');
+        if (res.ok) {
+          const data = await res.json();
+          if (!data.hasSeenQuickStart) {
+            setShowQuickStart(true);
+          }
+        }
+      } catch {
+        // Non-blocking — don't prevent dashboard from loading
+      }
+    };
+
+    checkQuickStart();
+  }, [sessionStatus, isLoading]);
 
   // Calculate recurring totals - filter by activeMonths for the selected month
   const effectiveMonth = selectedMonth === 'all' || selectedMonth === 'custom' ? currentMonth : selectedMonth;
@@ -1153,6 +1176,12 @@ export default function DashboardPage() {
         transactions={transactions}
         recurringTransactions={recurringTransactions}
         selectedMonth={selectedMonth === 'all' || selectedMonth === 'custom' ? currentMonth : selectedMonth}
+      />
+
+      <QuickStartModal
+        isOpen={showQuickStart}
+        onClose={() => setShowQuickStart(false)}
+        onImport={() => setIsImportModalOpen(true)}
       />
 
       <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />

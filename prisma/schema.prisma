@@ -15,6 +15,7 @@ model User {
   emailVerified         DateTime?
   image                 String?
   hasSeenOnboarding     Boolean                @default(false)
+  hasSeenQuickStart     Boolean                @default(false)
   hasProAccess          Boolean                @default(false) // Pro calculator access (unlocked via referral)
   signupSource          String?                // Signup source tracking (e.g., "prog", "facebook", "google_ads")
   isMarketingSubscribed Boolean               @default(true) // Whether subscribed to marketing emails
