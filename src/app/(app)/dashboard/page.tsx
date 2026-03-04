@@ -286,10 +286,14 @@ export default function DashboardPage() {
     checkOnboarding();
   }, [sessionStatus, isLoading, hasCheckedOnboarding, startTour, startHarediTour]);
 
-  // Show quickstart modal on every visit
+  // Show quickstart modal once per login session
   useEffect(() => {
     if (sessionStatus === 'authenticated' && !isLoading) {
-      setShowQuickStart(true);
+      const shown = sessionStorage.getItem('qs_shown');
+      if (!shown) {
+        setShowQuickStart(true);
+        sessionStorage.setItem('qs_shown', '1');
+      }
     }
   }, [sessionStatus, isLoading]);
 
