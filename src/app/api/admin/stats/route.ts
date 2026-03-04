@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminHelpers';
 import { cleanupOldAuditLogs } from '@/lib/auditLog';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
+import { Prisma } from '@prisma/client';
 
 // GET - Fetch admin statistics (admin only)
 export async function GET() {
@@ -50,6 +51,9 @@ export async function GET() {
 
       // Unique users who logged in today
       todayUniqueLogins,
+
+      // Users with more than one unique login day (returning users)
+      usersWithMultipleLoginDays,
     ] = await Promise.all([
       // Total counts
       prisma.asset.count(),
@@ -97,6 +101,9 @@ export async function GET() {
 
       // Count unique users who logged in today
       getTodayUniqueLoginsCount(startOfToday, startOfTomorrow),
+
+      // Count users with more than one unique login day
+      getUsersWithMultipleLoginDaysCount(),
     ]);
 
     // Return only aggregated numbers - no PII
@@ -116,6 +123,7 @@ export async function GET() {
       activity: {
         multipleLoginUsers,
         todayUniqueLogins,
+        usersWithMultipleLoginDays,
       },
     });
   } catch (error) {
@@ -148,6 +156,30 @@ async function getTodayUniqueLoginsCount(
     return rows.length;
   } catch {
     console.error('Failed to count today unique logins');
+    return 0;
+  }
+}
+
+/**
+ * Count users with more than one unique login day (returning users)
+ * Uses OAUTH_LOGIN/LOGIN AuditLog entries, counts distinct calendar dates per user
+ */
+async function getUsersWithMultipleLoginDaysCount(): Promise<number> {
+  try {
+    const result = await prisma.$queryRaw<Array<{ count: bigint }>>(Prisma.sql`
+      SELECT COUNT(*)::bigint AS count
+      FROM (
+        SELECT al."userId"
+        FROM "AuditLog" al
+        WHERE al.action IN ('LOGIN', 'OAUTH_LOGIN')
+          AND al."userId" IS NOT NULL
+        GROUP BY al."userId"
+        HAVING COUNT(DISTINCT DATE(al."createdAt")) > 1
+      ) AS returning_users
+    `);
+    return Number(result[0]?.count ?? 0);
+  } catch {
+    console.error('Failed to count users with multiple login days');
     return 0;
   }
 }

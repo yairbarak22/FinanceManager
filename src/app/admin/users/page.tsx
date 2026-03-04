@@ -32,8 +32,7 @@ interface UserData {
   image: string | null;
   createdAt: string;
   lastLoginAt: string | null;
-  loginCount: number;
-  realLoginCount: number;
+  uniqueLoginDays: number;
   hasSeenOnboarding: boolean;
   _count: {
     transactions: number;
@@ -66,6 +65,7 @@ interface AdminStats {
   activity: {
     multipleLoginUsers: number;
     todayUniqueLogins: number;
+    usersWithMultipleLoginDays: number;
   };
 }
 
@@ -343,6 +343,17 @@ export default function AdminUsersPage() {
                     </div>
                   </div>
                 </div>
+                <div className="bg-gradient-to-br from-teal-50 to-white rounded-xl p-3 sm:p-4 border border-teal-100 shadow-sm">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Users className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" />
+                    </div>
+                    <div>
+                      <p className="text-xl sm:text-2xl font-bold text-teal-700">{(stats.activity.usersWithMultipleLoginDays ?? 0).toLocaleString()}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">משתמשים חוזרים (2+ ימים)</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </>
@@ -535,7 +546,7 @@ export default function AdminUsersPage() {
                       כניסה אחרונה
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      כניסות אמיתיות
+                      ימי כניסה
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Onboarding
@@ -577,13 +588,10 @@ export default function AdminUsersPage() {
                         }
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.realLoginCount > 0 ? (
-                          <div className="flex flex-col gap-0.5">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
-                              {user.realLoginCount} אמיתיות
-                            </span>
-                            <span className="text-[11px] text-gray-400">{user.loginCount} סה״כ</span>
-                          </div>
+                        {user.uniqueLoginDays > 0 ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
+                            {user.uniqueLoginDays} ימים
+                          </span>
                         ) : (
                           <span className="text-gray-300 text-xs">—</span>
                         )}

@@ -13,8 +13,7 @@ interface UserRow {
   createdAt: Date;
   hasSeenOnboarding: boolean;
   lastLoginAt: Date | null;
-  login_count: bigint;
-  real_login_count: bigint;
+  unique_login_days: bigint;
   transactions_count: bigint;
   assets_count: bigint;
   liabilities_count: bigint;
@@ -53,25 +52,22 @@ export async function GET(request: NextRequest) {
         u.image,
         u."createdAt",
         u."hasSeenOnboarding",
-        MAX(CASE WHEN al.action IN ('LOGIN', 'OAUTH_LOGIN') THEN al."createdAt" END) AS "lastLoginAt",
-        COUNT(CASE WHEN al.action IN ('LOGIN', 'OAUTH_LOGIN') THEN 1 END)::bigint    AS login_count,
-        COUNT(CASE WHEN al.action = 'OAUTH_LOGIN' THEN 1 END)::bigint               AS real_login_count,
+        MAX(al."createdAt")                        AS "lastLoginAt",
+        COUNT(DISTINCT DATE(al."createdAt"))::bigint AS unique_login_days,
         COUNT(DISTINCT t.id)::bigint  AS transactions_count,
         COUNT(DISTINCT a.id)::bigint  AS assets_count,
         COUNT(DISTINCT l.id)::bigint  AS liabilities_count,
         COUNT(DISTINCT rt.id)::bigint AS "recurringTransactions_count"
       FROM "User" u
-      LEFT JOIN "AuditLog"             al ON al."userId" = u.id AND al.action = 'LOGIN'
+      LEFT JOIN "AuditLog"             al ON al."userId" = u.id
+        AND al.action IN ('LOGIN', 'OAUTH_LOGIN')
       LEFT JOIN "Transaction"          t  ON t."userId"  = u.id
       LEFT JOIN "Asset"                a  ON a."userId"  = u.id
       LEFT JOIN "Liability"            l  ON l."userId"  = u.id
       LEFT JOIN "RecurringTransaction" rt ON rt."userId" = u.id
       GROUP BY u.id
       ORDER BY
-        COALESCE(
-          MAX(CASE WHEN al.action IN ('LOGIN', 'OAUTH_LOGIN') THEN al."createdAt" END),
-          u."createdAt"
-        ) DESC
+        COALESCE(MAX(al."createdAt"), u."createdAt") DESC
       LIMIT ${pageSize} OFFSET ${skip}
     `);
 
@@ -85,8 +81,7 @@ export async function GET(request: NextRequest) {
       createdAt: u.createdAt.toISOString(),
       hasSeenOnboarding: u.hasSeenOnboarding,
       lastLoginAt: u.lastLoginAt ? u.lastLoginAt.toISOString() : null,
-      loginCount: Number(u.login_count),
-      realLoginCount: Number(u.real_login_count),
+      uniqueLoginDays: Number(u.unique_login_days),
       _count: {
         transactions: Number(u.transactions_count),
         assets: Number(u.assets_count),
