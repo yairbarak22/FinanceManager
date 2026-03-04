@@ -53,6 +53,7 @@ interface AdminStats {
   };
   activity: {
     multipleLoginUsers: number;
+    todayUniqueLogins: number;
   };
 }
 
@@ -269,7 +270,7 @@ export default function AdminUsersPage() {
                 <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500" />
                 שינויים היום
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-4">
                 <div className="bg-gradient-to-br from-indigo-50 to-white rounded-xl p-3 sm:p-4 border border-indigo-100 shadow-sm">
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -311,6 +312,17 @@ export default function AdminUsersPage() {
                     <div>
                       <p className="text-xl sm:text-2xl font-bold text-purple-700">+{stats.today.transactions}</p>
                       <p className="text-xs sm:text-sm text-gray-500">עסקאות חדשות</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-amber-50 to-white rounded-xl p-3 sm:p-4 border border-amber-100 shadow-sm">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Users className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-xl sm:text-2xl font-bold text-amber-700">{stats.activity.todayUniqueLogins.toLocaleString()}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">כניסות ייחודיות היום</p>
                     </div>
                   </div>
                 </div>

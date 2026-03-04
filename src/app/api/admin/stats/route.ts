@@ -47,6 +47,9 @@ export async function GET() {
       // Users who logged in more than once (using AuditLog if available)
       // Since we use JWT strategy, we'll count users with multiple sessions or audit logs
       multipleLoginUsers,
+
+      // Unique users who logged in today
+      todayUniqueLogins,
     ] = await Promise.all([
       // Total counts
       prisma.asset.count(),
@@ -91,6 +94,9 @@ export async function GET() {
       // Count users with multiple LOGIN events in AuditLog
       // Using raw query because Prisma groupBy with having is complex
       getMultipleLoginUsersCount(),
+
+      // Count unique users who logged in today
+      getTodayUniqueLoginsCount(startOfToday, startOfTomorrow),
     ]);
 
     // Return only aggregated numbers - no PII
@@ -109,6 +115,7 @@ export async function GET() {
       },
       activity: {
         multipleLoginUsers,
+        todayUniqueLogins,
       },
     });
   } catch (error) {
@@ -118,6 +125,30 @@ export async function GET() {
       { error: 'Failed to fetch statistics' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Count unique users who logged in today
+ * Groups AuditLog LOGIN entries by userId for today's date range
+ */
+async function getTodayUniqueLoginsCount(
+  startOfToday: Date,
+  startOfTomorrow: Date
+): Promise<number> {
+  try {
+    const rows = await prisma.auditLog.groupBy({
+      by: ['userId'],
+      where: {
+        action: 'LOGIN',
+        userId: { not: null },
+        createdAt: { gte: startOfToday, lt: startOfTomorrow },
+      },
+    });
+    return rows.length;
+  } catch {
+    console.error('Failed to count today unique logins');
+    return 0;
   }
 }
 
