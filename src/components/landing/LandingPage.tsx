@@ -10,6 +10,7 @@ import HeroSection from './HeroSection';
 import FeaturesSection from './FeaturesSection';
 import PlatformOverview from './PlatformOverview';
 import HowItWorksSection from './HowItWorksSection';
+import VideoShowcaseSection from './VideoShowcaseSection';
 import FAQSection from './FAQSection';
 import FinalCTASection from './FinalCTASection';
 import Footer from './Footer';
@@ -64,6 +65,7 @@ function LandingPageContent() {
       <FeaturesSection />
       <PlatformOverview />
       <HowItWorksSection />
+      <VideoShowcaseSection />
       <FAQSection />
       <FinalCTASection callbackUrl={callbackUrl} onOpenLegal={(type) => setLegalModal({ isOpen: true, type })} />
       <Footer

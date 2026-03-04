@@ -13,6 +13,7 @@ const navLinks = [
   { label: 'איך זה עובד?', href: '#features' },
   { label: 'כלים', href: '#tools' },
   { label: 'המערכת שלנו', href: '#screens' },
+  { label: 'קורס פיננסי', href: '#video-showcase' },
   { label: 'שאלות נפוצות', href: '#faq' },
 ];
 
