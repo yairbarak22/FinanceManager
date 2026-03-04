@@ -286,25 +286,11 @@ export default function DashboardPage() {
     checkOnboarding();
   }, [sessionStatus, isLoading, hasCheckedOnboarding, startTour, startHarediTour]);
 
-  // Check quickstart modal
+  // Show quickstart modal on every visit
   useEffect(() => {
-    if (sessionStatus !== 'authenticated' || isLoading) return;
-
-    const checkQuickStart = async () => {
-      try {
-        const res = await apiFetch('/api/user/quickstart');
-        if (res.ok) {
-          const data = await res.json();
-          if (!data.hasSeenQuickStart) {
-            setShowQuickStart(true);
-          }
-        }
-      } catch {
-        // Non-blocking — don't prevent dashboard from loading
-      }
-    };
-
-    checkQuickStart();
+    if (sessionStatus === 'authenticated' && !isLoading) {
+      setShowQuickStart(true);
+    }
   }, [sessionStatus, isLoading]);
 
   // Calculate recurring totals - filter by activeMonths for the selected month

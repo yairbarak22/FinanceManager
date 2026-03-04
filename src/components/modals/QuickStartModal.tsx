@@ -4,7 +4,6 @@ import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Target, GraduationCap } from 'lucide-react';
-import { apiFetch } from '@/lib/utils';
 
 interface QuickStartModalProps {
   isOpen: boolean;
@@ -94,17 +93,8 @@ const skipVariants = {
 export default function QuickStartModal({ isOpen, onClose, onImport }: QuickStartModalProps) {
   const router = useRouter();
 
-  const dismiss = useCallback(async () => {
-    try {
-      await apiFetch('/api/user/quickstart', { method: 'POST' });
-    } catch {
-      // Non-blocking — modal still closes even if API fails
-    }
-  }, []);
-
   const handleAction = useCallback(
-    async (actionId: string) => {
-      await dismiss();
+    (actionId: string) => {
       onClose();
 
       switch (actionId) {
@@ -119,13 +109,8 @@ export default function QuickStartModal({ isOpen, onClose, onImport }: QuickStar
           break;
       }
     },
-    [dismiss, onClose, onImport, router]
+    [onClose, onImport, router]
   );
-
-  const handleSkip = useCallback(async () => {
-    await dismiss();
-    onClose();
-  }, [dismiss, onClose]);
 
   return (
     <AnimatePresence>
@@ -136,7 +121,7 @@ export default function QuickStartModal({ isOpen, onClose, onImport }: QuickStar
           initial="hidden"
           animate="visible"
           exit="exit"
-          onClick={handleSkip}
+          onClick={onClose}
         >
           <motion.div
             className="relative bg-white rounded-3xl shadow-xl max-w-lg w-full overflow-hidden"
@@ -148,7 +133,7 @@ export default function QuickStartModal({ isOpen, onClose, onImport }: QuickStar
           >
             {/* Close button */}
             <button
-              onClick={handleSkip}
+              onClick={onClose}
               className="absolute top-5 start-5 z-10 p-2 rounded-lg transition-colors duration-200 hover:bg-[#F7F7F8] cursor-pointer"
               aria-label="סגור"
             >
@@ -256,7 +241,7 @@ export default function QuickStartModal({ isOpen, onClose, onImport }: QuickStar
               animate="visible"
             >
               <button
-                onClick={handleSkip}
+                onClick={onClose}
                 className="text-xs cursor-pointer transition-colors duration-200 hover:underline"
                 style={{ color: '#BDBDCB' }}
               >
