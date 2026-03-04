@@ -41,8 +41,8 @@ const ctaCards = [
   {
     id: 'courses',
     icon: GraduationCap,
-    title: 'קורס חינוך פיננסי',
-    description: 'צפה בקורס הווידאו שלנו ולמד את סודות ניהול הכסף וההשקעות.',
+    title: 'קורס פיננסים — בחינם!',
+    description: 'למד את סודות ניהול הכסף וההשקעות בקורס הווידאו המלא שלנו, ללא עלות.',
     accentColor: '#F18AB5',
     accentBg: 'rgba(241, 138, 181, 0.1)',
     glowColor: 'rgba(241, 138, 181, 0.25)',
