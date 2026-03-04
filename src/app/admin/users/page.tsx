@@ -18,6 +18,8 @@ import {
   UserPlus,
   Activity,
   ChevronDown,
+  ChevronRight,
+  ChevronLeft,
   MousePointerClick
 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
@@ -29,6 +31,9 @@ interface UserData {
   email: string;
   image: string | null;
   createdAt: string;
+  lastLoginAt: string | null;
+  loginCount: number;
+  realLoginCount: number;
   hasSeenOnboarding: boolean;
   _count: {
     transactions: number;
@@ -36,6 +41,13 @@ interface UserData {
     liabilities: number;
     recurringTransactions: number;
   };
+}
+
+interface PaginationMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
 }
 
 interface AdminStats {
@@ -77,6 +89,8 @@ export default function AdminUsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<UserData[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [pagination, setPagination] = useState<PaginationMeta>({ page: 1, pageSize: 30, total: 0, totalPages: 1 });
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAccessDenied, setIsAccessDenied] = useState(false);
@@ -96,7 +110,8 @@ export default function AdminUsersPage() {
   }, [session, status]);
 
   const fetchData = async () => {
-    await Promise.all([fetchUsers(), fetchStats(), fetchCtaClicks()]);
+    setCurrentPage(1);
+    await Promise.all([fetchUsers(1), fetchStats(), fetchCtaClicks()]);
   };
 
   const fetchStats = async () => {
@@ -118,12 +133,12 @@ export default function AdminUsersPage() {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
       setIsAccessDenied(false);
-      const res = await apiFetch('/api/admin/users');
+      const res = await apiFetch(`/api/admin/users?page=${page}&pageSize=30`);
 
       if (!res.ok) {
         if (res.status === 403 || res.status === 401) {
@@ -136,6 +151,8 @@ export default function AdminUsersPage() {
 
       const data = await res.json();
       setUsers(data.users);
+      setPagination(data.pagination);
+      setCurrentPage(data.pagination.page);
     } catch {
       setError('שגיאה בטעינת המשתמשים');
     } finally {
@@ -344,7 +361,7 @@ export default function AdminUsersPage() {
                   <Users className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
                 </div>
                 <div>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{users.length}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{pagination.total}</p>
                   <p className="text-xs sm:text-sm text-gray-500">משתמשים רשומים</p>
                 </div>
               </div>
@@ -493,7 +510,9 @@ export default function AdminUsersPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-3 text-[11px] text-gray-400 mr-12">
-                    <span>{formatDate(user.createdAt)}</span>
+                    <span>
+                      {user.lastLoginAt ? formatDate(user.lastLoginAt) : 'מעולם לא נכנס'}
+                    </span>
                     <span>{user._count.transactions} עסקאות</span>
                     <span>{user._count.assets} נכסים</span>
                   </div>
@@ -513,7 +532,10 @@ export default function AdminUsersPage() {
                       אימייל
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      תאריך הרשמה
+                      כניסה אחרונה
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      כניסות אמיתיות
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Onboarding
@@ -549,7 +571,22 @@ export default function AdminUsersPage() {
                         <SensitiveData>{user.email}</SensitiveData>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(user.createdAt)}
+                        {user.lastLoginAt
+                          ? formatDate(user.lastLoginAt)
+                          : <span className="text-gray-300 text-xs">מעולם לא נכנס</span>
+                        }
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {user.realLoginCount > 0 ? (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700">
+                              {user.realLoginCount} אמיתיות
+                            </span>
+                            <span className="text-[11px] text-gray-400">{user.loginCount} סה״כ</span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-300 text-xs">—</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {user.hasSeenOnboarding ? (
@@ -581,6 +618,37 @@ export default function AdminUsersPage() {
               <div className="text-center py-12">
                 <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500">אין משתמשים רשומים עדיין</p>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-t border-gray-100 bg-gray-50">
+                <button
+                  onClick={() => fetchUsers(currentPage + 1)}
+                  disabled={currentPage >= pagination.totalPages || loading}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  הבא
+                </button>
+
+                <div className="flex items-center gap-1 text-sm text-gray-600">
+                  <span>עמוד</span>
+                  <span className="font-semibold text-gray-900">{currentPage}</span>
+                  <span>מתוך</span>
+                  <span className="font-semibold text-gray-900">{pagination.totalPages}</span>
+                  <span className="text-gray-400 mr-2">({pagination.total} משתמשים)</span>
+                </div>
+
+                <button
+                  onClick={() => fetchUsers(currentPage - 1)}
+                  disabled={currentPage <= 1 || loading}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  קודם
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             )}
           </div>

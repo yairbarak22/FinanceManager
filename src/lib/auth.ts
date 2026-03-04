@@ -47,13 +47,13 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   events: {
-    async signIn({ user }) {
-      // Log LOGIN event for returning user tracking
-      if (user?.id) {
+    async signIn({ user, account }) {
+      // Log OAUTH_LOGIN only on real OAuth sign-ins (account is null during JWT refreshes)
+      if (user?.id && account) {
         logAuditEvent({
           userId: user.id,
-          action: AuditAction.LOGIN,
-          metadata: { provider: 'google' },
+          action: AuditAction.OAUTH_LOGIN,
+          metadata: { provider: account.provider },
         });
       }
     },
