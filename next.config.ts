@@ -41,7 +41,7 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://web-sdk.smartlook.com https://www.googletagmanager.com https://cdn.mxpnl.com",
+              "script-src 'self' https://accounts.google.com https://apis.google.com https://web-sdk.smartlook.com https://www.googletagmanager.com https://cdn.mxpnl.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data: https://fonts.gstatic.com",
