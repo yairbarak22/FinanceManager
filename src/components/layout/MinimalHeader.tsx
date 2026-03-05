@@ -15,6 +15,7 @@ import {
   Accessibility,
   Menu,
   HelpCircle,
+  Trash2,
 } from 'lucide-react';
 import SupportModal from '@/components/layout/SupportModal';
 import ProgressBell from '@/components/haredi/ProgressBell';
@@ -25,6 +26,7 @@ import { useSidebar } from '@/context/SidebarContext';
 import MonthFilter from '@/components/MonthFilter';
 import { SensitiveData } from '@/components/common/SensitiveData';
 import { trackMixpanelEvent, resetMixpanel } from '@/lib/mixpanel';
+import DeleteAllDataModal from '@/components/modals/DeleteAllDataModal';
 
 interface MinimalHeaderProps {
   pageTitle: string;
@@ -57,6 +59,7 @@ export default function MinimalHeader({
   const { isCollapsed, toggleSidebar, openMobileSidebar } = useSidebar();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -252,6 +255,14 @@ export default function MinimalHeader({
                     <div className="border-t border-slate-100 py-1">
                       <button
                         type="button"
+                        onClick={() => { setIsUserMenuOpen(false); setIsDeleteModalOpen(true); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-rose-400 hover:bg-rose-50 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span>מחיקת כל הנתונים</span>
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => { trackMixpanelEvent('logout'); resetMixpanel(); signOut({ callbackUrl: '/' }); }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-rose-500 hover:bg-rose-50 transition-colors"
                       >
@@ -281,6 +292,10 @@ export default function MinimalHeader({
     <SupportModal
       isOpen={isSupportModalOpen}
       onClose={() => setIsSupportModalOpen(false)}
+    />
+    <DeleteAllDataModal
+      isOpen={isDeleteModalOpen}
+      onClose={() => setIsDeleteModalOpen(false)}
     />
     </>
   );

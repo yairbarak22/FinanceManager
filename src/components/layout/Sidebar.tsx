@@ -140,7 +140,6 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
   const [isSendingInvite, setIsSendingInvite] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState<string | null>(null);
-
   // Fetch signupSource to determine if user is Haredi
   useEffect(() => {
     const checkSignupSource = async () => {
@@ -560,6 +559,7 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
               </div>
             )}
           </div>
+
         </div>
       )}
     </>
