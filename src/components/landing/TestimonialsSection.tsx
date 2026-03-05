@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
-/* ── Testimonial data ──────────────────────────────────── */
+/* ── Testimonial data — Haredi community ──────────────── */
 interface Testimonial {
   id: string;
   authorName: string;
@@ -18,68 +18,68 @@ interface Testimonial {
 const TESTIMONIALS: Testimonial[] = [
   {
     id: '1',
-    authorName: 'דנה כהן',
-    authorRole: 'אמא לשלושה, ירושלים',
-    avatarInitials: 'דכ',
+    authorName: 'שרה גולדברג',
+    authorRole: 'עקרת בית, בני ברק',
+    avatarInitials: 'שג',
     avatarColor: '#0DBACC',
     rating: 5,
     content:
-      '״לפני myNETO הייתי בערפל מוחלט. היום אני יודעת בדיוק לאן הולך כל שקל, ואני ישנה טוב יותר בלילה.״',
+      '״עם שבעה ילדים ותקציב מדוד, לא יכולתי להרשות לעצמי הפתעות. myNETO נותנת לי שליטה מלאה — ידועה לכמה יש ולאן הכל הולך.״',
   },
   {
     id: '2',
-    authorName: 'יוסי לוי',
-    authorRole: 'עצמאי בתחום הטכנולוגיה, תל אביב',
-    avatarInitials: 'ילׁ',
+    authorName: 'ישראל רוזנברג',
+    authorRole: 'אברך כולל, ירושלים',
+    avatarInitials: 'יר',
     avatarColor: '#69ADFF',
     rating: 5,
     content:
-      '״הגדרתי יעד לדירה וראיתי בדיוק כמה חסרים לי. שלושה חודשים אחרי — חסכתי כפול ממה שחשבתי שאוכל.״',
+      '״הקצבה מהכולל מוגבלת, ואנחנו חייבים לנהל אותה בחוכמה. המערכת הזו עזרה לי ולאשתי לראות בדיוק לאן הולך כל שקל ולחסוך לשמחות.״',
   },
   {
     id: '3',
-    authorName: 'מיכל רוזן',
-    authorRole: 'מורה ואמא, חיפה',
-    avatarInitials: 'מר',
+    authorName: 'דבורה שטיינר',
+    authorRole: 'מנהלת בית, אלעד',
+    avatarInitials: 'דש',
     avatarColor: '#F18AB5',
     rating: 5,
     content:
-      '״פשוט מדהים. העלאתי קובץ ה-Excel מחברת האשראי ותוך שניות הכל היה מסודר בקטגוריות. חסכתי שעות של עבודה.״',
+      '״שכר הלימוד לחמישה ילדים, הוצאות שמחות, קניות — הכל בפנים. אחרי שהעליתי את הקובץ, הכל התסדר תוך דקות. פשוט נפלא.״',
   },
   {
     id: '4',
-    authorName: 'אבי שמש',
-    authorRole: 'אב למשפחה בת 5, ראשון לציון',
-    avatarInitials: 'אש',
+    authorName: 'מנחם פרידמן',
+    authorRole: 'אב למשפחה גדולה, בית שמש',
+    avatarInitials: 'מפ',
     avatarColor: '#C9A84C',
     rating: 5,
     content:
-      '״חשבון משותף עם אשתי שינה הכל. אנחנו סוף סוף מדברים על כסף בלי ריב. הכל שקוף ומסודר בשניהם.״',
+      '״הגדרתי יעד לחתונת הבן הגדול. המערכת מחשבת כמה להפריש כל חודש ומזכירה לי לעמוד בזה. לראשונה אני בשקט אמיתי.״',
   },
   {
     id: '5',
-    authorName: 'נועה ברקוביץ',
-    authorRole: 'סטודנטית לרפואה, באר שבע',
-    avatarInitials: 'נב',
+    authorName: 'חנה ליפשיץ',
+    authorRole: 'עקרת בית, מודיעין עילית',
+    avatarInitials: 'חל',
     avatarColor: '#A78BFA',
     rating: 5,
     content:
-      '״כשגרה על תקציב קטן, כל שקל חשוב. myNETO עזרה לי להבין איפה אני "מבזבזת" בלי לשים לב ולהפסיק.״',
+      '״הממשק צנוע, נקי, וקל לשימוש — בלי בלגן מיותר. מעלה את הנתונים פעם בחודש וזה מספיק לי כדי לנהל את הבית בצורה מסודרת.״',
   },
 ];
 
-/* ── Star rating component ─────────────────────────────── */
+/* ── Star rating ────────────────────────────────────────── */
 function Stars({ count }: { count: number }) {
   return (
     <div className="flex items-center gap-1" aria-label={`דירוג ${count} מתוך 5`}>
       {Array.from({ length: 5 }).map((_, i) => (
         <svg
           key={i}
-          width="16"
-          height="16"
+          width="15"
+          height="15"
           viewBox="0 0 16 16"
           fill={i < count ? '#C9A84C' : 'none'}
-          stroke={i < count ? '#C9A84C' : 'rgba(255,255,255,0.2)'}
+          stroke={i < count ? '#C9A84C' : '#BDBDCB'}
           strokeWidth="1.2"
           aria-hidden="true"
         >
@@ -90,14 +90,14 @@ function Stars({ count }: { count: number }) {
   );
 }
 
-/* ── Avatar ────────────────────────────────────────────── */
+/* ── Avatar ─────────────────────────────────────────────── */
 function Avatar({ initials, color }: { initials: string; color: string }) {
   return (
     <div
       className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold text-white select-none"
       style={{
         background: `radial-gradient(circle at 35% 35%, ${color}EE, ${color}88)`,
-        boxShadow: `0 0 0 2px ${color}40, 0 4px 12px ${color}30`,
+        boxShadow: `0 0 0 2px ${color}30, 0 4px 10px ${color}25`,
         fontFamily: 'var(--font-heebo)',
         letterSpacing: '0.04em',
       }}
@@ -111,10 +111,10 @@ function Avatar({ initials, color }: { initials: string; color: string }) {
 /* ── Animation variants ─────────────────────────────────── */
 const cardVariants = {
   enter: (dir: number) => ({
-    rotateY: dir > 0 ? 85 : -85,
+    rotateY: dir > 0 ? 90 : -90,
     opacity: 0,
-    filter: 'brightness(0.3)',
-    scale: 0.92,
+    filter: 'brightness(0.6)',
+    scale: 0.94,
   }),
   center: {
     rotateY: 0,
@@ -122,22 +122,22 @@ const cardVariants = {
     filter: 'brightness(1)',
     scale: 1,
     transition: {
-      rotateY: { duration: 0.65, ease: [0.25, 0.1, 0.25, 1] },
-      opacity: { duration: 0.35, ease: 'easeOut' },
+      rotateY: { duration: 0.7, ease: [0.25, 0.1, 0.25, 1] },
+      opacity: { duration: 0.3, ease: 'easeOut' },
       filter: { duration: 0.6, ease: 'easeOut' },
-      scale: { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] },
+      scale: { duration: 0.7, ease: [0.25, 0.1, 0.25, 1] },
     },
   },
   exit: (dir: number) => ({
-    rotateY: dir > 0 ? -85 : 85,
+    rotateY: dir > 0 ? -90 : 90,
     opacity: 0,
-    filter: 'brightness(0.3)',
-    scale: 0.92,
+    filter: 'brightness(0.6)',
+    scale: 0.94,
     transition: {
-      rotateY: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] },
+      rotateY: { duration: 0.55, ease: [0.25, 0.1, 0.25, 1] },
       opacity: { duration: 0.25, ease: 'easeIn' },
       filter: { duration: 0.45, ease: 'easeIn' },
-      scale: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] },
+      scale: { duration: 0.55, ease: [0.25, 0.1, 0.25, 1] },
     },
   }),
 };
@@ -155,7 +155,6 @@ export default function TestimonialsSection() {
   const [isPaused, setIsPaused] = useState(false);
   const prefersReduced = useReducedMotion();
   const dragStartX = useRef<number | null>(null);
-  const sectionRef = useRef<HTMLElement>(null);
 
   const total = TESTIMONIALS.length;
   const current = TESTIMONIALS[index];
@@ -176,14 +175,14 @@ export default function TestimonialsSection() {
     setIndex(i);
   }, [index]);
 
-  /* Auto-advance every 5s, pause on hover/focus */
+  /* Auto-advance every 6s, pause on hover/focus */
   useEffect(() => {
     if (isPaused) return;
-    const id = setInterval(goNext, 5000);
+    const id = setInterval(goNext, 6000);
     return () => clearInterval(id);
   }, [isPaused, goNext]);
 
-  /* Drag/swipe handlers */
+  /* Swipe/drag handlers */
   const handleDragStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
     const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
     dragStartX.current = x;
@@ -201,38 +200,27 @@ export default function TestimonialsSection() {
 
   return (
     <section
-      ref={sectionRef}
       id="testimonials"
-      className="relative overflow-hidden"
-      style={{ background: '#080812' }}
+      className="relative overflow-hidden py-20 md:py-28"
+      style={{ background: '#F5F5F7' }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onFocus={() => setIsPaused(true)}
       onBlur={() => setIsPaused(false)}
       aria-label="המלצות לקוחות"
     >
-      {/* Top gradient fade from previous (light) section */}
+      {/* Top fade from previous section */}
       <div
-        className="absolute inset-x-0 top-0 h-20 pointer-events-none z-10"
-        style={{ background: 'linear-gradient(to bottom, #ffffff 0%, transparent 100%)' }}
+        className="absolute inset-x-0 top-0 h-16 pointer-events-none z-10"
+        style={{ background: 'linear-gradient(to bottom, #FFFFFF, transparent)' }}
       />
-      {/* Bottom gradient fade to next (light) section */}
+      {/* Bottom fade to next section */}
       <div
-        className="absolute inset-x-0 bottom-0 h-20 pointer-events-none z-10"
-        style={{ background: 'linear-gradient(to top, #ffffff 0%, transparent 100%)' }}
-      />
-
-      {/* Atmospheric background glow */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        aria-hidden="true"
-        style={{
-          background:
-            'radial-gradient(ellipse 70% 60% at 50% 50%, rgba(105,173,255,0.07) 0%, transparent 70%)',
-        }}
+        className="absolute inset-x-0 bottom-0 h-16 pointer-events-none z-10"
+        style={{ background: 'linear-gradient(to top, #FFFFFF, transparent)' }}
       />
 
-      <div className="relative z-20 max-w-2xl mx-auto px-6 py-24 flex flex-col items-center">
+      <div className="relative z-20 max-w-2xl mx-auto px-6 flex flex-col items-center">
         {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -244,9 +232,9 @@ export default function TestimonialsSection() {
           <span
             className="inline-block mb-4 px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest uppercase"
             style={{
-              background: 'rgba(105,173,255,0.12)',
+              background: 'rgba(105,173,255,0.1)',
               color: '#69ADFF',
-              border: '1px solid rgba(105,173,255,0.25)',
+              border: '1px solid rgba(105,173,255,0.22)',
               fontFamily: 'var(--font-nunito)',
               letterSpacing: '0.14em',
             }}
@@ -257,12 +245,19 @@ export default function TestimonialsSection() {
             className="text-3xl sm:text-4xl font-bold leading-tight"
             style={{
               fontFamily: 'var(--font-heebo)',
-              color: '#FFFFFF',
-              textShadow: '0 2px 24px rgba(105,173,255,0.18)',
+              color: '#303150',
             }}
           >
             אלפי משפחות כבר{' '}
-            <span style={{ color: '#69ADFF' }}>עושות סדר</span>
+            <span
+              style={{
+                background: 'linear-gradient(135deg, #2B4699, #0DBACC)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              עושות סדר
+            </span>
             <br />
             בכסף שלהן
           </h2>
@@ -271,54 +266,70 @@ export default function TestimonialsSection() {
         {/* 3D card stage */}
         <div
           className="relative w-full flex items-center justify-center"
-          style={{ perspective: '1200px' }}
+          style={{ perspective: '1400px' }}
         >
-          {/* Previous arrow */}
+          {/* Prev arrow */}
           <button
             onClick={goPrev}
-            className="absolute z-30 p-2.5 rounded-full transition-all duration-200 opacity-0 group-hover:opacity-100 hover:opacity-100 focus:opacity-100"
+            className="absolute z-30 p-2.5 rounded-full transition-all duration-200"
             style={{
-              right: '-0.5rem',
-              background: 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              color: 'rgba(255,255,255,0.7)',
-              backdropFilter: 'blur(4px)',
+              right: '-0.25rem',
+              background: '#FFFFFF',
+              border: '1px solid #E8E8ED',
+              color: '#7E7F90',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
             }}
             aria-label="המלצה קודמת"
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(105,173,255,0.2)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = '#69ADFF';
+              (e.currentTarget as HTMLButtonElement).style.color = '#FFFFFF';
+              (e.currentTarget as HTMLButtonElement).style.borderColor = '#69ADFF';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = '#FFFFFF';
+              (e.currentTarget as HTMLButtonElement).style.color = '#7E7F90';
+              (e.currentTarget as HTMLButtonElement).style.borderColor = '#E8E8ED';
+            }}
           >
-            <ChevronRight className="w-5 h-5" strokeWidth={2} />
+            <ChevronRight className="w-4 h-4" strokeWidth={2} />
           </button>
 
           {/* Next arrow */}
           <button
             onClick={goNext}
-            className="absolute z-30 p-2.5 rounded-full transition-all duration-200 opacity-0 hover:opacity-100 focus:opacity-100"
+            className="absolute z-30 p-2.5 rounded-full transition-all duration-200"
             style={{
-              left: '-0.5rem',
-              background: 'rgba(255,255,255,0.08)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              color: 'rgba(255,255,255,0.7)',
-              backdropFilter: 'blur(4px)',
+              left: '-0.25rem',
+              background: '#FFFFFF',
+              border: '1px solid #E8E8ED',
+              color: '#7E7F90',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
             }}
             aria-label="המלצה הבאה"
-            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(105,173,255,0.2)')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = '#69ADFF';
+              (e.currentTarget as HTMLButtonElement).style.color = '#FFFFFF';
+              (e.currentTarget as HTMLButtonElement).style.borderColor = '#69ADFF';
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = '#FFFFFF';
+              (e.currentTarget as HTMLButtonElement).style.color = '#7E7F90';
+              (e.currentTarget as HTMLButtonElement).style.borderColor = '#E8E8ED';
+            }}
           >
-            <ChevronLeft className="w-5 h-5" strokeWidth={2} />
+            <ChevronLeft className="w-4 h-4" strokeWidth={2} />
           </button>
 
           {/* Card wrapper — preserves 3D context */}
           <div
-            className="w-full max-w-md"
+            className="w-full max-w-sm"
             style={{ transformStyle: 'preserve-3d' }}
             onMouseDown={handleDragStart as React.MouseEventHandler}
             onMouseUp={handleDragEnd as React.MouseEventHandler}
             onTouchStart={handleDragStart as React.TouchEventHandler}
             onTouchEnd={handleDragEnd as React.TouchEventHandler}
           >
-            <AnimatePresence mode="wait" custom={dir}>
+            <AnimatePresence mode="sync" custom={dir}>
               <motion.article
                 key={current.id}
                 custom={dir}
@@ -327,37 +338,34 @@ export default function TestimonialsSection() {
                 animate="center"
                 exit="exit"
                 style={{ transformStyle: 'preserve-3d' }}
-                className="relative w-full rounded-3xl p-8 sm:p-10 select-none cursor-grab active:cursor-grabbing"
+                className="relative w-full rounded-3xl p-8 select-none cursor-grab active:cursor-grabbing"
                 aria-live="polite"
                 aria-atomic="true"
               >
-                {/* Card background with glassmorphism */}
+                {/* Card background */}
                 <div
                   className="absolute inset-0 rounded-3xl"
                   aria-hidden="true"
                   style={{
-                    background:
-                      'linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.03) 100%)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    backdropFilter: 'blur(16px)',
-                    boxShadow:
-                      '0 0 0 1px rgba(255,255,255,0.04) inset, 0 24px 60px rgba(0,0,0,0.5), 0 0 40px rgba(105,173,255,0.08)',
+                    background: '#FFFFFF',
+                    boxShadow: '0 4px 40px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.05)',
+                    border: '1px solid rgba(0,0,0,0.05)',
                   }}
                 />
 
                 {/* Card content */}
-                <div className="relative z-10 flex flex-col gap-8">
+                <div className="relative z-10 flex flex-col gap-7">
                   {/* Stars */}
                   <Stars count={current.rating} />
 
                   {/* Quote */}
                   <blockquote
                     style={{
-                      fontFamily: "Georgia, 'Times New Roman', serif",
-                      fontSize: 'clamp(1.1rem, 2.5vw, 1.35rem)',
-                      fontStyle: 'italic',
-                      color: 'rgba(255,255,255,0.92)',
-                      lineHeight: 1.75,
+                      fontFamily: 'var(--font-heebo)',
+                      fontSize: 'clamp(1rem, 2.2vw, 1.15rem)',
+                      fontWeight: 700,
+                      color: '#303150',
+                      lineHeight: 1.8,
                       margin: 0,
                       textAlign: 'right',
                     }}
@@ -369,8 +377,7 @@ export default function TestimonialsSection() {
                   <div
                     style={{
                       height: '1px',
-                      background:
-                        'linear-gradient(to left, transparent, rgba(255,255,255,0.12), transparent)',
+                      background: '#F7F7F8',
                     }}
                   />
 
@@ -383,7 +390,7 @@ export default function TestimonialsSection() {
                           fontFamily: 'var(--font-heebo)',
                           fontWeight: 600,
                           fontSize: '15px',
-                          color: 'rgba(255,255,255,0.95)',
+                          color: '#303150',
                         }}
                       >
                         {current.authorName}
@@ -393,7 +400,7 @@ export default function TestimonialsSection() {
                           fontFamily: 'var(--font-nunito)',
                           fontWeight: 400,
                           fontSize: '13px',
-                          color: 'rgba(255,255,255,0.45)',
+                          color: '#7E7F90',
                         }}
                       >
                         {current.authorRole}
@@ -423,8 +430,8 @@ export default function TestimonialsSection() {
               style={{
                 width: i === index ? '28px' : '8px',
                 height: '8px',
-                background: i === index ? '#69ADFF' : 'rgba(255,255,255,0.2)',
-                boxShadow: i === index ? '0 0 10px rgba(105,173,255,0.6)' : 'none',
+                background: i === index ? '#69ADFF' : '#BDBDCB',
+                boxShadow: i === index ? '0 0 8px rgba(105,173,255,0.5)' : 'none',
               }}
             />
           ))}
