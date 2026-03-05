@@ -19,7 +19,7 @@ const ctaCards = [
     id: 'import',
     icon: Download,
     title: 'ייבוא נתונים מהבנק',
-    description: 'העלה את קובץ הבנק או האשראי שלך והמערכת תסווג הכל אוטומטית — תוך שניות.',
+    description: 'העלה את קובץ הבנק או האשראי שלך והמערכת תסווג הכל אוטומטית - תוך שניות.',
     accentColor: '#0DBACC',
     accentBg: 'rgba(13, 186, 204, 0.1)',
     glowColor: 'rgba(13, 186, 204, 0.25)',
@@ -32,7 +32,7 @@ const ctaCards = [
     id: 'goals',
     icon: Target,
     title: 'הצבת יעדים פיננסיים',
-    description: 'הגדר יעדי חיסכון או תקציב חודשי ונתחיל לעקוב אחריהם יחד.',
+    description: 'הגדר יעדי חיסכון והמערכת תנתח לעומק ותציג לך כמה אתה נדרש לחסוך בכל חודש כדי לעמוד ביעד .',
     accentColor: '#69ADFF',
     accentBg: 'rgba(105, 173, 255, 0.1)',
     glowColor: 'rgba(105, 173, 255, 0.25)',
@@ -247,7 +247,7 @@ export default function NewUserOnboardingModal({
                     initial="hidden"
                     animate="visible"
                   >
-                    הבית הפיננסי שלך מוכן — איך תרצה להתחיל?
+                  הבית הפיננסי של המשפחה החרדית
                   </motion.p>
                   <motion.p
                     className="text-[0.8125rem] leading-relaxed"
@@ -256,8 +256,7 @@ export default function NewUserOnboardingModal({
                     initial="hidden"
                     animate="visible"
                   >
-                    בחר את הדרך שמתאימה לך ביותר
-                  </motion.p>
+איך תרצה להתחיל?                   </motion.p>
                 </div>
               </div>
 
