@@ -19,6 +19,7 @@ interface LiabilityModalProps {
   liability?: Liability | null;
   liabilityTypes: { default: CategoryInfo[]; custom: CategoryInfo[] };
   onAddCategory: (name: string) => Promise<CategoryInfo>;
+  onDeleteCategory?: (categoryId: string, type: string) => Promise<void>;
 }
 
 export default function LiabilityModal({
@@ -28,6 +29,7 @@ export default function LiabilityModal({
   liability,
   liabilityTypes,
   onAddCategory,
+  onDeleteCategory,
 }: LiabilityModalProps) {
   const [name, setName] = useState('');
   const [type, setType] = useState('loan');
@@ -175,6 +177,7 @@ export default function LiabilityModal({
                   customCategories={liabilityTypes.custom}
                   placeholder="בחר סוג התחייבות"
                   onAddNew={() => setShowAddCategory(true)}
+                  onDeleteCategory={onDeleteCategory}
                   required
                 />
               </div>

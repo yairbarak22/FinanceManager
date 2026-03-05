@@ -42,6 +42,7 @@ interface RecurringModalProps {
   expenseCategories: { default: CategoryInfo[]; custom: CategoryInfo[] };
   incomeCategories: { default: CategoryInfo[]; custom: CategoryInfo[] };
   onAddCategory: (name: string, type: 'expense' | 'income', isMaaserEligible?: boolean) => Promise<CategoryInfo>;
+  onDeleteCategory?: (categoryId: string, type: string) => Promise<void>;
 }
 
 export default function RecurringModal({
@@ -52,6 +53,7 @@ export default function RecurringModal({
   expenseCategories,
   incomeCategories,
   onAddCategory,
+  onDeleteCategory,
 }: RecurringModalProps) {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
@@ -282,6 +284,7 @@ export default function RecurringModal({
                   customCategories={type === 'income' ? incomeCategories.custom : expenseCategories.custom}
                   placeholder="בחר קטגוריה"
                   onAddNew={() => setShowAddCategory(true)}
+                  onDeleteCategory={onDeleteCategory}
                   required
                 />
               </div>

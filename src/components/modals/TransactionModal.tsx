@@ -23,6 +23,7 @@ interface TransactionModalProps {
   onAddCategory: (name: string, type: 'expense' | 'income', isMaaserEligible?: boolean) => Promise<CategoryInfo>;
   customCategoriesRaw?: CustomCategory[];
   onUpdateCategory?: (updated: CustomCategory) => void;
+  onDeleteCategory?: (categoryId: string, type: string) => Promise<void>;
 }
 
 export default function TransactionModal({
@@ -35,6 +36,7 @@ export default function TransactionModal({
   onAddCategory,
   customCategoriesRaw = [],
   onUpdateCategory,
+  onDeleteCategory,
 }: TransactionModalProps) {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
@@ -232,6 +234,7 @@ export default function TransactionModal({
                     const cat = customCategoriesRaw.find((c) => c.id === catId);
                     if (cat) setEditingCategory(cat);
                   } : undefined}
+                  onDeleteCategory={onDeleteCategory}
                   required
                   aria-labelledby="tx-category-label"
                 />

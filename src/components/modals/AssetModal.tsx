@@ -17,6 +17,7 @@ interface AssetModalProps {
   asset?: Asset | null;
   assetCategories: { default: CategoryInfo[]; custom: CategoryInfo[] };
   onAddCategory: (name: string) => Promise<CategoryInfo>;
+  onDeleteCategory?: (categoryId: string, type: string) => Promise<void>;
 }
 
 export default function AssetModal({
@@ -26,6 +27,7 @@ export default function AssetModal({
   asset,
   assetCategories,
   onAddCategory,
+  onDeleteCategory,
 }: AssetModalProps) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('investments');
@@ -137,6 +139,7 @@ export default function AssetModal({
                   customCategories={assetCategories.custom}
                   placeholder="בחר סוג נכס"
                   onAddNew={() => setShowAddCategory(true)}
+                  onDeleteCategory={onDeleteCategory}
                   required
                 />
               </div>

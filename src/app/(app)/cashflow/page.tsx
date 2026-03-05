@@ -123,7 +123,12 @@ export default function DashboardPage() {
   const liabilitiesRef = useRef<HTMLDivElement>(null);
 
   // Categories hook
-  const { getCustomByType, addCustomCategory } = useCategories();
+  const { getCustomByType, addCustomCategory, deleteCustomCategory } = useCategories();
+
+  // Delete a custom category - type is passed directly from CategorySelect
+  const handleDeleteCategory = useCallback(async (categoryId: string, type: string) => {
+    await deleteCustomCategory(categoryId, type as 'expense' | 'income' | 'asset' | 'liability');
+  }, [deleteCustomCategory]);
 
   // Analytics hook
   const analytics = useAnalytics();
@@ -959,6 +964,7 @@ export default function DashboardPage() {
         expenseCategories={expenseCats}
         incomeCategories={incomeCats}
         onAddCategory={addCustomCategory}
+        onDeleteCategory={handleDeleteCategory}
       />
 
       <RecurringModal
@@ -972,6 +978,7 @@ export default function DashboardPage() {
         expenseCategories={expenseCats}
         incomeCategories={incomeCats}
         onAddCategory={addCustomCategory}
+        onDeleteCategory={handleDeleteCategory}
       />
 
       <AssetModal
@@ -984,6 +991,7 @@ export default function DashboardPage() {
         asset={editingAsset}
         assetCategories={assetCats}
         onAddCategory={(name) => addCustomCategory(name, 'asset')}
+        onDeleteCategory={handleDeleteCategory}
       />
 
       <LiabilityModal
@@ -996,6 +1004,7 @@ export default function DashboardPage() {
         liability={editingLiability}
         liabilityTypes={liabilityCats}
         onAddCategory={(name) => addCustomCategory(name, 'liability')}
+        onDeleteCategory={handleDeleteCategory}
       />
 
       <LiabilityTypeSelectionModal

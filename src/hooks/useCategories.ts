@@ -159,11 +159,14 @@ export function useCategories() {
   // Get custom categories as CategoryInfo for a specific type
   // For Haredi users, haredi-only expense categories are prepended
   const getCustomByType = useCallback(
-    (type: 'expense' | 'income' | 'asset' | 'liability'): (CategoryInfo & { isGoalCategory?: boolean })[] => {
-      const customCats = customCategories[type].map(convertToInfo);
+    (type: 'expense' | 'income' | 'asset' | 'liability'): (CategoryInfo & { isGoalCategory?: boolean; type: string })[] => {
+      const customCats = customCategories[type].map(cat => ({
+        ...convertToInfo(cat),
+        type,
+      }));
       // Prepend haredi expense categories for Haredi users
       if (type === 'expense' && isHaredi) {
-        return [...harediExpenseCategories, ...customCats];
+        return [...harediExpenseCategories.map(c => ({ ...c, type })), ...customCats];
       }
       return customCats;
     },
@@ -226,11 +229,12 @@ export function useCategories() {
         method: 'DELETE',
       });
 
-      if (!response.ok) {
+      // 404 means the category is already gone from DB — still remove it from UI
+      if (!response.ok && response.status !== 404) {
         throw new Error('Failed to delete category');
       }
 
-      // Update local state
+      // Update local state (covers both successful deletion and already-deleted 404)
       setCustomCategories((prev) => ({
         ...prev,
         [type]: prev[type].filter((c) => c.id !== id),

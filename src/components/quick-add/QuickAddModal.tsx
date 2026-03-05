@@ -61,6 +61,7 @@ interface QuickAddModalProps {
     startDate: string;
   }) => Promise<void>;
   onAddCategory: (name: string, type: 'expense' | 'income' | 'asset' | 'liability', isMaaserEligible?: boolean) => Promise<CategoryInfo>;
+  onDeleteCategory?: (categoryId: string, type: string) => Promise<void>;
 }
 
 const tabs: { id: TabType; label: string; icon: typeof TrendingDown }[] = [
@@ -78,6 +79,7 @@ export default function QuickAddModal({
   onSaveAsset,
   onSaveLiability,
   onAddCategory,
+  onDeleteCategory,
 }: QuickAddModalProps) {
   const { isModalOpen, closeModal } = useModal();
   const analytics = useAnalytics();
@@ -255,6 +257,7 @@ export default function QuickAddModal({
                     incomeCategories={incomeCategories}
                     onSave={handleSaveTransaction}
                     onAddCategory={(name, type, isMaaserEligible) => onAddCategory(name, type, isMaaserEligible)}
+                    onDeleteCategory={onDeleteCategory}
                   />
                 </div>
               )}

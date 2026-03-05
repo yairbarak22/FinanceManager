@@ -20,6 +20,7 @@ interface TransactionQuickFormProps {
     date: string;
   }) => Promise<void>;
   onAddCategory: (name: string, type: 'expense' | 'income', isMaaserEligible?: boolean) => Promise<CategoryInfo>;
+  onDeleteCategory?: (categoryId: string, type: string) => Promise<void>;
 }
 
 export default function TransactionQuickForm({
@@ -27,6 +28,7 @@ export default function TransactionQuickForm({
   incomeCategories,
   onSave,
   onAddCategory,
+  onDeleteCategory,
 }: TransactionQuickFormProps) {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
@@ -201,6 +203,7 @@ export default function TransactionQuickForm({
             customCategories={currentCategories.custom}
             placeholder="בחר קטגוריה"
             onAddNew={() => setShowAddCategory(true)}
+            onDeleteCategory={onDeleteCategory}
             required
           />
         </div>

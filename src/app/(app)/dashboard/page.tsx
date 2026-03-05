@@ -127,7 +127,12 @@ export default function DashboardPage() {
   const liabilitiesRef = useRef<HTMLDivElement>(null);
 
   // Categories hook
-  const { getCustomByType, addCustomCategory, updateCustomCategory, customCategories: rawCustomCategories, isHaredi } = useCategories();
+  const { getCustomByType, addCustomCategory, updateCustomCategory, deleteCustomCategory, customCategories: rawCustomCategories, isHaredi } = useCategories();
+
+  // Delete a custom category - type is passed directly from CategorySelect
+  const handleDeleteCategory = useCallback(async (categoryId: string, type: string) => {
+    await deleteCustomCategory(categoryId, type as 'expense' | 'income' | 'asset' | 'liability');
+  }, [deleteCustomCategory]);
 
   // Analytics hook
   const analytics = useAnalytics();
@@ -1015,6 +1020,7 @@ export default function DashboardPage() {
           ...rawCustomCategories.income.map(c => ({ ...c, type: 'income' as const, icon: c.icon ?? undefined, color: c.color ?? undefined })),
         ]}
         onUpdateCategory={(updated) => updateCustomCategory(updated.id, updated.type as 'expense' | 'income' | 'asset' | 'liability', updated.isMaaserEligible ?? false)}
+        onDeleteCategory={handleDeleteCategory}
       />
 
       <RecurringModal
@@ -1028,6 +1034,7 @@ export default function DashboardPage() {
         expenseCategories={expenseCats}
         incomeCategories={incomeCats}
         onAddCategory={addCustomCategory}
+        onDeleteCategory={handleDeleteCategory}
       />
 
       <AssetModal
@@ -1040,6 +1047,7 @@ export default function DashboardPage() {
         asset={editingAsset}
         assetCategories={assetCats}
         onAddCategory={(name) => addCustomCategory(name, 'asset')}
+        onDeleteCategory={handleDeleteCategory}
       />
 
       <LiabilityModal
@@ -1052,6 +1060,7 @@ export default function DashboardPage() {
         liability={editingLiability}
         liabilityTypes={liabilityCats}
         onAddCategory={(name) => addCustomCategory(name, 'liability')}
+        onDeleteCategory={handleDeleteCategory}
       />
 
       <LiabilityTypeSelectionModal
@@ -1163,6 +1172,7 @@ export default function DashboardPage() {
           });
         }}
         onAddCategory={addCustomCategory}
+        onDeleteCategory={handleDeleteCategory}
       />
 
       <MaaserCalculatorModal
