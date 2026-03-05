@@ -38,8 +38,8 @@ export function AddAssetButton({ onAddAsset, fullWidth = false, exchangeRate }: 
         `}
         style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
       >
-        <Plus className="w-4 h-4" strokeWidth={1.75} />
         <span className="font-medium text-[0.9375rem]">הוסף נכס</span>
+        <Plus className="w-4 h-4" strokeWidth={1.75} />
       </button>
 
       <AddAssetDialog

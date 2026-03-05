@@ -169,8 +169,8 @@ export default function LiabilitiesSection({
           className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
           style={{ color: '#69ADFF' }}
         >
-          <Plus className="w-4 h-4" strokeWidth={1.5} />
           הוסף
+          <Plus className="w-4 h-4" strokeWidth={1.5} />
         </button>
       </div>
 

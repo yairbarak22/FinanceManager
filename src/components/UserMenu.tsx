@@ -111,7 +111,7 @@ export default function UserMenu({ onOpenProfile, onOpenAccountSettings }: UserM
               className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
             >
               <Sparkles className="w-4 h-4 text-amber-500" />
-              סיור במערכת
+              התחלה מהירה
             </button>
             <div className="my-1 border-t border-slate-100" />
             <button

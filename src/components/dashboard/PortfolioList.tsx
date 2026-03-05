@@ -234,8 +234,8 @@ export default function PortfolioList({
             color: '#7E7F90' 
           }}
         >
-          <span>הצג עוד {items.length - maxItems} פריטים</span>
           <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
+          <span>הצג עוד {items.length - maxItems} פריטים</span>
         </button>
       )}
     </div>

@@ -245,7 +245,7 @@ export default function MinimalHeader({
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-50 transition-colors"
                       >
                         <Sparkles className="w-4 h-4 text-slate-400" />
-                        <span>הצג סיור</span>
+                        <span>התחלה מהירה</span>
                       </button>
                     </div>
 

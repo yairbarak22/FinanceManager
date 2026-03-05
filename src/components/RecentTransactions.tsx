@@ -381,8 +381,8 @@ export default function RecentTransactions({
                   className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
                   style={{ color: '#7E7F90' }}
                 >
-                  <CheckSquare className="w-4 h-4" strokeWidth={1.5} />
                   בחירה
+                  <CheckSquare className="w-4 h-4" strokeWidth={1.5} />
                 </button>
               )}
               {onOpenMaaserCalculator && (
@@ -391,8 +391,8 @@ export default function RecentTransactions({
                   className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
                   style={{ color: '#7E7F90' }}
                 >
-                  <Calculator className="w-4 h-4" strokeWidth={1.5} />
                   מעשרות
+                  <Calculator className="w-4 h-4" strokeWidth={1.5} />
                 </button>
               )}
               <button
@@ -401,8 +401,8 @@ export default function RecentTransactions({
                 className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
                 style={{ color: '#7E7F90' }}
               >
-                <Upload className="w-4 h-4" strokeWidth={1.5} />
                 ייבוא
+                <Upload className="w-4 h-4" strokeWidth={1.5} />
               </button>
               <button
                 id="btn-global-add"
@@ -410,8 +410,8 @@ export default function RecentTransactions({
                 className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
                 style={{ color: '#69ADFF' }}
               >
-                <Plus className="w-4 h-4" strokeWidth={1.5} />
                 הוסף
+                <Plus className="w-4 h-4" strokeWidth={1.5} />
               </button>
             </>
           )}

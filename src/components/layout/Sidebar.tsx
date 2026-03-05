@@ -448,7 +448,7 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
               className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors"
             >
               <Sparkles className="w-4 h-4 text-slate-400" />
-              <span className="text-sm font-medium">הצג סיור</span>
+              <span className="text-sm font-medium">התחלה מהירה</span>
             </button>
             <button
               type="button"

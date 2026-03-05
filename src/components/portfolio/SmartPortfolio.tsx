@@ -665,8 +665,8 @@ function EmptyState({ onAddAsset, exchangeRate }: {
           className="flex items-center gap-2 px-6 py-3 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-all active:scale-95 font-medium shadow-lg shadow-[#69ADFF]/25"
           style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
         >
-          <Plus className="w-5 h-5" strokeWidth={2} />
           <span>הוסף נכס ראשון</span>
+          <Plus className="w-5 h-5" strokeWidth={2} />
         </button>
       </div>
 
