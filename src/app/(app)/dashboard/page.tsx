@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout';
 import { 
   SectionHeader, 
@@ -27,6 +28,7 @@ import MortgageModal from '@/components/modals/MortgageModal';
 import AmortizationModal from '@/components/modals/AmortizationModal';
 import ImportModal from '@/components/modals/ImportModal';
 import QuickStartModal from '@/components/modals/QuickStartModal';
+import NewUserOnboardingModal from '@/components/modals/NewUserOnboardingModal';
 import DocumentsModal from '@/components/modals/DocumentsModal';
 import ProfileModal from '@/components/ProfileModal';
 import AccountSettings from '@/components/AccountSettings';
@@ -141,8 +143,9 @@ export default function DashboardPage() {
   const toast = useToast();
 
   // Onboarding
-  const { startTour, startHarediTour } = useOnboarding();
+  const { startTour, startHarediTour, isWizardOpen, endTour } = useOnboarding();
   const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
+  const router = useRouter();
   const { status: sessionStatus } = useSession();
 
   // Memoized categories
@@ -239,27 +242,39 @@ export default function DashboardPage() {
     fetchData();
   }, [fetchData]);
 
-  // Listen for onboarding data additions
-  useEffect(() => {
-    let debounceTimer: NodeJS.Timeout | null = null;
+  // ============================================================
+  // Onboarding modal handlers — called when user picks an option
+  // ============================================================
 
-    const handleOnboardingAdd = () => {
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
-      debounceTimer = setTimeout(() => {
-        fetchData();
-      }, 2000);
-    };
+  const handleOnboardingImport = useCallback(async () => {
+    await endTour();
+    setIsImportModalOpen(true);
+  }, [endTour]);
 
-    window.addEventListener('onboarding-data-added', handleOnboardingAdd);
-    return () => {
-      window.removeEventListener('onboarding-data-added', handleOnboardingAdd);
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-      }
-    };
-  }, [fetchData]);
+  const handleOnboardingGoals = useCallback(async () => {
+    await endTour();
+    router.push('/goals');
+  }, [endTour, router]);
+
+  const handleOnboardingCourses = useCallback(async () => {
+    await endTour();
+    router.push('/courses');
+  }, [endTour, router]);
+
+  const handleOnboardingAddAsset = useCallback(async () => {
+    await endTour();
+    setEditingAsset(null);
+    setIsAssetModalOpen(true);
+  }, [endTour]);
+
+  const handleOnboardingAddLiability = useCallback(async () => {
+    await endTour();
+    setIsLiabilityTypeSelectionOpen(true);
+  }, [endTour]);
+
+  const handleOnboardingClose = useCallback(async () => {
+    await endTour();
+  }, [endTour]);
 
   // Check onboarding
   useEffect(() => {
@@ -1191,6 +1206,16 @@ export default function DashboardPage() {
         isOpen={showQuickStart}
         onClose={() => setShowQuickStart(false)}
         onImport={() => setIsImportModalOpen(true)}
+      />
+
+      <NewUserOnboardingModal
+        isOpen={isWizardOpen}
+        onClose={handleOnboardingClose}
+        onImport={handleOnboardingImport}
+        onGoals={handleOnboardingGoals}
+        onCourses={handleOnboardingCourses}
+        onAddAsset={handleOnboardingAddAsset}
+        onAddLiability={handleOnboardingAddLiability}
       />
 
       <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAuth, withIdAndUserId } from '@/lib/authHelpers';
+import { requireAuth, withSharedAccountId } from '@/lib/authHelpers';
 import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 
 // PUT - Update a custom category (isMaaserEligible)
@@ -23,9 +23,9 @@ export async function PUT(
       );
     }
 
-    // Find and verify ownership before updating
+    // Find and verify ownership (allows shared account members to edit)
     const existing = await prisma.customCategory.findFirst({
-      where: withIdAndUserId(id, userId),
+      where: await withSharedAccountId(id, userId),
     });
 
     if (!existing) {
@@ -89,9 +89,9 @@ export async function DELETE(
   try {
     const { id } = await params;
 
-    // Delete only if it belongs to the user (IDOR prevention)
+    // Delete only if it belongs to the shared account (IDOR prevention)
     const result = await prisma.customCategory.deleteMany({
-      where: withIdAndUserId(id, userId),
+      where: await withSharedAccountId(id, userId),
     });
 
     if (result.count === 0) {

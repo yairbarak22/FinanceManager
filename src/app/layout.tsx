@@ -5,7 +5,6 @@ import { headers } from "next/headers";
 import Providers from "@/components/Providers";
 import { OnboardingProvider } from "@/context/OnboardingContext";
 import { AccessibilityProvider } from "@/context/AccessibilityContext";
-import OnboardingLayer from "@/components/onboarding/OnboardingLayer";
 import Analytics from "@/components/Analytics";
 import CookieConsent from "@/components/CookieConsent";
 import { AccessibilityStatement } from "@/components/AccessibilityStatement";
@@ -172,7 +171,6 @@ export default async function RootLayout({
           <AccessibilityProvider>
             <OnboardingProvider>
               {children}
-              <OnboardingLayer />
             </OnboardingProvider>
             <Analytics nonce={nonce} />
             <CookieConsent />
