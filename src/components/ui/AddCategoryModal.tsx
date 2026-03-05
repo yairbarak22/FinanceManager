@@ -6,7 +6,7 @@ import { X, Plus } from 'lucide-react';
 interface AddCategoryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (name: string) => Promise<void>;
+  onSave: (name: string, isMaaserEligible?: boolean) => Promise<void>;
   categoryType: 'expense' | 'income' | 'asset' | 'liability';
 }
 
@@ -24,8 +24,11 @@ export default function AddCategoryModal({
   categoryType,
 }: AddCategoryModalProps) {
   const [name, setName] = useState('');
+  const [isMaaserEligible, setIsMaaserEligible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const showMaaserOption = categoryType === 'income' || categoryType === 'expense';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,8 +42,9 @@ export default function AddCategoryModal({
     setError('');
 
     try {
-      await onSave(name.trim());
+      await onSave(name.trim(), showMaaserOption ? isMaaserEligible : undefined);
       setName('');
+      setIsMaaserEligible(false);
       onClose();
     } catch (err) {
       if (err instanceof Error) {
@@ -55,11 +59,17 @@ export default function AddCategoryModal({
 
   const handleClose = () => {
     setName('');
+    setIsMaaserEligible(false);
     setError('');
     onClose();
   };
 
   if (!isOpen) return null;
+
+  const maaserLabel =
+    categoryType === 'income'
+      ? 'הכנסה זו חייבת במעשרות'
+      : 'הוצאה זו נחשבת למעשרות/תרומה';
 
   return (
     <div className="modal-overlay" onClick={handleClose}>
@@ -69,11 +79,11 @@ export default function AddCategoryModal({
       >
         {/* Header */}
         <div className="modal-header py-4">
-          <h2 
+          <h2
             className="text-lg font-bold"
-            style={{ 
-              color: '#303150', 
-              fontFamily: 'var(--font-nunito), system-ui, sans-serif' 
+            style={{
+              color: '#303150',
+              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
             }}
           >
             הוסף קטגוריית {typeLabels[categoryType]}
@@ -103,23 +113,70 @@ export default function AddCategoryModal({
               />
             </div>
 
+            {/* Maaser Checkbox — income/expense only */}
+            {showMaaserOption && (
+              <button
+                type="button"
+                onClick={() => setIsMaaserEligible((v) => !v)}
+                disabled={isLoading}
+                className="w-full flex items-center gap-3 rounded-xl px-4 py-3 transition-all text-right"
+                style={{
+                  backgroundColor: isMaaserEligible ? 'rgba(105,173,255,0.08)' : '#F7F7F8',
+                  border: `1px solid ${isMaaserEligible ? '#69ADFF' : '#E8E8ED'}`,
+                }}
+                aria-pressed={isMaaserEligible}
+              >
+                {/* Custom checkbox */}
+                <span
+                  className="flex-shrink-0 w-5 h-5 rounded-md flex items-center justify-center transition-all"
+                  style={{
+                    backgroundColor: isMaaserEligible ? '#69ADFF' : '#FFFFFF',
+                    border: `2px solid ${isMaaserEligible ? '#69ADFF' : '#BDBDCB'}`,
+                  }}
+                >
+                  {isMaaserEligible && (
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                      <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </span>
+                <span
+                  className="text-sm font-medium"
+                  style={{
+                    color: isMaaserEligible ? '#303150' : '#7E7F90',
+                    fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                  }}
+                >
+                  {maaserLabel}
+                </span>
+              </button>
+            )}
+
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 text-red-600 text-sm p-3 rounded-xl">
+              <div
+                className="rounded-xl p-3 text-sm"
+                style={{
+                  backgroundColor: 'rgba(241,138,181,0.1)',
+                  border: '1px solid rgba(241,138,181,0.3)',
+                  color: '#F18AB5',
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                }}
+              >
                 {error}
               </div>
             )}
 
             {/* Info */}
-            <div 
+            <div
               className="rounded-xl p-3"
               style={{ backgroundColor: '#F7F7F8' }}
             >
-              <p 
+              <p
                 className="text-sm"
-                style={{ 
-                  color: '#7E7F90', 
-                  fontFamily: 'var(--font-nunito), system-ui, sans-serif' 
+                style={{
+                  color: '#7E7F90',
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
                 }}
               >
                 הקטגוריה תישמר ותהיה זמינה בכל הרשימות מסוג {typeLabels[categoryType]}.
@@ -160,4 +217,3 @@ export default function AddCategoryModal({
     </div>
   );
 }
-

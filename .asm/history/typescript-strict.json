@@ -1,0 +1,16 @@
+{
+  "skill": "typescript-strict",
+  "commits": [
+    {
+      "id": "baab594aceca",
+      "kind": "import",
+      "snapshot_id": "typescript-strict-99e54a792daf2fd0",
+      "parent_snapshot_id": "",
+      "local_revision": 0,
+      "message": "Imported skill",
+      "author": "yairbarak",
+      "created_at": "2026-03-04T20:28:31.659561+00:00"
+    }
+  ],
+  "tags": {}
+}

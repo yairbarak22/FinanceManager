@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, Plus, Check, Star, Target } from 'lucide-react';
+import { ChevronDown, Plus, Check, Star, Target, Pencil } from 'lucide-react';
 import { CategoryInfo, defaultCustomIcon } from '@/lib/categories';
 import { cn } from '@/lib/utils';
 import { SensitiveData } from '../common/SensitiveData';
@@ -22,6 +22,7 @@ interface CategorySelectProps {
   customCategories: ExtendedCategoryInfo[];
   placeholder?: string;
   onAddNew?: () => void;
+  onEditCategory?: (categoryId: string) => void;
   required?: boolean;
 }
 
@@ -40,6 +41,7 @@ export default function CategorySelect({
   customCategories,
   placeholder = 'בחר קטגוריה',
   onAddNew,
+  onEditCategory,
   required = false,
 }: CategorySelectProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -128,47 +130,61 @@ export default function CategorySelect({
     // Ensure we have a valid icon component - fallback to Star if not
     const IconComponent = typeof category.icon === 'function' ? category.icon : Star;
     const isGoal = category.isGoalCategory;
+    const isEditable = category.isCustom && !isGoal && onEditCategory;
 
     return (
-      <button
-        key={category.id}
-        type="button"
-        onClick={() => handleSelect(category.id)}
-        className={cn(
-          'category-option',
-          isSelected && 'selected',
-          isGoal && 'bg-gradient-to-l from-[rgba(13,186,204,0.05)] to-transparent'
-        )}
-      >
-        <div
-          className={cn('category-option-icon', isGoal ? 'bg-[rgba(13,186,204,0.15)]' : category.bgColor)}
-          style={{ color: isGoal ? GOAL_CATEGORY_COLOR : category.color }}
-        >
-          {isGoal ? (
-            <Target className="w-4 h-4" />
-          ) : (
-            <IconComponent className="w-4 h-4" />
+      <div key={category.id} className="relative group flex items-center">
+        <button
+          type="button"
+          onClick={() => handleSelect(category.id)}
+          className={cn(
+            'category-option flex-1',
+            isSelected && 'selected',
+            isGoal && 'bg-gradient-to-l from-[rgba(13,186,204,0.05)] to-transparent'
           )}
-        </div>
-        <SensitiveData as="span" className="flex-1 text-right">{category.nameHe}</SensitiveData>
-        {isGoal && (
-          <span 
-            className="text-xs px-2 py-0.5 rounded-full font-medium"
-            style={{ 
-              backgroundColor: 'rgba(13, 186, 204, 0.1)',
-              color: GOAL_CATEGORY_COLOR,
-            }}
+          style={isEditable ? { paddingInlineEnd: '2rem' } : undefined}
+        >
+          <div
+            className={cn('category-option-icon', isGoal ? 'bg-[rgba(13,186,204,0.15)]' : category.bgColor)}
+            style={{ color: isGoal ? GOAL_CATEGORY_COLOR : category.color }}
           >
-            יעד
-          </span>
+            {isGoal ? (
+              <Target className="w-4 h-4" />
+            ) : (
+              <IconComponent className="w-4 h-4" />
+            )}
+          </div>
+          <SensitiveData as="span" className="flex-1 text-right">{category.nameHe}</SensitiveData>
+          {isGoal && (
+            <span 
+              className="text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{ 
+                backgroundColor: 'rgba(13, 186, 204, 0.1)',
+                color: GOAL_CATEGORY_COLOR,
+              }}
+            >
+              יעד
+            </span>
+          )}
+          {showCheckmark && isSelected && (
+            <Check className="w-4 h-4 text-indigo-500" />
+          )}
+        </button>
+        {isEditable && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsOpen(false);
+              onEditCategory(category.id);
+            }}
+            className="absolute start-1 top-1/2 -translate-y-1/2 p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-slate-100"
+            title="ערוך קטגוריה"
+          >
+            <Pencil className="w-3.5 h-3.5 text-slate-400" />
+          </button>
         )}
-        {showCheckmark && isSelected && (
-          <Check className="w-4 h-4 text-indigo-500" />
-        )}
-        {category.isCustom && !isGoal && (
-          <span className="text-xs text-slate-400 px-1">מותאם</span>
-        )}
-      </button>
+      </div>
     );
   };
 

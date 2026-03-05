@@ -1,6 +1,6 @@
 // Maaser/Chomesh calculation utilities
 
-import { Transaction, RecurringTransaction } from '@/lib/types';
+import { Transaction, RecurringTransaction, CustomCategory } from '@/lib/types';
 import { getMonthKey, isRecurringActiveInMonth } from '@/lib/utils';
 
 export type CalculationType = 'maaser' | 'chomesh';
@@ -38,32 +38,45 @@ export function calculateObligation(
 }
 
 /**
- * Get all income transactions for a specific month
+ * Get all income transactions for a specific month.
+ * Custom income categories with isMaaserEligible=false are excluded if customCategories is provided.
  */
 export function getMonthlyIncomes(
   transactions: Transaction[],
-  monthKey: string
+  monthKey: string,
+  customCategories?: CustomCategory[]
 ): Transaction[] {
+  const excludedCustomIds = customCategories
+    ?.filter((c) => c.type === 'income' && !c.isMaaserEligible)
+    .map((c) => c.id) ?? [];
+
   return transactions.filter((tx) => {
     const txMonth = getMonthKey(tx.date);
-    return txMonth === monthKey && tx.type === 'income';
+    if (txMonth !== monthKey || tx.type !== 'income') return false;
+    if (excludedCustomIds.includes(tx.category)) return false;
+    return true;
   });
 }
 
 /**
- * Get all donation/maaser expense transactions for a specific month
+ * Get all donation/maaser expense transactions for a specific month.
+ * Also includes custom expense categories with isMaaserEligible=true.
  */
 export function getMonthlyDonationTransactions(
   transactions: Transaction[],
-  monthKey: string
+  monthKey: string,
+  customCategories?: CustomCategory[]
 ): Transaction[] {
+  const customMaaserIds = customCategories
+    ?.filter((c) => c.type === 'expense' && c.isMaaserEligible)
+    .map((c) => c.id) ?? [];
+
   return transactions.filter((tx) => {
     const txMonth = getMonthKey(tx.date);
-    return (
-      txMonth === monthKey &&
-      tx.type === 'expense' &&
-      (tx.category === 'maaser' || tx.category === 'donation')
-    );
+    if (txMonth !== monthKey || tx.type !== 'expense') return false;
+    if (tx.category === 'maaser' || tx.category === 'donation') return true;
+    if (customMaaserIds.includes(tx.category)) return true;
+    return false;
   });
 }
 
@@ -72,9 +85,10 @@ export function getMonthlyDonationTransactions(
  */
 export function getMonthlyDonationsTotal(
   transactions: Transaction[],
-  monthKey: string
+  monthKey: string,
+  customCategories?: CustomCategory[]
 ): number {
-  return getMonthlyDonationTransactions(transactions, monthKey).reduce(
+  return getMonthlyDonationTransactions(transactions, monthKey, customCategories).reduce(
     (sum, tx) => sum + tx.amount,
     0
   );

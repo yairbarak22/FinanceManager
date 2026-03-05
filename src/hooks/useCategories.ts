@@ -15,6 +15,7 @@ interface CustomCategoryResponse {
   type: string;
   icon: string | null;
   color: string | null;
+  isMaaserEligible: boolean;
   isCustom: boolean;
   isGoalCategory?: boolean; // Added to mark goal categories
 }
@@ -180,12 +181,13 @@ export function useCategories() {
   const addCustomCategory = useCallback(
     async (
       name: string,
-      type: 'expense' | 'income' | 'asset' | 'liability'
+      type: 'expense' | 'income' | 'asset' | 'liability',
+      isMaaserEligible?: boolean
     ): Promise<CategoryInfo> => {
       const response = await apiFetch('/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, type }),
+        body: JSON.stringify({ name, type, isMaaserEligible: isMaaserEligible ?? false }),
       });
 
       if (!response.ok) {
@@ -204,6 +206,18 @@ export function useCategories() {
       return convertToInfo(newCategory);
     },
     [convertToInfo]
+  );
+
+  const updateCustomCategory = useCallback(
+    (id: string, type: 'expense' | 'income' | 'asset' | 'liability', isMaaserEligible: boolean) => {
+      setCustomCategories((prev) => ({
+        ...prev,
+        [type]: prev[type].map((c) =>
+          c.id === id ? { ...c, isMaaserEligible } : c
+        ),
+      }));
+    },
+    []
   );
 
   const deleteCustomCategory = useCallback(
@@ -231,6 +245,7 @@ export function useCategories() {
     error,
     fetchCategories,
     addCustomCategory,
+    updateCustomCategory,
     deleteCustomCategory,
     getCustomByType,
     isGoalCategory,

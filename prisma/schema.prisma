@@ -281,14 +281,15 @@ model Holding {
 }
 
 model CustomCategory {
-  id        String   @id @default(cuid())
-  userId    String
-  name      String   // Hebrew name
-  type      String   // 'expense' | 'income' | 'asset' | 'liability'
-  icon      String?  // Icon name from Lucide (optional)
-  color     String?  // Hex color (optional)
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  userId           String
+  name             String   // Hebrew name
+  type             String   // 'expense' | 'income' | 'asset' | 'liability'
+  icon             String?  // Icon name from Lucide (optional)
+  color            String?  // Hex color (optional)
+  isMaaserEligible Boolean  @default(false) // האם נחשב למעשרות (income=חיוב, expense=תרומה)
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, name, type]) // Prevent duplicates
   @@index([userId])

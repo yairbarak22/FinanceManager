@@ -1,0 +1,16 @@
+{
+  "skill": "remotion-best-practices",
+  "commits": [
+    {
+      "id": "80397e447218",
+      "kind": "import",
+      "snapshot_id": "remotion-best-practices-0124016e904ac198",
+      "parent_snapshot_id": "",
+      "local_revision": 0,
+      "message": "Imported skill",
+      "author": "yairbarak",
+      "created_at": "2026-03-04T21:10:37.571596+00:00"
+    }
+  ],
+  "tags": {}
+}

@@ -1,0 +1,16 @@
+{
+  "skill": "nextjs-best-practices",
+  "commits": [
+    {
+      "id": "6b7b7308a6e0",
+      "kind": "import",
+      "snapshot_id": "nextjs-best-practices-7b31199cce0f9a1b",
+      "parent_snapshot_id": "",
+      "local_revision": 0,
+      "message": "Imported skill",
+      "author": "yairbarak",
+      "created_at": "2026-03-04T20:28:27.617448+00:00"
+    }
+  ],
+  "tags": {}
+}

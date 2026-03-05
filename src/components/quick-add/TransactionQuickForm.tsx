@@ -19,7 +19,7 @@ interface TransactionQuickFormProps {
     description: string;
     date: string;
   }) => Promise<void>;
-  onAddCategory: (name: string, type: 'expense' | 'income') => Promise<CategoryInfo>;
+  onAddCategory: (name: string, type: 'expense' | 'income', isMaaserEligible?: boolean) => Promise<CategoryInfo>;
 }
 
 export default function TransactionQuickForm({
@@ -82,8 +82,8 @@ export default function TransactionQuickForm({
     }
   };
 
-  const handleAddCategory = async (name: string) => {
-    const newCategory = await onAddCategory(name, type);
+  const handleAddCategory = async (name: string, isMaaserEligible?: boolean) => {
+    const newCategory = await onAddCategory(name, type, isMaaserEligible);
     setCategory(newCategory.id);
     setShowAddCategory(false);
   };

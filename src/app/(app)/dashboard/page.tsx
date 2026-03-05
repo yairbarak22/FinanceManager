@@ -127,7 +127,7 @@ export default function DashboardPage() {
   const liabilitiesRef = useRef<HTMLDivElement>(null);
 
   // Categories hook
-  const { getCustomByType, addCustomCategory, isHaredi } = useCategories();
+  const { getCustomByType, addCustomCategory, updateCustomCategory, customCategories: rawCustomCategories, isHaredi } = useCategories();
 
   // Analytics hook
   const analytics = useAnalytics();
@@ -1010,6 +1010,11 @@ export default function DashboardPage() {
         expenseCategories={expenseCats}
         incomeCategories={incomeCats}
         onAddCategory={addCustomCategory}
+        customCategoriesRaw={[
+          ...rawCustomCategories.expense.map(c => ({ ...c, type: 'expense' as const, icon: c.icon ?? undefined, color: c.color ?? undefined })),
+          ...rawCustomCategories.income.map(c => ({ ...c, type: 'income' as const, icon: c.icon ?? undefined, color: c.color ?? undefined })),
+        ]}
+        onUpdateCategory={(updated) => updateCustomCategory(updated.id, updated.type as 'expense' | 'income' | 'asset' | 'liability', updated.isMaaserEligible ?? false)}
       />
 
       <RecurringModal
@@ -1166,6 +1171,10 @@ export default function DashboardPage() {
         transactions={transactions}
         recurringTransactions={recurringTransactions}
         selectedMonth={selectedMonth === 'all' || selectedMonth === 'custom' ? currentMonth : selectedMonth}
+        customCategories={[
+          ...rawCustomCategories.expense.map(c => ({ ...c, type: 'expense' as const, icon: c.icon ?? undefined, color: c.color ?? undefined })),
+          ...rawCustomCategories.income.map(c => ({ ...c, type: 'income' as const, icon: c.icon ?? undefined, color: c.color ?? undefined })),
+        ]}
       />
 
       <QuickStartModal

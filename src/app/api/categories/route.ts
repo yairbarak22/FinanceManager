@@ -9,6 +9,7 @@ interface CustomCategoryResponse {
   type: string;
   icon: string | null;
   color: string | null;
+  isMaaserEligible: boolean;
   isCustom: boolean;
 }
 
@@ -39,6 +40,7 @@ export async function GET(request: NextRequest) {
         type: cat.type,
         icon: cat.icon,
         color: cat.color,
+        isMaaserEligible: cat.isMaaserEligible,
         isCustom: true,
       };
 
@@ -81,7 +83,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, type, icon, color } = body;
+    const { name, type, icon, color, isMaaserEligible } = body;
 
     // Validate required fields
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -122,6 +124,7 @@ export async function POST(request: NextRequest) {
         type,
         icon: icon || null,
         color: color || null,
+        isMaaserEligible: (type === 'income' || type === 'expense') ? (isMaaserEligible ?? false) : false,
       },
     });
 
@@ -132,6 +135,7 @@ export async function POST(request: NextRequest) {
       type: customCategory.type,
       icon: customCategory.icon,
       color: customCategory.color,
+      isMaaserEligible: customCategory.isMaaserEligible,
       isCustom: true,
     });
   } catch (error) {

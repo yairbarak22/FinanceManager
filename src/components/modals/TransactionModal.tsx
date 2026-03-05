@@ -6,6 +6,8 @@ import { Transaction } from '@/lib/types';
 import { CategoryInfo } from '@/lib/categories';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
+import EditCategoryModal from '@/components/ui/EditCategoryModal';
+import { CustomCategory } from '@/lib/types';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 // Field order for auto-scroll
@@ -18,7 +20,9 @@ interface TransactionModalProps {
   transaction?: Transaction | null;
   expenseCategories: { default: CategoryInfo[]; custom: CategoryInfo[] };
   incomeCategories: { default: CategoryInfo[]; custom: CategoryInfo[] };
-  onAddCategory: (name: string, type: 'expense' | 'income') => Promise<CategoryInfo>;
+  onAddCategory: (name: string, type: 'expense' | 'income', isMaaserEligible?: boolean) => Promise<CategoryInfo>;
+  customCategoriesRaw?: CustomCategory[];
+  onUpdateCategory?: (updated: CustomCategory) => void;
 }
 
 export default function TransactionModal({
@@ -29,6 +33,8 @@ export default function TransactionModal({
   expenseCategories,
   incomeCategories,
   onAddCategory,
+  customCategoriesRaw = [],
+  onUpdateCategory,
 }: TransactionModalProps) {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
@@ -36,6 +42,7 @@ export default function TransactionModal({
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<CustomCategory | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Refs for auto-scroll to next field
@@ -98,8 +105,8 @@ export default function TransactionModal({
     }
   };
 
-  const handleAddCategory = async (name: string) => {
-    const newCategory = await onAddCategory(name, type);
+  const handleAddCategory = async (name: string, isMaaserEligible?: boolean) => {
+    const newCategory = await onAddCategory(name, type, isMaaserEligible);
     setCategory(newCategory.id);
   };
 
@@ -221,6 +228,10 @@ export default function TransactionModal({
                   customCategories={type === 'income' ? incomeCategories.custom : expenseCategories.custom}
                   placeholder="בחר קטגוריה"
                   onAddNew={() => setShowAddCategory(true)}
+                  onEditCategory={onUpdateCategory ? (catId) => {
+                    const cat = customCategoriesRaw.find((c) => c.id === catId);
+                    if (cat) setEditingCategory(cat);
+                  } : undefined}
                   required
                   aria-labelledby="tx-category-label"
                 />
@@ -281,6 +292,19 @@ export default function TransactionModal({
         onSave={handleAddCategory}
         categoryType={type}
       />
+
+      {/* Edit Category Modal */}
+      {onUpdateCategory && (
+        <EditCategoryModal
+          isOpen={editingCategory !== null}
+          onClose={() => setEditingCategory(null)}
+          category={editingCategory}
+          onSave={(updated) => {
+            onUpdateCategory(updated);
+            setEditingCategory(null);
+          }}
+        />
+      )}
     </>
   );
 }

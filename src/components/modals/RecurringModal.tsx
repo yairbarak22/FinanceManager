@@ -41,7 +41,7 @@ interface RecurringModalProps {
   transaction?: RecurringTransaction | null;
   expenseCategories: { default: CategoryInfo[]; custom: CategoryInfo[] };
   incomeCategories: { default: CategoryInfo[]; custom: CategoryInfo[] };
-  onAddCategory: (name: string, type: 'expense' | 'income') => Promise<CategoryInfo>;
+  onAddCategory: (name: string, type: 'expense' | 'income', isMaaserEligible?: boolean) => Promise<CategoryInfo>;
 }
 
 export default function RecurringModal({
@@ -157,8 +157,8 @@ export default function RecurringModal({
     }
   };
 
-  const handleAddCategory = async (categoryName: string) => {
-    const newCategory = await onAddCategory(categoryName, type);
+  const handleAddCategory = async (categoryName: string, isMaaserEligible?: boolean) => {
+    const newCategory = await onAddCategory(categoryName, type, isMaaserEligible);
     setCategory(newCategory.id);
   };
 

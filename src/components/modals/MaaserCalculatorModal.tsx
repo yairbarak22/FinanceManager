@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { X, Loader2, ChevronDown, ChevronUp, Calculator, RefreshCw } from 'lucide-react';
-import { Transaction, RecurringTransaction } from '@/lib/types';
+import { Transaction, RecurringTransaction, CustomCategory } from '@/lib/types';
 import { formatCurrency, apiFetch } from '@/lib/utils';
 import {
   CalculationType,
@@ -44,6 +44,7 @@ interface MaaserCalculatorModalProps {
   transactions: Transaction[];
   recurringTransactions: RecurringTransaction[];
   selectedMonth: string; // YYYY-MM format
+  customCategories?: CustomCategory[];
 }
 
 export default function MaaserCalculatorModal({
@@ -52,6 +53,7 @@ export default function MaaserCalculatorModal({
   transactions,
   recurringTransactions,
   selectedMonth,
+  customCategories,
 }: MaaserCalculatorModalProps) {
   // State
   const [calculationType, setCalculationType] = useState<CalculationType>('maaser');
@@ -68,8 +70,8 @@ export default function MaaserCalculatorModal({
 
   // Get one-time income transactions for the selected month
   const monthlyIncomes = useMemo(
-    () => getMonthlyIncomes(transactions, selectedMonth),
-    [transactions, selectedMonth]
+    () => getMonthlyIncomes(transactions, selectedMonth, customCategories),
+    [transactions, selectedMonth, customCategories]
   );
 
   // Get recurring income transactions active in the selected month
@@ -109,8 +111,8 @@ export default function MaaserCalculatorModal({
 
   // Get one-time donation transactions for the selected month
   const donationTransactions = useMemo(
-    () => getMonthlyDonationTransactions(transactions, selectedMonth),
-    [transactions, selectedMonth]
+    () => getMonthlyDonationTransactions(transactions, selectedMonth, customCategories),
+    [transactions, selectedMonth, customCategories]
   );
 
   // Get recurring donation transactions active in the selected month
@@ -121,7 +123,7 @@ export default function MaaserCalculatorModal({
 
   // Total donations paid this month (one-time + recurring)
   const totalDonationsPaid = useMemo(() => {
-    const oneTime = getMonthlyDonationsTotal(transactions, selectedMonth);
+    const oneTime = getMonthlyDonationsTotal(transactions, selectedMonth, customCategories);
     const recurring = getActiveRecurringDonationsTotal(recurringTransactions, selectedMonth);
     return oneTime + recurring;
   }, [transactions, recurringTransactions, selectedMonth]);

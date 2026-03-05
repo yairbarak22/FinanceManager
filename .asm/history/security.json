@@ -1,0 +1,16 @@
+{
+  "skill": "security",
+  "commits": [
+    {
+      "id": "8fdf6dc98859",
+      "kind": "import",
+      "snapshot_id": "security-9902df41c20dd708",
+      "parent_snapshot_id": "",
+      "local_revision": 0,
+      "message": "Imported skill",
+      "author": "yairbarak",
+      "created_at": "2026-03-04T20:28:37.529676+00:00"
+    }
+  ],
+  "tags": {}
+}

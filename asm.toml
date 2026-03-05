@@ -1,0 +1,22 @@
+# ASM — Agent Skill Manager configuration
+
+[project]
+name = "FinanceManager"
+version = "0.1.0"
+
+[asm]
+version = "0.1.0"
+
+[skills]
+nextjs-best-practices = {source = "github:https://github.com/davila7/claude-code-templates/tree/main/cli-tool/components/skills/development/nextjs-best-practices"}
+prisma-expert = {source = "github:https://github.com/davila7/claude-code-templates/tree/main/cli-tool/components/skills/development/prisma-expert"}
+tailwind-4 = {source = "github:https://github.com/Gentleman-Programming/Gentleman.Dots/tree/main/GentlemanClaude/skills/tailwind-4"}
+typescript-strict = {source = "github:https://github.com/citypaul/.dotfiles/tree/main/claude/.claude/skills/typescript-strict"}
+security = {source = "github:https://github.com/HoangNguyen0403/agent-skills-standard/tree/develop/skills/nextjs/security"}
+security-best-practices = {source = "github:https://github.com/davila7/claude-code-templates/tree/main/cli-tool/components/skills/security/security-best-practices"}
+vitest = {source = "github:https://github.com/antfu/skills/tree/main/skills/vitest"}
+frontend-design = {source = "github:https://github.com/vudovn/antigravity-kit/tree/main/.agent/skills/frontend-design"}
+remotion-best-practices = {source = "github:https://github.com/remotion-dev/remotion/tree/main/packages/skills/skills/remotion"}
+
+[expertises]
+hebrew-rtl-personal-finance-management-app-built-w = {description = "Hebrew RTL personal finance management app built with Next.js 16 App Router, TypeScript, Tailwind CSS v4, Prisma ORM with PostgreSQL, NextAuth with Google OAuth, and OpenAI API integration for AI-powered transaction classification", skills = ["tailwind-4", "security", "nextjs-best-practices", "typescript-strict", "prisma-expert"], intent_tags = ["hebrew rtl personal finance management app built w", "expertise routing"], task_signals = ["Hebrew RTL personal finance management app built with Next.js 16 App Router, TypeScript, Tailwind CSS v4, Prisma ORM with PostgreSQL, NextAuth with Google OAuth, and OpenAI API integration for AI-powered transaction classification"], confidence_hint = "Use when task signals strongly match this domain vocabulary.", selection_rubric = ["Match at least one task signal before selecting this expertise.", "Load required skills first; then add advanced optional skills.", "Only use fallback skills if advanced optional skills do not fit."], prefer_advanced = true, skill_policies = [{name = "tailwind-4", role = "required", execution_order = 0, is_advanced = false}, {name = "security", role = "required", execution_order = 1, is_advanced = false}, {name = "nextjs-best-practices", role = "required", execution_order = 2, is_advanced = false}, {name = "typescript-strict", role = "required", execution_order = 3, is_advanced = false}, {name = "prisma-expert", role = "required", execution_order = 4, is_advanced = false}]}

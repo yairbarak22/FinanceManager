@@ -1,0 +1,16 @@
+{
+  "skill": "security-best-practices",
+  "commits": [
+    {
+      "id": "e4bedbe64cb5",
+      "kind": "import",
+      "snapshot_id": "security-best-practices-ebfdb521a64f9c43",
+      "parent_snapshot_id": "",
+      "local_revision": 0,
+      "message": "Imported skill",
+      "author": "yairbarak",
+      "created_at": "2026-03-04T20:31:42.921294+00:00"
+    }
+  ],
+  "tags": {}
+}

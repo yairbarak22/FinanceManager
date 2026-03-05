@@ -162,6 +162,7 @@ export interface CustomCategory {
   type: 'expense' | 'income' | 'asset' | 'liability';
   icon?: string;
   color?: string;
+  isMaaserEligible?: boolean;
   createdAt?: string;
 }
 

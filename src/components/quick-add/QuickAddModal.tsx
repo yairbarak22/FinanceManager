@@ -60,7 +60,7 @@ interface QuickAddModalProps {
     interestRate?: number;
     startDate: string;
   }) => Promise<void>;
-  onAddCategory: (name: string, type: 'expense' | 'income' | 'asset' | 'liability') => Promise<CategoryInfo>;
+  onAddCategory: (name: string, type: 'expense' | 'income' | 'asset' | 'liability', isMaaserEligible?: boolean) => Promise<CategoryInfo>;
 }
 
 const tabs: { id: TabType; label: string; icon: typeof TrendingDown }[] = [
@@ -254,7 +254,7 @@ export default function QuickAddModal({
                     expenseCategories={expenseCategories}
                     incomeCategories={incomeCategories}
                     onSave={handleSaveTransaction}
-                    onAddCategory={(name, type) => onAddCategory(name, type)}
+                    onAddCategory={(name, type, isMaaserEligible) => onAddCategory(name, type, isMaaserEligible)}
                   />
                 </div>
               )}
