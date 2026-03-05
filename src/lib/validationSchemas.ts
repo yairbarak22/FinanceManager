@@ -42,7 +42,7 @@ export const createRecurringSchema = z.object({
   category: shortString(50),
   name: shortString(100),
   isActive: z.boolean().optional(),
-  activeMonths: z.array(z.number().int().min(1).max(12)).min(1).max(12).optional().nullable(),
+  activeMonths: z.array(z.string().regex(/^\d{4}-\d{2}$/, 'Month must be in YYYY-MM format')).min(1).max(24).optional().nullable(),
 });
 
 // --- Liability schemas ---
