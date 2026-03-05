@@ -63,14 +63,6 @@ function buildNavItems(): NavItem[] {
       iconBg: 'bg-blue-100',
       iconColor: 'text-blue-600',
     },
-    {
-      id: 'budget',
-      label: 'תקציב',
-      path: '/budget',
-      icon: Wallet,
-      iconBg: 'bg-emerald-100',
-      iconColor: 'text-emerald-600',
-    },
     { 
       id: 'investments', 
       label: 'תיק מסחר עצמאי', 
@@ -91,6 +83,14 @@ function buildNavItems(): NavItem[] {
       icon: Target,
       iconBg: 'bg-purple-100',
       iconColor: 'text-purple-600',
+    },
+    {
+      id: 'budget',
+      label: 'תקציב',
+      path: '/budget',
+      icon: Wallet,
+      iconBg: 'bg-[#69ADFF1A]',
+      iconColor: 'text-[#69ADFF]',
     },
     { 
       id: 'help', 

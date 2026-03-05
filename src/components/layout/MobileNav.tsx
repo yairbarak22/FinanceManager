@@ -14,9 +14,9 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'dashboard', label: 'דשבורד', path: '/dashboard', icon: Home, activeColor: 'text-blue-500' },
-  { id: 'budget', label: 'תקציב', path: '/budget', icon: Wallet, activeColor: 'text-emerald-500' },
   { id: 'investments', label: 'השקעות', path: '/investments', icon: TrendingUp, activeColor: 'text-sky-500' },
   { id: 'goals', label: 'יעדים', path: '/goals', icon: Target, activeColor: 'text-purple-500' },
+  { id: 'budget', label: 'תקציב', path: '/budget', icon: Wallet, activeColor: 'text-[#69ADFF]' },
   { id: 'help', label: 'ידע', path: '/help', icon: BookOpen, activeColor: 'text-amber-500' },
 ];
 
