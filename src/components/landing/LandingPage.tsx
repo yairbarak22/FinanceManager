@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { trackMixpanelEvent, onMixpanelReady } from '@/lib/mixpanel';
+import dynamic from 'next/dynamic';
 import LegalModal from '@/components/modals/LegalModal';
 import Navbar from './Navbar';
 import HeroSection from './HeroSection';
@@ -14,6 +15,8 @@ import VideoShowcaseSection from './VideoShowcaseSection';
 import FAQSection from './FAQSection';
 import FinalCTASection from './FinalCTASection';
 import Footer from './Footer';
+
+const TestimonialsSection = dynamic(() => import('./TestimonialsSection'), { ssr: false });
 
 // Cookie name for signup source tracking
 const SIGNUP_SOURCE_COOKIE = 'signup_source';
@@ -66,6 +69,7 @@ function LandingPageContent() {
       <PlatformOverview />
       <HowItWorksSection />
       <VideoShowcaseSection />
+      <TestimonialsSection />
       <FAQSection />
       <FinalCTASection callbackUrl={callbackUrl} onOpenLegal={(type) => setLegalModal({ isOpen: true, type })} />
       <Footer
