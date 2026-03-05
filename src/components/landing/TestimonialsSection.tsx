@@ -109,12 +109,14 @@ function Avatar({ initials, color }: { initials: string; color: string }) {
 }
 
 /* ── Animation variants ─────────────────────────────────── */
+// Exit rotates OUT to the right (+90), enter comes IN from the left (-90)
+// For prev direction: exit left (-90), enter from right (+90)
 const cardVariants = {
   enter: (dir: number) => ({
-    rotateY: dir > 0 ? 90 : -90,
+    rotateY: dir > 0 ? -90 : 90,
     opacity: 0,
-    filter: 'brightness(0.6)',
-    scale: 0.94,
+    filter: 'brightness(0.5)',
+    scale: 0.92,
   }),
   center: {
     rotateY: 0,
@@ -122,22 +124,22 @@ const cardVariants = {
     filter: 'brightness(1)',
     scale: 1,
     transition: {
-      rotateY: { duration: 0.7, ease: [0.25, 0.1, 0.25, 1] },
-      opacity: { duration: 0.3, ease: 'easeOut' },
-      filter: { duration: 0.6, ease: 'easeOut' },
-      scale: { duration: 0.7, ease: [0.25, 0.1, 0.25, 1] },
+      rotateY: { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] },
+      opacity: { duration: 0.25, ease: 'easeOut' },
+      filter: { duration: 0.5, ease: 'easeOut' },
+      scale: { duration: 0.6, ease: [0.25, 0.1, 0.25, 1] },
     },
   },
   exit: (dir: number) => ({
-    rotateY: dir > 0 ? -90 : 90,
+    rotateY: dir > 0 ? 90 : -90,
     opacity: 0,
-    filter: 'brightness(0.6)',
-    scale: 0.94,
+    filter: 'brightness(0.5)',
+    scale: 0.92,
     transition: {
-      rotateY: { duration: 0.55, ease: [0.25, 0.1, 0.25, 1] },
-      opacity: { duration: 0.25, ease: 'easeIn' },
-      filter: { duration: 0.45, ease: 'easeIn' },
-      scale: { duration: 0.55, ease: [0.25, 0.1, 0.25, 1] },
+      rotateY: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] },
+      opacity: { duration: 0.2, ease: 'easeIn' },
+      filter: { duration: 0.4, ease: 'easeIn' },
+      scale: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1] },
     },
   }),
 };
@@ -329,7 +331,7 @@ export default function TestimonialsSection() {
             onTouchStart={handleDragStart as React.TouchEventHandler}
             onTouchEnd={handleDragEnd as React.TouchEventHandler}
           >
-            <AnimatePresence mode="sync" custom={dir}>
+            <AnimatePresence mode="wait" custom={dir}>
               <motion.article
                 key={current.id}
                 custom={dir}
@@ -413,9 +415,39 @@ export default function TestimonialsSection() {
           </div>
         </div>
 
+        {/* Timer progress bar */}
+        <div className="w-full max-w-sm mt-8">
+          <style>{`
+            @keyframes testimonialTimer {
+              from { width: 0%; }
+              to   { width: 100%; }
+            }
+          `}</style>
+          <div
+            className="w-full rounded-full overflow-hidden"
+            style={{ height: '3px', background: '#E8E8ED' }}
+            aria-hidden="true"
+          >
+            <div
+              key={`timer-${index}`}
+              style={{
+                height: '100%',
+                width: '0%',
+                borderRadius: '9999px',
+                background: 'linear-gradient(90deg, #0DBACC, #69ADFF)',
+                animationName: 'testimonialTimer',
+                animationDuration: '6s',
+                animationTimingFunction: 'linear',
+                animationFillMode: 'forwards',
+                animationPlayState: isPaused ? 'paused' : 'running',
+              }}
+            />
+          </div>
+        </div>
+
         {/* Dot navigation */}
         <div
-          className="flex items-center gap-2.5 mt-10"
+          className="flex items-center gap-2.5 mt-5"
           role="tablist"
           aria-label="בחר המלצה"
         >
