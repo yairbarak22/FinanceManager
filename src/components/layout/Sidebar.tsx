@@ -19,6 +19,7 @@ import {
   GraduationCap,
   PlayCircle,
   Loader2,
+  Wallet,
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -61,6 +62,14 @@ function buildNavItems(): NavItem[] {
       icon: Home,
       iconBg: 'bg-blue-100',
       iconColor: 'text-blue-600',
+    },
+    {
+      id: 'budget',
+      label: 'תקציב',
+      path: '/budget',
+      icon: Wallet,
+      iconBg: 'bg-emerald-100',
+      iconColor: 'text-emerald-600',
     },
     { 
       id: 'investments', 

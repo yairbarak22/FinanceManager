@@ -199,6 +199,46 @@ export type LiabilityType =
   | 'student_loan'   // הלוואת סטודנטים
   | (string & {});   // קטגוריות מותאמות אישית
 
+// תקציב חודשי
+export interface Budget {
+  id: string;
+  userId: string;
+  categoryId: string;
+  amount: number;
+  month: number;
+  year: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BudgetWithSpending extends Budget {
+  spent: number;
+  remaining: number;
+  percentage: number;
+  categoryName: string;
+  categoryNameHe: string;
+  categoryIcon: string;
+  categoryColor: string;
+}
+
+export interface BudgetSummary {
+  totalBudget: number;
+  totalSpent: number;
+  totalRemaining: number;
+  overallPercentage: number;
+  budgets: BudgetWithSpending[];
+  unbudgetedExpenses: UnbudgetedExpense[];
+}
+
+export interface UnbudgetedExpense {
+  categoryId: string;
+  categoryName: string;
+  categoryNameHe: string;
+  categoryIcon: string;
+  categoryColor: string;
+  totalSpent: number;
+}
+
 // Monthly summary
 export interface MonthlySummary {
   month: string;

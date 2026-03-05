@@ -46,6 +46,7 @@ model User {
   groupMemberships      UserGroupMember[]      // User groups this user belongs to
   ctaClicks             CtaClick[]             // CTA click tracking
   monthlyReports        MonthlyReport[]        // Monthly financial reports
+  budgets               Budget[]               // Monthly budget entries
 }
 
 model Account {
@@ -759,6 +760,25 @@ model MonthlyReport {
   @@unique([userId, monthKey])
   @@index([userId])
   @@index([monthKey])
+}
+
+// ============================================
+// MONTHLY BUDGET - Per-category spending limits
+// ============================================
+model Budget {
+  id         String   @id @default(cuid())
+  userId     String
+  categoryId String
+  amount     Float
+  month      Int
+  year       Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId, month, year])
+  @@index([userId, month, year])
+  @@index([userId])
 }
 
 // ============================================

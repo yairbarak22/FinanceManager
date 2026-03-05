@@ -124,6 +124,22 @@ export const createGoalSchema = z.object({
   expectedInterestRate: z.number().min(0).max(100).optional(),
 });
 
+// --- Budget schemas ---
+
+export const createBudgetSchema = z.object({
+  categoryId: shortString(100),
+  amount: positiveAmount,
+  month: z.number().int().min(1).max(12),
+  year: z.number().int().min(2020).max(2100),
+});
+
+export const copyBudgetSchema = z.object({
+  fromMonth: z.number().int().min(1).max(12),
+  fromYear: z.number().int().min(2020).max(2100),
+  toMonth: z.number().int().min(1).max(12),
+  toYear: z.number().int().min(2020).max(2100),
+});
+
 // --- Invite schemas ---
 
 export const sendFriendInviteSchema = z.object({
