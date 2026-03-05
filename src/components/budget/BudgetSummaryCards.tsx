@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Wallet, Receipt, PiggyBank } from 'lucide-react';
+import { Wallet, Receipt, Coins } from 'lucide-react';
 
 const COLORS = {
   dodgerBlue: '#69ADFF',
@@ -126,7 +126,7 @@ export default function BudgetSummaryCards({
       <SummaryCard
         title="יתרה כוללת"
         value={totalRemaining}
-        icon={PiggyBank}
+        icon={Coins}
         accentColor={remainingColor}
         subtitle={remainingSubtitle}
       />

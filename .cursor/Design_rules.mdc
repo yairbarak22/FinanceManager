@@ -289,3 +289,29 @@ Toast Notification:
 - Animation: slide down + fade in over 300ms
 - Auto-dismiss: 3000ms
 - Shadow: shadow-xl
+
+18. Cultural Sensitivity
+NEVER use pig-related icons (PiggyBank, pig emojis, etc.) anywhere in the application — this is a religiously observant (Haredi) user base. Use alternatives for savings/balance concepts:
+- Coins (preferred for balance/savings cards)
+- CircleDollarSign
+- Banknote
+- Wallet
+
+19. Dropdowns Inside Modals — React Portal Pattern
+Dropdowns (and any absolutely-positioned floating UI) rendered inside a modal WILL be clipped by the modal's overflow unless rendered outside the DOM subtree. Always use React Portal (createPortal) for custom dropdowns inside modals.
+
+Implementation pattern:
+1. Place a ref on the trigger button to measure its position: `const triggerRef = useRef<HTMLButtonElement>(null)`
+2. On open, read `triggerRef.current.getBoundingClientRect()` and store `{ top: rect.bottom + scrollY + 4, left: rect.left + scrollX, width: rect.width }`
+3. Render the dropdown list via `createPortal(<div style={{ position: 'absolute', top, left, width, zIndex: 10000 }} />, document.body)`
+4. Close on click-outside by checking both the trigger container and the portal element (find by id or a separate ref)
+5. Close on scroll/resize if needed to prevent stale positions
+
+This pattern also applies to: tooltips, context menus, autocomplete lists, and any other floating panel that appears inside a modal or an overflow:hidden container.
+
+20. RTL Icon + Text Buttons
+In buttons containing both an icon and text, the icon must appear on the RIGHT side of the text (the "start" side in RTL is the right).
+- In JSX with a flex container, place the TEXT first and the ICON after it. RTL flex will visually render the icon to the right of the text.
+- Correct: `<button className="flex items-center gap-2">הוסף <Plus /></button>`
+- Wrong: `<button className="flex items-center gap-2"><Plus /> הוסף</button>`
+- This applies to all buttons across the entire app, including: primary, secondary, and any other buttons that combine text + icon.

@@ -84,12 +84,12 @@ export default function CopyBudgetButton({
           className="btn-primary flex items-center gap-2 text-base px-8 py-3"
           style={{ fontSize: '15px' }}
         >
+          העתק תקציב מחודש קודם
           {isLoading ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
             <Copy className="w-5 h-5" strokeWidth={1.75} />
           )}
-          העתק תקציב מחודש קודם
         </button>
       </div>
     </div>

@@ -1,8 +1,15 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { X, ChevronDown, Check } from 'lucide-react';
 import { CategoryInfo, getCategoryInfo as getBuiltinCategoryInfo, expenseCategories } from '@/lib/categories';
+
+interface DropdownRect {
+  top: number;
+  left: number;
+  width: number;
+}
 
 interface AddBudgetModalProps {
   isOpen: boolean;
@@ -27,7 +34,11 @@ export default function AddBudgetModal({
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownRect, setDropdownRect] = useState<DropdownRect | null>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const isEditMode = !!editingCategoryId;
 
@@ -47,11 +58,41 @@ export default function AddBudgetModal({
   useEffect(() => {
     if (!isOpen) return;
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (dropdownOpen) setDropdownOpen(false);
+        else onClose();
+      }
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, dropdownOpen]);
+
+  // Close dropdown when clicking outside trigger or portal list
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as Node;
+      const insideTrigger = dropdownRef.current?.contains(target);
+      const portalEl = document.getElementById('budget-dropdown-portal');
+      const insidePortal = portalEl?.contains(target);
+      if (!insideTrigger && !insidePortal) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [dropdownOpen]);
+
+  const openDropdown = useCallback(() => {
+    if (!triggerRef.current || isLoading) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setDropdownRect({
+      top: rect.bottom + window.scrollY + 4,
+      left: rect.left + window.scrollX,
+      width: rect.width,
+    });
+    setDropdownOpen(true);
+  }, [isLoading]);
 
   if (!isOpen) return null;
 
@@ -149,22 +190,116 @@ export default function AddBudgetModal({
                 </div>
               </div>
             ) : (
-              <div>
-                <label className="label" htmlFor="budget-category">קטגוריה</label>
-                <select
-                  id="budget-category"
-                  className="select w-full"
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
+              <div ref={dropdownRef}>
+                <label className="label">קטגוריה</label>
+                {/* Custom dropdown trigger */}
+                <button
+                  ref={triggerRef}
+                  type="button"
+                  onClick={() => dropdownOpen ? setDropdownOpen(false) : openDropdown()}
                   disabled={isLoading}
+                  className="input w-full flex items-center justify-between cursor-pointer"
+                  style={{
+                    textAlign: 'right',
+                    borderColor: dropdownOpen ? '#69ADFF' : '#E8E8ED',
+                    boxShadow: dropdownOpen ? '0 0 0 3px rgba(105,173,255,0.2)' : 'none',
+                    transition: 'border-color 200ms, box-shadow 200ms',
+                  }}
                 >
-                  <option value="">בחר קטגוריה...</option>
-                  {availableCategories.map(cat => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.nameHe}
-                    </option>
-                  ))}
-                </select>
+                  <span style={{ color: selectedCategory ? '#303150' : '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif', fontSize: '15px' }}>
+                    {selectedCategory
+                      ? (() => {
+                          const d = getCategoryDisplay(selectedCategory);
+                          return (
+                            <span className="flex items-center gap-2">
+                              {d.Icon && <d.Icon className="w-4 h-4 text-[#7E7F90]" strokeWidth={1.75} />}
+                              {d.name}
+                            </span>
+                          );
+                        })()
+                      : 'בחר קטגוריה...'}
+                  </span>
+                  <ChevronDown
+                    className="w-4 h-4 text-[#7E7F90] flex-shrink-0"
+                    strokeWidth={2}
+                    style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 200ms ease' }}
+                  />
+                </button>
+
+                {/* Dropdown list rendered in a portal to escape modal overflow clipping */}
+                {dropdownOpen && dropdownRect && createPortal(
+                  <div
+                    id="budget-dropdown-portal"
+                    className="rounded-2xl overflow-hidden"
+                    style={{
+                      position: 'absolute',
+                      top: dropdownRect.top,
+                      left: dropdownRect.left,
+                      width: dropdownRect.width,
+                      zIndex: 10000,
+                      background: '#FFFFFF',
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.14)',
+                      border: '1px solid #F7F7F8',
+                      direction: 'rtl',
+                    }}
+                  >
+                    <div
+                      className="overflow-y-auto"
+                      style={{
+                        maxHeight: '240px',
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: 'rgba(126,127,144,0.3) transparent',
+                      }}
+                    >
+                      {availableCategories.length === 0 ? (
+                        <div
+                          className="px-4 py-3 text-center"
+                          style={{ fontFamily: 'var(--font-nunito)', fontSize: '14px', color: '#BDBDCB' }}
+                        >
+                          אין קטגוריות זמינות
+                        </div>
+                      ) : (
+                        availableCategories.map((cat, idx) => {
+                          const isSelected = selectedCategory === cat.id;
+                          const Icon = cat.icon;
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCategory(cat.id);
+                                setDropdownOpen(false);
+                              }}
+                              className="w-full flex items-center gap-3 px-4 py-2.5"
+                              style={{
+                                fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                                fontSize: '14px',
+                                fontWeight: isSelected ? 600 : 400,
+                                color: isSelected ? '#69ADFF' : '#303150',
+                                background: isSelected ? 'rgba(105,173,255,0.08)' : 'transparent',
+                                borderTop: idx > 0 ? '1px solid #F7F7F8' : 'none',
+                                textAlign: 'right',
+                                cursor: 'pointer',
+                                transition: 'background 100ms',
+                              }}
+                              onMouseEnter={e => {
+                                if (!isSelected) (e.currentTarget as HTMLButtonElement).style.background = '#F7F7F8';
+                              }}
+                              onMouseLeave={e => {
+                                if (!isSelected) (e.currentTarget as HTMLButtonElement).style.background = isSelected ? 'rgba(105,173,255,0.08)' : 'transparent';
+                              }}
+                            >
+                              {Icon && <Icon className="w-4 h-4 flex-shrink-0" style={{ color: isSelected ? '#69ADFF' : '#7E7F90' }} strokeWidth={1.75} />}
+                              <span className="flex-1">{cat.nameHe}</span>
+                              {isSelected && <Check className="w-4 h-4 flex-shrink-0 text-[#69ADFF]" strokeWidth={2} />}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>,
+                  document.body
+                )}
               </div>
             )}
 

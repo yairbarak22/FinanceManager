@@ -10,7 +10,6 @@ import { useToast } from '@/hooks/useToast';
 import AppLayout from '@/components/layout/AppLayout';
 import MonthSelector from '@/components/monthly-summary/MonthSelector';
 import BudgetSummaryCards from '@/components/budget/BudgetSummaryCards';
-import BudgetProgressBar from '@/components/budget/BudgetProgressBar';
 import BudgetCategoryRow from '@/components/budget/BudgetCategoryRow';
 import UnbudgetedExpenses from '@/components/budget/UnbudgetedExpenses';
 import AddBudgetModal from '@/components/budget/AddBudgetModal';
@@ -46,6 +45,7 @@ export default function BudgetPage() {
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingAmount, setEditingAmount] = useState<number | null>(null);
   const [showOverviewAnimation, setShowOverviewAnimation] = useState(false);
+  const [contentReady, setContentReady] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const hasPlayedOverview = useRef(false);
   const hasShownCelebration = useRef(false);
@@ -65,6 +65,7 @@ export default function BudgetPage() {
 
   const fetchBudgetData = useCallback(async () => {
     setIsLoading(true);
+    setContentReady(false);
     try {
       const res = await apiFetch(`/api/budgets?month=${month}&year=${year}`, { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to fetch budget data');
@@ -73,20 +74,37 @@ export default function BudgetPage() {
     } catch {
       showError('שגיאה בטעינת נתוני התקציב');
       setBudgetData(null);
+      setContentReady(true);
     } finally {
       setIsLoading(false);
     }
   }, [month, year, showError]);
 
+  // Reset per-month animation state when month changes
+  useEffect(() => {
+    hasPlayedOverview.current = false;
+    setShowOverviewAnimation(false);
+    setContentReady(false);
+  }, [selectedMonth]);
+
   useEffect(() => {
     fetchBudgetData();
   }, [fetchBudgetData]);
 
-  // Trigger overview animation on first load with data
+  // After loading: trigger overview animation or reveal content directly
   useEffect(() => {
-    if (budgetData && budgetData.budgets.length > 0 && !hasPlayedOverview.current && !isLoading) {
-      hasPlayedOverview.current = true;
-      setShowOverviewAnimation(true);
+    if (isLoading) return;
+    if (budgetData && budgetData.budgets.length > 0) {
+      if (!hasPlayedOverview.current) {
+        hasPlayedOverview.current = true;
+        setShowOverviewAnimation(true);
+        setContentReady(false);
+      } else {
+        setContentReady(true);
+      }
+    } else {
+      // Empty state or error: show content immediately
+      setContentReady(true);
     }
   }, [budgetData, isLoading]);
 
@@ -206,17 +224,33 @@ export default function BudgetPage() {
               onClick={() => setSelectedMonth(currentMonth)}
               className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-1.5"
             >
-              <RotateCcw className="w-3.5 h-3.5" strokeWidth={2} />
               חודש נוכחי
+              <RotateCcw className="w-3.5 h-3.5" strokeWidth={2} />
             </button>
           )}
         </div>
 
         {isLoading ? (
           <BudgetLoadingPlayer />
+        ) : showOverviewAnimation && overviewAnimationData ? (
+          /* Phase 1: Overview animation plays alone */
+          <div className="flex justify-center">
+            <BudgetOverviewPlayer
+              data={overviewAnimationData}
+              onAnimationEnd={() => {
+                setShowOverviewAnimation(false);
+                setContentReady(true);
+              }}
+            />
+          </div>
         ) : !budgetData || budgetData.budgets.length === 0 ? (
           /* Empty state */
-          <div className="space-y-6">
+          <div
+            className="space-y-6"
+            style={{
+              animation: contentReady ? 'fadeSlideIn 400ms ease-out both' : 'none',
+            }}
+          >
             <CopyBudgetButton
               fromMonth={previousMonth.month}
               fromYear={previousMonth.year}
@@ -230,8 +264,8 @@ export default function BudgetPage() {
                 onClick={() => openAddModal()}
                 className="btn-primary flex items-center gap-2 mx-auto px-6 py-3"
               >
-                <Plus className="w-5 h-5" strokeWidth={1.75} />
                 הוסף קטגוריה לתקציב
+                <Plus className="w-5 h-5" strokeWidth={1.75} />
               </button>
             </div>
 
@@ -244,48 +278,32 @@ export default function BudgetPage() {
               />
             )}
           </div>
-        ) : (
-          /* Budget content */
+        ) : contentReady ? (
+          /* Phase 2: Budget content fades in after animation */
           <div className="space-y-6">
-            {/* Overview animation (plays once on first load) */}
-            {showOverviewAnimation && overviewAnimationData && (
-              <div className="flex justify-center">
-                <BudgetOverviewPlayer
-                  data={overviewAnimationData}
-                  onAnimationEnd={() => setShowOverviewAnimation(false)}
-                />
-              </div>
-            )}
-
-            {/* Summary cards */}
-            <BudgetSummaryCards
-              totalBudget={budgetData.totalBudget}
-              totalSpent={budgetData.totalSpent}
-              totalRemaining={budgetData.totalRemaining}
-              overallPercentage={budgetData.overallPercentage}
-            />
-
-            {/* Global progress */}
+            {/* Summary cards — staggered entry */}
             <div
-              className="rounded-3xl p-6"
               style={{
-                background: '#FFFFFF',
-                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                animation: 'fadeSlideIn 450ms ease-out both',
+                animationDelay: '0ms',
               }}
             >
-              <BudgetProgressBar
-                percentage={budgetData.overallPercentage}
-                height={6}
-                showLabel
+              <BudgetSummaryCards
+                totalBudget={budgetData.totalBudget}
+                totalSpent={budgetData.totalSpent}
+                totalRemaining={budgetData.totalRemaining}
+                overallPercentage={budgetData.overallPercentage}
               />
             </div>
 
-            {/* Category list */}
+            {/* Category list — staggered entry */}
             <div
               className="rounded-3xl p-6"
               style={{
                 background: '#FFFFFF',
                 boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                animation: 'fadeSlideIn 450ms ease-out both',
+                animationDelay: '150ms',
               }}
             >
               <div className="flex items-center justify-between mb-4">
@@ -303,8 +321,8 @@ export default function BudgetPage() {
                   onClick={() => openAddModal()}
                   className="btn-secondary flex items-center gap-1.5 text-sm"
                 >
-                  <Plus className="w-4 h-4" strokeWidth={2} />
                   הוסף
+                  <Plus className="w-4 h-4" strokeWidth={2} />
                 </button>
               </div>
 
@@ -326,16 +344,23 @@ export default function BudgetPage() {
               </div>
             </div>
 
-            {/* Unbudgeted expenses */}
+            {/* Unbudgeted expenses — staggered entry */}
             {budgetData.unbudgetedExpenses.length > 0 && (
-              <UnbudgetedExpenses
-                expenses={budgetData.unbudgetedExpenses}
-                getCategoryInfo={resolveCategoryInfo}
-                onAddBudget={(catId) => openAddModal(catId)}
-              />
+              <div
+                style={{
+                  animation: 'fadeSlideIn 450ms ease-out both',
+                  animationDelay: '300ms',
+                }}
+              >
+                <UnbudgetedExpenses
+                  expenses={budgetData.unbudgetedExpenses}
+                  getCategoryInfo={resolveCategoryInfo}
+                  onAddBudget={(catId) => openAddModal(catId)}
+                />
+              </div>
             )}
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Add/Edit budget modal */}
