@@ -10,8 +10,6 @@ import { apiFetch } from '@/lib/utils';
 interface OnboardingState {
   /** Whether the onboarding modal is open */
   isWizardOpen: boolean;
-  /** Whether the add to home screen modal is open */
-  isAddToHomeScreenModalOpen: boolean;
 }
 
 /**
@@ -26,10 +24,6 @@ interface OnboardingActions {
   endTour: () => Promise<void>;
   /** Close the onboarding modal without marking as complete */
   closeWizard: () => void;
-  /** Open the add to home screen modal */
-  openAddToHomeScreenModal: () => void;
-  /** Close the add to home screen modal */
-  closeAddToHomeScreenModal: () => void;
 }
 
 type OnboardingContextType = OnboardingState & OnboardingActions;
@@ -46,11 +40,9 @@ interface OnboardingProviderProps {
  * Provides:
  * - Modal open/close state for the new user onboarding choice modal
  * - Mark-onboarding-complete API call with retry logic
- * - Add to Home Screen modal state
  */
 export function OnboardingProvider({ children }: OnboardingProviderProps) {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
-  const [isAddToHomeScreenModalOpen, setIsAddToHomeScreenModalOpen] = useState(false);
 
   /**
    * Open the onboarding modal
@@ -117,13 +109,8 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
 
     trackMixpanelEvent('Onboarding Completed', {});
 
-    // Dispatch event so HarediProgressDock and ProgressBell can react
+    // Dispatch event so ProgressBell can react
     window.dispatchEvent(new CustomEvent('onboarding-completed'));
-
-    // Show "Add to Home Screen" modal after a short delay
-    setTimeout(() => {
-      setIsAddToHomeScreenModalOpen(true);
-    }, 500);
   }, []);
 
   /**
@@ -133,23 +120,12 @@ export function OnboardingProvider({ children }: OnboardingProviderProps) {
     setIsWizardOpen(false);
   }, []);
 
-  const openAddToHomeScreenModal = useCallback(() => {
-    setIsAddToHomeScreenModalOpen(true);
-  }, []);
-
-  const closeAddToHomeScreenModal = useCallback(() => {
-    setIsAddToHomeScreenModalOpen(false);
-  }, []);
-
   const value: OnboardingContextType = {
     isWizardOpen,
-    isAddToHomeScreenModalOpen,
     startTour,
     startHarediTour,
     endTour,
     closeWizard,
-    openAddToHomeScreenModal,
-    closeAddToHomeScreenModal,
   };
 
   return (
