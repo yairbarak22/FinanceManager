@@ -19,7 +19,8 @@ import { getCategoryInfo, CategoryInfo } from '@/lib/categories';
 import { apiFetch } from '@/lib/utils';
 import type { BudgetSummary } from '@/lib/types';
 
-const BudgetLoadingPlayer = dynamic(() => import('@/components/budget/BudgetLoadingPlayer'), { ssr: false });
+import BudgetSkeleton from '@/components/budget/BudgetSkeleton';
+
 const BudgetOverviewPlayer = dynamic(() => import('@/components/budget/BudgetOverviewPlayer'), { ssr: false });
 const BudgetCelebrationPlayer = dynamic(() => import('@/components/budget/BudgetCelebrationPlayer'), { ssr: false });
 
@@ -231,7 +232,7 @@ export default function BudgetPage() {
         </div>
 
         {isLoading ? (
-          <BudgetLoadingPlayer />
+          <BudgetSkeleton />
         ) : showOverviewAnimation && overviewAnimationData ? (
           /* Phase 1: Overview animation plays alone */
           <div className="flex justify-center">
