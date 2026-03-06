@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, ChevronDown, Check, Loader2, Filter, Search, Tag, Calculator } from 'lucide-react';
+import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, ChevronDown, Check, Loader2, Filter, Search, Tag, Calculator, SlidersHorizontal } from 'lucide-react';
 import { Transaction } from '@/lib/types';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { getCategoryInfo, expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
@@ -59,9 +59,13 @@ export default function RecentTransactions({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [multiDeleteConfirm, setMultiDeleteConfirm] = useState(false);
 
-  // Search state
+  // Search & filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
+  const [isCategoryFilterOpen, setIsCategoryFilterOpen] = useState(false);
+  const categoryFilterRef = useRef<HTMLDivElement>(null);
+  const categoryFilterBtnRef = useRef<HTMLButtonElement>(null);
 
   // Bulk category edit state
   const [isBulkCategoryModalOpen, setIsBulkCategoryModalOpen] = useState(false);
@@ -106,6 +110,20 @@ export default function RecentTransactions({
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // Close category filter on click outside
+  useEffect(() => {
+    if (!isCategoryFilterOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (categoryFilterRef.current && !categoryFilterRef.current.contains(target) &&
+          categoryFilterBtnRef.current && !categoryFilterBtnRef.current.contains(target)) {
+        setIsCategoryFilterOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isCategoryFilterOpen]);
 
   // Close bulk dropdown on click outside
   useEffect(() => {
@@ -220,14 +238,61 @@ export default function RecentTransactions({
     return categoryInfo?.nameHe || selectedCategory;
   }, [selectedCategory, customExpenseCategories]);
 
-  // Filter transactions by search query
-  const filteredBySearch = useMemo(() => {
-    if (!debouncedSearchQuery.trim()) return transactions;
-    const query = debouncedSearchQuery.toLowerCase();
-    return transactions.filter(t =>
-      t.description?.toLowerCase().includes(query)
-    );
-  }, [transactions, debouncedSearchQuery]);
+  // Build unique category list from current transactions
+  const availableCategories = useMemo(() => {
+    const seen = new Map<string, { info: ReturnType<typeof getCategoryInfo>; count: number }>();
+    transactions.forEach((tx) => {
+      if (seen.has(tx.category)) {
+        seen.get(tx.category)!.count++;
+        return;
+      }
+      const custom = tx.type === 'income' ? customIncomeCategories : customExpenseCategories;
+      const info = getCategoryInfo(tx.category, tx.type as 'income' | 'expense', custom);
+      seen.set(tx.category, { info, count: 1 });
+    });
+    return Array.from(seen.entries())
+      .sort((a, b) => b[1].count - a[1].count)
+      .map(([id, { info, count }]) => ({ id, info, count }));
+  }, [transactions, customExpenseCategories, customIncomeCategories]);
+
+  const toggleCategoryFilter = useCallback((categoryId: string) => {
+    setSelectedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  }, []);
+
+  const clearAllFilters = useCallback(() => {
+    setSearchQuery('');
+    setDebouncedSearchQuery('');
+    setSelectedCategories(new Set());
+    if (selectedCategory && onClearCategoryFilter) {
+      onClearCategoryFilter();
+    }
+  }, [selectedCategory, onClearCategoryFilter]);
+
+  const hasActiveFilters = debouncedSearchQuery.trim().length > 0 || selectedCategories.size > 0 || !!selectedCategory;
+
+  // Filter transactions by search query AND category
+  const filteredTransactions = useMemo(() => {
+    let result = transactions;
+
+    if (selectedCategories.size > 0) {
+      result = result.filter(t => selectedCategories.has(t.category));
+    }
+
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase();
+      result = result.filter(t => t.description?.toLowerCase().includes(query));
+    }
+
+    return result;
+  }, [transactions, debouncedSearchQuery, selectedCategories]);
 
   const toggleSelectMode = () => {
     setIsSelectMode(!isSelectMode);
@@ -336,14 +401,14 @@ export default function RecentTransactions({
                 color: '#303150'
               }}
             >
-              הוצאות שוטפות
+              עסקאות שוטפות
             </h3>
             <p 
               className="text-xs font-medium"
               style={{ color: '#F18AB5' }}
             >
-              {debouncedSearchQuery
-                ? `${filteredBySearch.length} מתוך ${transactions.length} עסקאות`
+              {hasActiveFilters
+                ? `${filteredTransactions.length} מתוך ${transactions.length} עסקאות`
                 : `${transactions.length} עסקאות`
               }
             </p>
@@ -418,93 +483,300 @@ export default function RecentTransactions({
         </div>
       </div>
 
-      {/* Category Filter Chip */}
-      <AnimatePresence>
-        {selectedCategory && selectedCategoryName && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: 'auto' }}
-            exit={{ opacity: 0, y: -10, height: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="mb-3 flex-shrink-0 overflow-hidden"
-          >
-            <div
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl"
-              style={{
-                backgroundColor: '#F7F7F8',
-                border: '1px solid #69ADFF',
-              }}
-            >
-              <Filter className="w-3.5 h-3.5" style={{ color: '#69ADFF' }} strokeWidth={2} />
-              <span
-                className="text-sm font-medium"
+      {/* Search & Filter Bar */}
+      {transactions.length > 0 && (
+        <div className="mb-3 flex-shrink-0 space-y-2">
+          <div className="flex items-center gap-2">
+            {/* Search Input */}
+            <div className="relative flex-1">
+              <Search
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                style={{ color: '#BDBDCB' }}
+                strokeWidth={1.75}
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="חיפוש לפי שם עסק..."
+                dir="rtl"
+                aria-label="חיפוש לפי שם עסק"
+                className="w-full pr-10 pl-9 py-2.5 bg-white rounded-xl text-sm transition-all outline-none"
                 style={{
                   fontFamily: 'var(--font-nunito), system-ui, sans-serif',
                   color: '#303150',
+                  border: '1px solid #E8E8ED',
                 }}
-              >
-                {selectedCategoryName}
-              </span>
-              <button
-                onClick={onClearCategoryFilter}
-                className="p-0.5 rounded-md hover:bg-[#E8E8ED] transition-colors"
-                style={{ color: '#7E7F90' }}
-                aria-label="בטל סינון קטגוריה"
-              >
-                <X className="w-4 h-4" strokeWidth={2} />
-              </button>
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = '#69ADFF';
+                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(105, 173, 255, 0.2)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = '#E8E8ED';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 p-0.5 rounded-md hover:bg-[#F7F7F8] transition-colors"
+                  style={{ color: '#7E7F90' }}
+                  aria-label="נקה חיפוש"
+                >
+                  <X className="w-4 h-4" strokeWidth={2} />
+                </button>
+              )}
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Search Input */}
-      {transactions.length > 0 && (
-        <div className="relative mb-3 flex-shrink-0">
-          <Search
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-            style={{ color: '#BDBDCB' }}
-            strokeWidth={1.75}
-          />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="חיפוש לפי תיאור העסקה..."
-            dir="rtl"
-            aria-label="חיפוש לפי תיאור העסקה"
-            className="w-full pr-10 pl-9 py-2.5 bg-white rounded-xl text-sm transition-all outline-none"
-            style={{
-              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-              color: '#303150',
-              border: '1px solid #E8E8ED',
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = '#69ADFF';
-              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(105, 173, 255, 0.2)';
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = '#E8E8ED';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute left-3 top-1/2 -translate-y-1/2 p-0.5 rounded-md hover:bg-[#F7F7F8] transition-colors"
-              style={{ color: '#7E7F90' }}
-              aria-label="נקה חיפוש"
-            >
-              <X className="w-4 h-4" strokeWidth={2} />
-            </button>
-          )}
+            {/* Category Filter Toggle */}
+            <div className="relative">
+              <button
+                ref={categoryFilterBtnRef}
+                onClick={() => setIsCategoryFilterOpen(prev => !prev)}
+                className={cn(
+                  'p-2.5 rounded-xl transition-all relative',
+                  'hover:scale-[1.05] active:scale-[0.95]'
+                )}
+                style={{
+                  border: isCategoryFilterOpen || selectedCategories.size > 0
+                    ? '1px solid #69ADFF'
+                    : '1px solid #E8E8ED',
+                  backgroundColor: selectedCategories.size > 0 ? 'rgba(105, 173, 255, 0.08)' : '#FFFFFF',
+                }}
+                aria-label="סינון לפי קטגוריה"
+                aria-expanded={isCategoryFilterOpen}
+              >
+                <SlidersHorizontal
+                  className="w-4 h-4"
+                  style={{ color: selectedCategories.size > 0 ? '#69ADFF' : '#7E7F90' }}
+                  strokeWidth={1.75}
+                />
+                {selectedCategories.size > 0 && (
+                  <span
+                    className="absolute -top-1.5 -left-1.5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                    style={{
+                      backgroundColor: '#69ADFF',
+                      color: '#FFFFFF',
+                      minWidth: '18px',
+                      height: '18px',
+                      lineHeight: '18px',
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    }}
+                  >
+                    {selectedCategories.size}
+                  </span>
+                )}
+              </button>
+
+              {/* Category Filter Dropdown */}
+              <AnimatePresence>
+                {isCategoryFilterOpen && (
+                  <motion.div
+                    ref={categoryFilterRef}
+                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    className="absolute left-0 top-full mt-2 rounded-2xl overflow-hidden"
+                    style={{
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #E8E8ED',
+                      width: '280px',
+                      zIndex: 50,
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                    }}
+                    dir="rtl"
+                  >
+                    <div
+                      className="px-4 py-3 flex items-center justify-between"
+                      style={{ borderBottom: '1px solid #F7F7F8' }}
+                    >
+                      <span
+                        className="text-sm font-semibold"
+                        style={{
+                          fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                          color: '#303150',
+                        }}
+                      >
+                        סינון לפי קטגוריה
+                      </span>
+                      {selectedCategories.size > 0 && (
+                        <button
+                          onClick={() => setSelectedCategories(new Set())}
+                          className="text-xs font-medium transition-colors hover:opacity-80"
+                          style={{
+                            fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                            color: '#69ADFF',
+                          }}
+                        >
+                          נקה הכל
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-64 overflow-y-auto scrollbar-ghost p-2 space-y-0.5">
+                      {availableCategories.map(({ id, info, count }) => {
+                        const isActive = selectedCategories.has(id);
+                        const CatIcon = info?.icon;
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => toggleCategoryFilter(id)}
+                            className={cn(
+                              'w-full px-3 py-2 rounded-xl text-sm transition-all',
+                              'flex items-center gap-2.5',
+                              'hover:scale-[1.01] active:scale-[0.99]'
+                            )}
+                            style={{
+                              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                              backgroundColor: isActive ? 'rgba(105, 173, 255, 0.1)' : 'transparent',
+                              color: '#303150',
+                            }}
+                          >
+                            <div
+                              className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                              style={{
+                                background: info?.bgColor || '#F7F7F8',
+                                color: info?.color || '#7E7F90',
+                              }}
+                            >
+                              {CatIcon && <CatIcon className="w-3.5 h-3.5" strokeWidth={1.75} />}
+                            </div>
+                            <span className="flex-1 text-right font-medium truncate">
+                              {info?.nameHe || id}
+                            </span>
+                            <span
+                              className="text-xs flex-shrink-0"
+                              style={{ color: '#BDBDCB' }}
+                            >
+                              {count}
+                            </span>
+                            <div
+                              className="w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
+                              style={{
+                                border: isActive ? 'none' : '1.5px solid #E8E8ED',
+                                backgroundColor: isActive ? '#69ADFF' : 'transparent',
+                              }}
+                            >
+                              {isActive && <Check className="w-3 h-3 text-white" strokeWidth={2.5} />}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          {/* Active Filter Chips */}
+          <AnimatePresence>
+            {(selectedCategories.size > 0 || (selectedCategory && selectedCategoryName)) && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className="flex flex-wrap gap-1.5 overflow-hidden"
+              >
+                {selectedCategory && selectedCategoryName && (
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+                    style={{
+                      backgroundColor: 'rgba(105, 173, 255, 0.1)',
+                      border: '1px solid rgba(105, 173, 255, 0.25)',
+                    }}
+                  >
+                    <span
+                      className="text-xs font-medium"
+                      style={{
+                        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                        color: '#303150',
+                      }}
+                    >
+                      {selectedCategoryName}
+                    </span>
+                    <button
+                      onClick={onClearCategoryFilter}
+                      className="p-0.5 rounded hover:bg-[#E8E8ED] transition-colors"
+                      style={{ color: '#7E7F90' }}
+                      aria-label={`הסר סינון ${selectedCategoryName}`}
+                    >
+                      <X className="w-3 h-3" strokeWidth={2.5} />
+                    </button>
+                  </motion.div>
+                )}
+
+                {Array.from(selectedCategories).map(catId => {
+                  const catInfo = getCategoryInfo(catId, 'expense', customExpenseCategories)
+                    || getCategoryInfo(catId, 'income', customIncomeCategories);
+                  return (
+                    <motion.div
+                      key={catId}
+                      layout
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+                      style={{
+                        backgroundColor: 'rgba(105, 173, 255, 0.1)',
+                        border: '1px solid rgba(105, 173, 255, 0.25)',
+                      }}
+                    >
+                      <span
+                        className="text-xs font-medium"
+                        style={{
+                          fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                          color: '#303150',
+                        }}
+                      >
+                        {catInfo?.nameHe || catId}
+                      </span>
+                      <button
+                        onClick={() => toggleCategoryFilter(catId)}
+                        className="p-0.5 rounded hover:bg-[#E8E8ED] transition-colors"
+                        style={{ color: '#7E7F90' }}
+                        aria-label={`הסר סינון ${catInfo?.nameHe || catId}`}
+                      >
+                        <X className="w-3 h-3" strokeWidth={2.5} />
+                      </button>
+                    </motion.div>
+                  );
+                })}
+
+                {hasActiveFilters && (selectedCategories.size + (selectedCategory ? 1 : 0)) > 1 && (
+                  <motion.button
+                    layout
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    onClick={clearAllFilters}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors hover:opacity-80"
+                    style={{
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                      color: '#F18AB5',
+                      backgroundColor: 'rgba(241, 138, 181, 0.08)',
+                    }}
+                  >
+                    נקה הכל
+                    <X className="w-3 h-3" strokeWidth={2.5} />
+                  </motion.button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
 
       {/* Transactions List - Scrollable - Matching AssetsSection Style */}
       <div className="overflow-y-scroll flex-1 min-h-0 scrollbar-transactions scrollbar-edge-left scrollbar-fade-bottom">
         <AnimatePresence mode="popLayout">
-          {filteredBySearch.map((transaction, index) => {
+          {filteredTransactions.map((transaction, index) => {
             const cached = categoryInfoMap.get(transaction.id);
             const categoryInfo = cached?.info;
             const Icon = categoryInfo?.icon;
@@ -552,7 +824,7 @@ export default function RecentTransactions({
                     ? 'focus:outline-none focus:ring-2 focus:ring-indigo-500'
                     : 'hover:bg-[#F7F7F8] hover:shadow-sm active:scale-[0.98]',
                   isSelected ? 'bg-indigo-50' : 'bg-white',
-                  index < filteredBySearch.length - 1 && 'border-b'
+                  index < filteredTransactions.length - 1 && 'border-b'
                 )}
                 style={{ borderColor: '#F7F7F8' }}
               >
@@ -660,7 +932,7 @@ export default function RecentTransactions({
         </AnimatePresence>
         
         <AnimatePresence>
-          {transactions.length === 0 && !debouncedSearchQuery && (
+          {transactions.length === 0 && !hasActiveFilters && (
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -671,17 +943,43 @@ export default function RecentTransactions({
               אין עסקאות להצגה
             </motion.p>
           )}
-          {filteredBySearch.length === 0 && transactions.length > 0 && debouncedSearchQuery && (
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-center text-sm py-6"
-              style={{ color: '#7E7F90' }}
+          {filteredTransactions.length === 0 && transactions.length > 0 && hasActiveFilters && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              className="text-center py-8"
               aria-live="polite"
             >
-              לא נמצאו תוצאות לחיפוש &quot;{debouncedSearchQuery}&quot;
-            </motion.p>
+              <Filter className="w-8 h-8 mx-auto mb-2" style={{ color: '#BDBDCB' }} strokeWidth={1.5} />
+              <p
+                className="text-sm font-medium mb-1"
+                style={{
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                  color: '#7E7F90',
+                }}
+              >
+                לא נמצאו עסקאות תואמות
+              </p>
+              <p
+                className="text-xs mb-3"
+                style={{ color: '#BDBDCB' }}
+              >
+                {debouncedSearchQuery && `חיפוש: "${debouncedSearchQuery}"`}
+                {debouncedSearchQuery && selectedCategories.size > 0 && ' · '}
+                {selectedCategories.size > 0 && `${selectedCategories.size} קטגוריות נבחרו`}
+              </p>
+              <button
+                onClick={clearAllFilters}
+                className="text-xs font-medium transition-colors hover:opacity-80"
+                style={{
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                  color: '#69ADFF',
+                }}
+              >
+                נקה את כל הסינונים
+              </button>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
