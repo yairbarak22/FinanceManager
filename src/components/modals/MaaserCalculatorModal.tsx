@@ -126,7 +126,7 @@ export default function MaaserCalculatorModal({
     const oneTime = getMonthlyDonationsTotal(transactions, selectedMonth, customCategories);
     const recurring = getActiveRecurringDonationsTotal(recurringTransactions, selectedMonth);
     return oneTime + recurring;
-  }, [transactions, recurringTransactions, selectedMonth]);
+  }, [transactions, recurringTransactions, selectedMonth, customCategories]);
 
   // Are there any donation details to show?
   const hasDonationDetails =
