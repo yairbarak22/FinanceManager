@@ -987,7 +987,7 @@ export default function DashboardPage() {
           <section>
             <SectionHeader
               title="פעילות"
-              subtitle="פילוח הוצאות ועסקאות אחרונות"
+              subtitle="פילוח הוצאות והכנסות ועסקאות אחרונות"
             />
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -996,6 +996,7 @@ export default function DashboardPage() {
                   transactions={monthFilteredTransactions} 
                   recurringExpenses={recurringTransactions}
                   customExpenseCategories={expenseCats.custom}
+                  customIncomeCategories={incomeCats.custom}
                   selectedCategory={selectedCategory}
                   onCategoryClick={handleCategoryClick}
                 />
