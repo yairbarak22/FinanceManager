@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, ChevronDown, Check, Loader2, Filter, Search, Tag, Calculator, SlidersHorizontal } from 'lucide-react';
+import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, ChevronDown, Check, Loader2, Filter, Search, Tag, Calculator, SlidersHorizontal, FileSpreadsheet } from 'lucide-react';
+import ExportExcelModal from './modals/ExportExcelModal';
 import { Transaction } from '@/lib/types';
 import { formatCurrency, formatDate, cn } from '@/lib/utils';
 import { getCategoryInfo, expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
@@ -50,6 +51,7 @@ export default function RecentTransactions({
   onClearCategoryFilter,
   onOpenMaaserCalculator,
 }: RecentTransactionsProps) {
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; description: string }>({
     isOpen: false,
     id: '',
@@ -460,6 +462,14 @@ export default function RecentTransactions({
                   <Calculator className="w-4 h-4" strokeWidth={1.5} />
                 </button>
               )}
+              <button
+                onClick={() => setIsExportModalOpen(true)}
+                className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
+                style={{ color: '#7E7F90' }}
+              >
+                ייצוא
+                <FileSpreadsheet className="w-4 h-4" strokeWidth={1.5} />
+              </button>
               <button
                 id="btn-import-transactions"
                 onClick={onImport}
@@ -1565,6 +1575,11 @@ export default function RecentTransactions({
         </div>,
         document.body
       )}
+
+      <ExportExcelModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+      />
     </div>
   );
 }
