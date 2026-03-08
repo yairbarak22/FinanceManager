@@ -8,13 +8,15 @@ const VALID_SOURCES = [
   'funnel_navbar_cta', 'funnel_placeholder_cta',
   'guide_final_cta',
   'transfer_steps_cta', 'transfer_final_cta',
+  'landing_video_cta',
 ];
 
-const FUNNEL_SOURCES = new Set([
+const PUBLIC_SOURCES = new Set([
   'funnel_hero_cta', 'funnel_video_cta', 'funnel_benefits_cta', 'funnel_final_cta',
   'funnel_navbar_cta', 'funnel_placeholder_cta',
   'guide_final_cta',
   'transfer_steps_cta', 'transfer_final_cta',
+  'landing_video_cta',
 ]);
 
 const MAX_CLICKS_PER_HOUR = 10;
@@ -31,10 +33,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const isFunnelSource = FUNNEL_SOURCES.has(source);
+    const isPublicSource = PUBLIC_SOURCES.has(source);
     const auth = await requireAuth();
 
-    if (auth.error && !isFunnelSource) {
+    if (auth.error && !isPublicSource) {
       return auth.error;
     }
 
