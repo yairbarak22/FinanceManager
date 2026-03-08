@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/authHelpers';
 import { prisma } from '@/lib/prisma';
 
-const VALID_SOURCES = ['course_header', 'course_cta', 'course_sidebar'];
+const VALID_SOURCES = [
+  'course_header', 'course_cta', 'course_sidebar',
+  'funnel_hero_cta', 'funnel_video_cta', 'funnel_benefits_cta', 'funnel_final_cta',
+  'funnel_navbar_cta', 'funnel_placeholder_cta',
+  'guide_final_cta',
+  'transfer_steps_cta', 'transfer_final_cta',
+];
 const MAX_CLICKS_PER_HOUR = 10;
 
 export async function POST(request: NextRequest) {
