@@ -53,6 +53,7 @@ export function buildCspHeader(nonce: string): string {
       'https://*.mixpanel.com', 'https://*.mxpnl.com',
       isDev ? 'http://localhost:* ws://localhost:*' : '',
     ].filter(Boolean).join(' '),
+    "media-src 'self' blob:",
     "worker-src 'self' blob:",
     "frame-src 'self' https://accounts.google.com https://iframe.mediadelivery.net https://www.youtube.com https://youtube.com",
     "frame-ancestors 'none'",
