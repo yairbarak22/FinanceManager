@@ -8,6 +8,9 @@ import { calculateSpitzerPayment } from '@/lib/loanCalculations';
 import { cn } from '@/lib/utils';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
+import CurrencyPill from '@/components/ui/CurrencyPill';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import type { CurrencyCode } from '@/lib/utils';
 
 // Field order for auto-scroll
 const FIELD_ORDER = ['name', 'type', 'loanMethod', 'totalAmount', 'interestRate', 'loanTermMonths', 'startDate', 'monthlyPayment', 'hasInterestRebate'];
@@ -35,6 +38,7 @@ export default function LiabilityModal({
   const [type, setType] = useState('loan');
   const [totalAmount, setTotalAmount] = useState('');
   const [monthlyPayment, setMonthlyPayment] = useState('');
+  const [currency, setCurrency] = useState<CurrencyCode>('ILS');
   const [interestRate, setInterestRate] = useState('');
   const [loanTermMonths, setLoanTermMonths] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
@@ -42,6 +46,7 @@ export default function LiabilityModal({
   const [hasInterestRebate, setHasInterestRebate] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { rate: exchangeRate } = useExchangeRate();
 
   // Refs for auto-scroll to next field
   const fieldRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -67,6 +72,7 @@ export default function LiabilityModal({
       setType(liability.type);
       setTotalAmount(liability.totalAmount.toString());
       setMonthlyPayment(liability.monthlyPayment.toString());
+      setCurrency((liability.currency as CurrencyCode) || 'ILS');
       setInterestRate((liability.interestRate || 0).toString());
       setLoanTermMonths((liability.loanTermMonths || 0).toString());
       setStartDate(liability.startDate ? new Date(liability.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
@@ -77,6 +83,7 @@ export default function LiabilityModal({
       setType('loan');
       setTotalAmount('');
       setMonthlyPayment('');
+      setCurrency('ILS');
       setInterestRate('');
       setLoanTermMonths('');
       setStartDate(new Date().toISOString().split('T')[0]);
@@ -106,6 +113,7 @@ export default function LiabilityModal({
         type,
         totalAmount: parseFloat(totalAmount),
         monthlyPayment: parseFloat(monthlyPayment),
+        currency,
         interestRate: parseFloat(interestRate) || 0,
         loanTermMonths: parseInt(loanTermMonths) || 0,
         startDate: startDate,
@@ -219,10 +227,21 @@ export default function LiabilityModal({
                 </div>
               </div>
 
+              {/* Currency */}
+              <div className="flex items-center justify-between">
+                <label className="label mb-0">מטבע</label>
+                <CurrencyPill
+                  value={currency}
+                  onChange={setCurrency}
+                  amount={totalAmount ? parseFloat(totalAmount) : undefined}
+                  exchangeRate={exchangeRate}
+                />
+              </div>
+
               {/* Total Amount + Interest Rate */}
               <div className="grid grid-cols-2 gap-3">
                 <div ref={(el) => { if (el) fieldRefs.current.set('totalAmount', el); }}>
-                  <label className="label">סכום הלוואה (₪)</label>
+                  <label className="label">סכום הלוואה ({currency === 'USD' ? '$' : '₪'})</label>
                   <input
                     type="number"
                     value={totalAmount}
@@ -282,7 +301,7 @@ export default function LiabilityModal({
               {/* Calculate Payment Button */}
               <div ref={(el) => { if (el) fieldRefs.current.set('monthlyPayment', el); }} className="flex items-end gap-3">
                 <div className="flex-1">
-                  <label className="label">תשלום חודשי (₪)</label>
+                  <label className="label">תשלום חודשי ({currency === 'USD' ? '$' : '₪'})</label>
                   <input
                     type="number"
                     value={monthlyPayment}

@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
         type: data.type,
         totalAmount: data.totalAmount,
         monthlyPayment: data.monthlyPayment,
+        currency: data.currency,
         interestRate: data.interestRate,
         loanTermMonths: data.loanTermMonths,
         startDate: data.startDate ? new Date(data.startDate) : new Date(),

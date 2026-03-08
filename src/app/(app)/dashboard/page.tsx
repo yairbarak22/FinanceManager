@@ -44,7 +44,8 @@ import {
   NetWorthHistory,
   MonthlySummary as MonthlySummaryType,
 } from '@/lib/types';
-import { getMonthKey, calculateSavingsRate, apiFetch, isRecurringActiveInMonth } from '@/lib/utils';
+import { getMonthKey, calculateSavingsRate, apiFetch, isRecurringActiveInMonth, getAmountInILS } from '@/lib/utils';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { getEffectiveMonthlyExpense, getRemainingBalance, isLiabilityActiveInCashFlow } from '@/lib/loanCalculations';
 import { getTotalAssetsForMonth } from '@/lib/assetUtils';
 import { useCategories } from '@/hooks/useCategories';
@@ -77,6 +78,8 @@ export default function DashboardPage() {
   
   // Use shared modal context
   const { openModal, isModalOpen, closeModal } = useModal();
+
+  const { rate: exchangeRate } = useExchangeRate();
 
   // Data state
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -321,15 +324,15 @@ export default function DashboardPage() {
   const effectiveMonth = selectedMonth === 'all' || selectedMonth === 'custom' ? currentMonth : selectedMonth;
   const fixedIncome = recurringTransactions
     .filter((t) => t.type === 'income' && isRecurringActiveInMonth(t, effectiveMonth))
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + getAmountInILS(t.amount, t.currency || 'ILS', exchangeRate), 0);
 
   const fixedExpenses = recurringTransactions
     .filter((t) => t.type === 'expense' && isRecurringActiveInMonth(t, effectiveMonth))
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + getAmountInILS(t.amount, t.currency || 'ILS', exchangeRate), 0);
 
   const monthlyLiabilityPayments = liabilities
     .filter((l) => isLiabilityActiveInCashFlow(l))
-    .reduce((sum, l) => sum + getEffectiveMonthlyExpense(l), 0);
+    .reduce((sum, l) => sum + getAmountInILS(getEffectiveMonthlyExpense(l), l.currency || 'ILS', exchangeRate), 0);
 
   // Calculate totals - filter by month or custom date range (for summaries)
   const monthFilteredTransactions = selectedMonth === 'custom' && customDateRange
@@ -375,11 +378,11 @@ export default function DashboardPage() {
 
   const transactionIncome = monthFilteredTransactions
     .filter((tx) => tx.type === 'income')
-    .reduce((sum, tx) => sum + tx.amount, 0);
+    .reduce((sum, tx) => sum + getAmountInILS(tx.amount, tx.currency || 'ILS', exchangeRate), 0);
 
   const transactionExpenses = monthFilteredTransactions
     .filter((tx) => tx.type === 'expense')
-    .reduce((sum, tx) => sum + tx.amount, 0);
+    .reduce((sum, tx) => sum + getAmountInILS(tx.amount, tx.currency || 'ILS', exchangeRate), 0);
 
   const totalIncome = transactionIncome + (fixedIncome * monthsCount);
   const totalExpenses = transactionExpenses + ((fixedExpenses + monthlyLiabilityPayments) * monthsCount);
@@ -401,15 +404,14 @@ export default function DashboardPage() {
 
     const txIncome = monthTransactions
       .filter((tx) => tx.type === 'income')
-      .reduce((sum, tx) => sum + tx.amount, 0);
+      .reduce((sum, tx) => sum + getAmountInILS(tx.amount, tx.currency || 'ILS', exchangeRate), 0);
     const txExpenses = monthTransactions
       .filter((tx) => tx.type === 'expense')
-      .reduce((sum, tx) => sum + tx.amount, 0);
+      .reduce((sum, tx) => sum + getAmountInILS(tx.amount, tx.currency || 'ILS', exchangeRate), 0);
 
-    // Calculate liability payments for this specific month (respects loan end dates)
     const monthlyLiabilityPaymentsForMonth = liabilities
       .filter((l) => isLiabilityActiveInCashFlow(l, monthDate))
-      .reduce((sum, l) => sum + getEffectiveMonthlyExpense(l, monthDate), 0);
+      .reduce((sum, l) => sum + getAmountInILS(getEffectiveMonthlyExpense(l, monthDate), l.currency || 'ILS', exchangeRate), 0);
 
     const income = txIncome + fixedIncome;
     const expenses = txExpenses + fixedExpenses + monthlyLiabilityPaymentsForMonth;

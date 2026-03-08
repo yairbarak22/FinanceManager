@@ -127,6 +127,13 @@ export async function PUT(
       updateData.amount = body.amount;
     }
 
+    if (body.currency !== undefined) {
+      if (!['ILS', 'USD'].includes(body.currency)) {
+        return NextResponse.json({ error: 'Currency must be "ILS" or "USD"' }, { status: 400 });
+      }
+      updateData.currency = body.currency;
+    }
+
     if (body.category !== undefined) {
       if (typeof body.category !== 'string' || body.category.trim().length === 0) {
         return NextResponse.json({ error: 'Category must be a non-empty string' }, { status: 400 });

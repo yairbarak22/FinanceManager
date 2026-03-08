@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
         userId,
         type: data.type,
         amount: data.amount,
+        currency: data.currency,
         category: data.category,
         name: data.name,
         isActive: data.isActive ?? true,

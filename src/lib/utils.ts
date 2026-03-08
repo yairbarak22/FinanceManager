@@ -1,5 +1,7 @@
 // Utility functions for the finance manager
 
+export type CurrencyCode = 'ILS' | 'USD';
+
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('he-IL', {
     style: 'currency',
@@ -7,6 +9,26 @@ export function formatCurrency(amount: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+export function formatCurrencyAmount(amount: number, currency: CurrencyCode): string {
+  if (currency === 'USD') {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  }
+  return formatCurrency(amount);
+}
+
+export function getAmountInILS(
+  amount: number,
+  currency: CurrencyCode | string,
+  exchangeRate: number
+): number {
+  return currency === 'USD' ? amount * exchangeRate : amount;
 }
 
 export function formatNumber(num: number): string {

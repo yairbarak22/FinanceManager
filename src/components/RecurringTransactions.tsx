@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Plus, Trash2, RefreshCw, TrendingUp, TrendingDown, CalendarDays } from 'lucide-react';
 import { RecurringTransaction } from '@/lib/types';
-import { formatCurrency, cn, isRecurringActiveInMonth } from '@/lib/utils';
+import { formatCurrency, formatCurrencyAmount, cn, isRecurringActiveInMonth } from '@/lib/utils';
 import { useMonth } from '@/context/MonthContext';
 import { getCategoryInfo, CategoryInfo } from '@/lib/categories';
 import ConfirmDialog from './modals/ConfirmDialog';
@@ -244,7 +244,7 @@ export default function RecurringTransactions({
                   }}
                   dir="ltr"
                 >
-                  {`${isIncome ? '+' : '-'}${formatCurrency(transaction.amount)}`}
+                  {`${isIncome ? '+' : '-'}${formatCurrencyAmount(transaction.amount, transaction.currency || 'ILS')}`}
                 </SensitiveData>
 
                 {/* Actions */}

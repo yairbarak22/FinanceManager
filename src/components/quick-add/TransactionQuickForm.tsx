@@ -5,6 +5,9 @@ import { Loader2 } from 'lucide-react';
 import { CategoryInfo } from '@/lib/categories';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
+import CurrencyPill from '@/components/ui/CurrencyPill';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import type { CurrencyCode } from '@/lib/utils';
 
 // Field order for auto-scroll
 const FIELD_ORDER = ['amount', 'type', 'category', 'description', 'date'];
@@ -15,6 +18,7 @@ interface TransactionQuickFormProps {
   onSave: (data: {
     type: 'income' | 'expense';
     amount: number;
+    currency?: 'ILS' | 'USD';
     category: string;
     description: string;
     date: string;
@@ -32,11 +36,13 @@ export default function TransactionQuickForm({
 }: TransactionQuickFormProps) {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState<CurrencyCode>('ILS');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const { rate: exchangeRate } = useExchangeRate();
   
   const amountInputRef = useRef<HTMLInputElement>(null);
   
@@ -75,6 +81,7 @@ export default function TransactionQuickForm({
       await onSave({
         type,
         amount: parseFloat(amount),
+        currency,
         category,
         description,
         date,
@@ -105,19 +112,28 @@ export default function TransactionQuickForm({
           className="text-center"
           ref={(el) => { if (el) fieldRefs.current.set('amount', el); }}
         >
-          <label
-            htmlFor="quick-amount"
-            className="block text-sm font-medium mb-2"
-            style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-          >
-            סכום
-          </label>
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <label
+              htmlFor="quick-amount"
+              className="text-sm font-medium"
+              style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+            >
+              סכום
+            </label>
+            <CurrencyPill
+              value={currency}
+              onChange={setCurrency}
+              amount={amount ? parseFloat(amount) : undefined}
+              exchangeRate={exchangeRate}
+              showConversion={false}
+            />
+          </div>
           <div className="relative inline-flex items-center justify-center">
             <span
-              className="text-3xl font-bold ml-1"
-              style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+              className="text-3xl font-bold ml-1 transition-all duration-200"
+              style={{ color: currency === 'USD' ? '#69ADFF' : '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
             >
-              ₪
+              {currency === 'ILS' ? '₪' : '$'}
             </span>
             <input
               ref={amountInputRef}
@@ -138,6 +154,11 @@ export default function TransactionQuickForm({
               aria-required="true"
             />
           </div>
+          {currency === 'USD' && amount && parseFloat(amount) > 0 && (
+            <p className="text-xs mt-1" style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }} dir="ltr">
+              ≈ ₪{Math.round(parseFloat(amount) * exchangeRate).toLocaleString('he-IL')}
+            </p>
+          )}
         </div>
 
         {/* Type Toggle - Segmented Control */}

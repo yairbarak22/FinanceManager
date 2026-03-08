@@ -4,6 +4,7 @@ export interface Transaction {
   id: string;
   type: 'income' | 'expense';
   amount: number;
+  currency?: 'ILS' | 'USD';
   category: string;
   description: string;
   date: string;
@@ -15,6 +16,7 @@ export interface RecurringTransaction {
   id: string;
   type: 'income' | 'expense';
   amount: number;
+  currency?: 'ILS' | 'USD';
   category: string;
   name: string;
   isActive: boolean;
@@ -56,6 +58,7 @@ export interface Asset {
   name: string;
   category: string; // 'investments' | 'real_estate' etc.
   value: number;
+  currency?: 'ILS' | 'USD';
   liquidity?: 'immediate' | 'short_term' | 'pension' | 'locked'; // נזילות הנכס
   gemachId?: string; // UUID linking to paired Liability (null for regular assets)
   createdAt?: string;
@@ -76,6 +79,7 @@ export interface Liability {
   type: string;
   totalAmount: number;        // סכום ההלוואה המקורי
   monthlyPayment: number;     // תשלום חודשי קבוע
+  currency?: 'ILS' | 'USD';
   interestRate: number;       // ריבית שנתית באחוזים
   loanTermMonths: number;     // תקופת ההלוואה בחודשים
   startDate: string;          // תאריך תחילת ההלוואה

@@ -5,6 +5,9 @@ import { Loader2 } from 'lucide-react';
 import { CategoryInfo } from '@/lib/categories';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
+import CurrencyPill from '@/components/ui/CurrencyPill';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import type { CurrencyCode } from '@/lib/utils';
 
 // Field order for auto-scroll
 const FIELD_ORDER = ['name', 'category', 'value'];
@@ -15,6 +18,7 @@ interface AssetQuickFormProps {
     name: string;
     category: string;
     value: number;
+    currency?: 'ILS' | 'USD';
   }) => Promise<void>;
   onAddCategory: (name: string) => Promise<CategoryInfo>;
 }
@@ -27,8 +31,10 @@ export default function AssetQuickForm({
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [value, setValue] = useState('');
+  const [currency, setCurrency] = useState<CurrencyCode>('ILS');
   const [isLoading, setIsLoading] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const { rate: exchangeRate } = useExchangeRate();
 
   const nameInputRef = useRef<HTMLInputElement>(null);
   
@@ -66,6 +72,7 @@ export default function AssetQuickForm({
         name,
         category,
         value: parseFloat(value),
+        currency,
       });
     } finally {
       setIsLoading(false);
@@ -132,13 +139,21 @@ export default function AssetQuickForm({
 
         {/* Value */}
         <div ref={(el) => { if (el) fieldRefs.current.set('value', el); }}>
-          <label
-            htmlFor="asset-value"
-            className="block text-sm font-medium mb-1.5"
-            style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-          >
-            שווי נוכחי (₪)
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label
+              htmlFor="asset-value"
+              className="text-sm font-medium"
+              style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+            >
+              שווי נוכחי
+            </label>
+            <CurrencyPill
+              value={currency}
+              onChange={setCurrency}
+              amount={value ? parseFloat(value) : undefined}
+              exchangeRate={exchangeRate}
+            />
+          </div>
           <input
             id="asset-value"
             type="number"

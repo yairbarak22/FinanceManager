@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Plus, Trash2, TrendingUp, HelpCircle, FolderOpen, Link, Link2 } from 'lucide-react';
 import { Asset, AssetValueHistory } from '@/lib/types';
-import { formatCurrency, cn } from '@/lib/utils';
+import { formatCurrency, formatCurrencyAmount, cn } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
 import { getAssetValueForMonth, getTotalAssetsForMonth } from '@/lib/assetUtils';
 import ConfirmDialog from './modals/ConfirmDialog';
@@ -182,7 +182,7 @@ export default function AssetsSection({
                     color: '#0DBACC'
                   }}
                 >
-                  {formatCurrency(displayValue)}
+                  {formatCurrencyAmount(displayValue, asset.currency || 'ILS')}
                 </SensitiveData>
 
                 {/* Actions */}

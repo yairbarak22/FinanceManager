@@ -179,6 +179,7 @@ export async function POST(request: NextRequest) {
         userId,
         type: data.type,
         amount: data.amount,
+        currency: data.currency,
         category: data.category,
         description: data.description,
         date: new Date(data.date),

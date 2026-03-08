@@ -5,6 +5,9 @@ import { Loader2 } from 'lucide-react';
 import { CategoryInfo } from '@/lib/categories';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
+import CurrencyPill from '@/components/ui/CurrencyPill';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import type { CurrencyCode } from '@/lib/utils';
 
 // Field order for auto-scroll
 const FIELD_ORDER = ['name', 'type', 'totalAmount', 'monthlyPayment', 'interestRate', 'startDate'];
@@ -16,6 +19,7 @@ interface LiabilityQuickFormProps {
     type: string;
     totalAmount: number;
     monthlyPayment: number;
+    currency?: 'ILS' | 'USD';
     interestRate?: number;
     startDate: string;
   }) => Promise<void>;
@@ -31,10 +35,12 @@ export default function LiabilityQuickForm({
   const [type, setType] = useState('');
   const [totalAmount, setTotalAmount] = useState('');
   const [monthlyPayment, setMonthlyPayment] = useState('');
+  const [currency, setCurrency] = useState<CurrencyCode>('ILS');
   const [interestRate, setInterestRate] = useState('');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
+  const { rate: exchangeRate } = useExchangeRate();
 
   const nameInputRef = useRef<HTMLInputElement>(null);
   
@@ -73,6 +79,7 @@ export default function LiabilityQuickForm({
         type,
         totalAmount: parseFloat(totalAmount),
         monthlyPayment: parseFloat(monthlyPayment),
+        currency,
         interestRate: interestRate ? parseFloat(interestRate) : undefined,
         startDate,
       });
@@ -138,13 +145,21 @@ export default function LiabilityQuickForm({
 
         {/* Total Amount */}
         <div ref={(el) => { if (el) fieldRefs.current.set('totalAmount', el); }}>
-          <label
-            htmlFor="liability-total"
-            className="block text-sm font-medium mb-1.5"
-            style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-          >
-            סכום כולל (₪)
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label
+              htmlFor="liability-total"
+              className="text-sm font-medium"
+              style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+            >
+              סכום כולל
+            </label>
+            <CurrencyPill
+              value={currency}
+              onChange={setCurrency}
+              amount={totalAmount ? parseFloat(totalAmount) : undefined}
+              exchangeRate={exchangeRate}
+            />
+          </div>
           <input
             id="liability-total"
             type="number"
@@ -167,7 +182,7 @@ export default function LiabilityQuickForm({
             className="block text-sm font-medium mb-1.5"
             style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
           >
-            תשלום חודשי (₪)
+            תשלום חודשי ({currency === 'USD' ? '$' : '₪'})
           </label>
           <input
             id="liability-monthly"

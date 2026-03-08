@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, ChevronDown, Check, Loader2, Filter, Search, Tag, Calculator, SlidersHorizontal, FileSpreadsheet } from 'lucide-react';
 import ExportExcelModal from './modals/ExportExcelModal';
 import { Transaction } from '@/lib/types';
-import { formatCurrency, formatDate, cn } from '@/lib/utils';
+import { formatCurrency, formatCurrencyAmount, formatDate, cn } from '@/lib/utils';
 import { getCategoryInfo, expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
 import ConfirmDialog from './modals/ConfirmDialog';
 import { SensitiveData } from './common/SensitiveData';
@@ -915,7 +915,7 @@ export default function RecentTransactions({
                     }}
                     dir="ltr"
                   >
-                    {`${isIncome ? '+' : '-'}${formatCurrency(transaction.amount)}`}
+                    {`${isIncome ? '+' : '-'}${formatCurrencyAmount(transaction.amount, transaction.currency || 'ILS')}`}
                   </SensitiveData>
 
                   {/* Action Buttons (only in normal mode) */}

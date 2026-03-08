@@ -88,6 +88,7 @@ model Transaction {
   userId      String
   type        String
   amount      Float
+  currency    String   @default("ILS") // ILS | USD
   category    String
   description String
   date        DateTime
@@ -106,6 +107,7 @@ model RecurringTransaction {
   userId       String
   type         String
   amount       Float
+  currency     String          @default("ILS") // ILS | USD
   category     String
   name         String
   isActive     Boolean         @default(true)
@@ -150,6 +152,7 @@ model Asset {
   name         String
   category     String
   value        Float
+  currency     String              @default("ILS") // ILS | USD
   liquidity    String              @default("locked") // immediate | short_term | pension | locked
   gemachId     String?             // UUID linking to paired Liability (null for regular assets)
   createdAt    DateTime            @default(now())
@@ -181,6 +184,7 @@ model Liability {
   type              String
   totalAmount       Float
   monthlyPayment    Float
+  currency          String   @default("ILS") // ILS | USD
   interestRate      Float    @default(0)
   loanTermMonths    Int      @default(0)
   startDate         DateTime @default(now())

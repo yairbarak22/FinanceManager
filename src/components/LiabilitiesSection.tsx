@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { Plus, Trash2, Banknote, Home, TrendingDown, Table, FolderOpen, Link2 } from 'lucide-react';
 import { Liability } from '@/lib/types';
-import { formatCurrency, cn, apiFetch } from '@/lib/utils';
+import { formatCurrency, formatCurrencyAmount, cn, apiFetch } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
 import { getEffectiveMonthlyExpense, getCurrentMonthPayment, getRemainingBalance, isLiabilityActiveInCashFlow } from '@/lib/loanCalculations';
 import ConfirmDialog from './modals/ConfirmDialog';
@@ -324,7 +324,7 @@ export default function LiabilitiesSection({
                     className="text-xs mt-0.5"
                     style={{ color: '#7E7F90' }}
                   >
-                    {categoryInfo?.nameHe} • {formatCurrency(liability.monthlyPayment)}/חודש
+                    {categoryInfo?.nameHe} • {formatCurrencyAmount(liability.monthlyPayment, liability.currency || 'ILS')}/חודש
                     {liability.hasInterestRebate && (
                       <span style={{ color: '#0DBACC' }}> • זיכוי ריבית</span>
                     )}

@@ -7,8 +7,11 @@ import { CategoryInfo } from '@/lib/categories';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
 import EditCategoryModal from '@/components/ui/EditCategoryModal';
+import CurrencyPill from '@/components/ui/CurrencyPill';
 import { CustomCategory } from '@/lib/types';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import type { CurrencyCode } from '@/lib/utils';
 
 // Field order for auto-scroll
 const FIELD_ORDER = ['type', 'amount', 'category', 'description', 'date'];
@@ -40,12 +43,14 @@ export default function TransactionModal({
 }: TransactionModalProps) {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState<CurrencyCode>('ILS');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState<CustomCategory | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { rate: exchangeRate } = useExchangeRate();
 
   // Refs for auto-scroll to next field
   const fieldRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -74,12 +79,14 @@ export default function TransactionModal({
     if (transaction) {
       setType(transaction.type as 'income' | 'expense');
       setAmount(transaction.amount.toString());
+      setCurrency((transaction.currency as CurrencyCode) || 'ILS');
       setCategory(transaction.category);
       setDescription(transaction.description);
       setDate(new Date(transaction.date).toISOString().split('T')[0]);
     } else {
       setType('expense');
       setAmount('');
+      setCurrency('ILS');
       setCategory('');
       setDescription('');
       setDate(new Date().toISOString().split('T')[0]);
@@ -95,6 +102,7 @@ export default function TransactionModal({
       await onSave({
         type,
         amount: parseFloat(amount),
+        currency,
         category,
         description,
         date,
@@ -201,7 +209,15 @@ export default function TransactionModal({
 
               {/* Amount */}
               <div ref={(el) => { if (el) fieldRefs.current.set('amount', el); }}>
-                <label htmlFor="tx-amount" className="label">סכום (₪)</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label htmlFor="tx-amount" className="label mb-0">סכום</label>
+                  <CurrencyPill
+                    value={currency}
+                    onChange={setCurrency}
+                    amount={amount ? parseFloat(amount) : undefined}
+                    exchangeRate={exchangeRate}
+                  />
+                </div>
                 <input
                   id="tx-amount"
                   type="number"

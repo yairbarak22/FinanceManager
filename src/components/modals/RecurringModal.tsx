@@ -8,6 +8,9 @@ import { CategoryInfo } from '@/lib/categories';
 import { useMonth } from '@/context/MonthContext';
 import CategorySelect from '@/components/ui/CategorySelect';
 import AddCategoryModal from '@/components/ui/AddCategoryModal';
+import CurrencyPill from '@/components/ui/CurrencyPill';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import type { CurrencyCode } from '@/lib/utils';
 
 // Field order for auto-scroll
 const FIELD_ORDER = ['type', 'name', 'amount', 'category', 'activeMonths'];
@@ -57,6 +60,7 @@ export default function RecurringModal({
 }: RecurringModalProps) {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
+  const [currency, setCurrency] = useState<CurrencyCode>('ILS');
   const [category, setCategory] = useState('');
   const [name, setName] = useState('');
   const [allMonthsActive, setAllMonthsActive] = useState(true);
@@ -64,6 +68,7 @@ export default function RecurringModal({
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { rate: exchangeRate } = useExchangeRate();
 
   const { allMonths, currentMonth } = useMonth();
 
@@ -102,6 +107,7 @@ export default function RecurringModal({
     if (transaction) {
       setType(transaction.type as 'income' | 'expense');
       setAmount(transaction.amount.toString());
+      setCurrency((transaction.currency as CurrencyCode) || 'ILS');
       setCategory(transaction.category);
       setName(transaction.name);
       if (transaction.activeMonths && transaction.activeMonths.length > 0) {
@@ -114,6 +120,7 @@ export default function RecurringModal({
     } else {
       setType('expense');
       setAmount('');
+      setCurrency('ILS');
       setCategory('');
       setName('');
       setAllMonthsActive(true);
@@ -146,6 +153,7 @@ export default function RecurringModal({
       await onSave({
         type,
         amount: parseFloat(amount),
+        currency,
         category,
         name,
         isActive: true,
@@ -257,7 +265,15 @@ export default function RecurringModal({
 
               {/* Amount */}
               <div ref={(el) => { if (el) fieldRefs.current.set('amount', el); }}>
-                <label className="label">סכום (₪)</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="label mb-0">סכום</label>
+                  <CurrencyPill
+                    value={currency}
+                    onChange={setCurrency}
+                    amount={amount ? parseFloat(amount) : undefined}
+                    exchangeRate={exchangeRate}
+                  />
+                </div>
                 <input
                   type="number"
                   value={amount}

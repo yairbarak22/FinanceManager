@@ -134,6 +134,10 @@ export async function POST(request: NextRequest) {
     if (typeof body.value !== 'number' || body.value < 0) {
       return NextResponse.json({ error: 'Value must be a non-negative number' }, { status: 400 });
     }
+
+    if (body.currency !== undefined && !['ILS', 'USD'].includes(body.currency)) {
+      return NextResponse.json({ error: 'Currency must be "ILS" or "USD"' }, { status: 400 });
+    }
     
     const asset = await prisma.asset.create({
       data: {
@@ -141,6 +145,7 @@ export async function POST(request: NextRequest) {
         name: body.name.trim(),
         category: body.category,
         value: body.value,
+        currency: body.currency || 'ILS',
       },
     });
     

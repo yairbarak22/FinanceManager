@@ -51,6 +51,7 @@ export async function PUT(
     if (data.type !== undefined) updateData.type = data.type;
     if (data.totalAmount !== undefined) updateData.totalAmount = data.totalAmount;
     if (data.monthlyPayment !== undefined) updateData.monthlyPayment = data.monthlyPayment;
+    if (data.currency !== undefined) updateData.currency = data.currency;
     if (data.interestRate !== undefined) updateData.interestRate = data.interestRate;
     if (data.loanTermMonths !== undefined) updateData.loanTermMonths = data.loanTermMonths;
     if (data.loanMethod !== undefined) updateData.loanMethod = data.loanMethod;

@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatCurrencyAmount, formatDate } from '@/lib/utils';
 import { getCategoryInfo } from '@/lib/categories';
 import { SensitiveData } from '@/components/common/SensitiveData';
 import type { Transaction } from '@/lib/types';
@@ -120,7 +120,7 @@ export default function CategoryTransactionsDrawer({
                       </div>
                       <SensitiveData>
                         <span className="text-[0.9375rem] font-semibold text-[#F18AB5] flex-shrink-0 ps-4">
-                          {formatCurrency(tx.amount)}
+                          {formatCurrencyAmount(tx.amount, tx.currency || 'ILS')}
                         </span>
                       </SensitiveData>
                     </div>

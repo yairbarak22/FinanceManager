@@ -80,6 +80,13 @@ export async function PUT(
       updateData.value = body.value;
     }
 
+    if (body.currency !== undefined) {
+      if (!['ILS', 'USD'].includes(body.currency)) {
+        return NextResponse.json({ error: 'Currency must be "ILS" or "USD"' }, { status: 400 });
+      }
+      updateData.currency = body.currency;
+    }
+
     if (body.liquidity !== undefined) {
       const validLiquidity = ['immediate', 'short_term', 'pension', 'locked'];
       if (!validLiquidity.includes(body.liquidity)) {

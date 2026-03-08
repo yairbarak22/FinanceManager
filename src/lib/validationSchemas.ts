@@ -10,12 +10,14 @@ const isoDate = z.string().refine(
   (val) => !isNaN(new Date(val).getTime()),
   { message: 'Invalid date' },
 );
+const currencyCode = z.enum(['ILS', 'USD']).default('ILS');
 
 // --- Transaction schemas ---
 
 export const createTransactionSchema = z.object({
   type: z.enum(['income', 'expense'], { message: 'Type must be "income" or "expense"' }),
   amount: positiveAmount,
+  currency: currencyCode,
   category: shortString(50),
   description: shortString(500),
   date: isoDate,
@@ -24,10 +26,10 @@ export const createTransactionSchema = z.object({
 export const updateTransactionSchema = z.object({
   type: z.enum(['income', 'expense']).optional(),
   amount: positiveAmount.optional(),
+  currency: z.enum(['ILS', 'USD']).optional(),
   category: shortString(50).optional(),
   description: shortString(500).optional(),
   date: isoDate.optional(),
-  // Pass-through fields used by business logic (not validated further here)
   updateExistingTransactions: z.boolean().optional(),
   merchantName: z.string().max(500).optional(),
   originalCategory: z.string().max(50).optional(),
@@ -39,6 +41,7 @@ export const updateTransactionSchema = z.object({
 export const createRecurringSchema = z.object({
   type: z.enum(['income', 'expense'], { message: 'Type must be "income" or "expense"' }),
   amount: positiveAmount,
+  currency: currencyCode,
   category: shortString(50),
   name: shortString(100),
   isActive: z.boolean().optional(),
@@ -52,6 +55,7 @@ export const createLiabilitySchema = z.object({
   type: shortString(50),
   totalAmount: positiveAmount,
   monthlyPayment: nonNegativeAmount,
+  currency: currencyCode,
   interestRate: z.number().min(0).max(100, 'Interest rate must be between 0 and 100').optional().default(0),
   loanTermMonths: z.number().int().min(0).optional().default(0),
   startDate: isoDate.optional(),
@@ -66,6 +70,7 @@ export const updateLiabilitySchema = z.object({
   type: shortString(50).optional(),
   totalAmount: positiveAmount.optional(),
   monthlyPayment: nonNegativeAmount.optional(),
+  currency: z.enum(['ILS', 'USD']).optional(),
   interestRate: z.number().min(0).max(100).optional(),
   loanTermMonths: z.number().int().min(0).optional(),
   startDate: isoDate.optional(),
