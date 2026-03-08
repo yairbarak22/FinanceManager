@@ -125,6 +125,11 @@ export async function middleware(request: NextRequest) {
     return nextWithCsp(request);
   }
 
+  // Public CTA click tracking — funnel pages are public, so tracking must be too
+  if (pathname === '/api/track/cta-click') {
+    return NextResponse.next();
+  }
+
   // Capture signup source from URL parameters and set cookie
   const source = request.nextUrl.searchParams.get('source') || request.nextUrl.searchParams.get('utm_source');
   let response: NextResponse | null = null;
