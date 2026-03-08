@@ -159,6 +159,14 @@ export interface Holding {
   updatedAt?: string;
 }
 
+// קיזוז הוצאות מהכנסות לחישוב מעשרות
+export interface MaaserExpenseOffset {
+  id: string;
+  incomeCategory: string;
+  expenseCategory: string;
+  createdAt?: string;
+}
+
 // קטגוריה מותאמת אישית
 export interface CustomCategory {
   id: string;

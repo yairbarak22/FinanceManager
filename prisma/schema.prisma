@@ -41,6 +41,7 @@ model User {
   createdTemplates      EmailTemplate[]        // Templates created by this admin
   emailSequences        EmailSequence[]        // Drip email sequences
   maaserPreferences     MaaserPreference[]     // Maaser/Chomesh income preferences
+  maaserExpenseOffsets  MaaserExpenseOffset[]  // Expense-to-income category offsets for maaser
   quarantinedFiles      QuarantinedFile[]      // Files in quarantine awaiting review
   createdGroups         UserGroup[]            // User groups created by this admin
   groupMemberships      UserGroupMember[]      // User groups this user belongs to
@@ -438,6 +439,21 @@ model MaaserPreference {
   @@unique([userId, incomeSource]) // מניעת כפילויות לפי משתמש ומקור הכנסה
   @@index([userId])
   @@index([userId, incomeCategory])
+}
+
+// ============================================
+// MAASER EXPENSE OFFSETS - Link expense categories to income categories for netting
+// ============================================
+model MaaserExpenseOffset {
+  id              String   @id @default(cuid())
+  userId          String
+  incomeCategory  String   // קטגוריית הכנסה (rental, freelance, או custom category ID)
+  expenseCategory String   // קטגוריית הוצאה (housing, transport, או custom category ID)
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, incomeCategory, expenseCategory])
+  @@index([userId])
 }
 
 // ============================================

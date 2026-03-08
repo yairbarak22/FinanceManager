@@ -309,7 +309,43 @@ Implementation pattern:
 
 This pattern also applies to: tooltips, context menus, autocomplete lists, and any other floating panel that appears inside a modal or an overflow:hidden container.
 
-20. RTL Icon + Text Buttons
+20. Custom Dropdowns — NEVER Use Native `<select>`
+The native HTML `<select>` element renders a browser-default dropdown popup that CANNOT be styled and looks out of place in the design system. ALWAYS use a custom dropdown component instead.
+
+Use `StyledSelect` (`@/components/ui/StyledSelect`) for simple value pickers:
+- Portal-based dropdown (follows rule 19)
+- Matches design system: Nunito font, correct colors, rounded-xl, focus ring
+- Supports `size="sm"` for compact contexts (modals, inline forms)
+- Supports disabled state, placeholder, aria-label
+
+Use `CategorySelect` (`@/components/ui/CategorySelect`) for category pickers with icons:
+- Full icon + color support via CategoryInfo
+- Add/edit/delete custom categories
+- Goal category support
+
+Implementation:
+```tsx
+// Simple picker
+<StyledSelect
+  value={selected}
+  onChange={setSelected}
+  placeholder="בחר..."
+  options={[{ value: 'a', label: 'אפשרות א' }]}
+  size="sm"
+/>
+
+// Category picker
+<CategorySelect
+  value={selected}
+  onChange={setSelected}
+  defaultCategories={expenseCategories}
+  customCategories={customCats}
+/>
+```
+
+This rule applies everywhere: modals, forms, settings, filters. If you see a native `<select>`, replace it.
+
+21. RTL Icon + Text Buttons
 In buttons containing both an icon and text, the icon must appear on the RIGHT side of the text (the "start" side in RTL is the right).
 - In JSX with a flex container, place the TEXT first and the ICON after it. RTL flex will visually render the icon to the right of the text.
 - Correct: `<button className="flex items-center gap-2">הוסף <Plus /></button>`

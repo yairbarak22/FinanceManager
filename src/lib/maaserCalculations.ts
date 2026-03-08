@@ -1,6 +1,6 @@
 // Maaser/Chomesh calculation utilities
 
-import { Transaction, RecurringTransaction, CustomCategory } from '@/lib/types';
+import { Transaction, RecurringTransaction, CustomCategory, MaaserExpenseOffset } from '@/lib/types';
 import { getMonthKey, isRecurringActiveInMonth } from '@/lib/utils';
 
 export type CalculationType = 'maaser' | 'chomesh';
@@ -171,5 +171,134 @@ export function getHebrewMonthName(monthKey: string): string {
   const [year, month] = monthKey.split('-');
   const monthName = monthNames[month] || month;
   return `${monthName} ${year}`;
+}
+
+// ============================================
+// EXPENSE OFFSET LOGIC
+// ============================================
+
+export interface OffsetSummaryItem {
+  incomeCategory: string;
+  grossIncome: number;
+  offsetExpenses: number;
+  netIncome: number;
+  linkedExpenseCategories: string[];
+}
+
+/**
+ * Build a map: incomeCategory → [expenseCategory, ...]
+ */
+export function buildOffsetMap(
+  offsets: MaaserExpenseOffset[]
+): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  for (const o of offsets) {
+    const existing = map.get(o.incomeCategory) ?? [];
+    existing.push(o.expenseCategory);
+    map.set(o.incomeCategory, existing);
+  }
+  return map;
+}
+
+/**
+ * Sum expenses by category for a given month (one-time + recurring).
+ * Excludes maaser/donation categories (they are handled separately).
+ */
+export function getMonthlyExpensesByCategory(
+  transactions: Transaction[],
+  recurringTransactions: RecurringTransaction[],
+  monthKey: string
+): Map<string, number> {
+  const totals = new Map<string, number>();
+
+  for (const tx of transactions) {
+    if (tx.type !== 'expense') continue;
+    if (getMonthKey(tx.date) !== monthKey) continue;
+    if (tx.category === 'maaser' || tx.category === 'donation') continue;
+    totals.set(tx.category, (totals.get(tx.category) ?? 0) + tx.amount);
+  }
+
+  for (const rt of recurringTransactions) {
+    if (rt.type !== 'expense') continue;
+    if (!isRecurringActiveInMonth(rt, monthKey)) continue;
+    if (rt.category === 'maaser' || rt.category === 'donation') continue;
+    totals.set(rt.category, (totals.get(rt.category) ?? 0) + rt.amount);
+  }
+
+  return totals;
+}
+
+/**
+ * Calculate per-category offset summary for display.
+ * Only returns entries for income categories that have active offsets.
+ */
+export function calculateOffsetSummary(
+  incomeByCategory: Map<string, number>,
+  expenseByCategory: Map<string, number>,
+  offsetMap: Map<string, string[]>
+): OffsetSummaryItem[] {
+  const summary: OffsetSummaryItem[] = [];
+
+  for (const [incCat, expCats] of offsetMap.entries()) {
+    const grossIncome = incomeByCategory.get(incCat) ?? 0;
+    if (grossIncome === 0 && expCats.every((ec) => (expenseByCategory.get(ec) ?? 0) === 0)) {
+      continue;
+    }
+
+    let offsetExpenses = 0;
+    for (const ec of expCats) {
+      offsetExpenses += expenseByCategory.get(ec) ?? 0;
+    }
+
+    summary.push({
+      incomeCategory: incCat,
+      grossIncome,
+      offsetExpenses,
+      netIncome: Math.max(grossIncome - offsetExpenses, 0),
+      linkedExpenseCategories: expCats,
+    });
+  }
+
+  return summary;
+}
+
+/**
+ * Calculate total obligated income after applying expense offsets.
+ * For categories WITH offsets: uses net income (gross - expenses, min 0).
+ * For categories WITHOUT offsets: uses gross income as-is.
+ */
+export function calculateObligatedIncomeWithOffsets(
+  allIncomeItems: { amount: number; category: string; key: string }[],
+  incomeToggles: Map<string, boolean>,
+  offsetMap: Map<string, string[]>,
+  expenseByCategory: Map<string, number>
+): { total: number; totalOffset: number } {
+  // Group toggled-on income by category
+  const incomeByCat = new Map<string, number>();
+  for (const item of allIncomeItems) {
+    if (incomeToggles.get(item.key) === false) continue;
+    incomeByCat.set(item.category, (incomeByCat.get(item.category) ?? 0) + item.amount);
+  }
+
+  let total = 0;
+  let totalOffset = 0;
+
+  for (const [cat, gross] of incomeByCat.entries()) {
+    const linkedExpCats = offsetMap.get(cat);
+
+    if (linkedExpCats && linkedExpCats.length > 0) {
+      let offsetAmount = 0;
+      for (const ec of linkedExpCats) {
+        offsetAmount += expenseByCategory.get(ec) ?? 0;
+      }
+      const cappedOffset = Math.min(offsetAmount, gross);
+      totalOffset += cappedOffset;
+      total += gross - cappedOffset;
+    } else {
+      total += gross;
+    }
+  }
+
+  return { total, totalOffset };
 }
 
