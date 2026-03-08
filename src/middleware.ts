@@ -120,6 +120,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Public funnel pages — no auth required, but need CSP nonce for hydration
+  if (pathname === '/invest' || pathname.startsWith('/invest/')) {
+    return nextWithCsp(request);
+  }
+
   // Capture signup source from URL parameters and set cookie
   const source = request.nextUrl.searchParams.get('source') || request.nextUrl.searchParams.get('utm_source');
   let response: NextResponse | null = null;
@@ -318,8 +323,8 @@ export const config = {
      * - /api/webhook/receive, /api/webhooks/resend (webhook endpoints - verify signatures themselves)
      * - /_next/static (static files)
      * - /_next/image (image optimization)
-     * - /favicon.ico, /images, /screenshots (static assets)
+     * - /favicon.ico, /images, /screenshots, /videos (static assets)
      */
-    '/((?!invite|api/auth|api/webhook|api/csp-report|api/marketing/unsubscribe|_next/static|_next/image|favicon.ico|images|screenshots).*)',
+    '/((?!invite|api/auth|api/webhook|api/csp-report|api/marketing/unsubscribe|_next/static|_next/image|favicon.ico|images|screenshots|videos).*)',
   ],
 };

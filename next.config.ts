@@ -63,6 +63,7 @@ const nextConfig: NextConfig = {
                 "https://*.mxpnl.com",
                 ...(isDev ? ["http://localhost:*", "ws://localhost:*"] : []),
               ].join(' '),
+              "media-src 'self' blob:",
               "worker-src 'self' blob:",
               "frame-src 'self' https://accounts.google.com https://iframe.mediadelivery.net https://www.youtube.com https://youtube.com",
               "frame-ancestors 'none'",
