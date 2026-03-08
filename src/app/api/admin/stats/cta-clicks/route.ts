@@ -7,17 +7,26 @@ export async function GET() {
   if (adminResult.error) return adminResult.error;
 
   try {
-    const [totalClicks, clicksByUser] = await Promise.all([
+    const [totalClicks, anonymousClicks, clicksBySource, clicksByUser] = await Promise.all([
       prisma.ctaClick.count(),
+      prisma.ctaClick.count({ where: { userId: null } }),
+      prisma.ctaClick.groupBy({
+        by: ['source'],
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+      }),
       prisma.ctaClick.groupBy({
         by: ['userId'],
+        where: { userId: { not: null } },
         _count: { id: true },
         _max: { createdAt: true },
         orderBy: { _max: { createdAt: 'desc' } },
       }),
     ]);
 
-    const userIds = clicksByUser.map((c) => c.userId);
+    const userIds = clicksByUser
+      .map((c) => c.userId)
+      .filter((id): id is string => id !== null);
 
     const users = await prisma.user.findMany({
       where: { id: { in: userIds } },
@@ -27,7 +36,7 @@ export async function GET() {
     const userMap = new Map(users.map((u) => [u.id, u]));
 
     const usersWithClicks = clicksByUser.map((c) => {
-      const user = userMap.get(c.userId);
+      const user = c.userId ? userMap.get(c.userId) : null;
       return {
         id: c.userId,
         name: user?.name || null,
@@ -38,9 +47,15 @@ export async function GET() {
       };
     });
 
+    const sourceBreakdown = Object.fromEntries(
+      clicksBySource.map((s) => [s.source, s._count.id])
+    );
+
     return NextResponse.json({
       totalClicks,
+      anonymousClicks,
       uniqueUsers: clicksByUser.length,
+      sourceBreakdown,
       users: usersWithClicks,
     });
   } catch (err) {

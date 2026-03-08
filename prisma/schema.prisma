@@ -678,13 +678,14 @@ model UserGroupMember {
 // ============================================
 model CtaClick {
   id        String   @id @default(cuid())
-  userId    String
-  source    String   // 'course_header' | 'course_cta' | 'course_sidebar'
+  userId    String?
+  source    String
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([createdAt])
+  @@index([source])
 }
 
 // ============================================

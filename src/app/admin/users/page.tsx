@@ -70,7 +70,7 @@ interface AdminStats {
 }
 
 interface CtaClickUser {
-  id: string;
+  id: string | null;
   name: string | null;
   email: string | null;
   image: string | null;
@@ -80,7 +80,9 @@ interface CtaClickUser {
 
 interface CtaClickData {
   totalClicks: number;
+  anonymousClicks: number;
   uniqueUsers: number;
+  sourceBreakdown: Record<string, number>;
   users: CtaClickUser[];
 }
 
@@ -426,48 +428,65 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        {showCtaUsers && ctaData && ctaData.users.length > 0 && (
-          <div className="mb-4 sm:mb-6">
+        {showCtaUsers && ctaData && (ctaData.users.length > 0 || ctaData.anonymousClicks > 0) && (
+          <div className="mb-4 sm:mb-6 space-y-4">
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4 sm:p-6">
               <h3 className="text-sm sm:text-base font-semibold text-[#303150] mb-4 flex items-center gap-2">
                 <MousePointerClick className="w-4 h-4 text-[#0DBACC]" />
-                משתמשים שלחצו על פתיחת חשבון מסחר
-                <span className="text-xs text-[#7E7F90] font-normal">({ctaData.totalClicks} לחיצות סה״כ)</span>
+                לחיצות על פתיחת חשבון מסחר
+                <span className="text-xs text-[#7E7F90] font-normal">({ctaData.totalClicks} סה״כ, {ctaData.anonymousClicks} אנונימיות)</span>
               </h3>
-              <div className="divide-y divide-gray-100">
-                {ctaData.users.map((ctaUser) => (
-                  <div key={ctaUser.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                    {ctaUser.image ? (
-                      <img
-                        src={ctaUser.image}
-                        alt={ctaUser.name || 'User'}
-                        className="w-9 h-9 rounded-full flex-shrink-0"
-                        data-sl="mask"
-                      />
-                    ) : (
-                      <div className="w-9 h-9 rounded-full bg-[#0DBACC]/10 flex items-center justify-center flex-shrink-0">
-                        <User className="w-4 h-4 text-[#0DBACC]" />
+
+              {ctaData.sourceBreakdown && Object.keys(ctaData.sourceBreakdown).length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {Object.entries(ctaData.sourceBreakdown).map(([src, count]) => (
+                    <span
+                      key={src}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-gray-50 text-[#6E6E73] border border-gray-100"
+                    >
+                      <span className="text-[#303150]">{count}</span>
+                      {src.replace(/_/g, ' ')}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {ctaData.users.length > 0 && (
+                <div className="divide-y divide-gray-100">
+                  {ctaData.users.map((ctaUser) => (
+                    <div key={ctaUser.id ?? 'anon'} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                      {ctaUser.image ? (
+                        <img
+                          src={ctaUser.image}
+                          alt={ctaUser.name || 'User'}
+                          className="w-9 h-9 rounded-full flex-shrink-0"
+                          data-sl="mask"
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-[#0DBACC]/10 flex items-center justify-center flex-shrink-0">
+                          <User className="w-4 h-4 text-[#0DBACC]" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <SensitiveData as="p" className="text-sm font-medium text-[#303150] truncate">
+                          {ctaUser.name || 'ללא שם'}
+                        </SensitiveData>
+                        <SensitiveData as="p" className="text-xs text-[#7E7F90] truncate">
+                          {ctaUser.email || ''}
+                        </SensitiveData>
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <SensitiveData as="p" className="text-sm font-medium text-[#303150] truncate">
-                        {ctaUser.name || 'ללא שם'}
-                      </SensitiveData>
-                      <SensitiveData as="p" className="text-xs text-[#7E7F90] truncate">
-                        {ctaUser.email || ''}
-                      </SensitiveData>
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#0DBACC]/10 text-[#0DBACC]">
+                          {ctaUser.clickCount} {ctaUser.clickCount === 1 ? 'לחיצה' : 'לחיצות'}
+                        </span>
+                        <span className="text-[11px] text-[#BDBDCB]">
+                          {new Date(ctaUser.lastClickedAt).toLocaleDateString('he-IL', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#0DBACC]/10 text-[#0DBACC]">
-                        {ctaUser.clickCount} {ctaUser.clickCount === 1 ? 'לחיצה' : 'לחיצות'}
-                      </span>
-                      <span className="text-[11px] text-[#BDBDCB]">
-                        {new Date(ctaUser.lastClickedAt).toLocaleDateString('he-IL', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
