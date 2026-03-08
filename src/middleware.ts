@@ -121,7 +121,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Public funnel pages — no auth required, but need CSP nonce for hydration
-  if (pathname === '/invest') {
+  if (pathname === '/invest' || pathname.startsWith('/invest/')) {
     return nextWithCsp(request);
   }
 

@@ -27,41 +27,40 @@ const BENTO_BENEFITS = [
   {
     value: '0₪',
     title: 'פטור מלא מדמי ניהול',
-    desc: 'ללא הגבלת זמן — לכל חיי החשבון. חסכון של אלפי שקלים לאורך השנים.',
+    desc: 'ללא הגבלת זמן, לכל חיי החשבון. חסכון של אלפי שקלים לאורך השנים.',
     icon: ShieldCheck,
     accent: '#0DBACC',
   },
   {
     value: '200₪',
     title: 'מתנת הצטרפות',
-    desc: 'לכל פותחי חשבון חדש דרכנו — ישר לחשבון.',
+    desc: 'לכל פותחי חשבון חדש דרכנו, ישר לחשבון.',
     icon: Gift,
     accent: '#69ADFF',
   },
   {
     value: 'כשר',
     title: 'מסלולי השקעה הלכתיים',
-    desc: 'בפיקוח הלכתי מלא — בהכשר מהדרין.',
+    desc: 'בפיקוח הלכתי מלא, בהכשר מהדרין.',
     icon: BadgeCheck,
     accent: '#74ACEF',
   },
   {
     value: 'אוטומט׳',
     title: 'הוראת קבע פעם אחת',
-    desc: 'מגדירים — והכסף עובד לבד. בלי לגעת.',
+    desc: 'מגדירים והכסף עובד לבד. בלי לגעת.',
     icon: Zap,
     accent: '#F18AB5',
   },
   {
     value: '3 דק׳',
     title: 'פתיחת חשבון מהירה',
-    desc: 'תהליך דיגיטלי פשוט ומהיר — בלי ביורוקרטיה.',
+    desc: 'תהליך דיגיטלי פשוט ומהיר, בלי ביורוקרטיה.',
     icon: Clock,
     accent: '#2B4699',
   },
 ];
 
-const STAT_BADGES = ['השקעה פשוטה', 'ללא ידע מוקדם', 'תשואה לטווח ארוך'];
 
 /* ── Investment calculator channel definitions ────────── */
 
@@ -154,105 +153,11 @@ const GRADIENT_STYLE = {
   backgroundClip: 'text' as const,
 };
 
-/* ── Section transition fade with blur ────────────────── */
-
-function SectionFade({ toColor }: { toColor: string }) {
-  return (
-    <div className="absolute bottom-0 inset-x-0 pointer-events-none" style={{ height: '20rem' }}>
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `linear-gradient(to bottom, transparent, ${toColor})`,
-        }}
-      />
-      <div
-        className="absolute inset-0"
-        style={{
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          maskImage: 'linear-gradient(to bottom, transparent 0%, black 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 100%)',
-        }}
-      />
-    </div>
-  );
-}
-
-function SectionFadeTop({ fromColor }: { fromColor: string }) {
-  return (
-    <div className="absolute top-0 inset-x-0 pointer-events-none z-0" style={{ height: '20rem' }}>
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `linear-gradient(to bottom, ${fromColor}, transparent)`,
-        }}
-      />
-      <div
-        className="absolute inset-0"
-        style={{
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          maskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
-        }}
-      />
-    </div>
-  );
-}
-
 /* ── CTA click handler ─────────────────────────────────── */
 
 function handleCtaClick(source: string) {
   trackCtaClickServer(source);
   window.open(PARTNER_URL, '_blank', 'noopener,noreferrer');
-}
-
-/* ── Section 1: Sticky Micro-Bar ───────────────────────── */
-
-function StickyBar({ visible, noMotion }: { visible: boolean; noMotion: boolean }) {
-  return (
-    <AnimatePresence>
-      {visible && (
-        <motion.nav
-          className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-4 sm:px-6"
-          style={{
-            height: '48px',
-            background: 'rgba(255,255,255,0.92)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-          }}
-          initial={noMotion ? { opacity: 0 } : { y: '-100%', opacity: 0 }}
-          animate={noMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
-          exit={noMotion ? { opacity: 0 } : { y: '-100%', opacity: 0 }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
-          aria-label="סרגל ניווט"
-        >
-          <div className="flex items-center gap-0">
-            <PieChart className="w-6 h-6" style={{ color: '#2B4699' }} strokeWidth={3} />
-            <span
-              className="text-lg font-black tracking-tight"
-              style={{ color: '#303150', fontFamily: 'var(--font-heebo)' }}
-            >
-              NET
-            </span>
-          </div>
-          <motion.button
-            onClick={() => handleCtaClick('funnel_sticky_cta')}
-            className="px-4 py-1.5 rounded-xl text-white text-xs font-bold cursor-pointer"
-            style={{
-              background: '#69ADFF',
-              fontFamily: 'var(--font-heebo)',
-            }}
-            whileHover={noMotion ? undefined : { scale: 1.04, boxShadow: '0 4px 16px rgba(105,173,255,0.35)' }}
-            whileTap={noMotion ? undefined : { scale: 0.97 }}
-          >
-            פתיחת חשבון מסחר
-          </motion.button>
-        </motion.nav>
-      )}
-    </AnimatePresence>
-  );
 }
 
 /* ── Spring presets (matching main landing) ───────────── */
@@ -478,13 +383,14 @@ function HeroSection({ noMotion }: { noMotion: boolean }) {
 
             {/* CTA button */}
             <motion.div
+              className="flex justify-center lg:justify-start"
               initial={noMotion ? undefined : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={noMotion ? { duration: 0 } : { ...springBouncy, delay: 0.4 }}
             >
               <motion.button
                 onClick={() => handleCtaClick('funnel_hero_cta')}
-                className="relative inline-flex items-center gap-2 w-full sm:w-auto justify-center px-8 py-3.5 sm:px-10 sm:py-4 rounded-2xl text-white text-base sm:text-lg font-bold cursor-pointer overflow-hidden"
+                className="relative inline-flex items-center gap-2 px-8 py-3.5 sm:px-10 sm:py-4 rounded-2xl text-white text-base sm:text-lg font-bold cursor-pointer overflow-hidden"
                 style={{
                   background: 'linear-gradient(135deg, #2B4699, #0DBACC)',
                   fontFamily: 'var(--font-heebo)',
@@ -505,32 +411,9 @@ function HeroSection({ noMotion }: { noMotion: boolean }) {
                     animation: 'ctaShimmer 3s ease-in-out infinite',
                   }}
                 />
-                <span className="relative z-10">להתחיל לצמוח</span>
+                <span className="relative z-10">התחל להשקיע עכשיו</span>
                 <ArrowLeft className="relative z-10 w-4 h-4" strokeWidth={2.5} />
               </motion.button>
-            </motion.div>
-
-            {/* Stat badges */}
-            <motion.div
-              className="flex flex-wrap justify-center lg:justify-start gap-3 mt-8"
-              initial={noMotion ? undefined : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={noMotion ? { duration: 0 } : { duration: 0.7, delay: 0.5 }}
-            >
-              {STAT_BADGES.map((badge) => (
-                <span
-                  key={badge}
-                  className="px-4 py-2 rounded-xl text-xs font-bold"
-                  style={{
-                    background: 'rgba(0,0,0,0.04)',
-                    border: '1px solid rgba(0,0,0,0.06)',
-                    color: '#6E6E73',
-                    fontFamily: 'var(--font-heebo)',
-                  }}
-                >
-                  {badge}
-                </span>
-              ))}
             </motion.div>
           </motion.div>
 
@@ -615,22 +498,11 @@ function HeroSection({ noMotion }: { noMotion: boolean }) {
         </motion.div>
       )}
 
-      {/* Bottom fade with blur */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none">
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(to top, #F5F5F7, transparent)' }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-          }}
-        />
-      </div>
+      {/* Bottom fade into WhyInvest (#FFFFFF) */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, transparent, #FFFFFF)' }}
+      />
 
       <style jsx>{`
         @keyframes ctaShimmer {
@@ -872,7 +744,7 @@ function WhyInvestSection({ noMotion }: { noMotion: boolean }) {
   const bestVal = chartData[0]?.endValue ?? 0;
   const worstVal = chartData[chartData.length - 1]?.endValue ?? 0;
   const diffBestWorst = bestVal - worstVal;
-  const multiplier = worstVal > 0 ? (bestVal / worstVal).toFixed(1) : '—';
+  const multiplier = worstVal > 0 ? (bestVal / worstVal).toFixed(1) : '0';
   const totalDeposited = initialAmount + monthlyDeposit * years * 12;
   const netProfit = bestVal - totalDeposited;
 
@@ -1165,7 +1037,11 @@ function WhyInvestSection({ noMotion }: { noMotion: boolean }) {
         }
       `}</style>
 
-      <SectionFade toColor="#F5F5F7" />
+      {/* Bottom fade into VideoCourse (#F5F5F7) */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-48 pointer-events-none z-20"
+        style={{ background: 'linear-gradient(to bottom, transparent, #F5F5F7)' }}
+      />
     </section>
   );
 }
@@ -1296,23 +1172,13 @@ function VideoCourseSection({ noMotion }: { noMotion: boolean }) {
       style={{ background: '#F5F5F7' }}
       aria-label="הקורס שלנו"
     >
-      <div className="absolute top-0 left-0 right-0 h-32 pointer-events-none">
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(to bottom, #FFFFFF, transparent)' }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            maskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
-          }}
-        />
-      </div>
+      {/* Top fade from WhyInvest (#FFFFFF) */}
+      <div
+        className="absolute top-0 left-0 right-0 h-48 pointer-events-none z-[1]"
+        style={{ background: 'linear-gradient(to bottom, #FFFFFF, transparent)' }}
+      />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <motion.p
           className="text-sm font-bold tracking-widest text-center mb-4"
@@ -1612,21 +1478,11 @@ function VideoCourseSection({ noMotion }: { noMotion: boolean }) {
         }
       `}</style>
 
-      <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none">
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(to bottom, transparent, #FFFFFF)' }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            maskImage: 'linear-gradient(to bottom, transparent 0%, black 100%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 100%)',
-          }}
-        />
-      </div>
+      {/* Bottom fade into Benefits (#FFFFFF) */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, transparent, #FFFFFF)' }}
+      />
     </section>
   );
 }
@@ -1729,7 +1585,7 @@ function BenefitsSection({ noMotion }: { noMotion: boolean }) {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.12 }}
             >
-              הטבות בלעדיות שלא תמצאו בשום מקום אחר — רק למצטרפים דרך myNETO.
+              הטבות בלעדיות שלא תמצאו בשום מקום אחר, רק למצטרפים דרך myNETO.
             </motion.p>
 
             {/* CTA */}
@@ -1861,7 +1717,11 @@ function BenefitsSection({ noMotion }: { noMotion: boolean }) {
         </motion.p>
       </div>
 
-      <SectionFade toColor="#F5F5F7" />
+      {/* Bottom fade into FinalCTA (#F5F5F7) */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, transparent, #F5F5F7)' }}
+      />
     </section>
   );
 }
@@ -1875,8 +1735,6 @@ function FinalCTASection({ noMotion }: { noMotion: boolean }) {
       style={{ background: '#F5F5F7' }}
       aria-label="פתיחת חשבון"
     >
-      <SectionFadeTop fromColor="#FFFFFF" />
-
       <div
         className="absolute inset-0 pointer-events-none"
         style={{ background: 'radial-gradient(circle at 50% 50%, rgba(105,173,255,0.04), transparent 60%)' }}
@@ -1972,16 +1830,7 @@ export default function InvestFunnelPage() {
   const prefersReduced = useReducedMotion();
   const noMotion = !!prefersReduced;
 
-  const [showStickyBar, setShowStickyBar] = useState(false);
   const hasTrackedRef = useRef(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowStickyBar(window.scrollY > window.innerHeight * 0.5);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     if (hasTrackedRef.current) return;
@@ -2000,14 +1849,13 @@ export default function InvestFunnelPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div dir="rtl" style={{ fontFamily: 'var(--font-heebo)' }}>
-      <StickyBar visible={showStickyBar} noMotion={noMotion} />
+    <>
       <HeroSection noMotion={noMotion} />
       <WhyInvestSection noMotion={noMotion} />
       <VideoCourseSection noMotion={noMotion} />
       <BenefitsSection noMotion={noMotion} />
       <FinalCTASection noMotion={noMotion} />
       <MiniFooter />
-    </div>
+    </>
   );
 }
