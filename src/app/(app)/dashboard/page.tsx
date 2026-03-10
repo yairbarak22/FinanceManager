@@ -26,7 +26,6 @@ import LiabilityTypeSelectionModal from '@/components/modals/LiabilityTypeSelect
 import GemachFormModal from '@/components/modals/GemachFormModal';
 import MortgageModal from '@/components/modals/MortgageModal';
 import AmortizationModal from '@/components/modals/AmortizationModal';
-import ImportModal from '@/components/modals/ImportModal';
 import QuickStartModal from '@/components/modals/QuickStartModal';
 import NewUserOnboardingModal from '@/components/modals/NewUserOnboardingModal';
 import DocumentsModal from '@/components/modals/DocumentsModal';
@@ -94,7 +93,7 @@ export default function DashboardPage() {
   const [isRecurringModalOpen, setIsRecurringModalOpen] = useState(false);
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [isLiabilityModalOpen, setIsLiabilityModalOpen] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
   const [isLiabilityTypeSelectionOpen, setIsLiabilityTypeSelectionOpen] = useState(false);
   const [isGemachFormOpen, setIsGemachFormOpen] = useState(false);
   const [isMortgageModalOpen, setIsMortgageModalOpen] = useState(false);
@@ -251,8 +250,8 @@ export default function DashboardPage() {
 
   const handleOnboardingImport = useCallback(async () => {
     await endTour();
-    setIsImportModalOpen(true);
-  }, [endTour]);
+    router.push('/workspace');
+  }, [endTour, router]);
 
   const handleOnboardingGoals = useCallback(async () => {
     await endTour();
@@ -1012,7 +1011,7 @@ export default function DashboardPage() {
                   onUpdateTransaction={handleUpdateTransaction}
                   onBulkUpdateCategory={handleBulkUpdateCategory}
                   onNewTransaction={() => setIsTransactionModalOpen(true)}
-                  onImport={() => setIsImportModalOpen(true)}
+                  onImport={() => router.push('/workspace')}
                   customExpenseCategories={expenseCats.custom}
                   customIncomeCategories={incomeCats.custom}
                   selectedCategory={selectedCategory}
@@ -1121,12 +1120,6 @@ export default function DashboardPage() {
         liability={viewingLiability}
       />
 
-      <ImportModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        onSuccess={() => fetchData()}
-      />
-
       {documentsEntity && (
         <DocumentsModal
           isOpen={isDocumentsModalOpen}
@@ -1208,7 +1201,7 @@ export default function DashboardPage() {
       <QuickStartModal
         isOpen={showQuickStart}
         onClose={() => setShowQuickStart(false)}
-        onImport={() => setIsImportModalOpen(true)}
+        onImport={() => router.push('/workspace')}
       />
 
       <NewUserOnboardingModal
