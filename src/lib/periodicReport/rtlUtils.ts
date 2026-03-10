@@ -1,35 +1,26 @@
 /**
  * RTL text utilities for PDF rendering.
  *
- * PDF renderers (pdfkit, @react-pdf/renderer) lay out ALL text LTR.
- * Hebrew glyphs render correctly via the font, but word order must be
- * reversed so that when the renderer places words left-to-right the
- * result reads correctly right-to-left in the PDF viewer.
+ * @react-pdf/renderer 4.x includes a Unicode BiDi engine that handles
+ * RTL text layout automatically. We only need to:
+ *   - Set the base paragraph direction to RTL via a directional mark
+ *   - Let the BiDi algorithm handle word ordering and mixed content
  *
- * We reverse the WORD ORDER only -- never the characters within words.
- * Consecutive LTR tokens (numbers, English, symbols) keep their relative
- * internal order after the global reversal.
- *
- * Between Hebrew words we insert an LTR mark (\u200E) alongside the space
- * to prevent the renderer from collapsing inter-word spacing.
+ * No manual word reversal is needed. Hebrew words flow RTL naturally,
+ * and LTR sequences (numbers, English) are handled by the BiDi algorithm.
  */
 
-const HEBREW_CHAR = /[\u0590-\u05FF]/;
 const LTR_MARK = '\u200E';
-const WORD_SEP = ` ${LTR_MARK}`;
-
-function containsHebrew(token: string): boolean {
-  return HEBREW_CHAR.test(token);
-}
+const RTL_MARK = '\u200F';
 
 /**
- * Prepare a mixed Hebrew/LTR string for PDF rendering.
+ * Prepare a Hebrew string for PDF rendering by setting RTL base direction.
  *
- * 1. Normalize whitespace (collapse consecutive spaces).
- * 2. Split into word tokens.
- * 3. Reverse the full array (so first Hebrew word ends up on the right in LTR layout).
- * 4. Groups of consecutive LTR tokens get re-reversed to restore their internal order.
- * 5. Join with space + LTR mark to preserve inter-word spacing.
+ * Prefixes with RTL_MARK to establish RTL paragraph direction for the
+ * renderer's BiDi algorithm. Adds a trailing RTL_MARK to seal the
+ * direction of any neutral characters (periods, percent signs) at the
+ * end of the text, preventing the BiDi algorithm from misplacing them.
+ * Suffixes with LTR_MARK to reset direction for any surrounding content.
  */
 export function prepareRtl(text: string): string {
   if (!text) return text;
@@ -37,37 +28,12 @@ export function prepareRtl(text: string): string {
   const normalized = text.replace(/\s+/g, ' ').trim();
   if (!normalized) return text;
 
-  const tokens = normalized.split(' ');
-  if (tokens.length <= 1) {
-    return containsHebrew(normalized) ? normalized + LTR_MARK : normalized;
-  }
-
-  const reversed = [...tokens].reverse();
-
-  const result: string[] = [];
-  let ltrGroup: string[] = [];
-
-  for (const token of reversed) {
-    if (containsHebrew(token)) {
-      if (ltrGroup.length > 0) {
-        result.push(...ltrGroup.reverse());
-        ltrGroup = [];
-      }
-      result.push(token);
-    } else {
-      ltrGroup.push(token);
-    }
-  }
-
-  if (ltrGroup.length > 0) {
-    result.push(...ltrGroup.reverse());
-  }
-
-  return result.join(WORD_SEP) + LTR_MARK;
+  return RTL_MARK + normalized + RTL_MARK + LTR_MARK;
 }
 
 /**
  * Format a number as ILS currency string suitable for PDF.
+ * Uses Non-Breaking Space to keep the symbol bound to the number.
  */
 export function formatILS(amount: number): string {
   const formatted = new Intl.NumberFormat('he-IL', {
@@ -76,7 +42,7 @@ export function formatILS(amount: number): string {
   }).format(Math.abs(amount));
 
   const sign = amount < 0 ? '-' : '';
-  return `₪${sign}${formatted}`;
+  return `${sign}${formatted}\u00A0\u20AA`;
 }
 
 /**

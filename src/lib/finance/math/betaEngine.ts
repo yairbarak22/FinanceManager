@@ -12,6 +12,7 @@ import { normalizeSymbol, detectAssetType } from '../providers/eod';
 
 const EOD_API_TOKEN = process.env.EOD_API_TOKEN || '';
 const EOD_BASE_URL = 'https://eodhistoricaldata.com/api';
+const isDev = process.env.NODE_ENV === 'development';
 
 // S&P 500 benchmark symbol
 const BENCHMARK_SYMBOL = 'GSPC.INDX';
@@ -193,7 +194,7 @@ async function getBenchmarkReturns(): Promise<MonthlyReturn[]> {
     return benchmarkCache.returns;
   }
 
-  console.log('[BetaEngine] Fetching S&P 500 benchmark data...');
+  if (isDev) console.log('[BetaEngine] Fetching S&P 500 benchmark data...');
 
   try {
     const prices = await fetchHistoricalPrices(BENCHMARK_SYMBOL, 36);
@@ -204,7 +205,7 @@ async function getBenchmarkReturns(): Promise<MonthlyReturn[]> {
       timestamp: now,
     };
 
-    console.log(`[BetaEngine] Benchmark cached: ${returns.length} monthly returns`);
+    if (isDev) console.log(`[BetaEngine] Benchmark cached: ${returns.length} monthly returns`);
     return returns;
   } catch (error) {
     console.error('[BetaEngine] Failed to fetch benchmark:', error);
@@ -262,7 +263,7 @@ export async function calculateBeta(symbol: string): Promise<{ beta: number; dat
     const assetReturns = calculateMonthlyReturns(assetPrices);
 
     if (assetReturns.length < MIN_MONTHS_REQUIRED) {
-      console.log(`[BetaEngine] ${normalizedSymbol}: Only ${assetReturns.length} months (need ${MIN_MONTHS_REQUIRED}), using default`);
+      if (isDev) console.log(`[BetaEngine] ${normalizedSymbol}: Only ${assetReturns.length} months (need ${MIN_MONTHS_REQUIRED}), using default`);
       const defaultBeta = isIsraeli ? 0.9 : 1.0;
       return { beta: defaultBeta, dataPoints: assetReturns.length, source: 'insufficient_data' };
     }
@@ -271,7 +272,7 @@ export async function calculateBeta(symbol: string): Promise<{ beta: number; dat
     const { assetValues, benchmarkValues } = alignReturns(assetReturns, benchmarkReturns);
 
     if (assetValues.length < MIN_MONTHS_REQUIRED) {
-      console.log(`[BetaEngine] ${normalizedSymbol}: Only ${assetValues.length} aligned months, using default`);
+      if (isDev) console.log(`[BetaEngine] ${normalizedSymbol}: Only ${assetValues.length} aligned months, using default`);
       const defaultBeta = isIsraeli ? 0.9 : 1.0;
       return { beta: defaultBeta, dataPoints: assetValues.length, source: 'insufficient_aligned' };
     }
@@ -300,7 +301,7 @@ export async function calculateBeta(symbol: string): Promise<{ beta: number; dat
       timestamp: now,
     });
 
-    console.log(`[BetaEngine] ${normalizedSymbol}: Beta=${beta} (${assetValues.length} data points)`);
+    if (isDev) console.log(`[BetaEngine] ${normalizedSymbol}: Beta=${beta} (${assetValues.length} data points)`);
 
     return { beta, dataPoints: assetValues.length, source: 'calculated' };
 
@@ -348,7 +349,7 @@ export async function calculateBetasBatch(symbols: string[]): Promise<Map<string
 export function clearBetaCache(): void {
   betaCache.clear();
   benchmarkCache = null;
-  console.log('[BetaEngine] Cache cleared');
+  if (isDev) console.log('[BetaEngine] Cache cleared');
 }
 
 /**

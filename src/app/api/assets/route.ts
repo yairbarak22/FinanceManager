@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         try {
           const result = await syncPortfolioAsset(userId, true);
           if (result) {
-            console.log(`[Assets] ${existingSyncAsset ? 'Updated' : 'Created'} portfolio sync asset for user ${userId}`);
+            if (process.env.NODE_ENV === 'development') console.log(`[Assets] ${existingSyncAsset ? 'Updated' : 'Created'} portfolio sync asset for user ${userId}`);
             // Re-fetch assets to include the updated sync asset
             assets = await prisma.asset.findMany({
               where: sharedWhere,

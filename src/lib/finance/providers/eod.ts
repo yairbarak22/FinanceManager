@@ -26,6 +26,7 @@ import { getEnrichment, enrichQuoteData, searchBySecurityNumber } from '../enric
 
 const EOD_API_TOKEN = process.env.EOD_API_TOKEN || '';
 const EOD_BASE_URL = 'https://eodhistoricaldata.com/api';
+const isDev = process.env.NODE_ENV === 'development';
 
 // ============================================================================
 // TYPES - EOD API Response Structures
@@ -281,7 +282,7 @@ export class EODProvider implements MarketDataProvider {
       if (data.close && data.close > 0) {
         cachedUsdIlsRate = data.close;
         rateLastFetched = now;
-        console.log(`[EOD] USD/ILS rate: ${cachedUsdIlsRate}`);
+        if (isDev) console.log(`[EOD] USD/ILS rate: ${cachedUsdIlsRate}`);
         return cachedUsdIlsRate;
       }
     } catch (error) {
@@ -297,7 +298,7 @@ export class EODProvider implements MarketDataProvider {
       if (Array.isArray(data) && data.length > 0 && data[0].close > 0) {
         cachedUsdIlsRate = data[0].close;
         rateLastFetched = now;
-        console.log(`[EOD] USD/ILS rate (fallback): ${cachedUsdIlsRate}`);
+        if (isDev) console.log(`[EOD] USD/ILS rate (fallback): ${cachedUsdIlsRate}`);
         return cachedUsdIlsRate;
       }
     } catch (error) {
@@ -306,7 +307,7 @@ export class EODProvider implements MarketDataProvider {
 
     // Final fallback
     const fallbackRate = cachedUsdIlsRate ?? FALLBACK_USD_ILS_RATE;
-    console.log(`[EOD] Using fallback USD/ILS rate: ${fallbackRate}`);
+    if (isDev) console.log(`[EOD] Using fallback USD/ILS rate: ${fallbackRate}`);
     return fallbackRate;
   }
 
@@ -425,7 +426,7 @@ export class EODProvider implements MarketDataProvider {
     const normalizedSymbol = normalizeSymbol(symbol);
     const { isIsraeli, isCrypto } = detectAssetType(symbol);
 
-    console.log(`[EOD] Getting quote for ${normalizedSymbol}`);
+    if (isDev) console.log(`[EOD] Getting quote for ${normalizedSymbol}`);
 
     // Fetch price
     const priceData = await this.getPriceData(symbol);
@@ -452,7 +453,7 @@ export class EODProvider implements MarketDataProvider {
     let adjustedPrice = priceData.price;
     if (isAgorot) {
       adjustedPrice = priceData.price / 100;
-      console.log(`[EOD] Converted ${symbol} from agorot (currency=${enrichmentCurrency || 'unknown'}): ${priceData.price} → ₪${adjustedPrice}`);
+      if (isDev) console.log(`[EOD] Converted ${symbol} from agorot (currency=${enrichmentCurrency || 'unknown'}): ${priceData.price} → ₪${adjustedPrice}`);
     }
 
     // Calculate ILS price
@@ -512,7 +513,7 @@ export class EODProvider implements MarketDataProvider {
       }),
     };
 
-    console.log(`[EOD] Enriched ${symbol}: Beta=${betaResult.beta} (${betaResult.source}), Sector=${enrichedQuote.sector}${enrichment ? ` (Hebrew: ${enrichment.sectorHe})` : ''}`);
+    if (isDev) console.log(`[EOD] Enriched ${symbol}: Beta=${betaResult.beta} (${betaResult.source}), Sector=${enrichedQuote.sector}${enrichment ? ` (Hebrew: ${enrichment.sectorHe})` : ''}`);
 
     return enrichedQuote;
   }
@@ -538,7 +539,7 @@ export class EODProvider implements MarketDataProvider {
             Type: enrichment.assetType === 'Stock' ? 'Common Stock' : enrichment.assetType,
             Currency: 'ILS',
           });
-          console.log(`[EOD] Enrichment DB mapped ${query} → ${enrichment.symbol} (${enrichment.nameHe})`);
+          if (isDev) console.log(`[EOD] Enrichment DB mapped ${query} → ${enrichment.symbol} (${enrichment.nameHe})`);
         }
       }
 
