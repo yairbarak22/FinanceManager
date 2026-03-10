@@ -5,16 +5,16 @@ import {
   Page,
   View,
   Text,
+  Link,
   StyleSheet,
   Font,
 } from '@react-pdf/renderer';
 import type {
   PeriodicReportData,
-  GoalStatus,
   AssetBreakdownItem,
   LiabilityBreakdownItem,
-  TradingPortfolioData,
 } from './types';
+import type { FinancialInsight, InsightTone } from '@/lib/insights/types';
 import { prepareRtl, formatILS, formatPercent } from './rtlUtils';
 
 // ---------------------------------------------------------------------------
@@ -251,11 +251,133 @@ const s = StyleSheet.create({
 
   // ---- Utility ----
   noData: { fontSize: 8, color: C.mediumGrey, textAlign: 'right' },
+
+  // ---- Insights (mini-cards on page 1) ----
+  insightsMiniWrap: {
+    marginTop: 14,
+  },
+  insightsMiniTitle: {
+    fontWeight: 700,
+    fontSize: 10,
+    color: C.black,
+    textAlign: 'right',
+    marginBottom: 6,
+  },
+  insightMiniCard: {
+    borderRadius: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    marginBottom: 4,
+    borderRightWidth: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  insightMiniBadge: {
+    fontSize: 6.5,
+    fontWeight: 700,
+    paddingVertical: 2,
+    paddingHorizontal: 5,
+    borderRadius: 3,
+    textAlign: 'center',
+    marginLeft: 8,
+  },
+  insightMiniText: {
+    fontSize: 7.5,
+    textAlign: 'right',
+    lineHeight: 1.4,
+    flex: 1,
+  },
+
+  // ---- Insights (full dedicated page) ----
+  insightGroupTitle: {
+    fontSize: 10,
+    fontWeight: 700,
+    textAlign: 'right',
+    marginTop: 12,
+    marginBottom: 6,
+    paddingBottom: 3,
+    borderBottomWidth: 0.75,
+  },
+  insightCard: {
+    borderRadius: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+    borderRightWidth: 3,
+  },
+  insightCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginBottom: 5,
+  },
+  insightBadge: {
+    fontSize: 7,
+    fontWeight: 700,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 3,
+    textAlign: 'center',
+  },
+  insightNumber: {
+    fontSize: 8,
+    fontWeight: 700,
+    marginLeft: 6,
+    textAlign: 'right',
+  },
+  insightMessage: {
+    fontSize: 9,
+    textAlign: 'right',
+    lineHeight: 1.5,
+  },
+  insightCtaWrap: {
+    marginTop: 6,
+    alignSelf: 'flex-end',
+    borderRadius: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+  },
+  insightCtaText: {
+    fontSize: 7.5,
+    fontWeight: 700,
+    textAlign: 'center',
+  },
 });
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+const TONE_THEME: Record<InsightTone, {
+  accent: string;
+  bg: string;
+  badgeBg: string;
+  badgeText: string;
+  label: string;
+}> = {
+  alert: {
+    accent: C.negative,
+    bg: '#FFF5F5',
+    badgeBg: '#FDDEDE',
+    badgeText: C.negative,
+    label: 'דורש תשומת לב',
+  },
+  recommendation: {
+    accent: '#D48A0A',
+    bg: '#FFF8E6',
+    badgeBg: '#FFF0C2',
+    badgeText: '#8B5E00',
+    label: 'המלצה',
+  },
+  positive: {
+    accent: C.positive,
+    bg: '#F0FAF0',
+    badgeBg: '#D4EDDA',
+    badgeText: C.positive,
+    label: 'נקודה חיובית',
+  },
+};
 
 function valColor(v: number): string {
   if (v > 0) return C.positive;
@@ -917,6 +1039,155 @@ function GoalsProjections({ data }: { data: PeriodicReportData }) {
   );
 }
 
+// ---- Insight Mini-Cards (shown after Executive Summary) ----
+
+function truncateMessage(msg: string, max: number): string {
+  if (msg.length <= max) return msg;
+  const cut = msg.lastIndexOf(' ', max);
+  return msg.slice(0, cut > 0 ? cut : max) + '\u2026';
+}
+
+function InsightMiniCards({ insights }: { insights: FinancialInsight[] }) {
+  if (insights.length === 0) return null;
+
+  return (
+    <View style={s.insightsMiniWrap}>
+      <Text style={s.insightsMiniTitle}>
+        {prepareRtl('תובנות והמלצות')}
+      </Text>
+      {insights.map((insight, i) => {
+        const theme = TONE_THEME[insight.tone];
+        return (
+          <View
+            key={i}
+            style={[
+              s.insightMiniCard,
+              { borderRightColor: theme.accent, backgroundColor: theme.bg },
+            ]}
+          >
+            <Text
+              style={[
+                s.insightMiniBadge,
+                { backgroundColor: theme.badgeBg, color: theme.badgeText },
+              ]}
+            >
+              {prepareRtl(theme.label)}
+            </Text>
+            <Text style={[s.insightMiniText, { color: C.darkGrey }]}>
+              {prepareRtl(truncateMessage(insight.message, 85))}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+// ---- Full Insights Section (dedicated page) ----
+
+const TONE_ORDER: InsightTone[] = ['alert', 'recommendation', 'positive'];
+const TONE_GROUP_TITLES: Record<InsightTone, string> = {
+  alert: 'דורש תשומת לב',
+  recommendation: 'המלצות לשיפור',
+  positive: 'מה עובד טוב',
+};
+
+function InsightsSection({ data }: { data: PeriodicReportData }) {
+  const insights = data.insights;
+  if (!insights || insights.length === 0) return null;
+
+  const grouped = TONE_ORDER.map((tone) => ({
+    tone,
+    items: insights.filter((ins) => ins.tone === tone),
+  })).filter((g) => g.items.length > 0);
+
+  const counterOffsets: Record<string, number> = {};
+  let runningOffset = 0;
+  for (const g of grouped) {
+    counterOffsets[g.tone] = runningOffset;
+    runningOffset += g.items.length;
+  }
+
+  return (
+    <View style={s.sectionWrap}>
+      <SectionTitle title="תובנות והמלצות" />
+
+      {grouped.map((group) => {
+        const theme = TONE_THEME[group.tone];
+        const baseOffset = counterOffsets[group.tone];
+        return (
+          <View key={group.tone}>
+            <Text
+              style={[
+                s.insightGroupTitle,
+                { color: theme.accent, borderBottomColor: theme.accent },
+              ]}
+            >
+              {prepareRtl(TONE_GROUP_TITLES[group.tone])}
+            </Text>
+
+            {group.items.map((insight, idx) => {
+              const num = baseOffset + idx + 1;
+              return (
+                <View
+                  key={insight.id}
+                  style={[
+                    s.insightCard,
+                    {
+                      borderRightColor: theme.accent,
+                      backgroundColor: theme.bg,
+                    },
+                  ]}
+                  wrap={false}
+                >
+                  <View style={s.insightCardHeader}>
+                    <Text
+                      style={[
+                        s.insightBadge,
+                        { backgroundColor: theme.badgeBg, color: theme.badgeText },
+                      ]}
+                    >
+                      {prepareRtl(theme.label)}
+                    </Text>
+                    <Text style={[s.insightNumber, { color: theme.accent }]}>
+                      {`.${num}`}
+                    </Text>
+                  </View>
+
+                  <Text style={[s.insightMessage, { color: C.darkGrey }]}>
+                    {prepareRtl(insight.message)}
+                  </Text>
+
+                  {insight.action && (
+                    <View
+                      style={[
+                        s.insightCtaWrap,
+                        { backgroundColor: theme.badgeBg },
+                      ]}
+                    >
+                      {insight.action.type === 'external_link' && insight.action.url ? (
+                        <Link src={insight.action.url} style={{ textDecoration: 'none' }}>
+                          <Text style={[s.insightCtaText, { color: theme.accent }]}>
+                            {prepareRtl(insight.action.buttonText)}
+                          </Text>
+                        </Link>
+                      ) : (
+                        <Text style={[s.insightCtaText, { color: theme.accent }]}>
+                          {prepareRtl(insight.action.buttonText)}
+                        </Text>
+                      )}
+                    </View>
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 // ---- Footer ----
 
 function ReportFooter() {
@@ -943,6 +1214,7 @@ interface ReportDocumentProps {
 export default function ReportDocument({ data }: ReportDocumentProps) {
   const hasGoalsOrProjections =
     data.goals.length > 0 || data.projections.totalProjected > 0;
+  const hasInsights = data.insights && data.insights.length > 0;
 
   return (
     <Document
@@ -953,6 +1225,7 @@ export default function ReportDocument({ data }: ReportDocumentProps) {
       <Page size="A4" style={s.page} wrap>
         <Header periodLabel={data.period.label} />
         <ExecutiveSummary data={data} />
+        {hasInsights && <InsightMiniCards insights={data.insights} />}
         <CashFlowTable data={data} />
         <IncomeBreakdown data={data} />
         <ExpensesBreakdown data={data} />
@@ -970,6 +1243,14 @@ export default function ReportDocument({ data }: ReportDocumentProps) {
         <Page size="A4" style={s.page} wrap>
           <Header periodLabel={data.period.label} />
           <GoalsProjections data={data} />
+          <ReportFooter />
+        </Page>
+      )}
+
+      {hasInsights && (
+        <Page size="A4" style={s.page} wrap>
+          <Header periodLabel={data.period.label} />
+          <InsightsSection data={data} />
           <ReportFooter />
         </Page>
       )}

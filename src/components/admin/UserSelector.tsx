@@ -45,7 +45,7 @@ export default function UserSelector({ selectedUserIds, onChange }: UserSelector
     try {
       setLoading(true);
       setError(null);
-      const res = await apiFetch('/api/admin/users');
+      const res = await apiFetch('/api/admin/users?pageSize=100');
 
       if (!res.ok) {
         setError('שגיאה בטעינת המשתמשים');

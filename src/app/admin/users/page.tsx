@@ -91,7 +91,7 @@ export default function AdminUsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<UserData[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [pagination, setPagination] = useState<PaginationMeta>({ page: 1, pageSize: 30, total: 0, totalPages: 1 });
+  const [pagination, setPagination] = useState<PaginationMeta>({ page: 1, pageSize: 10, total: 0, totalPages: 1 });
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -140,7 +140,7 @@ export default function AdminUsersPage() {
       setLoading(true);
       setError(null);
       setIsAccessDenied(false);
-      const res = await apiFetch(`/api/admin/users?page=${page}&pageSize=30`);
+      const res = await apiFetch(`/api/admin/users?page=${page}&pageSize=10`);
 
       if (!res.ok) {
         if (res.status === 403 || res.status === 401) {
@@ -212,7 +212,7 @@ export default function AdminUsersPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-[#303150] mb-1">ניהול משתמשים</h1>
           <p className="text-xs sm:text-sm text-[#7E7F90]">
-            צפייה בכל המשתמשים הרשומים במערכת
+            10 משתמשים אחרונים שהתחברו
           </p>
         </div>
         
@@ -374,7 +374,7 @@ export default function AdminUsersPage() {
                   <Users className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
                 </div>
                 <div>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{pagination.total}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.totals.users ?? pagination.total}</p>
                   <p className="text-xs sm:text-sm text-gray-500">משתמשים רשומים</p>
                 </div>
               </div>

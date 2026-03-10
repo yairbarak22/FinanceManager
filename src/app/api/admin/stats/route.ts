@@ -4,15 +4,13 @@ import { requireAdmin } from '@/lib/adminHelpers';
 import { cleanupOldAuditLogs } from '@/lib/auditLog';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { Prisma } from '@prisma/client';
+import { getGlobalStats, refreshTodayStats } from '@/lib/globalStats';
 
-// GET - Fetch admin statistics (admin only)
 export async function GET() {
   try {
-    // SECURITY: Triple validation - middleware, then this check
     const { userId, error } = await requireAdmin();
     if (error) return error;
 
-    // Rate limit admin endpoints to prevent abuse
     const rateLimitResult = await checkRateLimit(`admin:${userId}`, RATE_LIMITS.admin);
     if (!rateLimitResult.success) {
       return NextResponse.json(
@@ -21,104 +19,41 @@ export async function GET() {
       );
     }
 
-    // Cleanup old audit logs (fire-and-forget, 90-day retention)
     cleanupOldAuditLogs().catch(() => {});
 
-    // Get today's date range (Israel timezone)
+    // Read cached totals + today stats from GlobalStats singleton
+    let stats = await getGlobalStats();
+
+    // Lazy-refresh today counters when the calendar day rolls over
+    const todayStr = new Date().toISOString().slice(0, 10);
+    if (stats.todayDate !== todayStr) {
+      stats = await refreshTodayStats();
+    }
+
     const now = new Date();
-    const startOfToday = new Date(now);
-    startOfToday.setHours(0, 0, 0, 0);
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfTomorrow = new Date(startOfToday);
     startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
 
-    // Run all count queries in parallel for performance
-    const [
-      // Total counts (all time)
-      totalAssets,
-      totalLiabilities,
-      totalTransactions,
-      totalUsers,
-      
-      // Daily counts (created today)
-      todayAssets,
-      todayLiabilities,
-      todayTransactions,
-      todayUsers,
-      
-      // Users who logged in more than once (using AuditLog if available)
-      // Since we use JWT strategy, we'll count users with multiple sessions or audit logs
-      multipleLoginUsers,
-
-      // Unique users who logged in today
-      todayUniqueLogins,
-
-      // Users with more than one unique login day (returning users)
-      usersWithMultipleLoginDays,
-    ] = await Promise.all([
-      // Total counts
-      prisma.asset.count(),
-      prisma.liability.count(),
-      prisma.transaction.count(),
-      prisma.user.count(),
-      
-      // Daily counts
-      prisma.asset.count({
-        where: {
-          createdAt: {
-            gte: startOfToday,
-            lt: startOfTomorrow,
-          },
-        },
-      }),
-      prisma.liability.count({
-        where: {
-          createdAt: {
-            gte: startOfToday,
-            lt: startOfTomorrow,
-          },
-        },
-      }),
-      prisma.transaction.count({
-        where: {
-          createdAt: {
-            gte: startOfToday,
-            lt: startOfTomorrow,
-          },
-        },
-      }),
-      prisma.user.count({
-        where: {
-          createdAt: {
-            gte: startOfToday,
-            lt: startOfTomorrow,
-          },
-        },
-      }),
-      
-      // Count users with multiple LOGIN events in AuditLog
-      // Using raw query because Prisma groupBy with having is complex
+    // Activity stats still need real-time queries
+    const [multipleLoginUsers, todayUniqueLogins, usersWithMultipleLoginDays] = await Promise.all([
       getMultipleLoginUsersCount(),
-
-      // Count unique users who logged in today
       getTodayUniqueLoginsCount(startOfToday, startOfTomorrow),
-
-      // Count users with more than one unique login day
       getUsersWithMultipleLoginDaysCount(),
     ]);
 
-    // Return only aggregated numbers - no PII
     return NextResponse.json({
       totals: {
-        assets: totalAssets,
-        liabilities: totalLiabilities,
-        transactions: totalTransactions,
-        users: totalUsers,
+        assets: stats.totalAssets,
+        liabilities: stats.totalLiabilities,
+        transactions: stats.totalTransactions,
+        users: stats.totalUsers,
       },
       today: {
-        assets: todayAssets,
-        liabilities: todayLiabilities,
-        transactions: todayTransactions,
-        users: todayUsers,
+        assets: stats.todayAssets,
+        liabilities: stats.todayLiabilities,
+        transactions: stats.todayTransactions,
+        users: stats.todayUsers,
       },
       activity: {
         multipleLoginUsers,
@@ -127,7 +62,6 @@ export async function GET() {
       },
     });
   } catch (error) {
-    // Log error server-side but return generic message
     console.error('Error fetching admin stats:', error);
     return NextResponse.json(
       { error: 'Failed to fetch statistics' },

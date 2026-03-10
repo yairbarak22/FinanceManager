@@ -33,6 +33,9 @@ import type {
   ProjectionData,
   TradingPortfolioData,
 } from './types';
+import { aggregateFinancialDataForInsights } from '@/lib/insights/aggregateFinancialData';
+import { evaluateRules } from '@/lib/insights/engine';
+import { financialRules } from '@/lib/insights/rules';
 
 // ---------------------------------------------------------------------------
 // Asset category → logical group mapping
@@ -427,6 +430,26 @@ export async function aggregatePeriodicReportData(
     endDate
   );
 
+  // --- Financial Insights (Rules Engine) ---
+  let insights: import('@/lib/insights/types').FinancialInsight[] = [];
+  try {
+    const insightData = await aggregateFinancialDataForInsights(
+      userId,
+      dateRange,
+      {
+        totalIncome,
+        totalExpenses,
+        netCashflow,
+        fixedExpenses: fixedExpenseItems.reduce((s, i) => s + i.amount, 0),
+        totalAssets,
+        totalLiabilities,
+      }
+    );
+    insights = evaluateRules(insightData, financialRules);
+  } catch (err) {
+    console.error('[Insights Engine] Failed to generate insights:', err);
+  }
+
   return {
     period: periodInfo,
     netWorth,
@@ -446,6 +469,7 @@ export async function aggregatePeriodicReportData(
     goals: goalsStatus,
     projections,
     tradingPortfolio,
+    insights,
   };
 }
 

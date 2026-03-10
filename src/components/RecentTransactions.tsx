@@ -3,13 +3,22 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, ChevronDown, Check, Loader2, Filter, Search, Tag, Calculator, SlidersHorizontal, FileSpreadsheet } from 'lucide-react';
+import { Trash2, Receipt, Plus, Upload, CheckSquare, Square, X, ChevronDown, ChevronLeft, Check, Loader2, Filter, Search, Tag, Calculator, SlidersHorizontal, FileSpreadsheet, ArrowUpDown } from 'lucide-react';
 import ExportExcelModal from './modals/ExportExcelModal';
 import { Transaction } from '@/lib/types';
 import { formatCurrency, formatCurrencyAmount, formatDate, cn } from '@/lib/utils';
 import { getCategoryInfo, expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
 import ConfirmDialog from './modals/ConfirmDialog';
 import { SensitiveData } from './common/SensitiveData';
+
+// Sort options
+type SortOption = 'date' | 'category' | 'amount';
+
+const SORT_LABELS: Record<SortOption, string> = {
+  date: 'לפי תאריך',
+  category: 'לפי קטגוריה',
+  amount: 'לפי סכום',
+};
 
 // Save behavior options
 type SaveBehavior = 'once' | 'always' | 'alwaysAsk';
@@ -61,6 +70,13 @@ export default function RecentTransactions({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [multiDeleteConfirm, setMultiDeleteConfirm] = useState(false);
 
+  // Sort state
+  const [sortBy, setSortBy] = useState<SortOption>('date');
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
+  const sortButtonRef = useRef<HTMLButtonElement>(null);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
   // Search & filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
@@ -104,6 +120,22 @@ export default function RecentTransactions({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isDropdownOpen]);
+
+  // Close sort dropdown on click outside
+  useEffect(() => {
+    if (!isSortOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        sortDropdownRef.current && !sortDropdownRef.current.contains(target) &&
+        sortButtonRef.current && !sortButtonRef.current.contains(target)
+      ) {
+        setIsSortOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isSortOpen]);
 
   // Debounce search query
   useEffect(() => {
@@ -280,7 +312,7 @@ export default function RecentTransactions({
 
   const hasActiveFilters = debouncedSearchQuery.trim().length > 0 || selectedCategories.size > 0 || !!selectedCategory;
 
-  // Filter transactions by search query AND category
+  // Filter and sort transactions
   const filteredTransactions = useMemo(() => {
     let result = transactions;
 
@@ -293,8 +325,71 @@ export default function RecentTransactions({
       result = result.filter(t => t.description?.toLowerCase().includes(query));
     }
 
-    return result;
-  }, [transactions, debouncedSearchQuery, selectedCategories]);
+    const sorted = [...result];
+    switch (sortBy) {
+      case 'date':
+        sorted.sort((a, b) =>
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        break;
+      case 'category': {
+        sorted.sort((a, b) => {
+          const aCats = a.type === 'income' ? customIncomeCategories : customExpenseCategories;
+          const bCats = b.type === 'income' ? customIncomeCategories : customExpenseCategories;
+          const aName = getCategoryInfo(a.category, a.type as 'income' | 'expense', aCats)?.nameHe || '';
+          const bName = getCategoryInfo(b.category, b.type as 'income' | 'expense', bCats)?.nameHe || '';
+          const cmp = aName.localeCompare(bName, 'he');
+          return cmp !== 0 ? cmp : (a.description || '').localeCompare(b.description || '', 'he');
+        });
+        break;
+      }
+      case 'amount':
+        sorted.sort((a, b) => b.amount - a.amount);
+        break;
+    }
+
+    return sorted;
+  }, [transactions, debouncedSearchQuery, selectedCategories, sortBy, customExpenseCategories, customIncomeCategories]);
+
+  // Grouped view for category sort mode
+  const groupedByCategory = useMemo(() => {
+    if (sortBy !== 'category') return [];
+
+    const groups = new Map<string, { transactions: Transaction[]; total: number; info: ReturnType<typeof getCategoryInfo>; isIncome: boolean }>();
+
+    filteredTransactions.forEach((tx) => {
+      const existing = groups.get(tx.category);
+      if (existing) {
+        existing.transactions.push(tx);
+        existing.total += tx.type === 'income' ? tx.amount : -tx.amount;
+      } else {
+        const customCats = tx.type === 'income' ? customIncomeCategories : customExpenseCategories;
+        const info = getCategoryInfo(tx.category, tx.type as 'income' | 'expense', customCats);
+        groups.set(tx.category, {
+          transactions: [tx],
+          total: tx.type === 'income' ? tx.amount : -tx.amount,
+          info,
+          isIncome: tx.type === 'income',
+        });
+      }
+    });
+
+    return Array.from(groups.entries())
+      .sort(([, a], [, b]) => (a.info?.nameHe || '').localeCompare(b.info?.nameHe || '', 'he'))
+      .map(([categoryId, data]) => ({ categoryId, ...data }));
+  }, [filteredTransactions, sortBy, customExpenseCategories, customIncomeCategories]);
+
+  const toggleCategoryExpanded = useCallback((categoryId: string) => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  }, []);
 
   const toggleSelectMode = () => {
     setIsSelectMode(!isSelectMode);
@@ -678,6 +773,80 @@ export default function RecentTransactions({
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Sort Toggle */}
+            <div className="relative">
+              <button
+                ref={sortButtonRef}
+                onClick={() => setIsSortOpen(prev => !prev)}
+                className={cn(
+                  'p-2.5 rounded-xl transition-all',
+                  'hover:scale-[1.05] active:scale-[0.95]'
+                )}
+                style={{
+                  border: isSortOpen
+                    ? '1px solid #69ADFF'
+                    : '1px solid #E8E8ED',
+                  backgroundColor: sortBy !== 'date' ? 'rgba(105, 173, 255, 0.08)' : '#FFFFFF',
+                }}
+                aria-label="מיון עסקאות"
+                aria-expanded={isSortOpen}
+              >
+                <ArrowUpDown
+                  className="w-4 h-4"
+                  style={{ color: sortBy !== 'date' ? '#69ADFF' : '#7E7F90' }}
+                  strokeWidth={1.75}
+                />
+              </button>
+
+              <AnimatePresence>
+                {isSortOpen && (
+                  <motion.div
+                    ref={sortDropdownRef}
+                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    className="absolute left-0 top-full mt-2 rounded-xl overflow-hidden"
+                    style={{
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid #E8E8ED',
+                      minWidth: '160px',
+                      zIndex: 50,
+                      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+                    }}
+                    dir="rtl"
+                  >
+                    {(['date', 'category', 'amount'] as SortOption[]).map((option) => (
+                      <button
+                        key={option}
+                        onClick={() => {
+                          setSortBy(option);
+                          setIsSortOpen(false);
+                        }}
+                        className="w-full px-4 py-2.5 text-right text-sm transition-colors first:rounded-t-xl last:rounded-b-xl"
+                        style={{
+                          fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                          color: sortBy === option ? '#69ADFF' : '#303150',
+                          fontWeight: sortBy === option ? 600 : 400,
+                          backgroundColor: sortBy === option ? 'rgba(105, 173, 255, 0.06)' : 'transparent',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (sortBy !== option) e.currentTarget.style.backgroundColor = '#F7F7F8';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = sortBy === option
+                            ? 'rgba(105, 173, 255, 0.06)'
+                            : 'transparent';
+                        }}
+                      >
+                        {SORT_LABELS[option]}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           {/* Active Filter Chips */}
@@ -783,164 +952,368 @@ export default function RecentTransactions({
         </div>
       )}
 
-      {/* Transactions List - Scrollable - Matching AssetsSection Style */}
+      {/* Transactions List - Scrollable */}
       <div className="overflow-y-scroll flex-1 min-h-0 scrollbar-transactions scrollbar-edge-left scrollbar-fade-bottom">
-        <AnimatePresence mode="popLayout">
-          {filteredTransactions.map((transaction, index) => {
-            const cached = categoryInfoMap.get(transaction.id);
-            const categoryInfo = cached?.info;
-            const Icon = categoryInfo?.icon;
-            const isIncome = cached?.isIncome ?? transaction.type === 'income';
-            const isSelected = selectedIds.has(transaction.id);
 
-            // Icon colors based on transaction type
-            const iconBgColor = isIncome ? 'rgba(13, 186, 204, 0.1)' : 'rgba(241, 138, 181, 0.1)';
-            const iconColor = isIncome ? '#0DBACC' : '#F18AB5';
-            const amountColor = isIncome ? '#0DBACC' : '#F18AB5';
+        {/* ── Grouped by Category View ── */}
+        {sortBy === 'category' && groupedByCategory.length > 0 && (
+          <div className="space-y-1.5 pb-2">
+            {groupedByCategory.map((group) => {
+              const CatIcon = group.info?.icon;
+              const isExpanded = expandedCategories.has(group.categoryId);
+              const hasExpense = group.transactions.some(t => t.type === 'expense');
+              const hasIncome = group.transactions.some(t => t.type === 'income');
+              const accentColor = hasIncome && !hasExpense ? '#0DBACC' : '#F18AB5';
+              const accentBg = hasIncome && !hasExpense ? 'rgba(13, 186, 204, 0.08)' : 'rgba(241, 138, 181, 0.08)';
 
-            return (
-              <motion.div
-                key={transaction.id}
-                layout
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                transition={{ 
-                  type: 'spring', 
-                  stiffness: 300, 
-                  damping: 30,
-                  opacity: { duration: 0.2 }
-                }}
-                onClick={isSelectMode ? () => toggleSelection(transaction.id) : () => openEditDialog(transaction)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    if (isSelectMode) {
-                      toggleSelection(transaction.id);
-                    } else {
-                      openEditDialog(transaction);
-                    }
-                  }
-                }}
-                aria-pressed={isSelectMode ? isSelected : undefined}
-                aria-label={isSelectMode 
-                  ? `${isSelected ? 'בטל בחירה' : 'בחר'} עסקה: ${transaction.description}` 
-                  : `ערוך עסקה: ${transaction.description}`}
-                className={cn(
-                  'group relative p-3 transition-all duration-200 cursor-pointer',
-                  isSelectMode 
-                    ? 'focus:outline-none focus:ring-2 focus:ring-indigo-500'
-                    : 'hover:bg-[#F7F7F8] hover:shadow-sm active:scale-[0.98]',
-                  isSelected ? 'bg-indigo-50' : 'bg-white',
-                  index < filteredTransactions.length - 1 && 'border-b'
-                )}
-                style={{ borderColor: '#F7F7F8' }}
-              >
-                {/* Edge Indicator - only in normal mode */}
-                {!isSelectMode && (
-                  <div className="absolute right-0 top-2 bottom-2 w-0.5 bg-[#69ADFF] opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
-                )}
-                {/* Row 1: Icon + Category + Date */}
-                <div className="flex items-start gap-3 mb-2">
-                  {/* Checkbox (Select Mode) or Category Icon */}
-                  {isSelectMode ? (
-                    <div
-                      className={cn(
-                        'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors',
-                        isSelected ? 'bg-[#C1DDFF]' : 'bg-[#F7F7F8]'
-                      )}
-                    >
-                      {isSelected ? (
-                        <CheckSquare className="w-4 h-4 text-[#69ADFF]" />
-                      ) : (
-                        <Square className="w-4 h-4 text-[#7E7F90]" />
-                      )}
-                    </div>
-                  ) : (
+              return (
+                <div key={group.categoryId}>
+                  {/* Category Header */}
+                  <button
+                    type="button"
+                    onClick={() => toggleCategoryExpanded(group.categoryId)}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 hover:shadow-sm active:scale-[0.99] cursor-pointer"
+                    style={{
+                      backgroundColor: isExpanded ? 'rgba(105, 173, 255, 0.04)' : '#FFFFFF',
+                      border: isExpanded ? '1px solid rgba(105, 173, 255, 0.15)' : '1px solid #F7F7F8',
+                    }}
+                    aria-expanded={isExpanded}
+                    aria-controls={`cat-group-${group.categoryId}`}
+                  >
+                    {/* Chevron */}
+                    <ChevronLeft
+                      className="w-4 h-4 flex-shrink-0 transition-transform duration-300"
+                      style={{
+                        color: isExpanded ? '#69ADFF' : '#BDBDCB',
+                        transform: isExpanded ? 'rotate(-90deg)' : 'rotate(0deg)',
+                      }}
+                      strokeWidth={2}
+                    />
+
+                    {/* Category Icon */}
                     <div
                       className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ background: iconBgColor }}
+                      style={{
+                        background: group.info?.bgColor || '#F7F7F8',
+                      }}
                     >
-                      {Icon && (
-                        <Icon
+                      {CatIcon && (
+                        <CatIcon
                           className="w-4 h-4"
-                          style={{ color: iconColor }}
+                          style={{ color: group.info?.color || '#7E7F90' }}
                           strokeWidth={1.5}
                         />
                       )}
                     </div>
-                  )}
 
-                  {/* Details - full width, allow wrapping */}
-                  <div className="flex-1 pr-3">
-                    <SensitiveData 
-                      as="p" 
-                      className="font-medium text-sm leading-tight"
+                    {/* Name + Count */}
+                    <div className="flex-1 text-right">
+                      <p
+                        className="text-sm font-semibold leading-tight"
+                        style={{
+                          fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                          color: '#303150',
+                        }}
+                      >
+                        {group.info?.nameHe || group.categoryId}
+                      </p>
+                      <p
+                        className="text-[11px] mt-0.5"
+                        style={{ color: '#BDBDCB' }}
+                      >
+                        {group.transactions.length} עסקאות
+                      </p>
+                    </div>
+
+                    {/* Total */}
+                    <SensitiveData
+                      as="span"
+                      className="text-sm font-bold flex-shrink-0 px-2.5 py-1 rounded-lg"
+                      style={{
+                        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                        color: accentColor,
+                        backgroundColor: accentBg,
+                      }}
+                      dir="ltr"
+                    >
+                      {formatCurrency(Math.abs(group.total))}
+                    </SensitiveData>
+                  </button>
+
+                  {/* Expanded Transactions */}
+                  <AnimatePresence initial={false}>
+                    {isExpanded && (
+                      <motion.div
+                        id={`cat-group-${group.categoryId}`}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ type: 'spring', stiffness: 350, damping: 35 }}
+                        className="overflow-hidden"
+                      >
+                        <div
+                          className="mr-5 pr-4 border-r-2 mt-1 mb-2"
+                          style={{ borderColor: group.info?.color || '#E8E8ED' }}
+                        >
+                          {group.transactions.map((transaction, txIndex) => {
+                            const txIsIncome = transaction.type === 'income';
+                            const txAmountColor = txIsIncome ? '#0DBACC' : '#F18AB5';
+                            const txIsSelected = selectedIds.has(transaction.id);
+
+                            return (
+                              <motion.div
+                                key={transaction.id}
+                                initial={{ opacity: 0, x: 8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: txIndex * 0.03, duration: 0.2 }}
+                                onClick={isSelectMode ? () => toggleSelection(transaction.id) : () => openEditDialog(transaction)}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    if (isSelectMode) toggleSelection(transaction.id);
+                                    else openEditDialog(transaction);
+                                  }
+                                }}
+                                className={cn(
+                                  'group relative flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150',
+                                  isSelectMode
+                                    ? 'focus:outline-none focus:ring-2 focus:ring-indigo-500'
+                                    : 'hover:bg-[#F7F7F8] active:scale-[0.98]',
+                                  txIsSelected ? 'bg-indigo-50' : '',
+                                  txIndex < group.transactions.length - 1 && 'mb-0.5'
+                                )}
+                              >
+                                {/* Select Mode Checkbox */}
+                                {isSelectMode && (
+                                  <div
+                                    className={cn(
+                                      'w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors',
+                                      txIsSelected ? 'bg-[#C1DDFF]' : 'bg-[#F7F7F8]'
+                                    )}
+                                  >
+                                    {txIsSelected ? (
+                                      <CheckSquare className="w-3.5 h-3.5 text-[#69ADFF]" />
+                                    ) : (
+                                      <Square className="w-3.5 h-3.5 text-[#7E7F90]" />
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Transaction Details */}
+                                <div className="flex-1 min-w-0">
+                                  <SensitiveData
+                                    as="p"
+                                    className="text-sm font-medium truncate"
+                                    style={{
+                                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                                      color: '#303150',
+                                    }}
+                                  >
+                                    {transaction.description}
+                                  </SensitiveData>
+                                  <span
+                                    className="text-[11px]"
+                                    style={{ color: '#BDBDCB' }}
+                                  >
+                                    {formatDate(transaction.date)}
+                                  </span>
+                                </div>
+
+                                {/* Amount */}
+                                <SensitiveData
+                                  as="span"
+                                  className="text-sm font-semibold flex-shrink-0"
+                                  style={{
+                                    fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                                    color: txAmountColor,
+                                  }}
+                                  dir="ltr"
+                                >
+                                  {`${txIsIncome ? '+' : '-'}${formatCurrencyAmount(transaction.amount, transaction.currency || 'ILS')}`}
+                                </SensitiveData>
+
+                                {/* Delete (normal mode) */}
+                                {!isSelectMode && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeleteConfirm({ isOpen: true, id: transaction.id, description: transaction.description });
+                                    }}
+                                    className="p-1 rounded hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+                                    style={{ color: '#7E7F90' }}
+                                    aria-label={`מחק עסקה: ${transaction.description}`}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
+                                  </button>
+                                )}
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── Flat List View (date / amount sort) ── */}
+        {sortBy !== 'category' && (
+          <AnimatePresence mode="popLayout">
+            {filteredTransactions.map((transaction, index) => {
+              const cached = categoryInfoMap.get(transaction.id);
+              const categoryInfo = cached?.info;
+              const Icon = categoryInfo?.icon;
+              const isIncome = cached?.isIncome ?? transaction.type === 'income';
+              const isSelected = selectedIds.has(transaction.id);
+
+              const iconBgColor = isIncome ? 'rgba(13, 186, 204, 0.1)' : 'rgba(241, 138, 181, 0.1)';
+              const iconColor = isIncome ? '#0DBACC' : '#F18AB5';
+              const amountColor = isIncome ? '#0DBACC' : '#F18AB5';
+
+              return (
+                <motion.div
+                  key={transaction.id}
+                  layout
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                  transition={{ 
+                    type: 'spring', 
+                    stiffness: 300, 
+                    damping: 30,
+                    opacity: { duration: 0.2 }
+                  }}
+                  onClick={isSelectMode ? () => toggleSelection(transaction.id) : () => openEditDialog(transaction)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      if (isSelectMode) {
+                        toggleSelection(transaction.id);
+                      } else {
+                        openEditDialog(transaction);
+                      }
+                    }
+                  }}
+                  aria-pressed={isSelectMode ? isSelected : undefined}
+                  aria-label={isSelectMode 
+                    ? `${isSelected ? 'בטל בחירה' : 'בחר'} עסקה: ${transaction.description}` 
+                    : `ערוך עסקה: ${transaction.description}`}
+                  className={cn(
+                    'group relative p-3 transition-all duration-200 cursor-pointer',
+                    isSelectMode 
+                      ? 'focus:outline-none focus:ring-2 focus:ring-indigo-500'
+                      : 'hover:bg-[#F7F7F8] hover:shadow-sm active:scale-[0.98]',
+                    isSelected ? 'bg-indigo-50' : 'bg-white',
+                    index < filteredTransactions.length - 1 && 'border-b'
+                  )}
+                  style={{ borderColor: '#F7F7F8' }}
+                >
+                  {!isSelectMode && (
+                    <div className="absolute right-0 top-2 bottom-2 w-0.5 bg-[#69ADFF] opacity-0 group-hover:opacity-100 transition-opacity rounded-full" />
+                  )}
+                  <div className="flex items-start gap-3 mb-2">
+                    {isSelectMode ? (
+                      <div
+                        className={cn(
+                          'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors',
+                          isSelected ? 'bg-[#C1DDFF]' : 'bg-[#F7F7F8]'
+                        )}
+                      >
+                        {isSelected ? (
+                          <CheckSquare className="w-4 h-4 text-[#69ADFF]" />
+                        ) : (
+                          <Square className="w-4 h-4 text-[#7E7F90]" />
+                        )}
+                      </div>
+                    ) : (
+                      <div
+                        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ background: iconBgColor }}
+                      >
+                        {Icon && (
+                          <Icon
+                            className="w-4 h-4"
+                            style={{ color: iconColor }}
+                            strokeWidth={1.5}
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex-1 pr-3">
+                      <SensitiveData 
+                        as="p" 
+                        className="font-medium text-sm leading-tight"
+                        style={{ 
+                          fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                          color: '#303150'
+                        }}
+                      >
+                        {categoryInfo?.nameHe || transaction.category}
+                      </SensitiveData>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span 
+                          className="text-xs"
+                          style={{ color: '#7E7F90' }}
+                        >
+                          {formatDate(transaction.date)}
+                        </span>
+                      </div>
+                      <SensitiveData 
+                        as="p" 
+                        className="text-xs mt-0.5"
+                        style={{ color: '#7E7F90' }}
+                      >
+                        {transaction.description}
+                      </SensitiveData>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mr-12 pl-3">
+                    <SensitiveData
+                      as="p"
+                      className="text-sm font-semibold"
                       style={{ 
                         fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-                        color: '#303150'
+                        color: amountColor
                       }}
+                      dir="ltr"
                     >
-                      {categoryInfo?.nameHe || transaction.category}
+                      {`${isIncome ? '+' : '-'}${formatCurrencyAmount(transaction.amount, transaction.currency || 'ILS')}`}
                     </SensitiveData>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span 
-                        className="text-xs"
-                        style={{ color: '#7E7F90' }}
-                      >
-                        {formatDate(transaction.date)}
-                      </span>
-                    </div>
-                    <SensitiveData 
-                      as="p" 
-                      className="text-xs mt-0.5"
-                      style={{ color: '#7E7F90' }}
-                    >
-                      {transaction.description}
-                    </SensitiveData>
+
+                    {!isSelectMode && (
+                      <div className="flex gap-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirm({ isOpen: true, id: transaction.id, description: transaction.description });
+                          }}
+                          className="p-1.5 rounded hover:bg-red-50 transition-colors"
+                          style={{ color: '#7E7F90' }}
+                          aria-label={`מחק עסקה: ${transaction.description}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} aria-hidden="true" />
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </div>
-
-                {/* Row 2: Amount + Actions */}
-                <div className="flex items-center justify-between mr-12 pl-3">
-                  {/* Amount */}
-                  <SensitiveData
-                    as="p"
-                    className="text-sm font-semibold"
-                    style={{ 
-                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-                      color: amountColor
-                    }}
-                    dir="ltr"
-                  >
-                    {`${isIncome ? '+' : '-'}${formatCurrencyAmount(transaction.amount, transaction.currency || 'ILS')}`}
-                  </SensitiveData>
-
-                  {/* Action Buttons (only in normal mode) */}
-                  {!isSelectMode && (
-                    <div className="flex gap-1">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteConfirm({ isOpen: true, id: transaction.id, description: transaction.description });
-                        }}
-                        className="p-1.5 rounded hover:bg-red-50 transition-colors"
-                        style={{ color: '#7E7F90' }}
-                        aria-label={`מחק עסקה: ${transaction.description}`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} aria-hidden="true" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        )}
         
+        {/* ── Empty States ── */}
         <AnimatePresence>
           {transactions.length === 0 && !hasActiveFilters && (
             <motion.p 

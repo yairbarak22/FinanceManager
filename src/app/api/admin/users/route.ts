@@ -3,8 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { Prisma } from '@prisma/client';
+import { getGlobalStats } from '@/lib/globalStats';
 
-// Row shape returned by the raw SQL query
 interface UserRow {
   id: string;
   name: string | null;
@@ -20,14 +20,11 @@ interface UserRow {
   recurringTransactions_count: bigint;
 }
 
-// GET - Fetch paginated users sorted by last login (admin only)
 export async function GET(request: NextRequest) {
   try {
-    // SECURITY: Triple validation - middleware, then this check
     const { userId, error } = await requireAdmin();
     if (error) return error;
 
-    // Rate limit admin endpoints to prevent abuse
     const rateLimitResult = await checkRateLimit(`admin:${userId}`, RATE_LIMITS.admin);
     if (!rateLimitResult.success) {
       return NextResponse.json(
@@ -36,44 +33,52 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Parse pagination parameters
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
-    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') || '30', 10)));
+    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') || '10', 10)));
     const skip = (page - 1) * pageSize;
 
-    // Raw SQL: join with AuditLog to get last LOGIN per user, include counts.
-    // Sorted by lastLoginAt DESC; users with no login fall back to createdAt DESC.
-    const rows = await prisma.$queryRaw<UserRow[]>(Prisma.sql`
-      SELECT
-        u.id,
-        u.name,
-        u.email,
-        u.image,
-        u."createdAt",
-        u."hasSeenOnboarding",
-        MAX(al."createdAt")                        AS "lastLoginAt",
-        COUNT(DISTINCT DATE(al."createdAt"))::bigint AS unique_login_days,
-        COUNT(DISTINCT t.id)::bigint  AS transactions_count,
-        COUNT(DISTINCT a.id)::bigint  AS assets_count,
-        COUNT(DISTINCT l.id)::bigint  AS liabilities_count,
-        COUNT(DISTINCT rt.id)::bigint AS "recurringTransactions_count"
-      FROM "User" u
-      LEFT JOIN "AuditLog"             al ON al."userId" = u.id
-        AND al.action IN ('LOGIN', 'OAUTH_LOGIN')
-      LEFT JOIN "Transaction"          t  ON t."userId"  = u.id
-      LEFT JOIN "Asset"                a  ON a."userId"  = u.id
-      LEFT JOIN "Liability"            l  ON l."userId"  = u.id
-      LEFT JOIN "RecurringTransaction" rt ON rt."userId" = u.id
-      GROUP BY u.id
-      ORDER BY
-        COALESCE(MAX(al."createdAt"), u."createdAt") DESC
-      LIMIT ${pageSize} OFFSET ${skip}
-    `);
+    // Step 1: CTE finds the N most recently logged-in users from AuditLog
+    //         (lightweight — scans only the indexed AuditLog table).
+    // Step 2: Correlated sub-selects fetch per-user counts only for
+    //         the small result set, each hitting the userId index.
+    // This avoids the 5-way LEFT JOIN cartesian explosion.
+    const [rows, globalStats] = await Promise.all([
+      prisma.$queryRaw<UserRow[]>(Prisma.sql`
+        WITH latest_logins AS (
+          SELECT
+            "userId",
+            MAX("createdAt") AS last_login,
+            COUNT(DISTINCT DATE("createdAt"))::bigint AS unique_days
+          FROM "AuditLog"
+          WHERE action IN ('LOGIN', 'OAUTH_LOGIN') AND "userId" IS NOT NULL
+          GROUP BY "userId"
+          ORDER BY last_login DESC
+          LIMIT ${pageSize} OFFSET ${skip}
+        )
+        SELECT
+          u.id,
+          u.name,
+          u.email,
+          u.image,
+          u."createdAt",
+          u."hasSeenOnboarding",
+          ll.last_login                     AS "lastLoginAt",
+          COALESCE(ll.unique_days, 0)       AS unique_login_days,
+          (SELECT COUNT(*) FROM "Transaction"          WHERE "userId" = u.id)::bigint AS transactions_count,
+          (SELECT COUNT(*) FROM "Asset"                WHERE "userId" = u.id)::bigint AS assets_count,
+          (SELECT COUNT(*) FROM "Liability"            WHERE "userId" = u.id)::bigint AS liabilities_count,
+          (SELECT COUNT(*) FROM "RecurringTransaction" WHERE "userId" = u.id)::bigint AS "recurringTransactions_count"
+        FROM latest_logins ll
+        JOIN "User" u ON u.id = ll."userId"
+        ORDER BY ll.last_login DESC
+      `),
+      getGlobalStats(),
+    ]);
 
-    const total = await prisma.user.count();
+    const total = globalStats.totalUsers;
 
-    const users = rows.map((u) => ({
+    const users = rows.map((u: UserRow) => ({
       id: u.id,
       name: u.name,
       email: u.email,

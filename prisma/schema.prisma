@@ -832,3 +832,23 @@ model GlobalMerchantVote {
   @@unique([merchantName, category, isHarediContext, userId])
   @@index([merchantName, isHarediContext])
 }
+
+// ============================================
+// GLOBAL STATS - Cached system-wide entity counts (singleton)
+// ============================================
+model GlobalStats {
+  id                 String   @id @default("singleton")
+  totalUsers         Int      @default(0)
+  totalTransactions  Int      @default(0)
+  totalAssets        Int      @default(0)
+  totalLiabilities   Int      @default(0)
+  totalGoals         Int      @default(0)
+  totalRecurringTx   Int      @default(0)
+  totalHoldings      Int      @default(0)
+  todayUsers         Int      @default(0)
+  todayTransactions  Int      @default(0)
+  todayAssets        Int      @default(0)
+  todayLiabilities   Int      @default(0)
+  todayDate          String   @default("")
+  updatedAt          DateTime @updatedAt
+}
