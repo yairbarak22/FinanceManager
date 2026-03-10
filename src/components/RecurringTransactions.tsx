@@ -83,7 +83,7 @@ export default function RecurringTransactions({
     switch (sortBy) {
       case 'date':
         return sorted.sort((a, b) =>
-          new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+          new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
         );
 
       case 'category':
