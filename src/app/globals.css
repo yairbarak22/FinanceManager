@@ -1005,6 +1005,44 @@ body.pause-animations *::after {
 }
 
 /* ============================================
+   WORKSPACE SCROLLBAR - Desktop-Friendly
+   Optimized for users who click on scrollbar
+   10px width, visible track, prominent thumb
+   ============================================ */
+.scrollbar-workspace {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(126, 127, 144, 0.4) rgba(247, 247, 248, 0.6);
+}
+
+.scrollbar-workspace::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.scrollbar-workspace::-webkit-scrollbar-track {
+  background: rgba(247, 247, 248, 0.6);
+  border-radius: 5px;
+  margin: 4px 0;
+}
+
+.scrollbar-workspace::-webkit-scrollbar-thumb {
+  background: rgba(126, 127, 144, 0.4);
+  border-radius: 5px;
+  border: 1px solid rgba(247, 247, 248, 0.8);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.scrollbar-workspace::-webkit-scrollbar-thumb:hover {
+  background: rgba(126, 127, 144, 0.85);
+  border-color: rgba(247, 247, 248, 0.9);
+}
+
+.scrollbar-workspace::-webkit-scrollbar-thumb:active {
+  background: rgba(48, 49, 80, 0.9);
+  border-color: rgba(247, 247, 248, 1);
+}
+
+/* ============================================
    UTILITY CLASSES
    ============================================ */
 .scrollbar-hide {

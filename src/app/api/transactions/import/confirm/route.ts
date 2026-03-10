@@ -38,6 +38,8 @@ interface DuplicateInfo {
     date: string;
     amount: number;
     description: string;
+    category: string | null;
+    isCategorized: boolean;
   };
 }
 
@@ -109,6 +111,7 @@ export async function POST(request: NextRequest) {
             date: true,
             amount: true,
             description: true,
+            category: true,
           },
         });
         
@@ -120,6 +123,8 @@ export async function POST(request: NextRequest) {
               date: existing.date.toISOString(),
               amount: existing.amount,
               description: existing.description,
+              category: existing.category,
+              isCategorized: !!(existing.category && existing.category !== 'other' && existing.category !== 'uncategorized'),
             },
           });
         }
@@ -231,7 +236,23 @@ export async function POST(request: NextRequest) {
         }
 
         for (const { merchantName, category } of votesToCast) {
-          // Try to insert unique vote; if already exists, skip
+          // Check if vote already exists before creating to avoid unique constraint errors
+          const existingVote = await prisma.globalMerchantVote.findUnique({
+            where: {
+              merchantName_category_isHarediContext_userId: {
+                merchantName,
+                category,
+                isHarediContext,
+                userId: globalUserId,
+              },
+            },
+          });
+
+          if (existingVote) {
+            // User already voted this combo → skip
+            continue;
+          }
+
           try {
             await prisma.globalMerchantVote.create({
               data: {
@@ -262,14 +283,7 @@ export async function POST(request: NextRequest) {
               },
             });
           } catch (voteErr) {
-            // Unique constraint violation = user already voted this combo → skip
-            if (
-              voteErr instanceof Error &&
-              'code' in voteErr &&
-              (voteErr as { code: string }).code === 'P2002'
-            ) {
-              continue;
-            }
+            // Fallback error handling (shouldn't happen now, but keep for safety)
             console.error('[Global Stats] Vote error:', voteErr);
           }
         }
