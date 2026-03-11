@@ -8,6 +8,10 @@ import {
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 function buildYemotAudioUrl(relativePath: string): string {
+  if (relativePath.startsWith('http://') || relativePath.startsWith('https://')) {
+    return relativePath;
+  }
+
   const token = process.env.YEMOT_TOKEN;
   if (!token) {
     throw new Error('YEMOT_TOKEN environment variable is not set');
@@ -52,6 +56,11 @@ export async function processExpenseBackground(params: {
   const { sessionId, userId, amount, categoryAudioUrl, nameAudioUrl, isHaredi } = params;
 
   console.log(`[IVR] Starting processing for session ${sessionId}, userId=${userId}`);
+  console.log(`[IVR] Audio URLs received: category=${categoryAudioUrl}, name=${nameAudioUrl}`);
+
+  if (!categoryAudioUrl || !nameAudioUrl) {
+    throw new Error(`Missing audio URLs: category=${categoryAudioUrl}, name=${nameAudioUrl}`);
+  }
 
   try {
     await prisma.ivrCallSession.update({
@@ -88,7 +97,7 @@ export async function processExpenseBackground(params: {
         currency: 'ILS',
         category: matchedCategoryId,
         description,
-        date: new Date(),
+        date: new Date(new Date().setHours(0, 0, 0, 0)),
       },
     });
 

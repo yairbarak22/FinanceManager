@@ -55,7 +55,7 @@ const router = YemotRouter({
   uncaughtErrorHandler: (error: Error, call: Call) => {
     console.error(`[IVR] Uncaught error from ${call.phone}: ${error.message}`);
     return call.id_list_message([
-      { type: "system_message", data: "M1804" },
+      { type: "file", data: "M1804" },
     ]);
   },
 });
@@ -63,7 +63,7 @@ const router = YemotRouter({
 router.all("/", async (call: Call) => {
   // Step 1: Ask for PIN
   const pin = await call.read(
-    [{ type: "system_message", data: "M1798" }],
+    [{ type: "file", data: "M1798" }],
     "tap",
     { max_digits: 4, min_digits: 4, sec_wait: 7 }
   );
@@ -72,7 +72,13 @@ router.all("/", async (call: Call) => {
   const ivrPinRecord = await findUserByPhone(call.phone);
   if (!ivrPinRecord) {
     return call.id_list_message([
-      { type: "system_message", data: "M1804" },
+      { type: "text", data: "מספר טלפון לא רשום במערכת" },
+    ]);
+  }
+
+  if (ivrPinRecord.phoneNumber !== call.phone) {
+    return call.id_list_message([
+      { type: "text", data: "מספר טלפון לא תואם למשתמש הרשום" },
     ]);
   }
 
@@ -82,13 +88,13 @@ router.all("/", async (call: Call) => {
   const isValidPin = await validatePin(userId, pin);
   if (!isValidPin) {
     return call.id_list_message([
-      { type: "system_message", data: "M1804" },
+      { type: "text", data: "קוד שגוי" },
     ]);
   }
 
   // Step 2: Record category
   const categoryFile = await call.read(
-    [{ type: "system_message", data: "M1799" }],
+    [{ type: "file", data: "M1799" }],
     "record",
     { no_confirm_menu: true }
   );
@@ -96,7 +102,7 @@ router.all("/", async (call: Call) => {
 
   // Step 3: Enter amount
   const amount = await call.read(
-    [{ type: "system_message", data: "M1802" }],
+    [{ type: "file", data: "M1802" }],
     "tap",
     { max_digits: 7, min_digits: 1, sec_wait: 7 }
   );
@@ -104,40 +110,39 @@ router.all("/", async (call: Call) => {
 
   // Step 4: Record transaction description
   const descFile = await call.read(
-    [{ type: "system_message", data: "M1803" }],
+    [{ type: "file", data: "M1803" }],
     "record",
     { no_confirm_menu: true }
   );
   console.log("[IVR] Description audio:", descFile);
 
   // Step 5: Confirm and finish
-  // Fire-and-forget background processing will go here
+  const isHaredi = ivrPinRecord.user.signupSource === 'prog';
+  const amountNum = parseFloat(amount);
+
+  console.log(`[IVR] Preparing to process expense: userId=${userId}, amount=${amountNum}, categoryFile=${categoryFile}, descFile=${descFile}`);
+
+  // Trigger background processing BEFORE sending final message
+  processIvrExpense({
+    userId,
+    phoneNumber: call.phone,
+    amount: amountNum,
+    categoryAudioPath: categoryFile,
+    nameAudioPath: descFile,
+    isHaredi,
+  }).catch((error) => {
+    console.error('[IVR] Failed to start background processing:', error);
+  });
+
+  // Then send success message and hangup
   try {
     call.id_list_message([
-      { type: "system_message", data: "M1805" },
+      { type: "file", data: "M1805" },
     ]);
   } catch (err) {
     if (err instanceof ExitError) return;
     throw err;
   }
-
-  // Determine if user is Haredi (signupSource === 'prog')
-  const isHaredi = ivrPinRecord.user.signupSource === 'prog';
-
-  // Convert amount string to number
-  const amountNum = parseFloat(amount);
-
-  // Trigger background processing (fire-and-forget)
-  processIvrExpense({
-    userId,
-    phoneNumber: call.phone,
-    amount: amountNum,
-    categoryAudioPath: categoryFile, // This is the URL from Yemot
-    nameAudioPath: descFile, // This is the URL from Yemot
-    isHaredi,
-  }).catch((error) => {
-    console.error('[IVR] Failed to start background processing:', error);
-  });
 });
 
 app.use("/api/ivr/webhook", router as unknown as express.Router);
