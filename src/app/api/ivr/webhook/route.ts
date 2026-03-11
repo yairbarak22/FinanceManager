@@ -1,264 +1,151 @@
 import { NextRequest, NextResponse } from "next/server";
-import express from "express";
-import { YemotRouter, ExitError } from "yemot-router2";
-import type { Call } from "yemot-router2";
-import { prisma } from '@/lib/prisma';
-import { findUserByPhone, validatePin } from '@/lib/ivr/helpers';
-import { processExpenseBackground } from '@/lib/ivr/processExpense';
+import { prisma } from "@/lib/prisma";
+import { findUserByPhone, validatePin } from "@/lib/ivr/helpers";
+import { processExpenseBackground } from "@/lib/ivr/processExpense";
 
-const app = express();
-app.use(express.urlencoded({ extended: true }));
+const HEADERS = {
+  "Content-Type": "text/html; charset=utf-8",
+  "Cache-Control": "no-store, max-age=0",
+};
 
-/**
- * Process IVR expense: Create session record and trigger background processing
- */
-async function processIvrExpense(params: {
-  userId: string;
-  phoneNumber: string;
-  amount: number;
-  categoryAudioPath: string;
-  nameAudioPath: string;
-  isHaredi: boolean;
-}): Promise<void> {
-  console.log(`[IVR] Starting background processing for user ${params.userId}...`);
-
-  try {
-    // Create IvrCallSession record with status 'pending'
-    const session = await prisma.ivrCallSession.create({
-      data: {
-        userId: params.userId,
-        phoneNumber: params.phoneNumber,
-        amount: params.amount,
-        status: 'pending',
-      },
-    });
-
-    // Fire-and-forget: don't await
-    processExpenseBackground({
-      sessionId: session.id,
-      userId: params.userId,
-      phoneNumber: params.phoneNumber,
-      amount: params.amount,
-      categoryAudioUrl: params.categoryAudioPath, // Yemot provides full URL
-      nameAudioUrl: params.nameAudioPath, // Yemot provides full URL
-      isHaredi: params.isHaredi,
-    }).catch((error) => {
-      console.error('[IVR] Background processing failed:', error);
-    });
-  } catch (error) {
-    console.error('[IVR] Failed to create session or start background processing:', error);
-  }
+function respond(body: string): NextResponse {
+  return new NextResponse(body, { status: 200, headers: HEADERS });
 }
 
-const router = YemotRouter({
-  printLog: true,
-  uncaughtErrorHandler: (error: Error, call: Call) => {
-    console.error(`[IVR] Uncaught error from ${call.phone}: ${error.message}`);
-    return call.id_list_message([
-      { type: "file", data: "M1804" },
-    ]);
-  },
-});
-
-router.all("/", async (call: Call) => {
-  // Step 1: Ask for PIN
-  const pin = await call.read(
-    [{ type: "file", data: "M1798" }],
-    "tap",
-    { max_digits: 4, min_digits: 4, sec_wait: 7 }
-  );
-
-  // Find user by phone number
-  const ivrPinRecord = await findUserByPhone(call.phone);
-  if (!ivrPinRecord) {
-    return call.id_list_message([
-      { type: "text", data: "מספר טלפון לא רשום במערכת" },
-    ]);
-  }
-
-  if (ivrPinRecord.phoneNumber !== call.phone) {
-    return call.id_list_message([
-      { type: "text", data: "מספר טלפון לא תואם למשתמש הרשום" },
-    ]);
-  }
-
-  const userId = ivrPinRecord.user.id;
-
-  // Validate PIN against database
-  const isValidPin = await validatePin(userId, pin);
-  if (!isValidPin) {
-    return call.id_list_message([
-      { type: "text", data: "קוד שגוי" },
-    ]);
-  }
-
-  // Step 2: Record category
-  const categoryFile = await call.read(
-    [{ type: "file", data: "M1799" }],
-    "record",
-    { no_confirm_menu: true }
-  );
-  console.log("[IVR] Category audio:", categoryFile);
-
-  // Step 3: Enter amount
-  const amount = await call.read(
-    [{ type: "file", data: "M1802" }],
-    "tap",
-    { max_digits: 7, min_digits: 1, sec_wait: 7 }
-  );
-  console.log("[IVR] Amount:", amount);
-
-  // Step 4: Record transaction description
-  const descFile = await call.read(
-    [{ type: "file", data: "M1803" }],
-    "record",
-    { no_confirm_menu: true }
-  );
-  console.log("[IVR] Description audio:", descFile);
-
-  // Step 5: Confirm and finish
-  const isHaredi = ivrPinRecord.user.signupSource === 'prog';
-  const amountNum = parseFloat(amount);
-
-  console.log(`[IVR] Preparing to process expense: userId=${userId}, amount=${amountNum}, categoryFile=${categoryFile}, descFile=${descFile}`);
-
-  // Trigger background processing BEFORE sending final message
-  processIvrExpense({
-    userId,
-    phoneNumber: call.phone,
-    amount: amountNum,
-    categoryAudioPath: categoryFile,
-    nameAudioPath: descFile,
-    isHaredi,
-  }).catch((error) => {
-    console.error('[IVR] Failed to start background processing:', error);
-  });
-
-  // Then send success message and hangup
-  try {
-    call.id_list_message([
-      { type: "file", data: "M1805" },
-    ]);
-  } catch (err) {
-    if (err instanceof ExitError) return;
-    throw err;
-  }
-});
-
-app.use("/api/ivr/webhook", router as unknown as express.Router);
-
-function nextReqToExpressReq(request: NextRequest): {
-  req: express.Request;
-  res: express.Response;
-  getResponseBody: () => Promise<string>;
-} {
-  const url = request.nextUrl;
-
-  let capturedBody = "";
-  let headersSent = false;
-  let resolveResponse: ((value: string) => void) | null = null;
-  const responsePromise = new Promise<string>((resolve) => {
-    resolveResponse = resolve;
-  });
-
-  const req = {
-    method: request.method,
-    url: url.pathname + url.search,
-    path: url.pathname,
-    query: Object.fromEntries(url.searchParams.entries()),
-    body: {},
-    headers: Object.fromEntries(request.headers.entries()),
-    get: (name: string) => request.headers.get(name),
-  } as unknown as express.Request;
-
-  const res = {
-    _headerSent: false,
-    statusCode: 200,
-    setHeader: () => res,
-    getHeader: () => undefined,
-    send: (data: string) => {
-      if (headersSent) return res;
-      headersSent = true;
-      (res as any)._headerSent = true;
-      capturedBody = data;
-      resolveResponse?.(data);
-      return res;
-    },
-    json: (data: unknown) => {
-      if (headersSent) return res;
-      headersSent = true;
-      (res as any)._headerSent = true;
-      capturedBody = JSON.stringify(data);
-      resolveResponse?.(capturedBody);
-      return res;
-    },
-    end: () => {
-      if (!headersSent) {
-        headersSent = true;
-        (res as any)._headerSent = true;
-        resolveResponse?.(capturedBody);
-      }
-      return res;
-    },
-    status: (code: number) => {
-      (res as any).statusCode = code;
-      return res;
-    },
-    writeHead: () => res,
-  } as unknown as express.Response;
-
-  return {
-    req,
-    res,
-    getResponseBody: () => responsePromise,
-  };
+function getParams(request: NextRequest): Record<string, string> {
+  return Object.fromEntries(request.nextUrl.searchParams.entries());
 }
 
-async function handleRequest(request: NextRequest): Promise<NextResponse> {
-  const { req, res, getResponseBody } = nextReqToExpressReq(request);
+async function getPostParams(request: NextRequest): Promise<Record<string, string>> {
+  const contentType = request.headers.get("content-type") || "";
+  if (contentType.includes("application/x-www-form-urlencoded")) {
+    const text = await request.text();
+    return Object.fromEntries(new URLSearchParams(text).entries());
+  }
+  return getParams(request);
+}
 
-  if (request.method === "POST") {
-    const contentType = request.headers.get("content-type") || "";
-    if (contentType.includes("application/x-www-form-urlencoded")) {
-      const text = await request.text();
-      const params = new URLSearchParams(text);
-      (req as any).body = Object.fromEntries(params.entries());
-    } else if (contentType.includes("application/json")) {
-      (req as any).body = await request.json();
+async function handleIvr(request: NextRequest): Promise<NextResponse> {
+  const params =
+    request.method === "POST"
+      ? await getPostParams(request)
+      : getParams(request);
+
+  const apiPhone = params.ApiPhone || null;
+  const pin = params.PIN || null;
+  const categoryAudio = params.CategoryAudio || null;
+  const amount = params.Amount || null;
+  const nameAudio = params.NameAudio || null;
+  const hangup = params.hangup || null;
+
+  if (hangup === "yes") {
+    console.log(`[IVR] Call hangup from ${apiPhone}`);
+    return respond("ok");
+  }
+
+  try {
+    // State 0: Ask for PIN
+    if (apiPhone && !pin) {
+      console.log(`[IVR] State 0: Asking PIN from ${apiPhone}`);
+      return respond("read=f-M1798=PIN,no,4,4,7,No,no,no,,,,,,");
     }
+
+    // State 1: Validate PIN & Ask for Category
+    if (apiPhone && pin && !categoryAudio) {
+      console.log(`[IVR] State 1: Validating PIN for ${apiPhone}`);
+
+      const ivrPinRecord = await findUserByPhone(apiPhone);
+      if (!ivrPinRecord) {
+        console.log(`[IVR] Phone ${apiPhone} not found in DB`);
+        return respond("id_list_message=t-מספר הטלפון אינו מזוהה במערכת&hangup");
+      }
+
+      if (ivrPinRecord.phoneNumber !== apiPhone) {
+        console.log(`[IVR] Phone mismatch: caller=${apiPhone}, registered=${ivrPinRecord.phoneNumber}`);
+        return respond("id_list_message=t-מספר טלפון לא תואם&hangup");
+      }
+
+      const userId = ivrPinRecord.user.id;
+      const isValidPin = await validatePin(userId, pin);
+      if (!isValidPin) {
+        console.log(`[IVR] Invalid PIN for user ${userId}`);
+        return respond("id_list_message=t-קוד שגוי&hangup");
+      }
+
+      console.log(`[IVR] PIN valid for user ${userId}, asking for category`);
+      return respond("read=f-M1799=CategoryAudio,no,record,,,no,,,,");
+    }
+
+    // State 2: Ask for Amount
+    if (apiPhone && pin && categoryAudio && !amount) {
+      console.log(`[IVR] State 2: Asking amount, categoryAudio=${categoryAudio}`);
+      return respond("read=f-M1802=Amount,no,7,1,7,No,no,no,,,,,,");
+    }
+
+    // State 3: Ask for Transaction Description
+    if (apiPhone && pin && categoryAudio && amount && !nameAudio) {
+      console.log(`[IVR] State 3: Asking description, amount=${amount}`);
+      return respond("read=f-M1803=NameAudio,no,record,,,no,,,,");
+    }
+
+    // State 4: Finish & Process Background Job
+    if (apiPhone && pin && categoryAudio && amount && nameAudio) {
+      console.log(`[IVR] State 4: All data collected, triggering background processing`);
+
+      const ivrPinRecord = await findUserByPhone(apiPhone);
+      if (ivrPinRecord) {
+        const userId = ivrPinRecord.user.id;
+        const isHaredi = ivrPinRecord.user.signupSource === "prog";
+        const amountNum = parseFloat(amount);
+
+        console.log(
+          `[IVR] Processing: userId=${userId}, amount=${amountNum}, ` +
+            `category=${categoryAudio}, name=${nameAudio}`
+        );
+
+        try {
+          const session = await prisma.ivrCallSession.create({
+            data: {
+              userId,
+              phoneNumber: apiPhone,
+              amount: amountNum,
+              status: "pending",
+            },
+          });
+
+          processExpenseBackground({
+            sessionId: session.id,
+            userId,
+            phoneNumber: apiPhone,
+            amount: amountNum,
+            categoryAudioUrl: categoryAudio,
+            nameAudioUrl: nameAudio,
+            isHaredi,
+          }).catch((error) => {
+            console.error("[IVR] Background processing failed:", error);
+          });
+        } catch (error) {
+          console.error("[IVR] Failed to create session:", error);
+        }
+      } else {
+        console.error(`[IVR] State 4: User not found for phone ${apiPhone}`);
+      }
+
+      return respond("id_list_message=f-M1805&hangup");
+    }
+
+    console.log("[IVR] Fallback: unhandled state", params);
+    return respond("id_list_message=f-M1804&hangup");
+  } catch (error) {
+    console.error("[IVR] Webhook error:", error);
+    return respond("id_list_message=f-M1804&hangup");
   }
-
-  return new Promise<NextResponse>((resolve) => {
-    const timeout = setTimeout(() => {
-      resolve(
-        new NextResponse("id_list_message=f-M1804&hangup", {
-          status: 200,
-          headers: { "Content-Type": "text/plain; charset=utf-8" },
-        })
-      );
-    }, 5000);
-
-    getResponseBody().then((body) => {
-      clearTimeout(timeout);
-      resolve(
-        new NextResponse(body, {
-          status: 200,
-          headers: {
-            "Content-Type": "text/plain; charset=utf-8",
-            "Cache-Control": "no-store, max-age=0",
-          },
-        })
-      );
-    });
-
-    (app as any).handle(req, res);
-  });
 }
 
 export async function GET(request: NextRequest) {
-  return handleRequest(request);
+  return handleIvr(request);
 }
 
 export async function POST(request: NextRequest) {
-  return handleRequest(request);
+  return handleIvr(request);
 }
