@@ -7,6 +7,15 @@ import {
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+function buildYemotAudioUrl(relativePath: string): string {
+  const token = process.env.YEMOT_TOKEN;
+  if (!token) {
+    throw new Error('YEMOT_TOKEN environment variable is not set');
+  }
+  const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
+  return `https://www.call2all.co.il/ym/api/DownloadFile?token=${token}&path=ivr/${cleanPath}`;
+}
+
 async function downloadAudioBuffer(url: string): Promise<Buffer> {
   const res = await fetch(url);
   if (!res.ok) {
@@ -42,16 +51,21 @@ export async function processExpenseBackground(params: {
 }): Promise<void> {
   const { sessionId, userId, amount, categoryAudioUrl, nameAudioUrl, isHaredi } = params;
 
+  console.log(`[IVR] Starting processing for session ${sessionId}, userId=${userId}`);
+
   try {
     await prisma.ivrCallSession.update({
       where: { id: sessionId },
       data: { status: 'processing' },
     });
 
-    // Download and transcribe both audio files in parallel
+    const categoryFullUrl = buildYemotAudioUrl(categoryAudioUrl);
+    const nameFullUrl = buildYemotAudioUrl(nameAudioUrl);
+    console.log(`[IVR] Downloading audio: category=${categoryFullUrl}, name=${nameFullUrl}`);
+
     const [categoryBuffer, nameBuffer] = await Promise.all([
-      downloadAudioBuffer(categoryAudioUrl),
-      downloadAudioBuffer(nameAudioUrl),
+      downloadAudioBuffer(categoryFullUrl),
+      downloadAudioBuffer(nameFullUrl),
     ]);
 
     const [categoryText, descriptionText] = await Promise.all([
@@ -59,13 +73,13 @@ export async function processExpenseBackground(params: {
       transcribeAudio(nameBuffer),
     ]);
 
-    // Match category against the user's available categories
+    console.log(`[IVR] Transcription: category="${categoryText}", description="${descriptionText}"`);
+
     const userCategories = await getUserExpenseCategories(userId, isHaredi);
     const matchedCategoryId = matchCategory(categoryText, userCategories);
 
     const description = descriptionText || categoryText || 'הוצאה מ-IVR';
 
-    // Create the transaction
     const transaction = await prisma.transaction.create({
       data: {
         userId,
@@ -95,7 +109,9 @@ export async function processExpenseBackground(params: {
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    const stack = error instanceof Error ? error.stack : undefined;
     console.error(`[IVR] Session ${sessionId} failed:`, message);
+    if (stack) console.error(`[IVR] Stack trace:`, stack);
 
     try {
       await prisma.ivrCallSession.update({
