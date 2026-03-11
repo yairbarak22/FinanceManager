@@ -7,7 +7,8 @@ export async function GET(request: NextRequest) {
 
   // State 0: We have ApiPhone, but no PIN yet. Ask for PIN.
   if (apiPhone && !pin) {
-    const responseText = "read=t-ברוך הבא למיי נטו. אנא הקש את הקוד הסודי שלך וסולמית=PIN,no,4,4,7,Any";
+    // Strict 8-parameter format: Variable,PlayBack,Max,Min,Timeout,StarBack,HashEnd,OtherEnd
+    const responseText = "read=t-ברוך הבא למיי נטו. אנא הקש את הקוד הסודי שלך וסולמית=PIN,no,4,4,7,No,Yes,No";
 
     return new NextResponse(responseText, {
       status: 200,
