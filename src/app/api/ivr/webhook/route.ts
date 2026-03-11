@@ -95,72 +95,64 @@ async function handleIvrRequest(params: IvrWebhookParams): Promise<Response> {
 
   // Must have a phone number
   if (!ApiPhone) {
-    return textResponse('id_list_message=t-שגיאה. אין מספר טלפון&hangup');
+    return textResponse('id_list_message=M0004&hangup');
   }
 
   // Rate limiting by phone number
   const rl = await checkRateLimit(`ivr:${ApiPhone}`, RATE_LIMITS.ivr);
   if (!rl.success) {
-    return textResponse('id_list_message=t-יותר מדי שיחות. אנא נסה שוב מאוחר יותר&hangup');
+    return textResponse('id_list_message=M0004&hangup');
   }
 
   // ── State 0: Ask for PIN ──────────────────────────────────────────────
   if (!PIN) {
-    return textResponse(
-      'read=t-ברוך הבא למיי נטו. אנא הקש את הקוד הסודי שלך וסולמית=PIN,no,4,4,7,Any'
-    );
+    return textResponse('read=000=PIN,no,4,4,7,Any');
   }
 
   // ── State 1: Validate PIN & Ask for Category ──────────────────────────
   if (!CategoryAudio) {
     // Validate PIN format
     if (!/^\d{4}$/.test(PIN)) {
-      return textResponse('id_list_message=t-קוד שגוי. נסה שנית&hangup');
+      return textResponse('id_list_message=M0004&hangup');
     }
 
     const ivrRecord = await findUserByPhone(ApiPhone);
     if (!ivrRecord) {
-      return textResponse('id_list_message=t-מספר טלפון לא מזוהה במערכת&hangup');
+      return textResponse('id_list_message=M0004&hangup');
     }
 
     const pinValid = await validatePin(ivrRecord.userId, PIN);
     if (!pinValid) {
-      return textResponse('id_list_message=t-קוד שגוי. נסה שנית&hangup');
+      return textResponse('id_list_message=M0004&hangup');
     }
 
-    return textResponse(
-      'id_list_message=t-קוד התקבל. אנא אמור את שם הקטגוריה ולאחר מכן הקש סולמית&record=CategoryAudio,no,5,1'
-    );
+    return textResponse('id_list_message=001&record=CategoryAudio,no,5,1');
   }
 
   // ── State 2: Ask for Amount ───────────────────────────────────────────
   if (!Amount) {
-    return textResponse(
-      'read=t-אנא הקש את סכום ההוצאה וסולמית=Amount,no,1,1,7,Any'
-    );
+    return textResponse('read=002=Amount,no,1,1,7,Any');
   }
 
   // ── State 3: Ask for Transaction Name ─────────────────────────────────
   if (!NameAudio) {
-    return textResponse(
-      'id_list_message=t-אנא אמור את פרטי ההוצאה ולאחר מכן הקש סולמית&record=NameAudio,no,10,1'
-    );
+    return textResponse('id_list_message=003&record=NameAudio,no,10,1');
   }
 
   // ── State 4: All data collected — finish & process in background ──────
   const parsedAmount = parseInt(Amount, 10);
   if (isNaN(parsedAmount) || parsedAmount <= 0) {
-    return textResponse('id_list_message=t-סכום לא תקין&hangup');
+    return textResponse('id_list_message=M0004&hangup');
   }
 
   const ivrRecord = await findUserByPhone(ApiPhone);
   if (!ivrRecord) {
-    return textResponse('id_list_message=t-שגיאה פנימית&hangup');
+    return textResponse('id_list_message=M0004&hangup');
   }
 
   const pinValid = await validatePin(ivrRecord.userId, PIN);
   if (!pinValid) {
-    return textResponse('id_list_message=t-קוד שגוי&hangup');
+    return textResponse('id_list_message=M0004&hangup');
   }
 
   // Create a session record for tracking
@@ -185,7 +177,7 @@ async function handleIvrRequest(params: IvrWebhookParams): Promise<Response> {
     isHaredi,
   });
 
-  return textResponse('id_list_message=t-ההוצאה נקלטה ותעודכן במערכת. להתראות&hangup');
+  return textResponse('id_list_message=029&hangup');
 }
 
 export async function GET(request: NextRequest) {
