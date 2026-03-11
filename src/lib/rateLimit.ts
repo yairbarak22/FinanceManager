@@ -53,6 +53,9 @@ export const RATE_LIMITS = {
 
   // Admin endpoints - strict limits to prevent abuse if credentials compromised
   admin: { maxRequests: 30, windowSeconds: 60 } as RateLimitConfig,
+
+  // IVR phone-based expense reporting - per phone number
+  ivr: { maxRequests: 10, windowSeconds: 60 } as RateLimitConfig,
 };
 
 // ============================================================================

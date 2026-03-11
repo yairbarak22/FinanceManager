@@ -111,11 +111,13 @@ export async function middleware(request: NextRequest) {
 
   // Allow webhook endpoints without authentication (they verify signatures)
   // Allow public marketing unsubscribe endpoints (users click from email)
+  // Allow IVR webhook (uses phone+PIN auth, not session-based)
   if (
     pathname === '/api/webhook/receive' ||
     pathname === '/api/webhooks/resend' ||
     pathname === '/api/marketing/unsubscribe' ||
-    pathname === '/api/marketing/unsubscribe-email'
+    pathname === '/api/marketing/unsubscribe-email' ||
+    pathname === '/api/ivr/webhook'
   ) {
     return NextResponse.next();
   }

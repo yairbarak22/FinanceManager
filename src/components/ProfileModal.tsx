@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Loader2, ChevronDown, Check } from 'lucide-react';
 import { cn, apiFetch } from '@/lib/utils';
 import { SensitiveData } from './common/SensitiveData';
+import IvrPinSettings from './IvrPinSettings';
 
 // Field order for auto-scroll
 const FIELD_ORDER = ['ageRange', 'maritalStatus', 'employmentType', 'hasChildren', 'monthlyIncome', 'riskTolerance'];
@@ -350,6 +351,11 @@ export default function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                   options={RISK_OPTIONS}
                   placeholder="בחר רמת סיכון"
                 />
+              </div>
+
+              {/* IVR PIN Settings */}
+              <div className="pt-4 mt-4 border-t border-slate-100">
+                <IvrPinSettings />
               </div>
             </div>
 

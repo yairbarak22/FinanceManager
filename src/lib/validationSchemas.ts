@@ -145,6 +145,13 @@ export const copyBudgetSchema = z.object({
   toYear: z.number().int().min(2020).max(2100),
 });
 
+// --- IVR schemas ---
+
+export const ivrPinSchema = z.object({
+  pin: z.string().regex(/^\d{4}$/, 'PIN חייב להיות 4 ספרות'),
+  phoneNumber: z.string().min(9).max(15),
+});
+
 // --- Invite schemas ---
 
 export const sendFriendInviteSchema = z.object({

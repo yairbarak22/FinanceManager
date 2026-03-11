@@ -48,6 +48,8 @@ model User {
   ctaClicks             CtaClick[]             // CTA click tracking
   monthlyReports        MonthlyReport[]        // Monthly financial reports
   budgets               Budget[]               // Monthly budget entries
+  ivrCallSessions       IvrCallSession[]       // IVR phone-based expense reports
+  ivrPin                IvrPin?                // PIN for IVR authentication
 }
 
 model Account {
@@ -800,6 +802,41 @@ model Budget {
   @@unique([userId, categoryId, month, year])
   @@index([userId, month, year])
   @@index([userId])
+}
+
+// ============================================
+// IVR - Phone-based expense reporting for kosher phones
+// ============================================
+model IvrCallSession {
+  id            String   @id @default(cuid())
+  userId        String
+  phoneNumber   String
+  amount        Float?
+  category      String?
+  description   String?
+  status        String   @default("pending") // pending | processing | completed | failed
+  errorMessage  String?
+  transactionId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([phoneNumber])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model IvrPin {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  hashedPin   String
+  phoneNumber String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([phoneNumber])
 }
 
 // ============================================
