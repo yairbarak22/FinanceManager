@@ -7,6 +7,7 @@ import { config } from './config';
 import { logAuditEvent, AuditAction } from './auditLog';
 import { processCalculatorInvites } from './calculatorInvites';
 import { addSubscriberToMailerLite } from './mailerlite';
+import { getGlobalStats } from './globalStats';
 
 // Cookie name for signup source tracking
 const SIGNUP_SOURCE_COOKIE = 'signup_source';
@@ -48,13 +49,41 @@ export const authOptions: NextAuthOptions = {
   ],
   events: {
     async signIn({ user, account }) {
-      // Log OAUTH_LOGIN only on real OAuth sign-ins (account is null during JWT refreshes)
       if (user?.id && account) {
+        let isFirstLogin = false;
+        try {
+          const priorLogin = await prisma.auditLog.findFirst({
+            where: {
+              userId: user.id,
+              action: { in: ['LOGIN', 'OAUTH_LOGIN'] },
+            },
+            select: { id: true },
+          });
+          isFirstLogin = !priorLogin;
+        } catch {
+          // If check fails, don't increment (safe default)
+        }
+
         logAuditEvent({
           userId: user.id,
           action: AuditAction.OAUTH_LOGIN,
           metadata: { provider: account.provider },
         });
+
+        if (isFirstLogin) {
+          try {
+            const currentStats = await getGlobalStats();
+            const todayStr = new Date().toISOString().slice(0, 10);
+            if (currentStats.todayDate === todayStr) {
+              await prisma.globalStats.update({
+                where: { id: 'singleton' },
+                data: { todayUsers: { increment: 1 } },
+              });
+            }
+          } catch (error) {
+            console.error('[Auth] Failed to increment today users:', error);
+          }
+        }
       }
     },
     async createUser({ user }) {
@@ -85,6 +114,17 @@ export const authOptions: NextAuthOptions = {
         } catch (error) {
           console.error('[Auth] Failed to add user to MailerLite:', error);
         }
+      }
+
+      // Increment total user count (todayUsers is based on first login, handled in signIn)
+      try {
+        await getGlobalStats();
+        await prisma.globalStats.update({
+          where: { id: 'singleton' },
+          data: { totalUsers: { increment: 1 } },
+        });
+      } catch (error) {
+        console.error('[Auth] Failed to increment total user count:', error);
       }
     },
   },

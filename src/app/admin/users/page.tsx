@@ -16,7 +16,6 @@ import {
   Receipt,
   Calendar,
   UserPlus,
-  Activity,
   ChevronDown,
   ChevronRight,
   ChevronLeft,
@@ -235,7 +234,7 @@ export default function AdminUsersPage() {
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-[#69ADFF]" />
               סה״כ במערכת
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
                 <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -266,17 +265,6 @@ export default function AdminUsersPage() {
                     <div>
                       <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.totals.transactions.toLocaleString()}</p>
                       <p className="text-xs sm:text-sm text-gray-500">עסקאות</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-100 shadow-sm">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.activity.multipleLoginUsers.toLocaleString()}</p>
-                      <p className="text-xs sm:text-sm text-gray-500">משתמשים חוזרים</p>
                     </div>
                   </div>
                 </div>
@@ -367,7 +355,7 @@ export default function AdminUsersPage() {
             <Users className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500" />
             סטטיסטיקות משתמשים
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
             <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-100 shadow-sm">
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -376,36 +364,6 @@ export default function AdminUsersPage() {
                 <div>
                   <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats?.totals.users ?? pagination.total}</p>
                   <p className="text-xs sm:text-sm text-gray-500">משתמשים רשומים</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {users.filter(u => u.hasSeenOnboarding).length}
-                  </p>
-                  <p className="text-xs sm:text-sm text-gray-500">סיימו onboarding</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <User className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {users.filter(u => 
-                      u._count.transactions > 0 || 
-                      u._count.assets > 0 || 
-                      u._count.liabilities > 0
-                    ).length}
-                  </p>
-                  <p className="text-xs sm:text-sm text-gray-500">משתמשים פעילים</p>
                 </div>
               </div>
             </div>

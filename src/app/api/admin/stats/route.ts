@@ -31,9 +31,9 @@ export async function GET() {
     }
 
     const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
     const startOfTomorrow = new Date(startOfToday);
-    startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+    startOfTomorrow.setUTCDate(startOfTomorrow.getUTCDate() + 1);
 
     // Activity stats still need real-time queries
     const [multipleLoginUsers, todayUniqueLogins, usersWithMultipleLoginDays] = await Promise.all([
@@ -82,7 +82,7 @@ async function getTodayUniqueLoginsCount(
     const rows = await prisma.auditLog.groupBy({
       by: ['userId'],
       where: {
-        action: 'LOGIN',
+        action: { in: ['LOGIN', 'OAUTH_LOGIN'] },
         userId: { not: null },
         createdAt: { gte: startOfToday, lt: startOfTomorrow },
       },
@@ -124,23 +124,19 @@ async function getUsersWithMultipleLoginDaysCount(): Promise<number> {
  */
 async function getMultipleLoginUsersCount(): Promise<number> {
   try {
-    // Check if we have any LOGIN audit logs
     const loginLogsExist = await prisma.auditLog.findFirst({
-      where: { action: 'LOGIN' },
+      where: { action: { in: ['LOGIN', 'OAUTH_LOGIN'] } },
       select: { id: true },
     });
 
     if (!loginLogsExist) {
-      // No login tracking yet - return 0
-      // This means login audit logging needs to be implemented
       return 0;
     }
 
-    // Group by userId and count users with more than one login
     const usersWithMultipleLogins = await prisma.auditLog.groupBy({
       by: ['userId'],
       where: {
-        action: 'LOGIN',
+        action: { in: ['LOGIN', 'OAUTH_LOGIN'] },
         userId: { not: null },
       },
       _count: {

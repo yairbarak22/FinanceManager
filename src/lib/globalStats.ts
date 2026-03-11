@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 type StatType = 'user' | 'transaction' | 'asset' | 'liability' | 'goal' | 'recurringTx' | 'holding';
 
@@ -20,19 +21,42 @@ const TODAY_FIELD_MAP: Partial<Record<StatType, string>> = {
 };
 
 function getTodayDateString(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return new Date().toISOString().slice(0, 10);
 }
 
 function getTodayRange() {
   const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const startOfTomorrow = new Date(startOfToday);
-  startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+  startOfTomorrow.setUTCDate(startOfTomorrow.getUTCDate() + 1);
   return { startOfToday, startOfTomorrow };
+}
+
+/**
+ * Count users whose first-ever login (AuditLog) falls within today's range.
+ * "New users" = users who logged in today for the very first time.
+ */
+async function countTodayNewUsers(startOfToday: Date, startOfTomorrow: Date): Promise<number> {
+  try {
+    const result = await prisma.$queryRaw<Array<{ count: bigint }>>(Prisma.sql`
+      SELECT COUNT(DISTINCT al."userId")::bigint AS count
+      FROM "AuditLog" al
+      WHERE al.action IN ('LOGIN', 'OAUTH_LOGIN')
+        AND al."userId" IS NOT NULL
+        AND al."createdAt" >= ${startOfToday}
+        AND al."createdAt" < ${startOfTomorrow}
+        AND NOT EXISTS (
+          SELECT 1
+          FROM "AuditLog" al2
+          WHERE al2."userId" = al."userId"
+            AND al2.action IN ('LOGIN', 'OAUTH_LOGIN')
+            AND al2."createdAt" < ${startOfToday}
+        )
+    `);
+    return Number(result[0]?.count ?? 0);
+  } catch {
+    return 0;
+  }
 }
 
 /**
@@ -69,7 +93,7 @@ export async function refreshGlobalStats() {
     prisma.financialGoal.count(),
     prisma.recurringTransaction.count(),
     prisma.holding.count(),
-    prisma.user.count({ where: { createdAt: { gte: startOfToday, lt: startOfTomorrow } } }),
+    countTodayNewUsers(startOfToday, startOfTomorrow),
     prisma.transaction.count({ where: { createdAt: { gte: startOfToday, lt: startOfTomorrow } } }),
     prisma.asset.count({ where: { createdAt: { gte: startOfToday, lt: startOfTomorrow } } }),
     prisma.liability.count({ where: { createdAt: { gte: startOfToday, lt: startOfTomorrow } } }),
@@ -102,7 +126,7 @@ export async function refreshTodayStats() {
   const { startOfToday, startOfTomorrow } = getTodayRange();
 
   const [todayUsers, todayTransactions, todayAssets, todayLiabilities] = await Promise.all([
-    prisma.user.count({ where: { createdAt: { gte: startOfToday, lt: startOfTomorrow } } }),
+    countTodayNewUsers(startOfToday, startOfTomorrow),
     prisma.transaction.count({ where: { createdAt: { gte: startOfToday, lt: startOfTomorrow } } }),
     prisma.asset.count({ where: { createdAt: { gte: startOfToday, lt: startOfTomorrow } } }),
     prisma.liability.count({ where: { createdAt: { gte: startOfToday, lt: startOfTomorrow } } }),
@@ -122,24 +146,22 @@ export async function incrementGlobalStats(type: StatType, count = 1) {
   const totalField = TOTAL_FIELD_MAP[type];
   const todayField = TODAY_FIELD_MAP[type];
 
+  // Ensure singleton exists and get current stats in a single call
+  const currentStats = await getGlobalStats();
+  const todayStr = getTodayDateString();
+
   const data: Record<string, unknown> = {
     [totalField]: { increment: count },
   };
 
-  if (todayField) {
-    const stats = await prisma.globalStats.findUnique({
-      where: { id: 'singleton' },
-      select: { todayDate: true },
-    });
-    if (stats?.todayDate === getTodayDateString()) {
-      data[todayField] = { increment: count };
-    }
+  if (todayField && currentStats.todayDate === todayStr) {
+    data[todayField] = { increment: count };
   }
 
   try {
     await prisma.globalStats.update({ where: { id: 'singleton' }, data });
-  } catch {
-    // Singleton doesn't exist yet — will be created on next getGlobalStats()
+  } catch (error) {
+    console.error(`[GlobalStats] Failed to increment ${type}:`, error);
   }
 }
 
