@@ -55,7 +55,7 @@ const router = YemotRouter({
   uncaughtErrorHandler: (error: Error, call: Call) => {
     console.error(`[IVR] Uncaught error from ${call.phone}: ${error.message}`);
     return call.id_list_message([
-      { type: "text", data: "אירעה שגיאה במערכת" },
+      { type: "system_message", data: "M1804" },
     ]);
   },
 });
@@ -63,7 +63,7 @@ const router = YemotRouter({
 router.all("/", async (call: Call) => {
   // Step 1: Ask for PIN
   const pin = await call.read(
-    [{ type: "text", data: "ברוך הבא למיי נטו אנא הקש קוד סודי וסולמית" }],
+    [{ type: "system_message", data: "M1798" }],
     "tap",
     { max_digits: 4, min_digits: 4, sec_wait: 7 }
   );
@@ -72,7 +72,7 @@ router.all("/", async (call: Call) => {
   const ivrPinRecord = await findUserByPhone(call.phone);
   if (!ivrPinRecord) {
     return call.id_list_message([
-      { type: "text", data: "קוד שגוי" },
+      { type: "system_message", data: "M1804" },
     ]);
   }
 
@@ -82,17 +82,13 @@ router.all("/", async (call: Call) => {
   const isValidPin = await validatePin(userId, pin);
   if (!isValidPin) {
     return call.id_list_message([
-      { type: "text", data: "קוד שגוי" },
+      { type: "system_message", data: "M1804" },
     ]);
   }
 
   // Step 2: Record category
-  call.id_list_message(
-    [{ type: "text", data: "קוד התקבל" }],
-    { prependToNextAction: true }
-  );
   const categoryFile = await call.read(
-    [{ type: "text", data: "אנא אמור את שם הקטגוריה ולאחר מכן הקש סולמית" }],
+    [{ type: "system_message", data: "M1799" }],
     "record",
     { no_confirm_menu: true }
   );
@@ -100,7 +96,7 @@ router.all("/", async (call: Call) => {
 
   // Step 3: Enter amount
   const amount = await call.read(
-    [{ type: "text", data: "אנא הקש את סכום ההוצאה וסולמית" }],
+    [{ type: "system_message", data: "M1802" }],
     "tap",
     { max_digits: 7, min_digits: 1, sec_wait: 7 }
   );
@@ -108,7 +104,7 @@ router.all("/", async (call: Call) => {
 
   // Step 4: Record transaction description
   const descFile = await call.read(
-    [{ type: "text", data: "אנא אמור את פרטי ההוצאה ולאחר מכן הקש סולמית" }],
+    [{ type: "system_message", data: "M1803" }],
     "record",
     { no_confirm_menu: true }
   );
@@ -118,7 +114,7 @@ router.all("/", async (call: Call) => {
   // Fire-and-forget background processing will go here
   try {
     call.id_list_message([
-      { type: "text", data: "ההוצאה נקלטה בהצלחה להתראות" },
+      { type: "system_message", data: "M1805" },
     ]);
   } catch (err) {
     if (err instanceof ExitError) return;
@@ -230,7 +226,7 @@ async function handleRequest(request: NextRequest): Promise<NextResponse> {
   return new Promise<NextResponse>((resolve) => {
     const timeout = setTimeout(() => {
       resolve(
-        new NextResponse("id_list_message=t-שגיאה במערכת", {
+        new NextResponse("id_list_message=f-M1804&hangup", {
           status: 200,
           headers: { "Content-Type": "text/plain; charset=utf-8" },
         })
