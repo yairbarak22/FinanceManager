@@ -95,64 +95,64 @@ async function handleIvrRequest(params: IvrWebhookParams): Promise<Response> {
 
   // Must have a phone number
   if (!ApiPhone) {
-    return textResponse('id_list_message=M0004&hangup');
+    return textResponse('id_list_message=M0000&hangup');
   }
 
   // Rate limiting by phone number
   const rl = await checkRateLimit(`ivr:${ApiPhone}`, RATE_LIMITS.ivr);
   if (!rl.success) {
-    return textResponse('id_list_message=M0004&hangup');
+    return textResponse('id_list_message=M0000&hangup');
   }
 
   // ── State 0: Ask for PIN ──────────────────────────────────────────────
   if (!PIN) {
-    return textResponse('read=000=PIN,no,4,4,7,Any');
+    return textResponse('read=M0000=PIN,no,4,4,7,Any');
   }
 
   // ── State 1: Validate PIN & Ask for Category ──────────────────────────
   if (!CategoryAudio) {
     // Validate PIN format
     if (!/^\d{4}$/.test(PIN)) {
-      return textResponse('id_list_message=M0004&hangup');
+      return textResponse('id_list_message=M0000&hangup');
     }
 
     const ivrRecord = await findUserByPhone(ApiPhone);
     if (!ivrRecord) {
-      return textResponse('id_list_message=M0004&hangup');
+      return textResponse('id_list_message=M0000&hangup');
     }
 
     const pinValid = await validatePin(ivrRecord.userId, PIN);
     if (!pinValid) {
-      return textResponse('id_list_message=M0004&hangup');
+      return textResponse('id_list_message=M0000&hangup');
     }
 
-    return textResponse('id_list_message=001&record=CategoryAudio,no,5,1');
+    return textResponse('id_list_message=M0000&record=CategoryAudio,no,5,1');
   }
 
   // ── State 2: Ask for Amount ───────────────────────────────────────────
   if (!Amount) {
-    return textResponse('read=002=Amount,no,1,1,7,Any');
+    return textResponse('read=M0000=Amount,no,1,1,7,Any');
   }
 
   // ── State 3: Ask for Transaction Name ─────────────────────────────────
   if (!NameAudio) {
-    return textResponse('id_list_message=003&record=NameAudio,no,10,1');
+    return textResponse('id_list_message=M0000&record=NameAudio,no,10,1');
   }
 
   // ── State 4: All data collected — finish & process in background ──────
   const parsedAmount = parseInt(Amount, 10);
   if (isNaN(parsedAmount) || parsedAmount <= 0) {
-    return textResponse('id_list_message=M0004&hangup');
+    return textResponse('id_list_message=M0000&hangup');
   }
 
   const ivrRecord = await findUserByPhone(ApiPhone);
   if (!ivrRecord) {
-    return textResponse('id_list_message=M0004&hangup');
+    return textResponse('id_list_message=M0000&hangup');
   }
 
   const pinValid = await validatePin(ivrRecord.userId, PIN);
   if (!pinValid) {
-    return textResponse('id_list_message=M0004&hangup');
+    return textResponse('id_list_message=M0000&hangup');
   }
 
   // Create a session record for tracking
@@ -177,7 +177,7 @@ async function handleIvrRequest(params: IvrWebhookParams): Promise<Response> {
     isHaredi,
   });
 
-  return textResponse('id_list_message=029&hangup');
+  return textResponse('id_list_message=M0000&hangup');
 }
 
 export async function GET(request: NextRequest) {
