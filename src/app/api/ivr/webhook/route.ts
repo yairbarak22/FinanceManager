@@ -8,7 +8,7 @@
  * Auth: phone number + 4-digit PIN (not NextAuth session-based).
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { findUserByPhone, validatePin } from '@/lib/ivr/helpers';
@@ -16,9 +16,11 @@ import { processExpenseBackground } from '@/lib/ivr/processExpense';
 import type { IvrWebhookParams } from '@/lib/ivr/types';
 
 function textResponse(body: string) {
-  return new Response(body, {
+  return new NextResponse(body, {
     status: 200,
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+    },
   });
 }
 
@@ -105,7 +107,7 @@ async function handleIvrRequest(params: IvrWebhookParams): Promise<Response> {
   // ── State 0: Ask for PIN ──────────────────────────────────────────────
   if (!PIN) {
     return textResponse(
-      'read=t-ברוך הבא למיי נטו. אנא הקש את הקוד הסודי שלך וסולמית=PIN,no,4,4,7,No,Yes,No'
+      'read=t-ברוך הבא למיי נטו. אנא הקש את הקוד הסודי שלך וסולמית=PIN,no,4,4,7,Any'
     );
   }
 
@@ -134,7 +136,7 @@ async function handleIvrRequest(params: IvrWebhookParams): Promise<Response> {
   // ── State 2: Ask for Amount ───────────────────────────────────────────
   if (!Amount) {
     return textResponse(
-      'read=t-אנא הקש את סכום ההוצאה וסולמית=Amount,no,1,1,7,No,Yes,No'
+      'read=t-אנא הקש את סכום ההוצאה וסולמית=Amount,no,1,1,7,Any'
     );
   }
 
