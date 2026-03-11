@@ -2,9 +2,53 @@ import { NextRequest, NextResponse } from "next/server";
 import express from "express";
 import { YemotRouter, ExitError } from "yemot-router2";
 import type { Call } from "yemot-router2";
+import { prisma } from '@/lib/prisma';
+import { findUserByPhone, validatePin } from '@/lib/ivr/helpers';
+import { processExpenseBackground } from '@/lib/ivr/processExpense';
 
 const app = express();
 app.use(express.urlencoded({ extended: true }));
+
+/**
+ * Process IVR expense: Create session record and trigger background processing
+ */
+async function processIvrExpense(params: {
+  userId: string;
+  phoneNumber: string;
+  amount: number;
+  categoryAudioPath: string;
+  nameAudioPath: string;
+  isHaredi: boolean;
+}): Promise<void> {
+  console.log(`[IVR] Starting background processing for user ${params.userId}...`);
+
+  try {
+    // Create IvrCallSession record with status 'pending'
+    const session = await prisma.ivrCallSession.create({
+      data: {
+        userId: params.userId,
+        phoneNumber: params.phoneNumber,
+        amount: params.amount,
+        status: 'pending',
+      },
+    });
+
+    // Fire-and-forget: don't await
+    processExpenseBackground({
+      sessionId: session.id,
+      userId: params.userId,
+      phoneNumber: params.phoneNumber,
+      amount: params.amount,
+      categoryAudioUrl: params.categoryAudioPath, // Yemot provides full URL
+      nameAudioUrl: params.nameAudioPath, // Yemot provides full URL
+      isHaredi: params.isHaredi,
+    }).catch((error) => {
+      console.error('[IVR] Background processing failed:', error);
+    });
+  } catch (error) {
+    console.error('[IVR] Failed to create session or start background processing:', error);
+  }
+}
 
 const router = YemotRouter({
   printLog: true,
@@ -24,8 +68,19 @@ router.all("/", async (call: Call) => {
     { max_digits: 4, min_digits: 4, sec_wait: 7 }
   );
 
-  // Validate PIN (mock - will be replaced with real DB validation)
-  if (pin !== "1234") {
+  // Find user by phone number
+  const ivrPinRecord = await findUserByPhone(call.phone);
+  if (!ivrPinRecord) {
+    return call.id_list_message([
+      { type: "text", data: "קוד שגוי" },
+    ]);
+  }
+
+  const userId = ivrPinRecord.user.id;
+
+  // Validate PIN against database
+  const isValidPin = await validatePin(userId, pin);
+  if (!isValidPin) {
     return call.id_list_message([
       { type: "text", data: "קוד שגוי" },
     ]);
@@ -70,12 +125,22 @@ router.all("/", async (call: Call) => {
     throw err;
   }
 
-  // Background job will be triggered here in the future
-  console.log("[IVR] Call completed:", {
-    phone: call.phone,
-    amount,
-    categoryFile,
-    descFile,
+  // Determine if user is Haredi (signupSource === 'prog')
+  const isHaredi = ivrPinRecord.user.signupSource === 'prog';
+
+  // Convert amount string to number
+  const amountNum = parseFloat(amount);
+
+  // Trigger background processing (fire-and-forget)
+  processIvrExpense({
+    userId,
+    phoneNumber: call.phone,
+    amount: amountNum,
+    categoryAudioPath: categoryFile, // This is the URL from Yemot
+    nameAudioPath: descFile, // This is the URL from Yemot
+    isHaredi,
+  }).catch((error) => {
+    console.error('[IVR] Failed to start background processing:', error);
   });
 });
 
