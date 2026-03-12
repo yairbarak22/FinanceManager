@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { findUserByPhone, validatePin } from "@/lib/ivr/helpers";
-import { processExpenseBackground } from "@/lib/ivr/processExpense";
 
 const HEADERS = {
   "Content-Type": "text/html; charset=utf-8",
@@ -53,7 +50,7 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
       return respond("read=f-M1798=PIN,no,4,4,7,No,no,no,,,,,,");
     }
 
-    // State 1: Ask for Category (instant -- no DB work here!)
+    // State 1: Ask for Category (instant -- no heavy imports needed)
     if (apiPhone && pin && !categoryAudio) {
       console.log(`[IVR] State 1: Asking category from ${apiPhone} (${Date.now() - reqStart}ms)`);
       return respond("read=f-M1799=CategoryAudio,no,record,,,no,,,,");
@@ -63,6 +60,8 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
     if (apiPhone && pin && categoryAudio && !amount) {
       console.log(`[IVR] State 2: Validating PIN for ${apiPhone}`);
       const dbStart = Date.now();
+
+      const { findUserByPhone, validatePin } = await import("@/lib/ivr/helpers");
 
       const ivrPinRecord = await findUserByPhone(apiPhone);
       if (!ivrPinRecord || ivrPinRecord.phoneNumber !== apiPhone) {
@@ -95,6 +94,10 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
         console.log(`[IVR] Invalid amount: "${amount}"`);
         return respond("id_list_message=t-סכום לא תקין&hangup");
       }
+
+      const { findUserByPhone } = await import("@/lib/ivr/helpers");
+      const { prisma } = await import("@/lib/prisma");
+      const { processExpenseBackground } = await import("@/lib/ivr/processExpense");
 
       const ivrPinRecord = await findUserByPhone(apiPhone);
       if (!ivrPinRecord) {
