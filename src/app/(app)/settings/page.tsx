@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 import {
   User,
   Loader2,
@@ -9,7 +9,11 @@ import {
   Save,
   UserCog,
   Users,
+  Shield,
+  AlertTriangle,
+  Trash2,
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { AppLayout } from '@/components/layout';
 import Card from '@/components/ui/Card';
 import StyledSelect from '@/components/ui/StyledSelect';
@@ -64,7 +68,13 @@ const RISK_OPTIONS = [
   { value: 'high', label: 'גבוהה - מוכן לקחת סיכונים' },
 ];
 
-type SettingsTab = 'profile' | 'account';
+type SettingsTab = 'profile' | 'account' | 'privacy';
+
+const SETTINGS_TABS: { id: SettingsTab; label: string; icon: typeof UserCog }[] = [
+  { id: 'profile', label: 'פרטים אישיים', icon: UserCog },
+  { id: 'account', label: 'חשבון משותף', icon: Users },
+  { id: 'privacy', label: 'פרטיות', icon: Shield },
+];
 
 export default function SettingsPage() {
   const { data: session } = useSession();
@@ -90,6 +100,25 @@ export default function SettingsPage() {
     monthlyIncome: null,
     riskTolerance: null,
   });
+
+  const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  const [indicatorStyle, setIndicatorStyle] = useState({ width: 0, right: 0 });
+
+  useEffect(() => {
+    const activeIdx = SETTINGS_TABS.findIndex((t) => t.id === activeTab);
+    const el = tabsRef.current[activeIdx];
+    if (el) {
+      const parent = el.parentElement;
+      if (parent) {
+        const parentRect = parent.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        setIndicatorStyle({
+          width: elRect.width,
+          right: parentRect.right - elRect.right,
+        });
+      }
+    }
+  }, [activeTab]);
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -135,11 +164,6 @@ export default function SettingsPage() {
 
   const { name, email, image } = session?.user || {};
 
-  const tabs = [
-    { id: 'profile' as SettingsTab, label: 'פרטים אישיים', icon: UserCog },
-    { id: 'account' as SettingsTab, label: 'חשבון משותף', icon: Users },
-  ];
-
   return (
     <AppLayout
       pageTitle="הגדרות"
@@ -151,33 +175,38 @@ export default function SettingsPage() {
       showMonthFilter={false}
     >
       <div className="max-w-2xl mx-auto">
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all text-sm font-medium"
-                style={{
-                  background: isActive ? '#69ADFF' : '#FFFFFF',
-                  color: isActive ? '#FFFFFF' : '#7E7F90',
-                  border: isActive ? '1px solid #69ADFF' : '1px solid #F7F7F8',
-                  boxShadow: isActive
-                    ? '0 4px 12px rgba(105, 173, 255, 0.3)'
-                    : '0 2px 8px rgba(0, 0, 0, 0.04)',
-                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-                }}
-              >
-                {tab.label}
-                <Icon className="w-4 h-4" strokeWidth={1.75} />
-              </button>
-            );
-          })}
-        </div>
+        {/* Tab Bar */}
+        <Card padding="none" className="overflow-hidden mb-6">
+          <div className="relative flex">
+            {SETTINGS_TABS.map((tab, i) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  ref={(el) => { tabsRef.current[i] = el; }}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                    flex-1 flex items-center justify-center gap-2 py-3.5 text-[0.8125rem] font-semibold
+                    transition-colors duration-200 cursor-pointer relative z-10
+                    ${isActive ? 'text-[#69ADFF]' : 'text-[#7E7F90] hover:text-[#303150]'}
+                  `}
+                  style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                >
+                  <Icon className="w-4 h-4" strokeWidth={1.75} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+            <motion.div
+              className="absolute bottom-0 h-[2px] rounded-full"
+              style={{ backgroundColor: '#69ADFF' }}
+              animate={{ right: indicatorStyle.right, width: indicatorStyle.width }}
+              transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+            />
+          </div>
+        </Card>
 
         {/* Profile Tab */}
         {activeTab === 'profile' && (
@@ -442,10 +471,208 @@ export default function SettingsPage() {
             <AccountSettingsInline />
           </div>
         )}
+
+        {/* Privacy Tab */}
+        {activeTab === 'privacy' && (
+          <div className="animate-fade-in">
+            <PrivacySettingsInline />
+          </div>
+        )}
       </div>
     </AppLayout>
   );
 }
+
+/* ─── Privacy Settings ─── */
+
+const DELETABLE_DATA = [
+  'עסקאות והיסטוריית תזרים',
+  'עסקאות קבועות',
+  'נכסים והיסטוריית ערכים',
+  'התחייבויות והלוואות',
+  'יעדים פיננסיים',
+  'תיק השקעות והחזקות',
+  'קטגוריות מותאמות אישית',
+  'פרופיל אישי ועדפות',
+  'היסטוריית שווי נקי',
+];
+
+function PrivacySettingsInline() {
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    setError(null);
+    try {
+      const res = await apiFetch('/api/user/delete-all-data', { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'שגיאה במחיקת הנתונים');
+        setIsDeleting(false);
+        return;
+      }
+      await signOut({ callbackUrl: '/' });
+    } catch {
+      setError('שגיאה בחיבור לשרת. נסה שוב.');
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <Card padding="none">
+      <div className="p-6">
+        <h3
+          className="font-semibold"
+          style={{
+            fontSize: '1.125rem',
+            color: '#303150',
+            fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+          }}
+        >
+          מחיקת נתונים
+        </h3>
+        <p
+          className="text-xs mt-1 mb-5"
+          style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+        >
+          מחיקת כל הנתונים הפיננסיים מהמערכת
+        </p>
+
+        {/* Warning */}
+        <div
+          className="flex gap-3 p-4 rounded-xl mb-5"
+          style={{
+            background: 'rgba(241, 138, 181, 0.06)',
+            border: '1px solid rgba(241, 138, 181, 0.15)',
+          }}
+        >
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{ backgroundColor: 'rgba(241, 138, 181, 0.12)' }}
+          >
+            <AlertTriangle className="w-[1.125rem] h-[1.125rem]" style={{ color: '#F18AB5' }} strokeWidth={1.75} />
+          </div>
+          <div>
+            <p
+              className="text-[0.8125rem] font-semibold"
+              style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+            >
+              פעולה זו בלתי הפיכה
+            </p>
+            <p
+              className="text-xs mt-1"
+              style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+            >
+              לאחר המחיקה תנותק אוטומטית ולא ניתן יהיה לשחזר את הנתונים.
+            </p>
+          </div>
+        </div>
+
+        {/* Data list */}
+        <p
+          className="text-[0.8125rem] font-medium mb-3"
+          style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+        >
+          הנתונים הבאים יימחקו לצמיתות:
+        </p>
+        <div className="space-y-1.5 mb-6">
+          {DELETABLE_DATA.map((item) => (
+            <div key={item} className="flex items-center gap-2.5">
+              <span
+                className="w-1.5 h-1.5 rounded-full shrink-0"
+                style={{ backgroundColor: '#F18AB5' }}
+              />
+              <span
+                className="text-[0.8125rem]"
+                style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+              >
+                {item}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div
+            className="mb-4 flex items-center gap-2 px-4 py-3 rounded-xl text-sm animate-fade-in"
+            style={{
+              background: 'rgba(241, 138, 181, 0.1)',
+              border: '1px solid rgba(241, 138, 181, 0.3)',
+              color: '#F18AB5',
+              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+            }}
+          >
+            {error}
+          </div>
+        )}
+
+        {/* Action */}
+        {!showConfirm ? (
+          <motion.button
+            type="button"
+            onClick={() => setShowConfirm(true)}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
+            style={{
+              color: '#F18AB5',
+              background: 'rgba(241, 138, 181, 0.08)',
+              border: '1px solid rgba(241, 138, 181, 0.2)',
+              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+            }}
+          >
+            <Trash2 className="w-4 h-4" strokeWidth={1.75} />
+            מחק כל הנתונים
+          </motion.button>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex gap-3"
+          >
+            <button
+              type="button"
+              onClick={() => { setShowConfirm(false); setError(null); }}
+              disabled={isDeleting}
+              className="btn-secondary flex-1"
+            >
+              ביטול
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all duration-200"
+              style={{
+                backgroundColor: isDeleting ? 'rgba(241, 138, 181, 0.5)' : '#F18AB5',
+                cursor: isDeleting ? 'not-allowed' : 'pointer',
+                fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+              }}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  מוחק...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4" strokeWidth={1.75} />
+                  אישור מחיקה
+                </>
+              )}
+            </button>
+          </motion.div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+/* ─── Account Settings ─── */
 
 function AccountSettingsInline() {
   const [loading, setLoading] = useState(true);
