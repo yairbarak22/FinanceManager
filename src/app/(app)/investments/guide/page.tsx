@@ -6,10 +6,7 @@ import { motion } from 'framer-motion';
 import { ChevronsDown } from 'lucide-react';
 import { AppLayout } from '@/components/layout';
 import { useMonth } from '@/context/MonthContext';
-import { useModal } from '@/context/ModalContext';
 import { useAnalytics } from '@/hooks/useAnalytics';
-import ProfileModal from '@/components/ProfileModal';
-import AccountSettings from '@/components/AccountSettings';
 import {
   GuideHero,
   StepBackground,
@@ -54,7 +51,6 @@ export default function InvestmentGuidePage() {
     currentMonth,
   } = useMonth();
 
-  const { openModal, isModalOpen, closeModal } = useModal();
   const analytics = useAnalytics();
   const hasTrackedPageView = useRef(false);
 
@@ -130,8 +126,6 @@ export default function InvestmentGuidePage() {
         allMonths={allMonths}
         monthsWithData={monthsWithData}
         currentMonth={currentMonth}
-        onOpenProfile={() => openModal('profile')}
-        onOpenAccountSettings={() => openModal('accountSettings')}
         showMonthFilter={false}
       >
         <div className="flex justify-center py-24">
@@ -150,8 +144,6 @@ export default function InvestmentGuidePage() {
       allMonths={allMonths}
       monthsWithData={monthsWithData}
       currentMonth={currentMonth}
-      onOpenProfile={() => openModal('profile')}
-      onOpenAccountSettings={() => openModal('accountSettings')}
       showMonthFilter={false}
     >
       <div className="max-w-3xl mx-auto space-y-12" dir="rtl">
@@ -202,16 +194,6 @@ export default function InvestmentGuidePage() {
           תשואות עבר אינן מעידות על תשואות עתידיות.
         </p>
       </div>
-
-      {/* Modals */}
-      <ProfileModal
-        isOpen={isModalOpen('profile')}
-        onClose={closeModal}
-      />
-      <AccountSettings
-        isOpen={isModalOpen('accountSettings')}
-        onClose={closeModal}
-      />
     </AppLayout>
   );
 }

@@ -3,14 +3,10 @@
 import { Suspense } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useMonth } from '@/context/MonthContext';
-import { useModal } from '@/context/ModalContext';
-import ProfileModal from '@/components/ProfileModal';
-import AccountSettings from '@/components/AccountSettings';
 import WorkspacePage from '@/components/workspace/WorkspacePage';
 
 export default function WorkspaceRoute() {
   const { selectedMonth, setSelectedMonth, allMonths, monthsWithData, currentMonth } = useMonth();
-  const { openModal, isModalOpen, closeModal } = useModal();
 
   return (
     <AppLayout
@@ -20,8 +16,6 @@ export default function WorkspaceRoute() {
       allMonths={allMonths}
       monthsWithData={monthsWithData}
       currentMonth={currentMonth}
-      onOpenProfile={() => openModal('profile')}
-      onOpenAccountSettings={() => openModal('accountSettings')}
       showMonthFilter={false}
       showQuickAddFab={false}
     >
@@ -39,9 +33,6 @@ export default function WorkspaceRoute() {
       >
         <WorkspacePage />
       </Suspense>
-
-      <ProfileModal isOpen={isModalOpen('profile')} onClose={closeModal} />
-      <AccountSettings isOpen={isModalOpen('accountSettings')} onClose={closeModal} />
     </AppLayout>
   );
 }

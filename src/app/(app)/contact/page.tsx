@@ -3,9 +3,6 @@
 import { AppLayout } from '@/components/layout';
 import { ContactSection } from '@/components/contact';
 import { useMonth } from '@/context/MonthContext';
-import { useModal } from '@/context/ModalContext';
-import ProfileModal from '@/components/ProfileModal';
-import AccountSettings from '@/components/AccountSettings';
 
 export default function ContactPage() {
   const {
@@ -15,8 +12,6 @@ export default function ContactPage() {
     monthsWithData,
     currentMonth,
   } = useMonth();
-  
-  const { openModal, isModalOpen, closeModal } = useModal();
 
   return (
     <AppLayout
@@ -26,21 +21,9 @@ export default function ContactPage() {
       allMonths={allMonths}
       monthsWithData={monthsWithData}
       currentMonth={currentMonth}
-      onOpenProfile={() => openModal('profile')}
-      onOpenAccountSettings={() => openModal('accountSettings')}
       showMonthFilter={false}
     >
       <ContactSection />
-      
-      {/* Modals */}
-      <ProfileModal
-        isOpen={isModalOpen('profile')}
-        onClose={closeModal}
-      />
-      <AccountSettings
-        isOpen={isModalOpen('accountSettings')}
-        onClose={closeModal}
-      />
     </AppLayout>
   );
 }

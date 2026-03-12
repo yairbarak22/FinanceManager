@@ -8,11 +8,8 @@ import { AppLayout } from '@/components/layout';
 import { SectionHeader } from '@/components/dashboard';
 import Card from '@/components/ui/Card';
 import ConfirmDialog from '@/components/modals/ConfirmDialog';
-import ProfileModal from '@/components/ProfileModal';
-import AccountSettings from '@/components/AccountSettings';
 import ToastContainer from '@/components/ui/Toast';
 import { useMonth } from '@/context/MonthContext';
-import { useModal } from '@/context/ModalContext';
 import { useToast } from '@/hooks/useToast';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import type { FinancialGoal, UpdateGoalInput } from '@/lib/api/goals';
@@ -33,7 +30,6 @@ export default function GoalsPage() {
     currentMonth,
   } = useMonth();
   
-  const { openModal, isModalOpen, closeModal } = useModal();
   const toast = useToast();
   
   const [editingGoal, setEditingGoal] = useState<FinancialGoal | null>(null);
@@ -131,8 +127,6 @@ export default function GoalsPage() {
       allMonths={allMonths}
       monthsWithData={monthsWithData}
       currentMonth={currentMonth}
-      onOpenProfile={() => openModal('profile')}
-      onOpenAccountSettings={() => openModal('accountSettings')}
       showMonthFilter={false}
     >
       <div className="space-y-12 pb-12">
@@ -236,16 +230,6 @@ export default function GoalsPage() {
         message={deletingGoal ? `האם אתה בטוח שברצונך למחוק את היעד "${deletingGoal.name}"?` : ''}
       />
       </div>
-
-      {/* Modals */}
-      <ProfileModal
-        isOpen={isModalOpen('profile')}
-        onClose={closeModal}
-      />
-      <AccountSettings
-        isOpen={isModalOpen('accountSettings')}
-        onClose={closeModal}
-      />
 
       <ToastContainer toasts={toast.toasts} removeToast={toast.removeToast} />
     </AppLayout>

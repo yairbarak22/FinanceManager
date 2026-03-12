@@ -29,8 +29,6 @@ import AmortizationModal from '@/components/modals/AmortizationModal';
 import QuickStartModal from '@/components/modals/QuickStartModal';
 import NewUserOnboardingModal from '@/components/modals/NewUserOnboardingModal';
 import DocumentsModal from '@/components/modals/DocumentsModal';
-import ProfileModal from '@/components/ProfileModal';
-import AccountSettings from '@/components/AccountSettings';
 import { QuickAddModal } from '@/components/quick-add';
 import MaaserCalculatorModal from '@/components/modals/MaaserCalculatorModal';
 import { PeriodicReportTrigger } from '@/components/PeriodicReportModal';
@@ -52,7 +50,6 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { useToast } from '@/hooks/useToast';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { useMonth } from '@/context/MonthContext';
-import { useModal } from '@/context/ModalContext';
 import { useSession } from 'next-auth/react';
 import ToastContainer from '@/components/ui/Toast';
 import Card from '@/components/ui/Card';
@@ -75,9 +72,6 @@ export default function DashboardPage() {
     customDateRange,
   } = useMonth();
   
-  // Use shared modal context
-  const { openModal, isModalOpen, closeModal } = useModal();
-
   const { rate: exchangeRate } = useExchangeRate();
 
   // Data state
@@ -802,8 +796,6 @@ export default function DashboardPage() {
       allMonths={allMonths}
       monthsWithData={monthsWithData}
       currentMonth={currentMonth}
-      onOpenProfile={() => openModal('profile')}
-      onOpenAccountSettings={() => openModal('accountSettings')}
       showQuickAddFab={true}
       showMonthFilter={true}
     >
@@ -1132,16 +1124,6 @@ export default function DashboardPage() {
           entityName={documentsEntity.name}
         />
       )}
-
-      <ProfileModal
-        isOpen={isModalOpen('profile')}
-        onClose={closeModal}
-      />
-
-      <AccountSettings
-        isOpen={isModalOpen('accountSettings')}
-        onClose={closeModal}
-      />
 
       <QuickAddModal
         expenseCategories={expenseCats}

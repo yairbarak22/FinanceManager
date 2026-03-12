@@ -6,9 +6,6 @@ import { AppLayout } from '@/components/layout';
 import { LockedCalculatorsGrid } from '@/components/calculators';
 import { GmachVsInvestmentCalc } from '@/components/calculators/haredi';
 import { useMonth } from '@/context/MonthContext';
-import { useModal } from '@/context/ModalContext';
-import ProfileModal from '@/components/ProfileModal';
-import AccountSettings from '@/components/AccountSettings';
 import { motion } from 'framer-motion';
 
 interface AccessStatus {
@@ -26,7 +23,6 @@ export default function HarediCalculatorsPage() {
     currentMonth,
   } = useMonth();
 
-  const { openModal, isModalOpen, closeModal } = useModal();
   const router = useRouter();
 
   // Access state
@@ -97,8 +93,6 @@ export default function HarediCalculatorsPage() {
         allMonths={allMonths}
         monthsWithData={monthsWithData}
         currentMonth={currentMonth}
-        onOpenProfile={() => openModal('profile')}
-        onOpenAccountSettings={() => openModal('accountSettings')}
         showMonthFilter={false}
       >
         <div className="flex justify-center py-24">
@@ -117,8 +111,6 @@ export default function HarediCalculatorsPage() {
       allMonths={allMonths}
       monthsWithData={monthsWithData}
       currentMonth={currentMonth}
-      onOpenProfile={() => openModal('profile')}
-      onOpenAccountSettings={() => openModal('accountSettings')}
       showMonthFilter={false}
     >
       <div className="space-y-8">
@@ -194,16 +186,6 @@ export default function HarediCalculatorsPage() {
           המידע הוא לצורכי לימוד בלבד ואינו מהווה ייעוץ פיננסי. מומלץ להתייעץ עם מומחה לפני קבלת החלטות.
         </p>
       </div>
-
-      {/* Modals */}
-      <ProfileModal
-        isOpen={isModalOpen('profile')}
-        onClose={closeModal}
-      />
-      <AccountSettings
-        isOpen={isModalOpen('accountSettings')}
-        onClose={closeModal}
-      />
     </AppLayout>
   );
 }

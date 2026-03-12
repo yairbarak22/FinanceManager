@@ -4,7 +4,6 @@ import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic';
 import { Plus, RotateCcw } from 'lucide-react';
 import { useMonth } from '@/context/MonthContext';
-import { useModal } from '@/context/ModalContext';
 import { useCategories } from '@/hooks/useCategories';
 import { useToast } from '@/hooks/useToast';
 import AppLayout from '@/components/layout/AppLayout';
@@ -36,7 +35,6 @@ function getPreviousMonth(month: number, year: number): { month: number; year: n
 
 export default function BudgetPage() {
   const { selectedMonth, setSelectedMonth, currentMonth, allMonths, monthsWithData } = useMonth();
-  const { openModal } = useModal();
   const { getCustomByType } = useCategories();
   const { toasts, removeToast, success, error: showError } = useToast();
 
@@ -211,8 +209,6 @@ export default function BudgetPage() {
       allMonths={allMonths}
       monthsWithData={monthsWithData}
       currentMonth={currentMonth}
-      onOpenProfile={() => openModal('profile')}
-      onOpenAccountSettings={() => openModal('accountSettings')}
       showMonthFilter={false}
       showQuickAddFab={true}
     >

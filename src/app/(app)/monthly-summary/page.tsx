@@ -7,10 +7,6 @@ import { AppLayout } from '@/components/layout';
 import { useMonth } from '@/context/MonthContext';
 import { useSession } from 'next-auth/react';
 import { apiFetch } from '@/lib/utils';
-import ProfileModal from '@/components/ProfileModal';
-import AccountSettings from '@/components/AccountSettings';
-import { useModal } from '@/context/ModalContext';
-
 import MonthSelector from '@/components/monthly-summary/MonthSelector';
 import MonthlyBalanceCard from '@/components/monthly-summary/MonthlyBalanceCard';
 import AIInsightsCard from '@/components/monthly-summary/AIInsightsCard';
@@ -67,7 +63,6 @@ export default function MonthlySummaryPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
-  const { openModal, isModalOpen, closeModal } = useModal();
   const {
     selectedMonth: contextMonth,
     setSelectedMonth,
@@ -348,20 +343,8 @@ export default function MonthlySummaryPage() {
       monthsWithData={monthsWithData}
       currentMonth={currentMonth}
       showMonthFilter={false}
-      onOpenProfile={() => openModal('profile')}
-      onOpenAccountSettings={() => openModal('accountSettings')}
     >
       {pageContent}
-
-      {/* Modals */}
-      <ProfileModal
-        isOpen={isModalOpen('profile')}
-        onClose={closeModal}
-      />
-      <AccountSettings
-        isOpen={isModalOpen('accountSettings')}
-        onClose={closeModal}
-      />
     </AppLayout>
   );
 }

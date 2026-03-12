@@ -5,10 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout';
 import { CompoundInterestCalc, LockedCalculatorsGrid } from '@/components/calculators';
 import { useMonth } from '@/context/MonthContext';
-import { useModal } from '@/context/ModalContext';
 import { useAnalytics } from '@/hooks/useAnalytics';
-import ProfileModal from '@/components/ProfileModal';
-import AccountSettings from '@/components/AccountSettings';
 import { motion } from 'framer-motion';
 
 interface AccessStatus {
@@ -26,7 +23,6 @@ export default function CalculatorsPage() {
     currentMonth,
   } = useMonth();
   
-  const { openModal, isModalOpen, closeModal } = useModal();
   const router = useRouter();
   const analytics = useAnalytics();
   const hasTrackedPageView = useRef(false);
@@ -102,8 +98,6 @@ export default function CalculatorsPage() {
       allMonths={allMonths}
       monthsWithData={monthsWithData}
       currentMonth={currentMonth}
-      onOpenProfile={() => openModal('profile')}
-      onOpenAccountSettings={() => openModal('accountSettings')}
       showMonthFilter={false}
     >
       <div className="space-y-8">
@@ -179,16 +173,6 @@ export default function CalculatorsPage() {
           המידע הוא לצורכי לימוד בלבד ואינו מהווה ייעוץ פיננסי. מומלץ להתייעץ עם מומחה לפני קבלת החלטות.
         </p>
       </div>
-      
-      {/* Modals */}
-      <ProfileModal
-        isOpen={isModalOpen('profile')}
-        onClose={closeModal}
-      />
-      <AccountSettings
-        isOpen={isModalOpen('accountSettings')}
-        onClose={closeModal}
-      />
     </AppLayout>
   );
 }

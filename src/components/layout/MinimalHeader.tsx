@@ -2,10 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import {
   User,
-  UserCog,
-  Users,
+  Settings,
   LogOut,
   Sparkles,
   ChevronDown,
@@ -36,8 +36,6 @@ interface MinimalHeaderProps {
   allMonths: string[];
   monthsWithData: Set<string>;
   currentMonth: string;
-  onOpenProfile?: () => void;
-  onOpenAccountSettings?: () => void;
   showMonthFilter?: boolean;
 }
 
@@ -49,11 +47,10 @@ export default function MinimalHeader({
   allMonths,
   monthsWithData,
   currentMonth,
-  onOpenProfile,
-  onOpenAccountSettings,
   showMonthFilter = true,
 }: MinimalHeaderProps) {
   const { data: session } = useSession();
+  const router = useRouter();
   const { startTour } = useOnboarding();
   const { openAccessibility } = useAccessibility();
   const { isCollapsed, toggleSidebar, openMobileSidebar } = useSidebar();
@@ -213,32 +210,17 @@ export default function MinimalHeader({
                     </div>
 
                     <div className="py-1">
-                      {onOpenProfile && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsUserMenuOpen(false);
-                            onOpenProfile();
-                          }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-50 transition-colors"
-                        >
-                          <UserCog className="w-4 h-4 text-slate-400" />
-                          <span>פרופיל משתמש</span>
-                        </button>
-                      )}
-                      {onOpenAccountSettings && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsUserMenuOpen(false);
-                            onOpenAccountSettings();
-                          }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-50 transition-colors"
-                        >
-                          <Users className="w-4 h-4 text-slate-400" />
-                          <span>חשבון משותף</span>
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsUserMenuOpen(false);
+                          router.push('/settings');
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-50 transition-colors"
+                      >
+                        <Settings className="w-4 h-4 text-slate-400" />
+                        <span>הגדרות</span>
+                      </button>
                       <button
                         type="button"
                         onClick={() => {

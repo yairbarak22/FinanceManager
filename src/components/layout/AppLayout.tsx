@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode, useEffect } from 'react';
+import { ReactNode } from 'react';
 import Sidebar from './Sidebar';
 import MinimalHeader from './MinimalHeader';
 import { QuickAddFab } from '@/components/quick-add';
@@ -16,8 +16,6 @@ interface AppLayoutProps {
   allMonths: string[];
   monthsWithData: Set<string>;
   currentMonth: string;
-  onOpenProfile?: () => void;
-  onOpenAccountSettings?: () => void;
   showMonthFilter?: boolean;
   showQuickAddFab?: boolean;
 }
@@ -31,8 +29,6 @@ export default function AppLayout({
   allMonths,
   monthsWithData,
   currentMonth,
-  onOpenProfile,
-  onOpenAccountSettings,
   showMonthFilter = true,
   showQuickAddFab = false,
 }: AppLayoutProps) {
@@ -48,10 +44,7 @@ export default function AppLayout({
   return (
     <div className="flex min-h-screen bg-[#F5F5F7]">
       {/* Sidebar - Desktop + Mobile (hamburger menu) */}
-      <Sidebar
-        onOpenProfile={onOpenProfile}
-        onOpenAccountSettings={onOpenAccountSettings}
-      />
+      <Sidebar />
 
       {/* Main Content Area */}
       <div id="main-content-area" className="flex-1 flex flex-col min-h-screen">
@@ -64,8 +57,6 @@ export default function AppLayout({
           allMonths={allMonths}
           monthsWithData={monthsWithData}
           currentMonth={currentMonth}
-          onOpenProfile={onOpenProfile}
-          onOpenAccountSettings={onOpenAccountSettings}
           showMonthFilter={showMonthFilter}
         />
 

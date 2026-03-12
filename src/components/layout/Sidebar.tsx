@@ -10,8 +10,7 @@ import {
   PieChart,
   ChevronDown,
   X,
-  UserCog,
-  Users,
+  Settings,
   Sparkles,
   LogOut,
   Target,
@@ -45,11 +44,6 @@ interface NavItem {
   iconBg: string;
   iconColor: string;
   subItems?: SubNavItem[];
-}
-
-interface SidebarProps {
-  onOpenProfile?: () => void;
-  onOpenAccountSettings?: () => void;
 }
 
 // Build nav items (investments submenu is dynamic based on Haredi user status)
@@ -115,7 +109,7 @@ function buildNavItems(): NavItem[] {
   ];
 }
 
-export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: SidebarProps = {}) {
+export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
@@ -421,32 +415,17 @@ export default function Sidebar({ onOpenProfile, onOpenAccountSettings }: Sideba
       {isMobile && session?.user && (
         <div className="px-4 py-4 border-t border-slate-100">
           <div className="space-y-1">
-            {onOpenProfile && (
-              <button
-                type="button"
-                onClick={() => {
-                  closeMobileSidebar();
-                  onOpenProfile();
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                <UserCog className="w-4 h-4 text-slate-400" />
-                <span className="text-sm font-medium">פרופיל משתמש</span>
-              </button>
-            )}
-            {onOpenAccountSettings && (
-              <button
-                type="button"
-                onClick={() => {
-                  closeMobileSidebar();
-                  onOpenAccountSettings();
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                <Users className="w-4 h-4 text-slate-400" />
-                <span className="text-sm font-medium">חשבון משותף</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                closeMobileSidebar();
+                router.push('/settings');
+              }}
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              <Settings className="w-4 h-4 text-slate-400" />
+              <span className="text-sm font-medium">הגדרות</span>
+            </button>
             <button
               type="button"
               onClick={() => {
