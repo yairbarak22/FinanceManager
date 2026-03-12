@@ -80,5 +80,6 @@ export function matchCategory(
     }
   }
 
+  console.log(`[IVR] Category not matched for text: "${spokenText}"`);
   return 'other';
 }

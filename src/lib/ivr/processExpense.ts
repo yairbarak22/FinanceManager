@@ -28,6 +28,19 @@ async function downloadAudioBuffer(url: string): Promise<Buffer> {
   return Buffer.from(await res.arrayBuffer());
 }
 
+async function downloadWithRetry(url: string, retries = 3): Promise<Buffer> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await downloadAudioBuffer(url);
+    } catch (error) {
+      console.error(`[IVR] Download attempt ${i + 1}/${retries} failed for ${url}:`, error);
+      if (i === retries - 1) throw error;
+      await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+    }
+  }
+  throw new Error(`Download failed after ${retries} retries: ${url}`);
+}
+
 async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
   const file = await toFile(audioBuffer, 'audio.wav', { type: 'audio/wav' });
   const transcription = await openai.audio.transcriptions.create({
@@ -38,12 +51,6 @@ async function transcribeAudio(audioBuffer: Buffer): Promise<string> {
   return transcription.text.trim();
 }
 
-/**
- * Background job: download audio files, transcribe them, match category,
- * and create a transaction in the database.
- *
- * This function is fire-and-forget — it must never throw to the caller.
- */
 export async function processExpenseBackground(params: {
   sessionId: string;
   userId: string;
@@ -73,19 +80,40 @@ export async function processExpenseBackground(params: {
     console.log(`[IVR] Downloading audio: category=${categoryFullUrl}, name=${nameFullUrl}`);
 
     const [categoryBuffer, nameBuffer] = await Promise.all([
-      downloadAudioBuffer(categoryFullUrl),
-      downloadAudioBuffer(nameFullUrl),
+      downloadWithRetry(categoryFullUrl),
+      downloadWithRetry(nameFullUrl),
     ]);
 
-    const [categoryText, descriptionText] = await Promise.all([
-      transcribeAudio(categoryBuffer),
-      transcribeAudio(nameBuffer),
-    ]);
+    let categoryText = '';
+    let descriptionText = '';
 
-    console.log(`[IVR] Transcription: category="${categoryText}", description="${descriptionText}"`);
+    try {
+      [categoryText, descriptionText] = await Promise.all([
+        transcribeAudio(categoryBuffer),
+        transcribeAudio(nameBuffer),
+      ]);
+      console.log(`[IVR] Transcription: category="${categoryText}", description="${descriptionText}"`);
+    } catch (transcriptionError) {
+      const msg = transcriptionError instanceof Error ? transcriptionError.message : String(transcriptionError);
+      console.error(`[IVR] Transcription failed for session ${sessionId}:`, msg);
+
+      await prisma.ivrCallSession.update({
+        where: { id: sessionId },
+        data: {
+          status: 'failed',
+          errorMessage: `Transcription failed: ${msg}`.slice(0, 500),
+        },
+      });
+      return;
+    }
 
     const userCategories = await getUserExpenseCategories(userId, isHaredi);
     const matchedCategoryId = matchCategory(categoryText, userCategories);
+    const needsCategoryReview = matchedCategoryId === 'other';
+
+    if (needsCategoryReview) {
+      console.log(`[IVR] Category not matched for session ${sessionId}, marking for review`);
+    }
 
     const description = descriptionText || categoryText || 'הוצאה מ-IVR';
 
@@ -109,12 +137,13 @@ export async function processExpenseBackground(params: {
         category: matchedCategoryId,
         description,
         transactionId: transaction.id,
+        needsCategoryReview,
       },
     });
 
     console.log(
       `[IVR] Session ${sessionId} completed — tx ${transaction.id}, ` +
-      `category=${matchedCategoryId}, amount=${amount}`
+      `category=${matchedCategoryId}, amount=${amount}, needsReview=${needsCategoryReview}`
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

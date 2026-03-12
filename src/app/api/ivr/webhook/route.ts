@@ -16,7 +16,9 @@ function getParams(request: NextRequest): Record<string, string> {
   return Object.fromEntries(request.nextUrl.searchParams.entries());
 }
 
-async function getPostParams(request: NextRequest): Promise<Record<string, string>> {
+async function getPostParams(
+  request: NextRequest
+): Promise<Record<string, string>> {
   const contentType = request.headers.get("content-type") || "";
   if (contentType.includes("application/x-www-form-urlencoded")) {
     const text = await request.text();
@@ -26,6 +28,7 @@ async function getPostParams(request: NextRequest): Promise<Record<string, strin
 }
 
 async function handleIvr(request: NextRequest): Promise<NextResponse> {
+  const reqStart = Date.now();
   const params =
     request.method === "POST"
       ? await getPostParams(request)
@@ -46,89 +49,90 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
   try {
     // State 0: Ask for PIN
     if (apiPhone && !pin) {
-      console.log(`[IVR] State 0: Asking PIN from ${apiPhone}`);
+      console.log(`[IVR] State 0: Asking PIN from ${apiPhone} (${Date.now() - reqStart}ms)`);
       return respond("read=f-M1798=PIN,no,4,4,7,No,no,no,,,,,,");
     }
 
-    // State 1: Validate PIN & Ask for Category
+    // State 1: Ask for Category (instant -- no DB work here!)
     if (apiPhone && pin && !categoryAudio) {
-      console.log(`[IVR] State 1: Validating PIN for ${apiPhone}`);
-
-      const ivrPinRecord = await findUserByPhone(apiPhone);
-      if (!ivrPinRecord) {
-        console.log(`[IVR] Phone ${apiPhone} not found in DB`);
-        return respond("id_list_message=t-מספר הטלפון אינו מזוהה במערכת&hangup");
-      }
-
-      if (ivrPinRecord.phoneNumber !== apiPhone) {
-        console.log(`[IVR] Phone mismatch: caller=${apiPhone}, registered=${ivrPinRecord.phoneNumber}`);
-        return respond("id_list_message=t-מספר טלפון לא תואם&hangup");
-      }
-
-      const userId = ivrPinRecord.user.id;
-      const isValidPin = await validatePin(userId, pin);
-      if (!isValidPin) {
-        console.log(`[IVR] Invalid PIN for user ${userId}`);
-        return respond("id_list_message=t-קוד שגוי&hangup");
-      }
-
-      console.log(`[IVR] PIN valid for user ${userId}, asking for category`);
+      console.log(`[IVR] State 1: Asking category from ${apiPhone} (${Date.now() - reqStart}ms)`);
       return respond("read=f-M1799=CategoryAudio,no,record,,,no,,,,");
     }
 
-    // State 2: Ask for Amount
+    // State 2: Validate PIN (deferred from State 1) & Ask for Amount
     if (apiPhone && pin && categoryAudio && !amount) {
-      console.log(`[IVR] State 2: Asking amount, categoryAudio=${categoryAudio}`);
+      console.log(`[IVR] State 2: Validating PIN for ${apiPhone}`);
+      const dbStart = Date.now();
+
+      const ivrPinRecord = await findUserByPhone(apiPhone);
+      if (!ivrPinRecord || ivrPinRecord.phoneNumber !== apiPhone) {
+        console.log(`[IVR] Phone ${apiPhone} not found or mismatch (${Date.now() - dbStart}ms)`);
+        return respond("id_list_message=t-מספר הטלפון אינו מזוהה במערכת&hangup");
+      }
+
+      const isValidPin = await validatePin(ivrPinRecord.user.id, pin);
+      if (!isValidPin) {
+        console.log(`[IVR] Invalid PIN for user ${ivrPinRecord.user.id} (${Date.now() - dbStart}ms)`);
+        return respond("id_list_message=t-קוד שגוי&hangup");
+      }
+
+      console.log(`[IVR] State 2: PIN valid, asking amount (${Date.now() - dbStart}ms)`);
       return respond("read=f-M1802=Amount,no,7,1,7,No,no,no,,,,,,");
     }
 
     // State 3: Ask for Transaction Description
     if (apiPhone && pin && categoryAudio && amount && !nameAudio) {
-      console.log(`[IVR] State 3: Asking description, amount=${amount}`);
+      console.log(`[IVR] State 3: Asking description, amount=${amount} (${Date.now() - reqStart}ms)`);
       return respond("read=f-M1803=NameAudio,no,record,,,no,,,,");
     }
 
-    // State 4: Finish & Process Background Job
+    // State 4: Validate, Process & Finish
     if (apiPhone && pin && categoryAudio && amount && nameAudio) {
-      console.log(`[IVR] State 4: All data collected, triggering background processing`);
+      console.log(`[IVR] State 4: All data collected (${Date.now() - reqStart}ms)`);
+
+      const amountNum = parseFloat(amount);
+      if (isNaN(amountNum) || amountNum <= 0) {
+        console.log(`[IVR] Invalid amount: "${amount}"`);
+        return respond("id_list_message=t-סכום לא תקין&hangup");
+      }
 
       const ivrPinRecord = await findUserByPhone(apiPhone);
-      if (ivrPinRecord) {
-        const userId = ivrPinRecord.user.id;
-        const isHaredi = ivrPinRecord.user.signupSource === "prog";
-        const amountNum = parseFloat(amount);
+      if (!ivrPinRecord) {
+        console.error(`[IVR] State 4: User not found for phone ${apiPhone}`);
+        return respond("id_list_message=f-M1805&hangup");
+      }
 
-        console.log(
-          `[IVR] Processing: userId=${userId}, amount=${amountNum}, ` +
-            `category=${categoryAudio}, name=${nameAudio}`
-        );
+      const userId = ivrPinRecord.user.id;
+      const isHaredi = ivrPinRecord.user.signupSource === "prog";
 
-        try {
-          const session = await prisma.ivrCallSession.create({
-            data: {
-              userId,
-              phoneNumber: apiPhone,
-              amount: amountNum,
-              status: "pending",
-            },
-          });
+      console.log(
+        `[IVR] Processing: userId=${userId}, amount=${amountNum}, ` +
+          `category=${categoryAudio}, name=${nameAudio}`
+      );
 
-          processExpenseBackground({
-            sessionId: session.id,
+      try {
+        const session = await prisma.ivrCallSession.create({
+          data: {
             userId,
             phoneNumber: apiPhone,
             amount: amountNum,
-            categoryAudioUrl: categoryAudio,
-            nameAudioUrl: nameAudio,
-            isHaredi,
-          }).catch((error) => {
-            console.error("[IVR] Background processing failed:", error);
-          });
-        } catch (error) {
-          console.error("[IVR] Failed to create session:", error);
-        }
-      } else {
-        console.error(`[IVR] State 4: User not found for phone ${apiPhone}`);
+            status: "pending",
+          },
+        });
+
+        processExpenseBackground({
+          sessionId: session.id,
+          userId,
+          phoneNumber: apiPhone,
+          amount: amountNum,
+          categoryAudioUrl: categoryAudio,
+          nameAudioUrl: nameAudio,
+          isHaredi,
+        }).catch((error) => {
+          console.error("[IVR] Background processing failed:", error);
+        });
+      } catch (error) {
+        console.error("[IVR] Failed to create session:", error);
       }
 
       return respond("id_list_message=f-M1805&hangup");

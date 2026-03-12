@@ -816,10 +816,11 @@ model IvrCallSession {
   description   String?
   status        String   @default("pending") // pending | processing | completed | failed
   errorMessage  String?
-  transactionId String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactionId       String?
+  needsCategoryReview Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([phoneNumber])
   @@index([userId])
