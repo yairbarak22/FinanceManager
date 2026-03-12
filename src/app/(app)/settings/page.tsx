@@ -6,8 +6,6 @@ import {
   User,
   Loader2,
   Check,
-  Phone,
-  Shield,
   Save,
   UserCog,
   Users,
@@ -152,44 +150,7 @@ export default function SettingsPage() {
       currentMonth={currentMonth}
       showMonthFilter={false}
     >
-      <div className="max-w-3xl mx-auto">
-        {/* User Identity Header */}
-        <Card className="mb-6">
-          <div className="flex items-center gap-4">
-            {image ? (
-              <img
-                src={image}
-                alt=""
-                className="w-16 h-16 rounded-2xl ring-2 ring-[#F7F7F8] object-cover"
-                data-sl="mask"
-              />
-            ) : (
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, #C1DDFF 0%, #69ADFF 100%)' }}
-              >
-                <User className="w-7 h-7 text-white" />
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <SensitiveData
-                as="h2"
-                className="text-lg font-bold truncate"
-                style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-              >
-                {name || 'משתמש'}
-              </SensitiveData>
-              <SensitiveData
-                as="p"
-                className="text-sm truncate mt-0.5"
-                style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-              >
-                {email}
-              </SensitiveData>
-            </div>
-          </div>
-        </Card>
-
+      <div className="max-w-2xl mx-auto">
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
           {tabs.map((tab) => {
@@ -220,43 +181,75 @@ export default function SettingsPage() {
 
         {/* Profile Tab */}
         {activeTab === 'profile' && (
-          <div className="space-y-6 animate-fade-in">
-            {/* Loading State */}
+          <div className="animate-fade-in">
             {loading ? (
               <Card>
-                <div className="flex items-center justify-center py-16">
-                  <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#69ADFF' }} />
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="w-7 h-7 animate-spin" style={{ color: '#69ADFF' }} />
                 </div>
               </Card>
             ) : (
-              <>
-                {/* Profile Form */}
-                <Card>
-                  <div className="flex items-center gap-3 mb-6">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ background: 'rgba(105, 173, 255, 0.1)' }}
-                    >
-                      <UserCog className="w-5 h-5" style={{ color: '#69ADFF' }} strokeWidth={1.75} />
-                    </div>
-                    <div>
-                      <h3
-                        className="text-base font-bold"
+              <Card padding="none">
+                {/* --- User Identity --- */}
+                <div className="p-6 pb-0">
+                  <div className="flex items-center gap-4">
+                    {image ? (
+                      <img
+                        src={image}
+                        alt=""
+                        className="w-14 h-14 rounded-2xl ring-2 ring-[#F7F7F8] object-cover"
+                        data-sl="mask"
+                      />
+                    ) : (
+                      <div
+                        className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                        style={{ background: 'linear-gradient(135deg, #C1DDFF 0%, #69ADFF 100%)' }}
+                      >
+                        <User className="w-6 h-6 text-white" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <SensitiveData
+                        as="h2"
+                        className="text-lg font-bold truncate"
                         style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
                       >
-                        פרטים אישיים
-                      </h3>
-                      <p
-                        className="text-xs mt-0.5"
-                        style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                        {name || 'משתמש'}
+                      </SensitiveData>
+                      <SensitiveData
+                        as="p"
+                        className="text-sm truncate mt-0.5"
+                        style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
                       >
-                        המידע משמש לייעוץ פיננסי מותאם אישית
-                      </p>
+                        {email}
+                      </SensitiveData>
                     </div>
                   </div>
+                </div>
+
+                {/* --- Divider --- */}
+                <div className="mx-6 my-6" style={{ borderTop: '1px solid #F7F7F8' }} />
+
+                {/* --- Profile Form Section --- */}
+                <div className="px-6">
+                  <h3
+                    className="font-semibold"
+                    style={{
+                      fontSize: '1.125rem',
+                      color: '#303150',
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    }}
+                  >
+                    פרטים אישיים
+                  </h3>
+                  <p
+                    className="text-xs mt-1 mb-5"
+                    style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                  >
+                    המידע משמש לייעוץ פיננסי מותאם אישית
+                  </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {/* Age Range */}
                     <div>
                       <label className="label">טווח גיל</label>
                       <StyledSelect
@@ -267,7 +260,6 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    {/* Marital Status */}
                     <div>
                       <label className="label">מצב משפחתי</label>
                       <StyledSelect
@@ -278,7 +270,6 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    {/* Employment Type */}
                     <div>
                       <label className="label">סוג תעסוקה</label>
                       <StyledSelect
@@ -289,7 +280,6 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    {/* Monthly Income */}
                     <div>
                       <label className="label">טווח הכנסה חודשית</label>
                       <StyledSelect
@@ -300,7 +290,6 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    {/* Risk Tolerance */}
                     <div>
                       <label className="label">רמת סיבולת סיכון</label>
                       <StyledSelect
@@ -311,7 +300,6 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    {/* Children */}
                     <div>
                       <label className="label">ילדים</label>
                       <div
@@ -331,7 +319,7 @@ export default function SettingsPage() {
                                   : 0,
                               });
                             }}
-                            className="w-4.5 h-4.5 rounded-md border-[#E8E8ED] accent-[#69ADFF] cursor-pointer"
+                            className="w-4 h-4 rounded-md border-[#E8E8ED] accent-[#69ADFF] cursor-pointer"
                           />
                           <span
                             className="text-sm"
@@ -375,7 +363,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* Error Message */}
+                  {/* Error */}
                   {error && (
                     <div
                       className="mt-5 flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
@@ -390,19 +378,8 @@ export default function SettingsPage() {
                     </div>
                   )}
 
-                  {/* Save Button */}
-                  <div className="mt-6 flex items-center justify-between">
-                    <div>
-                      {saved && (
-                        <div
-                          className="flex items-center gap-2 text-sm animate-fade-in"
-                          style={{ color: '#0DBACC', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-                        >
-                          <Check className="w-4 h-4" strokeWidth={2.5} />
-                          <span>השינויים נשמרו בהצלחה</span>
-                        </div>
-                      )}
-                    </div>
+                  {/* Save */}
+                  <div className="mt-6 flex items-center gap-3">
                     <button
                       type="button"
                       onClick={handleSave}
@@ -418,87 +395,43 @@ export default function SettingsPage() {
                         </>
                       )}
                     </button>
-                  </div>
-                </Card>
-
-                {/* IVR Settings */}
-                <Card>
-                  <div className="flex items-center gap-3 mb-5">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ background: 'rgba(13, 186, 204, 0.1)' }}
-                    >
-                      <Phone className="w-5 h-5" style={{ color: '#0DBACC' }} strokeWidth={1.75} />
-                    </div>
-                    <div>
-                      <h3
-                        className="text-base font-bold"
-                        style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-                      >
-                        דיווח הוצאות בטלפון
-                      </h3>
-                      <p
-                        className="text-xs mt-0.5"
-                        style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-                      >
-                        הגדרת PIN לדיווח הוצאות דרך שיחה טלפונית
-                      </p>
-                    </div>
-                  </div>
-                  <IvrPinSettings />
-                </Card>
-
-                {/* Security Info */}
-                <Card>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ background: 'rgba(159, 127, 224, 0.1)' }}
-                    >
-                      <Shield className="w-5 h-5" style={{ color: '#9F7FE0' }} strokeWidth={1.75} />
-                    </div>
-                    <div className="flex-1">
-                      <h3
-                        className="text-base font-bold"
-                        style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-                      >
-                        אבטחה ופרטיות
-                      </h3>
-                      <p
-                        className="text-xs mt-0.5"
-                        style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-                      >
-                        הנתונים שלך מוצפנים ומאובטחים בסטנדרטים הגבוהים ביותר
-                      </p>
-                    </div>
-                  </div>
-                  <div
-                    className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3"
-                  >
-                    {[
-                      { label: 'הצפנת AES-256', desc: 'לנתונים רגישים' },
-                      { label: 'OAuth 2.0', desc: 'אימות מאובטח' },
-                      { label: 'CSRF Protection', desc: 'הגנה מפני תקיפות' },
-                    ].map((item) => (
+                    {saved && (
                       <div
-                        key={item.label}
-                        className="flex flex-col items-center text-center px-4 py-3 rounded-xl"
-                        style={{
-                          background: '#F7F7F8',
-                          fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-                        }}
+                        className="flex items-center gap-1.5 text-sm animate-fade-in"
+                        style={{ color: '#0DBACC', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
                       >
-                        <span className="text-xs font-semibold" style={{ color: '#303150' }}>
-                          {item.label}
-                        </span>
-                        <span className="text-[11px] mt-0.5" style={{ color: '#BDBDCB' }}>
-                          {item.desc}
-                        </span>
+                        <Check className="w-4 h-4" strokeWidth={2.5} />
+                        <span>נשמר</span>
                       </div>
-                    ))}
+                    )}
                   </div>
-                </Card>
-              </>
+                </div>
+
+                {/* --- Divider --- */}
+                <div className="mx-6 my-6" style={{ borderTop: '1px solid #F7F7F8' }} />
+
+                {/* --- Phone Reporting Section --- */}
+                <div className="px-6 pb-6">
+                  <h3
+                    className="font-semibold"
+                    style={{
+                      fontSize: '1.125rem',
+                      color: '#303150',
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    }}
+                  >
+                    דיווח הוצאות בטלפון
+                  </h3>
+                  <p
+                    className="text-xs mt-1 mb-5"
+                    style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                  >
+                    הגדרת קוד לדיווח הוצאות דרך שיחה טלפונית
+                  </p>
+
+                  <IvrPinSettings />
+                </div>
+              </Card>
             )}
           </div>
         )}
@@ -617,39 +550,32 @@ function AccountSettingsInline() {
   if (loading) {
     return (
       <Card>
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#69ADFF' }} />
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-7 h-7 animate-spin" style={{ color: '#69ADFF' }} />
         </div>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Members */}
-      <Card>
-        <div className="flex items-center gap-3 mb-5">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ background: 'rgba(105, 173, 255, 0.1)' }}
-          >
-            <Users className="w-5 h-5" style={{ color: '#69ADFF' }} strokeWidth={1.75} />
-          </div>
-          <div>
-            <h3
-              className="text-base font-bold"
-              style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-            >
-              חברי חשבון
-            </h3>
-            <p
-              className="text-xs mt-0.5"
-              style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-            >
-              ניהול משתמשים בחשבון המשותף
-            </p>
-          </div>
-        </div>
+    <Card padding="none">
+      <div className="p-6">
+        <h3
+          className="font-semibold"
+          style={{
+            fontSize: '1.125rem',
+            color: '#303150',
+            fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+          }}
+        >
+          חברי חשבון
+        </h3>
+        <p
+          className="text-xs mt-1 mb-5"
+          style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+        >
+          ניהול משתמשים בחשבון המשותף
+        </p>
 
         {error && (
           <div
@@ -733,28 +659,31 @@ function AccountSettingsInline() {
             </div>
           ))}
         </div>
+      </div>
 
-        {/* Invite */}
-        <div className="mt-5 pt-5" style={{ borderTop: '1px solid #F7F7F8' }}>
-          <label className="label">הזמנת משתמש חדש</label>
-          <div className="flex gap-2">
-            <input
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              placeholder="כתובת מייל"
-              className="input flex-1"
-              dir="ltr"
-            />
-            <button
-              type="button"
-              onClick={handleInvite}
-              disabled={inviting || !newEmail}
-              className="btn-primary whitespace-nowrap"
-            >
-              {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'הזמן'}
-            </button>
-          </div>
+      {/* Divider */}
+      <div className="mx-6" style={{ borderTop: '1px solid #F7F7F8' }} />
+
+      {/* Invite */}
+      <div className="p-6">
+        <label className="label">הזמנת משתמש חדש</label>
+        <div className="flex gap-2">
+          <input
+            type="email"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            placeholder="כתובת מייל"
+            className="input flex-1"
+            dir="ltr"
+          />
+          <button
+            type="button"
+            onClick={handleInvite}
+            disabled={inviting || !newEmail}
+            className="btn-primary whitespace-nowrap"
+          >
+            {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'הזמן'}
+          </button>
         </div>
 
         {/* Pending Invites */}
@@ -799,7 +728,7 @@ function AccountSettingsInline() {
             </div>
           </div>
         )}
-      </Card>
-    </div>
+      </div>
+    </Card>
   );
 }

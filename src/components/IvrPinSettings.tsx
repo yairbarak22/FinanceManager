@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Phone, Loader2, Check, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Check, Trash2, Eye, EyeOff, Save } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
 
 interface IvrPinData {
@@ -47,11 +47,11 @@ export default function IvrPinSettings() {
     setSuccess(null);
 
     if (!/^\d{4}$/.test(pin)) {
-      setError('PIN חייב להיות 4 ספרות');
+      setError('הקוד חייב להיות 4 ספרות');
       return;
     }
     if (pin !== confirmPin) {
-      setError('קודי ה-PIN אינם תואמים');
+      setError('הקודות אינם תואמים');
       return;
     }
     if (!phoneNumber || phoneNumber.length < 9) {
@@ -73,7 +73,7 @@ export default function IvrPinSettings() {
         return;
       }
 
-      setSuccess('PIN הוגדר בהצלחה');
+      setSuccess('הקוד הוגדר בהצלחה');
       setPin('');
       setConfirmPin('');
       await fetchPinStatus();
@@ -85,13 +85,13 @@ export default function IvrPinSettings() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('האם אתה בטוח שברצונך למחוק את ה-PIN?')) return;
+    if (!confirm('האם אתה בטוח שברצונך למחוק את הקוד?')) return;
 
     try {
       setSaving(true);
       const res = await apiFetch('/api/ivr/pin', { method: 'DELETE' });
       if (res.ok) {
-        setSuccess('PIN נמחק');
+        setSuccess('הקוד נמחק');
         setData({ hasPin: false, phoneNumber: null, createdAt: null, updatedAt: null });
         setPhoneNumber('');
       }
@@ -111,39 +111,59 @@ export default function IvrPinSettings() {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 mb-2">
-        <Phone className="w-4 h-4 text-indigo-500" />
-        <h3 className="text-sm font-semibold text-slate-700">דיווח הוצאות בטלפון (IVR)</h3>
-      </div>
-
-      <p className="text-xs text-slate-500">
+    <div className="space-y-4">
+      <p
+        className="text-xs"
+        style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+      >
         הגדר קוד סודי ומספר טלפון לדיווח הוצאות דרך שיחה טלפונית.
       </p>
 
       {data?.hasPin && (
-        <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg">
-          <Check className="w-4 h-4 text-green-600" />
-          <span className="text-xs text-green-700">
-            PIN מוגדר למספר {data.phoneNumber}
+        <div
+          className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
+          style={{ background: 'rgba(13, 186, 204, 0.08)', border: '1px solid rgba(13, 186, 204, 0.15)' }}
+        >
+          <Check className="w-4 h-4" style={{ color: '#0DBACC' }} strokeWidth={2.5} />
+          <span
+            className="text-xs font-medium"
+            style={{ color: '#0DBACC', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+          >
+            קוד מוגדר למספר {data.phoneNumber}
           </span>
         </div>
       )}
 
       {error && (
-        <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600">
+        <div
+          className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs"
+          style={{
+            background: 'rgba(241, 138, 181, 0.1)',
+            border: '1px solid rgba(241, 138, 181, 0.3)',
+            color: '#F18AB5',
+            fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+          }}
+        >
           {error}
         </div>
       )}
-      {success && (
-        <div className="p-2 bg-green-50 border border-green-200 rounded-lg text-xs text-green-600">
+      {success && !data?.hasPin && (
+        <div
+          className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs"
+          style={{
+            background: 'rgba(13, 186, 204, 0.08)',
+            border: '1px solid rgba(13, 186, 204, 0.15)',
+            color: '#0DBACC',
+            fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+          }}
+        >
           {success}
         </div>
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <div>
-          <label className="text-xs font-medium text-slate-600 block mb-1">מספר טלפון</label>
+          <label className="label">מספר טלפון</label>
           <input
             type="tel"
             value={phoneNumber}
@@ -156,8 +176,8 @@ export default function IvrPinSettings() {
         </div>
 
         <div>
-          <label className="text-xs font-medium text-slate-600 block mb-1">
-            {data?.hasPin ? 'קוד PIN חדש' : 'קוד PIN (4 ספרות)'}
+          <label className="label">
+            {data?.hasPin ? 'קוד חדש' : 'קוד (4 ספרות)'}
           </label>
           <div className="relative">
             <input
@@ -173,7 +193,10 @@ export default function IvrPinSettings() {
             <button
               type="button"
               onClick={() => setShowPin(!showPin)}
-              className="absolute start-2 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
+              className="absolute start-2 top-1/2 -translate-y-1/2 p-1 rounded-lg transition-colors"
+              style={{ color: '#BDBDCB' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = '#7E7F90'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = '#BDBDCB'; }}
             >
               {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
@@ -181,7 +204,7 @@ export default function IvrPinSettings() {
         </div>
 
         <div>
-          <label className="text-xs font-medium text-slate-600 block mb-1">אישור PIN</label>
+          <label className="label">אישור קוד</label>
           <input
             type={showPin ? 'text' : 'password'}
             value={confirmPin}
@@ -200,10 +223,16 @@ export default function IvrPinSettings() {
           type="button"
           onClick={handleSave}
           disabled={saving || !pin || !confirmPin || !phoneNumber}
-          className="btn-primary text-xs py-1.5 px-3 flex-1"
+          className="btn-primary flex items-center gap-2"
         >
-          {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-          {data?.hasPin ? 'עדכן PIN' : 'שמור PIN'}
+          {saving ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <>
+              {data?.hasPin ? 'עדכן קוד' : 'שמור קוד'}
+              <Save className="w-4 h-4" strokeWidth={1.75} />
+            </>
+          )}
         </button>
 
         {data?.hasPin && (
@@ -211,8 +240,11 @@ export default function IvrPinSettings() {
             type="button"
             onClick={handleDelete}
             disabled={saving}
-            className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-            title="מחק PIN"
+            className="p-2 rounded-lg transition-colors"
+            style={{ color: '#F18AB5' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(241, 138, 181, 0.1)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+            title="מחק קוד"
           >
             <Trash2 className="w-4 h-4" />
           </button>
