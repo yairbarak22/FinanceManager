@@ -33,8 +33,10 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
 
   const apiPhone = params.ApiPhone || null;
   const pin = params.PIN || null;
+  const confirmCat = params.ConfirmCat || null;
   const categoryAudio = params.CategoryAudio || null;
   const amount = params.Amount || null;
+  const confirmDesc = params.ConfirmDesc || null;
   const nameAudio = params.NameAudio || null;
   const hangup = params.hangup || null;
 
@@ -44,20 +46,24 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    // State 0: Ask for PIN
+    // State 0: Ask for PIN (DTMF, instant, no DB)
     if (apiPhone && !pin) {
       console.log(`[IVR] State 0: Asking PIN from ${apiPhone} (${Date.now() - reqStart}ms)`);
       return respond("read=f-M1798=PIN,no,4,4,7,No,no,no,,,,,,");
     }
 
-    // State 1: Ask for Category (instant -- no heavy imports needed)
-    if (apiPhone && pin && !categoryAudio) {
-      console.log(`[IVR] State 1: Asking category from ${apiPhone} (${Date.now() - reqStart}ms)`);
-      return respond("read=f-M1799=CategoryAudio,no,record,,,no,,,,");
+    // State 1: Play M1799 category instruction via DTMF (instant, no DB)
+    // User presses any key to confirm they are ready to record.
+    // This guarantees M1799 plays reliably (DTMF mode always plays the file).
+    if (apiPhone && pin && !confirmCat) {
+      console.log(`[IVR] State 1: Playing M1799 (DTMF) for ${apiPhone} (${Date.now() - reqStart}ms)`);
+      return respond("read=f-M1799=ConfirmCat,no,1,1,10,No,no,no,,,,,,");
     }
 
-    // State 2: Validate PIN (deferred from State 1) & Ask for Amount
-    if (apiPhone && pin && categoryAudio && !amount) {
+    // State 2: Validate PIN + start category recording (DB work here)
+    // M1799 already played in State 1 so user knows the instruction.
+    // Record mode may or may not replay the file -- doesn't matter.
+    if (apiPhone && pin && confirmCat && !categoryAudio) {
       console.log(`[IVR] State 2: Validating PIN for ${apiPhone}`);
       const dbStart = Date.now();
 
@@ -75,19 +81,33 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
         return respond("id_list_message=t-קוד שגוי&hangup");
       }
 
-      console.log(`[IVR] State 2: PIN valid, asking amount (${Date.now() - dbStart}ms)`);
+      console.log(`[IVR] State 2: PIN valid, starting category recording (${Date.now() - dbStart}ms)`);
+      return respond("read=f-M1799=CategoryAudio,no,record,,,no,,,,");
+    }
+
+    // State 3: Ask for Amount (DTMF, instant, no DB)
+    if (apiPhone && pin && confirmCat && categoryAudio && !amount) {
+      console.log(`[IVR] State 3: Asking amount (${Date.now() - reqStart}ms)`);
       return respond("read=f-M1802=Amount,no,7,1,7,No,no,no,,,,,,");
     }
 
-    // State 3: Ask for Transaction Description
-    if (apiPhone && pin && categoryAudio && amount && !nameAudio) {
-      console.log(`[IVR] State 3: Asking description, amount=${amount} (${Date.now() - reqStart}ms)`);
+    // State 4: Play M1803 description instruction via DTMF (instant, no DB)
+    // Same pattern as State 1: play the file reliably, user presses key.
+    if (apiPhone && pin && confirmCat && categoryAudio && amount && !confirmDesc) {
+      console.log(`[IVR] State 4: Playing M1803 (DTMF), amount=${amount} (${Date.now() - reqStart}ms)`);
+      return respond("read=f-M1803=ConfirmDesc,no,1,1,10,No,no,no,,,,,,");
+    }
+
+    // State 5: Start description recording (instant, no DB)
+    // M1803 already played in State 4.
+    if (apiPhone && pin && confirmCat && categoryAudio && amount && confirmDesc && !nameAudio) {
+      console.log(`[IVR] State 5: Starting description recording (${Date.now() - reqStart}ms)`);
       return respond("read=f-M1803=NameAudio,no,record,,,no,,,,");
     }
 
-    // State 4: Validate, Process & Finish
-    if (apiPhone && pin && categoryAudio && amount && nameAudio) {
-      console.log(`[IVR] State 4: All data collected (${Date.now() - reqStart}ms)`);
+    // State 6: Validate, Process & Finish (DB work)
+    if (apiPhone && pin && confirmCat && categoryAudio && amount && confirmDesc && nameAudio) {
+      console.log(`[IVR] State 6: All data collected (${Date.now() - reqStart}ms)`);
 
       const amountNum = parseFloat(amount);
       if (isNaN(amountNum) || amountNum <= 0) {
@@ -101,7 +121,7 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
 
       const ivrPinRecord = await findUserByPhone(apiPhone);
       if (!ivrPinRecord) {
-        console.error(`[IVR] State 4: User not found for phone ${apiPhone}`);
+        console.error(`[IVR] State 6: User not found for phone ${apiPhone}`);
         return respond("id_list_message=f-M1805&hangup");
       }
 
