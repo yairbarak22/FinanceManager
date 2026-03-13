@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import {
   expenseCategories,
   harediExpenseCategories,
+  incomeCategories,
 } from '@/lib/categories';
 
 const BCRYPT_ROUNDS = 10;
@@ -44,6 +45,26 @@ export async function getUserExpenseCategories(
 
   const customs = await prisma.customCategory.findMany({
     where: { userId, type: 'expense' },
+    select: { id: true, name: true },
+  });
+
+  for (const c of customs) {
+    defaults.push({ id: c.id, nameHe: c.name });
+  }
+
+  return defaults;
+}
+
+export async function getUserIncomeCategories(
+  userId: string
+): Promise<Array<{ id: string; nameHe: string }>> {
+  const defaults = incomeCategories.map((c) => ({
+    id: c.id,
+    nameHe: c.nameHe,
+  }));
+
+  const customs = await prisma.customCategory.findMany({
+    where: { userId, type: 'income' },
     select: { id: true, name: true },
   });
 

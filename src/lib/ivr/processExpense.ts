@@ -2,6 +2,7 @@ import OpenAI, { toFile } from 'openai';
 import { prisma } from '@/lib/prisma';
 import {
   getUserExpenseCategories,
+  getUserIncomeCategories,
   matchCategory,
 } from './helpers';
 
@@ -59,8 +60,9 @@ export async function processExpenseBackground(params: {
   categoryAudioUrl: string;
   nameAudioUrl: string;
   isHaredi: boolean;
+  transactionType?: 'expense' | 'income';
 }): Promise<void> {
-  const { sessionId, userId, amount, categoryAudioUrl, nameAudioUrl, isHaredi } = params;
+  const { sessionId, userId, amount, categoryAudioUrl, nameAudioUrl, isHaredi, transactionType = 'expense' } = params;
 
   console.log(`[IVR] Starting processing for session ${sessionId}, userId=${userId}`);
   console.log(`[IVR] Audio URLs received: category=${categoryAudioUrl}, name=${nameAudioUrl}`);
@@ -107,7 +109,9 @@ export async function processExpenseBackground(params: {
       return;
     }
 
-    const userCategories = await getUserExpenseCategories(userId, isHaredi);
+    const userCategories = transactionType === 'income'
+      ? await getUserIncomeCategories(userId)
+      : await getUserExpenseCategories(userId, isHaredi);
     const matchedCategoryId = matchCategory(categoryText, userCategories);
     const needsCategoryReview = matchedCategoryId === 'other';
 
@@ -115,12 +119,13 @@ export async function processExpenseBackground(params: {
       console.log(`[IVR] Category not matched for session ${sessionId}, marking for review`);
     }
 
-    const description = descriptionText || categoryText || 'הוצאה מ-IVR';
+    const fallbackDesc = transactionType === 'income' ? 'הכנסה מ-IVR' : 'הוצאה מ-IVR';
+    const description = descriptionText || categoryText || fallbackDesc;
 
     const transaction = await prisma.transaction.create({
       data: {
         userId,
-        type: 'expense',
+        type: transactionType,
         amount,
         currency: 'ILS',
         category: matchedCategoryId,

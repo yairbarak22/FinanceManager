@@ -34,6 +34,7 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
   const apiPhone = params.ApiPhone || null;
   const pin = params.PIN || null;
   const categoryAudio = params.CategoryAudio || null;
+  const txType = params.TxType || null;
   const amount = params.Amount || null;
   const nameAudio = params.NameAudio || null;
   const hangup = params.hangup || null;
@@ -51,16 +52,21 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
     }
 
     // State 1: Play M1799 + Record category (instant, no DB)
-    // Uses id_list_message chaining (prependToNextAction pattern from yemot-router2):
-    // id_list_message plays M1799 reliably, then read starts recording.
     if (apiPhone && pin && !categoryAudio) {
       console.log(`[IVR] State 1: Playing M1799 + recording category for ${apiPhone} (${Date.now() - reqStart}ms)`);
       return respond("id_list_message=f-M1799&read=f-M1799=CategoryAudio,no,record,,,no,,,,");
     }
 
-    // State 2: Validate PIN & Ask for Amount (DB work)
-    if (apiPhone && pin && categoryAudio && !amount) {
-      console.log(`[IVR] State 2: Validating PIN for ${apiPhone}`);
+    // State 2: Ask expense or income (DTMF, instant, no DB)
+    // 034.wav: "להוספת הוצאה חדשה הקש 1, להוספת הכנסה הקש 2"
+    if (apiPhone && pin && categoryAudio && !txType) {
+      console.log(`[IVR] State 2: Asking expense/income type for ${apiPhone} (${Date.now() - reqStart}ms)`);
+      return respond("read=f-034=TxType,no,1,1,7,No,no,no,,1.2,,,,");
+    }
+
+    // State 3: Validate PIN & Ask for Amount (DB work)
+    if (apiPhone && pin && categoryAudio && txType && !amount) {
+      console.log(`[IVR] State 3: Validating PIN for ${apiPhone}`);
       const dbStart = Date.now();
 
       const { findUserByPhone, validatePin } = await import("@/lib/ivr/helpers");
@@ -77,20 +83,20 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
         return respond("id_list_message=t-קוד שגוי&hangup");
       }
 
-      console.log(`[IVR] State 2: PIN valid, asking amount (${Date.now() - dbStart}ms)`);
+      console.log(`[IVR] State 3: PIN valid, asking amount (${Date.now() - dbStart}ms)`);
       return respond("read=f-M1802=Amount,no,7,1,7,No,no,no,,,,,,");
     }
 
-    // State 3: Play M1803 + Record description (instant, no DB)
-    // Same chaining pattern as State 1.
-    if (apiPhone && pin && categoryAudio && amount && !nameAudio) {
-      console.log(`[IVR] State 3: Playing M1803 + recording description, amount=${amount} (${Date.now() - reqStart}ms)`);
+    // State 4: Play M1803 + Record description (instant, no DB)
+    if (apiPhone && pin && categoryAudio && txType && amount && !nameAudio) {
+      console.log(`[IVR] State 4: Playing M1803 + recording description, amount=${amount} (${Date.now() - reqStart}ms)`);
       return respond("id_list_message=f-M1803&read=f-M1803=NameAudio,no,record,,,no,,,,");
     }
 
-    // State 4: Validate, Process & Finish (DB work)
-    if (apiPhone && pin && categoryAudio && amount && nameAudio) {
-      console.log(`[IVR] State 4: All data collected (${Date.now() - reqStart}ms)`);
+    // State 5: Validate, Process & Finish (DB work)
+    if (apiPhone && pin && categoryAudio && txType && amount && nameAudio) {
+      const transactionType = txType === "2" ? "income" : "expense";
+      console.log(`[IVR] State 5: All data collected, type=${transactionType} (${Date.now() - reqStart}ms)`);
 
       const amountNum = parseFloat(amount);
       if (isNaN(amountNum) || amountNum <= 0) {
@@ -104,7 +110,7 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
 
       const ivrPinRecord = await findUserByPhone(apiPhone);
       if (!ivrPinRecord) {
-        console.error(`[IVR] State 4: User not found for phone ${apiPhone}`);
+        console.error(`[IVR] State 5: User not found for phone ${apiPhone}`);
         return respond("id_list_message=f-M1805&hangup");
       }
 
@@ -112,7 +118,7 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
       const isHaredi = ivrPinRecord.user.signupSource === "prog";
 
       console.log(
-        `[IVR] Processing: userId=${userId}, amount=${amountNum}, ` +
+        `[IVR] Processing: userId=${userId}, type=${transactionType}, amount=${amountNum}, ` +
           `category=${categoryAudio}, name=${nameAudio}`
       );
 
@@ -134,6 +140,7 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
           categoryAudioUrl: categoryAudio,
           nameAudioUrl: nameAudio,
           isHaredi,
+          transactionType,
         }).catch((error) => {
           console.error("[IVR] Background processing failed:", error);
         });
