@@ -35,11 +35,15 @@ export async function GET() {
     const startOfTomorrow = new Date(startOfToday);
     startOfTomorrow.setUTCDate(startOfTomorrow.getUTCDate() + 1);
 
-    // Activity stats still need real-time queries
-    const [multipleLoginUsers, todayUniqueLogins, usersWithMultipleLoginDays] = await Promise.all([
+    // Activity + IVR stats need real-time queries
+    const [multipleLoginUsers, todayUniqueLogins, usersWithMultipleLoginDays, usersWithPhone, ivrExpenses] = await Promise.all([
       getMultipleLoginUsersCount(),
       getTodayUniqueLoginsCount(startOfToday, startOfTomorrow),
       getUsersWithMultipleLoginDaysCount(),
+      prisma.ivrPin.count(),
+      prisma.ivrCallSession.count({
+        where: { status: 'completed', transactionId: { not: null } },
+      }),
     ]);
 
     return NextResponse.json({
@@ -59,6 +63,10 @@ export async function GET() {
         multipleLoginUsers,
         todayUniqueLogins,
         usersWithMultipleLoginDays,
+      },
+      ivr: {
+        usersWithPhone,
+        expensesCount: ivrExpenses,
       },
     });
   } catch (error) {

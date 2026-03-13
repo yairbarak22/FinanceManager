@@ -19,7 +19,8 @@ import {
   ChevronDown,
   ChevronRight,
   ChevronLeft,
-  MousePointerClick
+  MousePointerClick,
+  Phone
 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
 import { SensitiveData } from '@/components/common/SensitiveData';
@@ -65,6 +66,10 @@ interface AdminStats {
     multipleLoginUsers: number;
     todayUniqueLogins: number;
     usersWithMultipleLoginDays: number;
+  };
+  ivr: {
+    usersWithPhone: number;
+    expensesCount: number;
   };
 }
 
@@ -341,6 +346,38 @@ export default function AdminUsersPage() {
                     <div>
                       <p className="text-xl sm:text-2xl font-bold text-teal-700">{(stats.activity.usersWithMultipleLoginDays ?? 0).toLocaleString()}</p>
                       <p className="text-xs sm:text-sm text-gray-500">משתמשים חוזרים (2+ ימים)</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* IVR Statistics */}
+            <div className="mb-4 sm:mb-6">
+              <h2 className="text-base sm:text-lg font-semibold text-[#303150] mb-2 sm:mb-3 flex items-center gap-2">
+                <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-[#69ADFF]" />
+                סטטיסטיקות IVR
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+                <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.ivr.usersWithPhone.toLocaleString()}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">משתמשים עם מספר טלפון</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Receipt className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.ivr.expensesCount.toLocaleString()}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">הוצאות דרך IVR</p>
                     </div>
                   </div>
                 </div>
