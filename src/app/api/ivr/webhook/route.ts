@@ -51,22 +51,9 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
       return respond("read=f-M1798=PIN,no,4,4,7,No,no,no,,,,,,");
     }
 
-    // State 1: Play M1799 + Record category (instant, no DB)
-    if (apiPhone && pin && !categoryAudio) {
-      console.log(`[IVR] State 1: Playing M1799 + recording category for ${apiPhone} (${Date.now() - reqStart}ms)`);
-      return respond("id_list_message=f-M1799&read=f-M1799=CategoryAudio,no,record,,,no,,,,");
-    }
-
-    // State 2: Ask expense or income (DTMF, instant, no DB)
-    // 034.wav: "להוספת הוצאה חדשה הקש 1, להוספת הכנסה הקש 2"
-    if (apiPhone && pin && categoryAudio && !txType) {
-      console.log(`[IVR] State 2: Asking expense/income type for ${apiPhone} (${Date.now() - reqStart}ms)`);
-      return respond("read=f-034=TxType,no,1,1,7,No,no,no,,1.2,,,,");
-    }
-
-    // State 3: Validate PIN & Ask for Amount (DB work)
-    if (apiPhone && pin && categoryAudio && txType && !amount) {
-      console.log(`[IVR] State 3: Validating PIN for ${apiPhone}`);
+    // State 1: Validate PIN + Ask expense/income (DB work, then DTMF)
+    if (apiPhone && pin && !txType) {
+      console.log(`[IVR] State 1: Validating PIN + asking expense/income for ${apiPhone}`);
       const dbStart = Date.now();
 
       const { findUserByPhone, validatePin } = await import("@/lib/ivr/helpers");
@@ -83,12 +70,24 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
         return respond("id_list_message=t-קוד שגוי&hangup");
       }
 
-      console.log(`[IVR] State 3: PIN valid, asking amount (${Date.now() - dbStart}ms)`);
+      console.log(`[IVR] State 1: PIN valid, asking expense/income type (${Date.now() - dbStart}ms)`);
+      return respond("read=f-034=TxType,no,1,1,7,No,no,no,,1.2,,,,");
+    }
+
+    // State 2: Play M1799 + Record category (instant, no DB)
+    if (apiPhone && pin && txType && !categoryAudio) {
+      console.log(`[IVR] State 2: Playing M1799 + recording category for ${apiPhone} (${Date.now() - reqStart}ms)`);
+      return respond("id_list_message=f-M1799&read=f-M1799=CategoryAudio,no,record,,,no,,,,");
+    }
+
+    // State 3: Ask for Amount (DTMF, instant, no DB)
+    if (apiPhone && pin && txType && categoryAudio && !amount) {
+      console.log(`[IVR] State 3: Asking amount (${Date.now() - reqStart}ms)`);
       return respond("read=f-M1802=Amount,no,7,1,7,No,no,no,,,,,,");
     }
 
     // State 4: Play M1803 + Record description (instant, no DB)
-    if (apiPhone && pin && categoryAudio && txType && amount && !nameAudio) {
+    if (apiPhone && pin && txType && categoryAudio && amount && !nameAudio) {
       console.log(`[IVR] State 4: Playing M1803 + recording description, amount=${amount} (${Date.now() - reqStart}ms)`);
       return respond("id_list_message=f-M1803&read=f-M1803=NameAudio,no,record,,,no,,,,");
     }
