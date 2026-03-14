@@ -351,3 +351,206 @@ In buttons containing both an icon and text, the icon must appear on the RIGHT s
 - Correct: `<button className="flex items-center gap-2">הוסף <Plus /></button>`
 - Wrong: `<button className="flex items-center gap-2"><Plus /> הוסף</button>`
 - This applies to all buttons across the entire app, including: primary, secondary, and any other buttons that combine text + icon.
+
+22. Monday.com-Style Data Tables & Zero-Friction UX Patterns
+Based on our Roadmap and CFO Dashboard implementations, these patterns create a premium, high-density data management experience.
+
+22.1 CSS Grid Tables (Never HTML `<table>`)
+- ALWAYS use CSS Grid (`grid grid-cols-[...]`) for data tables, never HTML `<table>` elements.
+- Define consistent column templates shared between headers and rows: `grid-cols-[40px_minmax(250px,_1fr)_120px_140px_140px]`
+- Headers: `bg-[#FAFAFA] border-b border-[#E8E8ED]` with `text-xs font-semibold text-[#7E7F90]`
+- Rows: White background (`bg-white`), subtle bottom border (`border-b border-gray-200`), hover state (`hover:bg-gray-50`)
+- Cell padding: `px-4 py-3` for headers, `px-4 py-2.5` for data cells
+- RTL: Use logical properties (`ps-`/`pe-` instead of `pl-`/`pr-`, `start-0` instead of `left-0`)
+
+22.2 Inline Editing (Zero-Click-to-Edit)
+- Clicking any editable cell (title, amount, date, category) immediately transforms it into an `<input>` or `<input type="date">`
+- No "Edit" button needed — the cell IS the input when clicked
+- Save on `blur` or `Enter` key press
+- Visual feedback: Subtle border highlight (`border-indigo-400`) when editing
+- Auto-focus: Use `useEffect` to focus the input when entering edit mode
+- Escape key: Cancel edit and restore original value
+
+22.3 Optimistic UI Updates with Rollback
+- Update local state IMMEDIATELY when user performs an action (create, update, delete)
+- Call server action in the background
+- On success: Replace temporary/optimistic data with real server response (especially IDs)
+- On failure: Rollback to previous state snapshot and show error toast
+- Pattern:
+```tsx
+const prevDataRef = useRef<DataType | null>(null);
+const saveSnapshot = () => { prevDataRef.current = JSON.parse(JSON.stringify(data)); };
+const rollback = (msg?: string) => {
+  if (prevDataRef.current) { setData(prevDataRef.current); prevDataRef.current = null; }
+  if (msg) showError(msg);
+};
+// In handler:
+saveSnapshot();
+setData(optimisticUpdate); // Immediate UI update
+try {
+  const serverResult = await serverAction();
+  setData(replaceOptimisticWithReal(serverResult)); // Sync IDs
+} catch { rollback('Error message'); }
+```
+
+22.4 Quick-Add Rows (The "Monday" Input Method)
+- At the bottom of each table, render a special row that looks like a normal row but displays "+ הוסף [item]" text
+- Clicking it activates an input in the title/name cell
+- Pressing Enter creates a new record with sensible defaults (e.g., `amount: 0`, `status: 'ACTIVE'`, `type: 'EXPENSE'`)
+- After creation, focus moves to the next editable cell (e.g., amount) for immediate data entry
+- Use `forwardRef` and `useImperativeHandle` to expose an `activate()` method for programmatic triggering
+- Pattern:
+```tsx
+const AddRow = forwardRef<{ activate: () => void }, Props>((props, ref) => {
+  const [isCreating, setIsCreating] = useState(false);
+  useImperativeHandle(ref, () => ({ activate: () => setIsCreating(true) }));
+  // ... render input when isCreating, otherwise "+ הוסף" text
+});
+```
+
+22.5 Portal-Based Dropdowns for Badges/Status
+- Status, Priority, Type badges are full-width rectangles within their grid cells
+- Clicking a badge opens a portal-based dropdown (using `createPortal` to `document.body`)
+- Dropdown positioned via `getBoundingClientRect()`: `top: rect.bottom + 6, left: rect.left`
+- Close on outside click (check both trigger ref and dropdown ref)
+- Close on scroll/resize to prevent stale positions
+- RTL-aware: Use `dir="rtl"` on dropdown container
+- Z-index: `z-[10000]` for dropdowns
+- Styling: `bg-white rounded-xl py-1 px-2` with `box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12)`
+
+22.6 Row Hover Actions (Delete, More Options)
+- Delete button (trash icon) appears ONLY on row hover (`group-hover:block` or conditional rendering)
+- Position: Far end of row (rightmost in RTL), subtle gray (`text-gray-400`) that turns red on hover (`hover:text-red-500`)
+- Use `group` class on row container and `group-hover:` utilities for child elements
+- Pattern:
+```tsx
+<div className="group ...">
+  {/* row content */}
+  <button className="opacity-0 group-hover:opacity-100 transition-opacity">
+    <Trash2 className="w-4 h-4 text-gray-400 hover:text-red-500" />
+  </button>
+</div>
+```
+
+22.7 Filtering & Sorting Toolbar
+- Position: Above data tables, below summary/KPI cards
+- Layout: Flex container with `gap-3`, RTL-aware (`dir="rtl"`)
+- Search Input: Full-width with `Search` icon, `max-w-[320px]`, placeholder "חפש..."
+- Filter Button: Shows active filter count badge when filters are applied
+- Sort Buttons: Separate sort controls per table (subscriptions vs transactions) with independent configs
+- Clear Filters: Subtle text button (X icon) that appears only when filters/search are active
+- All dropdowns use portal pattern (see 22.5)
+
+22.8 Memoized Data Processing (Filter → Sort)
+- Use `useMemo` hooks to process raw data through filters and sorting
+- Order of operations: 1) Search filter, 2) Type filter, 3) Status filter, 4) Category filter, 5) Sort
+- Dependencies: Include all filter/sort state variables and raw data arrays
+- Pattern:
+```tsx
+const filteredData = useMemo(() => {
+  let result = [...rawData];
+  // Apply filters in sequence
+  if (searchQuery) result = result.filter(/* search logic */);
+  if (filterType !== 'ALL') result = result.filter(/* type logic */);
+  if (filterStatus.length > 0) result = result.filter(/* status logic */);
+  // Sort
+  result.sort((a, b) => {
+    const dir = sortDirection === 'asc' ? 1 : -1;
+    switch (sortKey) {
+      case 'title': return a.title.localeCompare(b.title, 'he') * dir;
+      case 'amount': return (a.amount - b.amount) * dir;
+      case 'date': return (new Date(a.date).getTime() - new Date(b.date).getTime()) * dir;
+    }
+  });
+  return result;
+}, [rawData, searchQuery, filterType, filterStatus, sortKey, sortDirection]);
+```
+
+22.9 Badge Styling (Status, Priority, Type)
+- Full-width, full-height rectangles within their grid cells
+- Background color from constants (e.g., `STATUS_COLORS[status]`)
+- White text (`text-white`), centered (`flex items-center justify-center`)
+- Rounded corners: `rounded` (4px) or `rounded-md` (6px)
+- Font: `text-xs font-medium`
+- Pattern:
+```tsx
+<div className="w-full h-8 rounded flex items-center justify-center text-xs font-medium text-white" style={{ backgroundColor: COLORS[value] }}>
+  {LABELS[value]}
+</div>
+```
+
+22.10 Drag-and-Drop (For Kanban/Task Boards)
+- Use `@hello-pangea/dnd` (React DnD Kit successor)
+- Wrap board in `<DragDropContext onDragEnd={handleDragEnd}>`
+- Each group/column: `<Droppable droppableId={groupId}>`
+- Each draggable item: `<Draggable draggableId={itemId} index={index}>`
+- On drag end: Update `orderIndex` fields and call server action to persist
+- Visual feedback: Slight opacity change (`opacity-50`) while dragging
+- RTL: Ensure drag handles and visual feedback work correctly in RTL layout
+
+22.11 Independent Sort Configurations
+- When multiple tables exist on the same page (e.g., subscriptions and transactions), each table should have its own independent sort configuration
+- State: `sortConfigSubscriptions` and `sortConfigTransactions` with different keys (e.g., `nextBillingDate` vs `date`)
+- UI: Separate sort buttons/dropdowns per table
+- Defaults: Set sensible defaults (e.g., subscriptions by `nextBillingDate` asc, transactions by `date` desc)
+
+22.12 Filter State Management
+- Unified filter config object: `{ type: 'ALL' | 'INCOME' | 'EXPENSE', status: string[], category: string }`
+- Status array: Can include multiple statuses (checkboxes), unified across different record types
+- Category: Single selection (radio/pill buttons), dynamically extracted from data
+- Clear filters: Reset all filter state to defaults (`type: 'ALL', status: [], category: ''`)
+- Active filter count: Calculate as `(type !== 'ALL' ? 1 : 0) + status.length + (category ? 1 : 0)`
+
+22.13 View Toggle (Table vs Timeline/Gantt)
+- Use tabs or toggle buttons to switch between views
+- State: `currentView: 'table' | 'timeline'`
+- Both views share the same filtered/sorted data
+- Timeline view: Fixed-width, horizontally scrollable, shows exactly 3 months at a time
+- RTL timeline: Time flows right-to-left, use `right` and `width` percentages for positioning
+
+22.14 Empty States
+- When filtered data is empty, show centered message: "אין [items] להצגה" or "אין מספיק נתונים להצגת תרשים"
+- Styling: `text-sm text-[#7E7F90]`, centered with `flex items-center justify-center`
+- Height: Match typical row height (e.g., `py-8`)
+
+22.15 Date Formatting (Hebrew Locale)
+- Use `Intl.DateTimeFormat` with Hebrew locale: `new Intl.DateTimeFormat('he-IL', { ... }).format(date)`
+- Short format: `{ day: 'numeric', month: 'short' }` → "12 במרץ"
+- Long format: `{ day: 'numeric', month: 'long', year: 'numeric' }` → "12 במרץ 2024"
+- RTL: Dates automatically align correctly in RTL layout
+
+22.16 Currency Formatting
+- Use `Intl.NumberFormat` with ILS currency: `new Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS' }).format(amount)`
+- Or use project utility: `formatCurrencyAmount(amount, 'ILS')`
+- RTL: Currency symbol (₪) automatically positions correctly
+
+22.17 ID Synchronization (Critical for Optimistic UI)
+- When creating new records optimistically, assign a temporary ID (e.g., `temp_sub_${Date.now()}`)
+- After server action resolves, find the optimistic record by temporary ID and replace it with the real server response
+- This ensures immediate editing of newly created items works correctly
+- Pattern:
+```tsx
+const tempId = `temp_${Date.now()}`;
+setData([...data, { id: tempId, ...optimisticData }]);
+const serverResult = await createAction(data);
+setData(data.map(item => item.id === tempId ? serverResult : item));
+```
+
+22.18 High-Density Information Display
+- Tables should feel information-dense but not cramped
+- Use consistent spacing: `px-4 py-2.5` for cells, `gap-4` between columns visually
+- Font sizes: `text-sm` for data, `text-xs` for labels/badges
+- Truncate long text: `truncate` class with `min-w-0` on flex containers
+- Tooltips: Show full text on hover for truncated cells (optional enhancement)
+
+22.19 Real-Time Search (Debounced Optional)
+- Search input filters data in real-time as user types
+- For large datasets, consider debouncing (300ms) to avoid excessive filtering
+- Search across multiple fields: `title`, `category`, and optionally other relevant fields
+- Case-insensitive: Use `.toLowerCase()` for both query and data
+
+22.20 Grouped Data (Task Groups, Categories)
+- Visual grouping: Use colored left border (`border-r-4` in RTL) matching group color
+- Group headers: Sticky or visually distinct, show group title and column headers
+- Group summary: Optional progress bar or count at bottom of group
+- Collapsible groups: Optional feature to expand/collapse groups (future enhancement)
