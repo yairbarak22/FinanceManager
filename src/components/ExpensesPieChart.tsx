@@ -112,6 +112,11 @@ export default function ExpensesPieChart({
   const hasSelection = selectedCategory !== null;
   const config = MODE_CONFIG[mode];
 
+  const allCustomCategories = useMemo(
+    () => [...customExpenseCategories, ...customIncomeCategories],
+    [customExpenseCategories, customIncomeCategories]
+  );
+
   const { data: expenseData, total: totalExpenses } = useMemo(() => {
     const byCategory = transactions
       .filter((t) => t.type === 'expense')
@@ -130,7 +135,7 @@ export default function ExpensesPieChart({
 
     const chartData = Object.entries(byCategory)
       .map(([category, amount]) => {
-        const categoryInfo = getCategoryInfo(category, 'expense', customExpenseCategories);
+        const categoryInfo = getCategoryInfo(category, 'expense', allCustomCategories);
         return {
           id: category,
           name: categoryInfo?.nameHe || category,
@@ -142,7 +147,7 @@ export default function ExpensesPieChart({
       .sort((a, b) => b.value - a.value);
 
     return { data: chartData, total };
-  }, [transactions, recurringExpenses, customExpenseCategories]);
+  }, [transactions, recurringExpenses, allCustomCategories]);
 
   const { data: incomeData, total: totalIncome } = useMemo(() => {
     const byCategory = transactions
@@ -162,7 +167,7 @@ export default function ExpensesPieChart({
 
     const chartData = Object.entries(byCategory)
       .map(([category, amount]) => {
-        const categoryInfo = getCategoryInfo(category, 'income', customIncomeCategories);
+        const categoryInfo = getCategoryInfo(category, 'income', allCustomCategories);
         return {
           id: category,
           name: categoryInfo?.nameHe || category,
@@ -174,7 +179,7 @@ export default function ExpensesPieChart({
       .sort((a, b) => b.value - a.value);
 
     return { data: chartData, total };
-  }, [transactions, recurringExpenses, customIncomeCategories]);
+  }, [transactions, recurringExpenses, allCustomCategories]);
 
   const data = mode === 'expense' ? expenseData : incomeData;
   const total = mode === 'expense' ? totalExpenses : totalIncome;

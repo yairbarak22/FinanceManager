@@ -529,20 +529,24 @@ export default function DashboardPage() {
     saveBehavior: 'once' | 'always' | 'alwaysAsk',
     newDescription?: string,
     newAmount?: number,
-    updateExistingTransactions?: boolean
+    updateExistingTransactions?: boolean,
+    newDate?: string
   ) => {
     try {
       // Build update body with all changed fields
       const updateBody: Record<string, unknown> = { 
         category: newCategory,
         updateExistingTransactions,
-        merchantName, // Pass merchant name for batch update
+        merchantName,
       };
       if (newDescription !== undefined) {
         updateBody.description = newDescription;
       }
       if (newAmount !== undefined) {
         updateBody.amount = newAmount;
+      }
+      if (newDate !== undefined) {
+        updateBody.date = newDate;
       }
 
       const res = await apiFetch(`/api/transactions/${transactionId}`, {
@@ -862,7 +866,56 @@ export default function DashboardPage() {
           </section>
 
           {/* ============================================
-              SECTION 3: Portfolio Details (פירוט תיק)
+              SECTION 3: Activity (פעילות)
+              ============================================ */}
+          <section>
+            <SectionHeader
+              title="פעילות"
+              subtitle="פילוח הוצאות והכנסות ועסקאות אחרונות"
+            />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card padding="sm" className="h-[500px] flex flex-col lg:col-span-1">
+                <ExpensesPieChart 
+                  transactions={monthFilteredTransactions} 
+                  recurringExpenses={recurringTransactions}
+                  customExpenseCategories={expenseCats.custom}
+                  customIncomeCategories={incomeCats.custom}
+                  selectedCategory={selectedCategory}
+                  onCategoryClick={handleCategoryClick}
+                />
+              </Card>
+
+              <Card ref={transactionsRef} padding="sm" className="h-[500px] flex flex-col lg:col-span-2">
+                <RecentTransactions
+                  transactions={filteredTransactions}
+                  onDelete={handleDeleteTransaction}
+                  onDeleteMultiple={handleDeleteMultipleTransactions}
+                  onUpdateTransaction={handleUpdateTransaction}
+                  onBulkUpdateCategory={handleBulkUpdateCategory}
+                  onNewTransaction={() => setIsTransactionModalOpen(true)}
+                  onSaveTransaction={async (data) => {
+                    await handleAddTransaction({
+                      type: data.type,
+                      amount: data.amount,
+                      category: data.category,
+                      description: data.description,
+                      date: data.date,
+                    });
+                  }}
+                  onImport={() => router.push('/workspace')}
+                  customExpenseCategories={expenseCats.custom}
+                  customIncomeCategories={incomeCats.custom}
+                  selectedCategory={selectedCategory}
+                  onClearCategoryFilter={handleClearCategoryFilter}
+                  onOpenMaaserCalculator={() => setIsMaaserModalOpen(true)}
+                />
+              </Card>
+            </div>
+          </section>
+
+          {/* ============================================
+              SECTION 4: Portfolio Details (פירוט תיק)
               ============================================ */}
           <section>
             <SectionHeader
@@ -951,7 +1004,7 @@ export default function DashboardPage() {
           </section>
 
           {/* ============================================
-              SECTION 4: Monthly Trends (מגמות חודשיות)
+              SECTION 5: Monthly Trends (מגמות חודשיות)
               ============================================ */}
           <section>
             <SectionHeader
@@ -971,46 +1024,6 @@ export default function DashboardPage() {
                   totalBalance={totalBalance}
                 />
               </div>
-            </div>
-          </section>
-
-          {/* ============================================
-              SECTION 5: Activity (פעילות)
-              ============================================ */}
-          <section>
-            <SectionHeader
-              title="פעילות"
-              subtitle="פילוח הוצאות והכנסות ועסקאות אחרונות"
-            />
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card padding="sm" className="h-[500px] flex flex-col lg:col-span-1">
-                <ExpensesPieChart 
-                  transactions={monthFilteredTransactions} 
-                  recurringExpenses={recurringTransactions}
-                  customExpenseCategories={expenseCats.custom}
-                  customIncomeCategories={incomeCats.custom}
-                  selectedCategory={selectedCategory}
-                  onCategoryClick={handleCategoryClick}
-                />
-              </Card>
-
-              <Card ref={transactionsRef} padding="sm" className="h-[500px] flex flex-col lg:col-span-2">
-                <RecentTransactions
-                  transactions={filteredTransactions}
-                  onDelete={handleDeleteTransaction}
-                  onDeleteMultiple={handleDeleteMultipleTransactions}
-                  onUpdateTransaction={handleUpdateTransaction}
-                  onBulkUpdateCategory={handleBulkUpdateCategory}
-                  onNewTransaction={() => setIsTransactionModalOpen(true)}
-                  onImport={() => router.push('/workspace')}
-                  customExpenseCategories={expenseCats.custom}
-                  customIncomeCategories={incomeCats.custom}
-                  selectedCategory={selectedCategory}
-                  onClearCategoryFilter={handleClearCategoryFilter}
-                  onOpenMaaserCalculator={() => setIsMaaserModalOpen(true)}
-                />
-              </Card>
             </div>
           </section>
         </div>
