@@ -145,6 +145,100 @@ export const copyBudgetSchema = z.object({
   toYear: z.number().int().min(2020).max(2100),
 });
 
+// --- Admin Roadmap schemas ---
+
+const adminTaskStatusEnum = z.enum(['WORKING_ON_IT', 'DONE', 'STUCK', 'NOT_STARTED']);
+const adminTaskPriorityEnum = z.enum(['HIGH', 'MEDIUM', 'LOW']);
+
+export const createAdminTaskSchema = z.object({
+  groupId: z.string().cuid('Invalid group ID'),
+  title: shortString(200),
+  ownerId: z.string().max(100).optional(),
+  status: adminTaskStatusEnum.default('NOT_STARTED'),
+  priority: adminTaskPriorityEnum.default('MEDIUM'),
+  startDate: isoDate.optional(),
+  endDate: isoDate.optional(),
+});
+
+export const updateAdminTaskSchema = z.object({
+  groupId: z.string().cuid('Invalid group ID').optional(),
+  title: shortString(200).optional(),
+  ownerId: z.string().max(100).nullable().optional(),
+  status: adminTaskStatusEnum.optional(),
+  priority: adminTaskPriorityEnum.optional(),
+  startDate: isoDate.nullable().optional(),
+  endDate: isoDate.nullable().optional(),
+  orderIndex: z.number().int().min(0).optional(),
+});
+
+export const createAdminTaskGroupSchema = z.object({
+  title: shortString(100),
+  color: z.string().max(30),
+});
+
+export const updateAdminTaskGroupSchema = z.object({
+  title: shortString(100).optional(),
+  color: z.string().max(30).optional(),
+});
+
+export const updateAdminTaskGroupOrderSchema = z.array(
+  z.object({
+    id: z.string().cuid('Invalid group ID'),
+    orderIndex: z.number().int().min(0),
+  })
+).min(1, 'At least one group required');
+
+// --- CFO Dashboard schemas ---
+
+const financeRecordTypeEnum = z.enum(['INCOME', 'EXPENSE']);
+const billingCycleEnum = z.enum(['MONTHLY', 'YEARLY']);
+const subscriptionStatusEnum = z.enum(['ACTIVE', 'REVIEWING', 'CANCELED']);
+const transactionStatusEnum = z.enum(['COMPLETED', 'PENDING']);
+
+export const createAdminSubscriptionSchema = z.object({
+  title: shortString(200),
+  type: financeRecordTypeEnum,
+  amount: nonNegativeAmount,
+  currency: currencyCode,
+  category: z.string().trim().max(100).optional().default(''),
+  billingCycle: billingCycleEnum,
+  nextBillingDate: isoDate,
+  status: subscriptionStatusEnum.default('ACTIVE'),
+});
+
+export const updateAdminSubscriptionSchema = z.object({
+  title: shortString(200).optional(),
+  type: financeRecordTypeEnum.optional(),
+  amount: nonNegativeAmount.optional(),
+  currency: currencyCode.optional(),
+  category: z.string().trim().max(100).optional(),
+  billingCycle: billingCycleEnum.optional(),
+  nextBillingDate: isoDate.optional(),
+  status: subscriptionStatusEnum.optional(),
+});
+
+export const createAdminTransactionSchema = z.object({
+  title: shortString(200),
+  type: financeRecordTypeEnum,
+  amount: nonNegativeAmount,
+  currency: currencyCode,
+  category: z.string().trim().max(100).optional().default(''),
+  date: isoDate,
+  status: transactionStatusEnum.default('COMPLETED'),
+  receiptUrl: z.string().url('Invalid URL').max(500).optional(),
+});
+
+export const updateAdminTransactionSchema = z.object({
+  title: shortString(200).optional(),
+  type: financeRecordTypeEnum.optional(),
+  amount: nonNegativeAmount.optional(),
+  currency: currencyCode.optional(),
+  category: z.string().trim().max(100).optional(),
+  date: isoDate.optional(),
+  status: transactionStatusEnum.optional(),
+  receiptUrl: z.string().url('Invalid URL').max(500).nullable().optional(),
+});
+
 // --- IVR schemas ---
 
 export const ivrPinSchema = z.object({

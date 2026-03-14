@@ -890,3 +890,111 @@ model GlobalStats {
   todayDate          String   @default("")
   updatedAt          DateTime @updatedAt
 }
+
+// ============================================
+// ADMIN ROADMAP - Internal task management (isolated from user data)
+// ============================================
+enum AdminTaskStatus {
+  WORKING_ON_IT
+  DONE
+  STUCK
+  NOT_STARTED
+}
+
+enum AdminTaskPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+// ADMIN CFO DASHBOARD - Business finance tracking (isolated from user data)
+// ============================================
+enum FinanceRecordType {
+  INCOME
+  EXPENSE
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  REVIEWING
+  CANCELED
+}
+
+enum TransactionStatus {
+  COMPLETED
+  PENDING
+}
+
+model AdminTaskGroup {
+  id         String      @id @default(cuid())
+  title      String
+  color      String
+  orderIndex Int
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  tasks      AdminTask[]
+
+  @@index([orderIndex])
+}
+
+model AdminTask {
+  id         String            @id @default(cuid())
+  groupId    String
+  title      String
+  ownerId    String?
+  status     AdminTaskStatus   @default(NOT_STARTED)
+  priority   AdminTaskPriority @default(MEDIUM)
+  startDate  DateTime?
+  endDate    DateTime?
+  orderIndex Int
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  group      AdminTaskGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@index([groupId, orderIndex])
+  @@index([status])
+  @@index([priority])
+}
+
+model AdminSubscription {
+  id              String             @id @default(cuid())
+  title           String
+  type            FinanceRecordType
+  amount          Float
+  currency        String             @default("ILS")
+  category        String
+  billingCycle    BillingCycle
+  nextBillingDate DateTime
+  status          SubscriptionStatus @default(ACTIVE)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([type])
+  @@index([status])
+  @@index([billingCycle])
+  @@index([nextBillingDate])
+}
+
+model AdminTransaction {
+  id         String            @id @default(cuid())
+  title      String
+  type       FinanceRecordType
+  amount     Float
+  currency   String            @default("ILS")
+  category   String
+  date       DateTime
+  status     TransactionStatus @default(COMPLETED)
+  receiptUrl String?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  @@index([type])
+  @@index([status])
+  @@index([date])
+}

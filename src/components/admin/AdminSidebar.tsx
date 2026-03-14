@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { Users, Mail, Shield, LogOut, ChevronDown, BarChart3, FileText, List, LayoutDashboard, Inbox, X, Timer, FolderOpen } from 'lucide-react';
+import { Users, Mail, Shield, LogOut, ChevronDown, BarChart3, FileText, List, LayoutDashboard, Inbox, X, Timer, FolderOpen, Map, DollarSign } from 'lucide-react';
 import { SensitiveData } from '@/components/common/SensitiveData';
 
 interface SubNavItem {
@@ -28,6 +28,18 @@ const navItems: NavItem[] = [
     label: 'משתמשים',
     path: '/admin/users',
     icon: Users,
+  },
+  {
+    id: 'roadmap',
+    label: 'מפת דרכים',
+    path: '/admin/roadmap',
+    icon: Map,
+  },
+  {
+    id: 'cfo',
+    label: 'ניהול פיננסי',
+    path: '/admin/cfo',
+    icon: DollarSign,
   },
   {
     id: 'marketing',
