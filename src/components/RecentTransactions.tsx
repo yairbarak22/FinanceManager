@@ -283,7 +283,11 @@ export default function RecentTransactions({
   }, []);
 
   const saveCellEdit = useCallback(async (tx: Transaction) => {
-    if (!editingCell || !onUpdateTransaction) { cancelCellEdit(); return; }
+    if (!editingCell || !onUpdateTransaction) {
+      setCellSaving(false);
+      cancelCellEdit();
+      return;
+    }
     const { field } = editingCell;
     let hasChanges = false;
     let newDesc: string | undefined;
@@ -307,13 +311,18 @@ export default function RecentTransactions({
       }
     }
 
-    if (!hasChanges) { cancelCellEdit(); return; }
+    if (!hasChanges) {
+      setCellSaving(false);
+      cancelCellEdit();
+      return;
+    }
 
     setCellSaving(true);
     try {
       await onUpdateTransaction(tx.id, tx.category, tx.description, 'once', newDesc, newAmt, undefined, newDate);
-    } catch { /* parent handles error */ }
-    setCellSaving(false);
+    } catch { /* parent handles error */ } finally {
+      setCellSaving(false);
+    }
     cancelCellEdit();
   }, [editingCell, editValue, onUpdateTransaction, cancelCellEdit]);
 
@@ -650,25 +659,34 @@ export default function RecentTransactions({
         {/* Description cell */}
         <div className="px-3 py-2.5 min-w-0">
           {isEditingDesc ? (
-            <input
-              type="text"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onBlur={() => saveCellEdit(transaction)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') saveCellEdit(transaction);
-                if (e.key === 'Escape') cancelCellEdit();
-              }}
-              autoFocus
-              disabled={cellSaving}
-              className="w-full px-2 py-1 text-sm rounded-lg outline-none transition-all"
-              style={{
-                fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-                color: '#303150',
-                border: '1.5px solid #69ADFF',
-                boxShadow: '0 0 0 3px rgba(105, 173, 255, 0.15)',
-              }}
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onBlur={() => saveCellEdit(transaction)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveCellEdit(transaction);
+                  if (e.key === 'Escape') cancelCellEdit();
+                }}
+                autoFocus
+                disabled={cellSaving}
+                className="w-full px-2 py-1 text-sm rounded-lg outline-none transition-all"
+                style={{
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                  color: '#303150',
+                  border: '1.5px solid #69ADFF',
+                  boxShadow: '0 0 0 3px rgba(105, 173, 255, 0.15)',
+                  opacity: cellSaving ? 0.6 : 1,
+                  cursor: cellSaving ? 'wait' : 'text',
+                }}
+              />
+              {cellSaving && (
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <Loader2 className="w-3 h-3 animate-spin" style={{ color: '#69ADFF' }} strokeWidth={2} />
+                </div>
+              )}
+            </div>
           ) : (
             <SensitiveData
               as="p"
@@ -684,25 +702,34 @@ export default function RecentTransactions({
         {/* Date cell */}
         <div className="px-3 py-2.5">
           {isEditingDate ? (
-            <input
-              type="date"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onBlur={() => saveCellEdit(transaction)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') saveCellEdit(transaction);
-                if (e.key === 'Escape') cancelCellEdit();
-              }}
-              autoFocus
-              disabled={cellSaving}
-              className="w-full px-1.5 py-1 text-xs rounded-lg outline-none transition-all"
-              style={{
-                fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-                color: '#303150',
-                border: '1.5px solid #69ADFF',
-                boxShadow: '0 0 0 3px rgba(105, 173, 255, 0.15)',
-              }}
-            />
+            <div className="relative">
+              <input
+                type="date"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onBlur={() => saveCellEdit(transaction)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveCellEdit(transaction);
+                  if (e.key === 'Escape') cancelCellEdit();
+                }}
+                autoFocus
+                disabled={cellSaving}
+                className="w-full px-1.5 py-1 text-xs rounded-lg outline-none transition-all"
+                style={{
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                  color: '#303150',
+                  border: '1.5px solid #69ADFF',
+                  boxShadow: '0 0 0 3px rgba(105, 173, 255, 0.15)',
+                  opacity: cellSaving ? 0.6 : 1,
+                  cursor: cellSaving ? 'wait' : 'text',
+                }}
+              />
+              {cellSaving && (
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <Loader2 className="w-3 h-3 animate-spin" style={{ color: '#69ADFF' }} strokeWidth={2} />
+                </div>
+              )}
+            </div>
           ) : (
             <span
               className="text-xs whitespace-nowrap cursor-pointer hover:text-[#69ADFF] transition-colors"
@@ -717,28 +744,37 @@ export default function RecentTransactions({
         {/* Amount cell */}
         <div className="px-3 py-2.5">
           {isEditingAmt ? (
-            <input
-              type="number"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onBlur={() => saveCellEdit(transaction)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') saveCellEdit(transaction);
-                if (e.key === 'Escape') cancelCellEdit();
-              }}
-              autoFocus
-              disabled={cellSaving}
-              min="0"
-              step="0.01"
-              className="w-full px-2 py-1 text-sm rounded-lg outline-none transition-all"
-              style={{
-                fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-                color: '#303150',
-                border: '1.5px solid #69ADFF',
-                boxShadow: '0 0 0 3px rgba(105, 173, 255, 0.15)',
-              }}
-              dir="ltr"
-            />
+            <div className="relative">
+              <input
+                type="number"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onBlur={() => saveCellEdit(transaction)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveCellEdit(transaction);
+                  if (e.key === 'Escape') cancelCellEdit();
+                }}
+                autoFocus
+                disabled={cellSaving}
+                min="0"
+                step="0.01"
+                className="w-full px-2 py-1 text-sm rounded-lg outline-none transition-all"
+                style={{
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                  color: '#303150',
+                  border: '1.5px solid #69ADFF',
+                  boxShadow: '0 0 0 3px rgba(105, 173, 255, 0.15)',
+                  opacity: cellSaving ? 0.6 : 1,
+                  cursor: cellSaving ? 'wait' : 'text',
+                }}
+                dir="ltr"
+              />
+              {cellSaving && (
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <Loader2 className="w-3 h-3 animate-spin" style={{ color: '#69ADFF' }} strokeWidth={2} />
+                </div>
+              )}
+            </div>
           ) : (
             <SensitiveData
               as="span"
