@@ -909,6 +909,8 @@ export default function DashboardPage() {
                   selectedCategory={selectedCategory}
                   onClearCategoryFilter={handleClearCategoryFilter}
                   onOpenMaaserCalculator={() => setIsMaaserModalOpen(true)}
+                  onAddCategory={addCustomCategory}
+                  onDeleteCategory={handleDeleteCategory}
                 />
               </Card>
             </div>

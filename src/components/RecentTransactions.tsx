@@ -56,6 +56,8 @@ interface RecentTransactionsProps {
   selectedCategory?: string | null;
   onClearCategoryFilter?: () => void;
   onOpenMaaserCalculator?: () => void;
+  onAddCategory?: (name: string, type: 'expense' | 'income') => Promise<CategoryInfo | void>;
+  onDeleteCategory?: (categoryId: string, type: 'expense' | 'income') => Promise<void>;
 }
 
 export default function RecentTransactions({
@@ -72,6 +74,8 @@ export default function RecentTransactions({
   selectedCategory = null,
   onClearCategoryFilter,
   onOpenMaaserCalculator,
+  onAddCategory,
+  onDeleteCategory,
 }: RecentTransactionsProps) {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; description: string }>({
@@ -118,6 +122,10 @@ export default function RecentTransactions({
     position: { top: number; left: number };
   } | null>(null);
   const inlineCatDropdownRef = useRef<HTMLDivElement>(null);
+  const [categorySearchQuery, setCategorySearchQuery] = useState('');
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [addingCategorySaving, setAddingCategorySaving] = useState(false);
+  const categorySearchInputRef = useRef<HTMLInputElement>(null);
 
   // Category save-behavior popover
   const [categorySavePopover, setCategorySavePopover] = useState<{
@@ -207,6 +215,16 @@ export default function RecentTransactions({
     return () => document.removeEventListener('mousedown', handle);
   }, [categoryEditTarget]);
 
+  // Auto-focus category search input & reset state when dropdown opens/closes
+  useEffect(() => {
+    if (categoryEditTarget) {
+      setTimeout(() => categorySearchInputRef.current?.focus(), 50);
+    } else {
+      setCategorySearchQuery('');
+      setNewCategoryName('');
+    }
+  }, [categoryEditTarget]);
+
   // Close save-behavior popover on click outside
   useEffect(() => {
     if (!categorySavePopover) return;
@@ -220,10 +238,12 @@ export default function RecentTransactions({
     return () => document.removeEventListener('mousedown', handle);
   }, [categorySavePopover]);
 
-  // Close category dropdown & save popover on any scroll
+  // Close category dropdown & save popover on any scroll (except inside the dropdown itself)
   useEffect(() => {
     if (!categoryEditTarget && !categorySavePopover && !isQuickAddCategoryOpen && !isQuickAddTypeOpen) return;
-    const close = () => {
+    const close = (e: Event) => {
+      if (inlineCatDropdownRef.current?.contains(e.target as Node)) return;
+      if (quickAddCategoryDropdownRef.current?.contains(e.target as Node)) return;
       setCategoryEditTarget(null);
       setCategorySavePopover(null);
       setIsQuickAddCategoryOpen(false);
@@ -349,6 +369,50 @@ export default function RecentTransactions({
     setPopoverSaving(false);
   }, [categoryEditTarget]);
 
+  const handleAddNewCategory = useCallback(async (nameOverride?: string) => {
+    if (!categoryEditTarget || !onAddCategory) return;
+    const trimmedName = (nameOverride ?? newCategoryName).trim();
+    if (!trimmedName) return;
+
+    const categoryType = categoryEditTarget.transaction.type as 'expense' | 'income';
+    setAddingCategorySaving(true);
+    try {
+      const created = await onAddCategory(trimmedName, categoryType);
+      if (created) {
+        handleCategorySelected(created.id);
+        setNewCategoryName('');
+      }
+    } catch {
+      /* parent handles error */
+    } finally {
+      setAddingCategorySaving(false);
+    }
+  }, [categoryEditTarget, onAddCategory, newCategoryName, handleCategorySelected]);
+
+  const getCategoriesForType = useCallback((type: string): CategoryInfo[] => {
+    const defaults = type === 'income' ? incomeCategories : expenseCategories;
+    const customs = type === 'income' ? customIncomeCategories : customExpenseCategories;
+    return [...customs, ...defaults];
+  }, [customExpenseCategories, customIncomeCategories]);
+
+  const handleDeleteCategoryInline = useCallback(async (categoryId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!categoryEditTarget || !onDeleteCategory) return;
+
+    const categoryType = categoryEditTarget.transaction.type as 'expense' | 'income';
+    const allCats = getCategoriesForType(categoryType);
+    const cat = allCats.find(c => c.id === categoryId);
+    if (!cat) return;
+
+    if (!cat.isCustom) return;
+
+    try {
+      await onDeleteCategory(categoryId, categoryType);
+    } catch {
+      /* parent handles error */
+    }
+  }, [categoryEditTarget, onDeleteCategory, getCategoriesForType]);
+
   const handleConfirmCategoryChange = useCallback(async () => {
     if (!categorySavePopover || !onUpdateTransaction) return;
     setPopoverSaving(true);
@@ -404,10 +468,11 @@ export default function RecentTransactions({
 
   /* ──────────────────────── Shared Helpers ──────────────────────── */
 
-  const getCategoriesForType = (type: string): CategoryInfo[] => {
-    if (type === 'income') return [...incomeCategories, ...customIncomeCategories];
-    return [...expenseCategories, ...customExpenseCategories];
-  };
+  const filterCategoriesBySearch = useCallback((categories: CategoryInfo[], query: string): CategoryInfo[] => {
+    if (!query.trim()) return categories;
+    const lowerQuery = query.toLowerCase();
+    return categories.filter(cat => cat.nameHe.toLowerCase().includes(lowerQuery));
+  }, []);
 
   /* ──────────────────────── Memoised Data ──────────────────────── */
 
@@ -1366,42 +1431,157 @@ export default function RecentTransactions({
 
       {/* Inline Category Dropdown (portal) */}
       {categoryEditTarget && createPortal(
-        <div
-          ref={inlineCatDropdownRef}
-          className="fixed rounded-xl shadow-lg max-h-64 overflow-y-auto scrollbar-ghost"
-          style={{
-            top: categoryEditTarget.position.top,
-            left: categoryEditTarget.position.left,
-            minWidth: 220,
-            zIndex: 10000,
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E8E8ED',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.12)',
-          }}
-          dir="rtl"
-        >
-          <div className="p-1.5">
-            {getCategoriesForType(categoryEditTarget.transaction.type).map((cat) => {
-              const isCurrentCat = cat.id === categoryEditTarget.transaction.category;
-              const CatIcon = cat.icon;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => handleCategorySelected(cat.id)}
-                  className={cn('w-full px-3 py-2 rounded-lg text-sm text-right flex items-center gap-2 transition-colors', isCurrentCat ? 'bg-[#C1DDFF]/40' : 'hover:bg-[#F7F7F8]')}
-                  style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif', color: '#303150' }}
-                >
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: cat.bgColor, color: cat.color }}>
-                    {CatIcon && <CatIcon className="w-3 h-3" strokeWidth={1.75} />}
+        (() => {
+          const allCats = getCategoriesForType(categoryEditTarget.transaction.type);
+          const filtered = filterCategoriesBySearch(allCats, categorySearchQuery);
+          return (
+            <div
+              ref={inlineCatDropdownRef}
+              className="fixed rounded-xl shadow-lg"
+              style={{
+                top: categoryEditTarget.position.top,
+                left: categoryEditTarget.position.left,
+                minWidth: 280,
+                maxWidth: 320,
+                zIndex: 10000,
+                backgroundColor: '#FFFFFF',
+                border: '1px solid #E8E8ED',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.12)',
+                maxHeight: '400px',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+              dir="rtl"
+            >
+              {/* Search */}
+              <div className="p-2 flex-shrink-0" style={{ borderBottom: '1px solid #F7F7F8' }}>
+                <div className="relative">
+                  <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: '#BDBDCB' }} strokeWidth={1.75} />
+                  <input
+                    ref={categorySearchInputRef}
+                    type="text"
+                    value={categorySearchQuery}
+                    onChange={(e) => setCategorySearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setCategoryEditTarget(null);
+                      } else if (e.key === 'Enter' && filtered.length === 1) {
+                        handleCategorySelected(filtered[0].id);
+                      }
+                    }}
+                    placeholder="חפש קטגוריה..."
+                    className="w-full pe-8 ps-3 py-2 rounded-lg text-sm outline-none transition-colors"
+                    style={{
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                      color: '#303150',
+                      border: '1.5px solid #E8E8ED',
+                      backgroundColor: '#FAFAFA',
+                    }}
+                    onFocus={(e) => { e.target.style.borderColor = '#69ADFF'; e.target.style.backgroundColor = '#FFFFFF'; }}
+                    onBlur={(e) => { e.target.style.borderColor = '#E8E8ED'; e.target.style.backgroundColor = '#FAFAFA'; }}
+                  />
+                </div>
+              </div>
+
+              {/* Add New Category - Always Visible, Above List */}
+              {onAddCategory && (
+                <div className="flex-shrink-0 p-2" style={{ borderBottom: '1px solid #F7F7F8' }}>
+                  <div className="relative flex items-center gap-1.5">
+                    <div className="relative flex-1">
+                      <Plus className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: '#BDBDCB' }} strokeWidth={1.75} />
+                      <input
+                        type="text"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && newCategoryName.trim()) {
+                            handleAddNewCategory();
+                          } else if (e.key === 'Escape') {
+                            setNewCategoryName('');
+                          }
+                        }}
+                        placeholder="הוסף קטגוריה חדשה..."
+                        disabled={addingCategorySaving}
+                        className="w-full pe-8 ps-3 py-2 rounded-lg text-sm outline-none transition-colors"
+                        style={{
+                          fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                          color: '#303150',
+                          border: '1.5px solid #E8E8ED',
+                          backgroundColor: '#FAFAFA',
+                          opacity: addingCategorySaving ? 0.6 : 1,
+                          cursor: addingCategorySaving ? 'wait' : 'text',
+                        }}
+                        onFocus={(e) => { e.target.style.borderColor = '#69ADFF'; e.target.style.backgroundColor = '#FFFFFF'; }}
+                        onBlur={(e) => { e.target.style.borderColor = '#E8E8ED'; e.target.style.backgroundColor = '#FAFAFA'; }}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { if (newCategoryName.trim()) handleAddNewCategory(); }}
+                      disabled={!newCategoryName.trim() || addingCategorySaving}
+                      className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                      style={{
+                        backgroundColor: newCategoryName.trim() ? '#69ADFF' : '#F0F0F4',
+                        color: newCategoryName.trim() ? '#FFFFFF' : '#BDBDCB',
+                        cursor: !newCategoryName.trim() || addingCategorySaving ? 'default' : 'pointer',
+                        opacity: addingCategorySaving ? 0.6 : 1,
+                      }}
+                    >
+                      {addingCategorySaving ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={2} />
+                      ) : (
+                        <Plus className="w-4 h-4" strokeWidth={2} />
+                      )}
+                    </button>
                   </div>
-                  <span className="flex-1 text-right font-medium">{cat.nameHe}</span>
-                  {isCurrentCat && <Check className="w-4 h-4 text-[#69ADFF]" strokeWidth={2} />}
-                </button>
-              );
-            })}
-          </div>
-        </div>,
+                </div>
+              )}
+
+              {/* Categories List */}
+              <div className="overflow-y-auto scrollbar-ghost flex-1" style={{ maxHeight: '280px' }}>
+                <div className="p-1.5">
+                  {filtered.length === 0 ? (
+                    <div className="px-3 py-4 text-center text-sm" style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
+                      לא נמצאו קטגוריות
+                    </div>
+                  ) : (
+                    filtered.map((cat) => {
+                      const isCurrentCat = cat.id === categoryEditTarget.transaction.category;
+                      const CatIcon = cat.icon;
+                      return (
+                        <div key={cat.id} className="group relative">
+                          <button
+                            type="button"
+                            onClick={() => handleCategorySelected(cat.id)}
+                            className={cn('w-full px-3 py-2 rounded-lg text-sm text-right flex items-center gap-2 transition-colors', isCurrentCat ? 'bg-[#C1DDFF]/40' : 'hover:bg-[#F7F7F8]')}
+                            style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif', color: '#303150' }}
+                          >
+                            <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: cat.bgColor, color: cat.color }}>
+                              {CatIcon && <CatIcon className="w-3 h-3" strokeWidth={1.75} />}
+                            </div>
+                            <span className="flex-1 text-right font-medium">{cat.nameHe}</span>
+                            {isCurrentCat && <Check className="w-4 h-4 text-[#69ADFF]" strokeWidth={2} />}
+                          </button>
+                          {cat.isCustom && onDeleteCategory && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteCategoryInline(cat.id, e)}
+                              className="absolute left-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50"
+                              style={{ color: '#F18AB5' }}
+                              title="מחק קטגוריה"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" strokeWidth={1.75} />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })(),
         document.body,
       )}
 
@@ -1520,7 +1700,7 @@ export default function RecentTransactions({
             <div className="space-y-1.5">
               {([
                 { value: 'once' as const, label: 'רק הפעם', desc: 'העדכון יחול רק על עסקה זו' },
-                { value: 'always' as const, label: 'זכור לפעמים הבאות', desc: 'עסקאות עתידיות יסווגו אוטומטית' },
+                { value: 'always' as const, label: 'זכור לפעמים הבאות', desc: 'עסקאות עתידיות יסווגו אוטומטית. גם בייבוא קבצים, בית העסק יסווג אוטומטית לקטגוריה זו' },
                 { value: 'alwaysAsk' as const, label: 'תמיד תשאל אותי', desc: 'לעסקים גנריים כמו ביט, PayBox' },
               ] as const).map(opt => (
                 <label

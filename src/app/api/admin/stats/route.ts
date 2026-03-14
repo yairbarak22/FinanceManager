@@ -35,8 +35,8 @@ export async function GET() {
     const startOfTomorrow = new Date(startOfToday);
     startOfTomorrow.setUTCDate(startOfTomorrow.getUTCDate() + 1);
 
-    // Activity + IVR stats need real-time queries
-    const [multipleLoginUsers, todayUniqueLogins, usersWithMultipleLoginDays, usersWithPhone, ivrExpenses] = await Promise.all([
+    // Activity + IVR + budgets/goals stats need real-time queries
+    const [multipleLoginUsers, todayUniqueLogins, usersWithMultipleLoginDays, usersWithPhone, ivrExpenses, budgetsCount, goalsCount] = await Promise.all([
       getMultipleLoginUsersCount(),
       getTodayUniqueLoginsCount(startOfToday, startOfTomorrow),
       getUsersWithMultipleLoginDaysCount(),
@@ -44,6 +44,8 @@ export async function GET() {
       prisma.ivrCallSession.count({
         where: { status: 'completed', transactionId: { not: null } },
       }),
+      prisma.budget.count(),
+      prisma.financialGoal.count(),
     ]);
 
     return NextResponse.json({
@@ -52,6 +54,8 @@ export async function GET() {
         liabilities: stats.totalLiabilities,
         transactions: stats.totalTransactions,
         users: stats.totalUsers,
+        budgets: budgetsCount,
+        goals: goalsCount,
       },
       today: {
         assets: stats.todayAssets,

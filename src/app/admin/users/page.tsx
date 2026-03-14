@@ -20,7 +20,9 @@ import {
   ChevronRight,
   ChevronLeft,
   MousePointerClick,
-  Phone
+  Phone,
+  Target,
+  Flag,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
 import { SensitiveData } from '@/components/common/SensitiveData';
@@ -55,6 +57,8 @@ interface AdminStats {
     liabilities: number;
     transactions: number;
     users: number;
+    budgets: number;
+    goals: number;
   };
   today: {
     assets: number;
@@ -239,7 +243,7 @@ export default function AdminUsersPage() {
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-[#69ADFF]" />
               סה״כ במערכת
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-4">
                 <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-100 shadow-sm">
                   <div className="flex items-center gap-2 sm:gap-3">
                     <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -270,6 +274,28 @@ export default function AdminUsersPage() {
                     <div>
                       <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.totals.transactions.toLocaleString()}</p>
                       <p className="text-xs sm:text-sm text-gray-500">עסקאות</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Target className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.totals.budgets.toLocaleString()}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">תקציבים</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl p-3 sm:p-4 border border-gray-100 shadow-sm">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Flag className="w-4 h-4 sm:w-5 sm:h-5 text-teal-600" />
+                    </div>
+                    <div>
+                      <p className="text-xl sm:text-2xl font-bold text-gray-900">{stats.totals.goals.toLocaleString()}</p>
+                      <p className="text-xs sm:text-sm text-gray-500">יעדים</p>
                     </div>
                   </div>
                 </div>
