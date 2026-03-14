@@ -156,13 +156,13 @@ const CompoundInterest = forwardRef<HTMLDivElement, CompoundInterestProps>(({ id
                       boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
                       direction: 'rtl',
                     }}
-                    formatter={(value: any, name: string) => {
-                      if (value === undefined || typeof value !== 'number') return ['', ''];
+                    formatter={((value: any, name: any) => {
+                      if (typeof value !== 'number') return ['', ''];
                       return [
                         formatCurrency(value),
                         name === 'principal' ? 'הכסף שלך' : name === 'interest' ? 'רווחים' : 'סה"כ'
                       ];
-                    }}
+                    }) as any}
                     labelFormatter={(label) => `שנה ${label}`}
                   />
                   <Area
