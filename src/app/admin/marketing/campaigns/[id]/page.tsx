@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Edit, Send, Trash2, AlertCircle, Calendar, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Edit, Send, Trash2, AlertCircle, Calendar, RefreshCw, BarChart3 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
 import CampaignStats from '@/components/admin/CampaignStats';
 import EmailPreview from '@/components/admin/EmailPreview';
@@ -247,6 +247,15 @@ export default function CampaignDetailPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 mr-10 sm:mr-0">
+          {(campaign.status === 'COMPLETED' || campaign.status === 'SENDING') && (
+            <button
+              onClick={() => router.push(`/admin/marketing/campaigns/${campaignId}/report`)}
+              className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#0DBACC] text-white rounded-xl hover:bg-[#0AA8B9] transition-colors text-xs sm:text-sm"
+            >
+              <BarChart3 className="w-4 h-4" />
+              דוח מפורט
+            </button>
+          )}
           {campaign.status === 'DRAFT' && (
             <>
               <button

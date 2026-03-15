@@ -256,3 +256,69 @@ export const sendFriendInviteSchema = z.object({
     .email('כתובת אימייל לא תקינה')
     .max(320, 'כתובת אימייל ארוכה מדי'),
 });
+
+// --- Marketing Campaign schemas ---
+
+const campaignVariantSchema = z.object({
+  id: z.enum(['A', 'B'], { message: 'Variant ID must be A or B' }),
+  subject: z.string().trim().min(1, 'Subject is required').max(200, 'Subject too long'),
+  htmlContent: z.string().min(1, 'Content is required'),
+});
+
+export type CampaignVariant = z.infer<typeof campaignVariantSchema>;
+
+export const createCampaignSchema = z.object({
+  name: shortString(200),
+  subject: shortString(200),
+  content: z.string().min(1, 'Content is required'),
+  segmentFilter: z.any(),
+  scheduledAt: isoDate.nullable().optional(),
+  isAbTest: z.boolean().optional().default(false),
+  abTestPercentage: z.number().int().min(1).max(50).optional(),
+  abTestDurationHours: z.number().int().min(1).max(72).optional(),
+  abTestWinningMetric: z.enum(['OPEN_RATE', 'CLICK_RATE']).optional(),
+  variants: z.array(campaignVariantSchema).min(2).max(2).optional(),
+}).refine((data) => {
+  if (data.isAbTest) {
+    return (
+      data.abTestPercentage !== undefined &&
+      data.abTestDurationHours !== undefined &&
+      data.abTestWinningMetric !== undefined &&
+      data.variants !== undefined &&
+      data.variants.length === 2
+    );
+  }
+  return true;
+}, {
+  message: 'A/B test campaigns require percentage, duration, winning metric, and exactly 2 variants',
+  path: ['isAbTest'],
+});
+
+export const updateCampaignSchema = z.object({
+  name: shortString(200).optional(),
+  subject: shortString(200).optional(),
+  content: z.string().min(1, 'Content is required').optional(),
+  segmentFilter: z.any().optional(),
+  scheduledAt: isoDate.nullable().optional(),
+  status: z.enum(['DRAFT', 'SCHEDULED', 'SENDING', 'TESTING', 'COMPLETED', 'CANCELLED']).optional(),
+  isAbTest: z.boolean().optional(),
+  abTestPercentage: z.number().int().min(1).max(50).optional(),
+  abTestDurationHours: z.number().int().min(1).max(72).optional(),
+  abTestWinningMetric: z.enum(['OPEN_RATE', 'CLICK_RATE']).optional(),
+  variants: z.array(campaignVariantSchema).min(2).max(2).optional(),
+  winningVariantId: z.enum(['A', 'B']).optional(),
+}).refine((data) => {
+  if (data.isAbTest === true) {
+    return (
+      data.abTestPercentage !== undefined &&
+      data.abTestDurationHours !== undefined &&
+      data.abTestWinningMetric !== undefined &&
+      data.variants !== undefined &&
+      data.variants.length === 2
+    );
+  }
+  return true;
+}, {
+  message: 'A/B test campaigns require percentage, duration, winning metric, and exactly 2 variants',
+  path: ['isAbTest'],
+});

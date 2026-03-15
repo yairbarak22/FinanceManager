@@ -121,9 +121,18 @@ const MAX_RETRIES = 3;
  */
 async function sendSingleWithRetry(
   resend: Resend,
-  email: { to: string; subject: string; html: string; campaignId: string; userId: string | null },
+  email: { to: string; subject: string; html: string; campaignId: string; userId: string | null; variantId?: string },
 ): Promise<{ email: string; id?: string; error?: string }> {
   const htmlWithUnsubscribe = addUnsubscribeLink(email.html, email.userId, email.to);
+
+  const tags: Array<{ name: string; value: string }> = [
+    { name: 'campaign_id', value: email.campaignId },
+    { name: 'user_id', value: email.userId || 'external' },
+    { name: 'type', value: 'marketing' },
+  ];
+  if (email.variantId) {
+    tags.push({ name: 'variant_id', value: email.variantId });
+  }
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
@@ -132,11 +141,7 @@ async function sendSingleWithRetry(
         to: email.to,
         subject: email.subject,
         html: htmlWithUnsubscribe,
-        tags: [
-          { name: 'campaign_id', value: email.campaignId },
-          { name: 'user_id', value: email.userId || 'external' },
-          { name: 'type', value: 'marketing' },
-        ],
+        tags,
       });
 
       if (result.error) {
@@ -172,7 +177,7 @@ async function sendSingleWithRetry(
  * Send batch emails with rate limiting (max 2 req/s to stay within Resend limits)
  */
 export async function sendBatchEmails(
-  emails: Array<{ to: string; subject: string; html: string; campaignId: string; userId: string | null }>
+  emails: Array<{ to: string; subject: string; html: string; campaignId: string; userId: string | null; variantId?: string }>
 ): Promise<Array<{ email: string; id?: string; error?: string }>> {
   const resend = getResend();
   if (!resend) {

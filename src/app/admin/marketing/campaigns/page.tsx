@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Mail, Plus, Eye, Send, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Mail, Plus, Eye, Send, AlertCircle, RefreshCw, CheckCircle2, BarChart3 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
 
 interface Campaign {
@@ -378,6 +378,15 @@ export default function CampaignsPage() {
                             >
                               <Eye className="w-4 h-4 text-[#7E7F90]" />
                             </button>
+                            {(campaign.status === 'COMPLETED' || campaign.status === 'SENDING') && (
+                              <button
+                                onClick={() => router.push(`/admin/marketing/campaigns/${campaign.id}/report`)}
+                                className="p-2 hover:bg-[#F7F7F8] rounded-lg transition-colors"
+                                title="דוח מפורט"
+                              >
+                                <BarChart3 className="w-4 h-4 text-[#0DBACC]" />
+                              </button>
+                            )}
                             {campaign.status === 'DRAFT' && (
                               <button
                                 onClick={() => handleSendCampaign(campaign.id, campaign.name)}

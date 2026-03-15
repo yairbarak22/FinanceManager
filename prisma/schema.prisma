@@ -39,7 +39,7 @@ model User {
   marketingEvents       MarketingEvent[]       // Marketing email events
   createdCampaigns      MarketingCampaign[]    // Campaigns created by this admin
   createdTemplates      EmailTemplate[]        // Templates created by this admin
-  emailSequences        EmailSequence[]        // Drip email sequences
+  workflowEnrollments   WorkflowEnrollment[]   // DAG workflow enrollments
   maaserPreferences     MaaserPreference[]     // Maaser/Chomesh income preferences
   maaserExpenseOffsets  MaaserExpenseOffset[]  // Expense-to-income category offsets for maaser
   quarantinedFiles      QuarantinedFile[]      // Files in quarantine awaiting review
@@ -540,6 +540,7 @@ enum CampaignStatus {
   DRAFT
   SCHEDULED
   SENDING
+  TESTING
   COMPLETED
   CANCELLED
 }
@@ -566,6 +567,12 @@ model MarketingCampaign {
   clickCount      Int               @default(0)
   bounceCount     Int               @default(0)
   complaintCount  Int               @default(0)
+  isAbTest              Boolean           @default(false)
+  abTestPercentage      Int?              // Total test group size (e.g., 20 = 10% A + 10% B)
+  abTestDurationHours   Int?              // Hours to wait before deciding winner
+  abTestWinningMetric   String?           // 'OPEN_RATE' or 'CLICK_RATE'
+  variants              Json?             // [{id:'A',subject:'...',htmlContent:'...'}, {id:'B',...}]
+  winningVariantId      String?           // 'A' or 'B' after test completes
   scheduledAt     DateTime?         // Scheduled send time
   startedAt       DateTime?         // When sending started
   completedAt     DateTime?         // When sending completed
@@ -617,33 +624,59 @@ model EmailTemplate {
 }
 
 // ============================================
-// EMAIL SEQUENCES - Drip campaign automation
+// AUTOMATION WORKFLOWS - DAG-based email automation
 // ============================================
-enum EmailSequenceStatus {
+enum WorkflowStatus {
+  DRAFT
   ACTIVE
   PAUSED
+}
+
+enum TriggerType {
+  MANUAL
+  USER_REGISTERED
+  ADDED_TO_GROUP
+}
+
+enum EnrollmentStatus {
+  ACTIVE
   COMPLETED
   CANCELLED
 }
 
-model EmailSequence {
-  id               String              @id @default(cuid())
-  userId           String
-  sequenceType     String              // e.g. 'course-intro'
-  currentStep      Int                 @default(0)
-  status           EmailSequenceStatus @default(ACTIVE)
-  sendHour         Int                 @default(10) // Hour in Israel time (0-23) to send emails
-  subjectOverrides Json?               // { "0": "custom subject", "1": "..." } per step
-  contentOverrides Json?               // { "0": "<html>...", "1": "<html>..." } per step
-  startedAt        DateTime            @default(now())
-  lastSentAt       DateTime?
-  nextSendAt       DateTime?
-  completedAt      DateTime?
-  user             User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+model AutomationWorkflow {
+  id          String              @id @default(uuid())
+  name        String
+  status      WorkflowStatus      @default(DRAFT)
+  triggerType TriggerType         @default(MANUAL)
+  nodes       Json                // React Flow nodes array: [{ id, type, data, position }]
+  edges       Json                // React Flow edges array: [{ id, source, target, type }]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  enrollments WorkflowEnrollment[]
 
-  @@unique([userId, sequenceType])
-  @@index([status, nextSendAt])
+  @@index([status])
+  @@index([triggerType])
+  @@index([createdAt])
+}
+
+model WorkflowEnrollment {
+  id            String              @id @default(uuid())
+  workflowId    String
+  userId        String
+  status        EnrollmentStatus    @default(ACTIVE)
+  currentNodeId String?
+  nextWakeupAt  DateTime?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  workflow      AutomationWorkflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workflowId, userId])
+  @@index([workflowId])
   @@index([userId])
+  @@index([status, nextWakeupAt])
+  @@index([currentNodeId])
 }
 
 // ============================================

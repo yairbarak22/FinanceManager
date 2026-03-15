@@ -40,7 +40,7 @@ export async function POST(
     }
 
     // Check status
-    if (campaign.status === 'SENDING') {
+    if (campaign.status === 'SENDING' || campaign.status === 'TESTING') {
       return NextResponse.json(
         { error: 'הקמפיין כבר בשליחה' },
         { status: 400 }
@@ -120,7 +120,142 @@ export async function POST(
       );
     }
 
-    // Update campaign status to SENDING
+    // ─── A/B Test Path ────────────────────────────────────────────────
+    if (campaign.isAbTest) {
+      if (!campaign.abTestPercentage || !campaign.abTestDurationHours || !campaign.abTestWinningMetric || !campaign.variants) {
+        return NextResponse.json(
+          { error: 'שדות A/B חסרים בקמפיין' },
+          { status: 400 }
+        );
+      }
+
+      const variants = campaign.variants as Array<{ id: string; subject: string; htmlContent: string }>;
+      if (variants.length !== 2) {
+        return NextResponse.json(
+          { error: 'בדיקת A/B דורשת בדיוק 2 וריאנטים' },
+          { status: 400 }
+        );
+      }
+
+      const testGroupSize = Math.floor(users.length * (campaign.abTestPercentage / 100));
+      if (testGroupSize < 2) {
+        return NextResponse.json(
+          { error: 'קבוצת הבדיקה קטנה מדי. נדרשים לפחות 2 משתמשים.' },
+          { status: 400 }
+        );
+      }
+
+      // Fisher-Yates shuffle for fair randomization
+      const shuffledUsers = [...users];
+      for (let i = shuffledUsers.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledUsers[i], shuffledUsers[j]] = [shuffledUsers[j], shuffledUsers[i]];
+      }
+
+      const halfTest = Math.floor(testGroupSize / 2);
+      const groupA = shuffledUsers.slice(0, halfTest);
+      const groupB = shuffledUsers.slice(halfTest, halfTest * 2);
+
+      // Update campaign status to TESTING
+      try {
+        await prisma.marketingCampaign.update({
+          where: { id },
+          data: { status: 'TESTING', startedAt: new Date() },
+        });
+        console.log('[Campaign Send] A/B test started', { campaignId: id, groupA: groupA.length, groupB: groupB.length });
+      } catch (error) {
+        console.error('[Campaign Send] Error updating campaign status', {
+          campaignId: id,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        return NextResponse.json({ error: 'שגיאה בעדכון סטטוס הקמפיין' }, { status: 500 });
+      }
+
+      const makeEmails = (
+        group: typeof users,
+        variant: { id: string; subject: string; htmlContent: string },
+      ) =>
+        group.map((user) => {
+          const displayName = user.name || 'משתמש';
+          return {
+            to: user.email,
+            subject: variant.subject.replace(/\[שם המשתמש\]/g, displayName),
+            html: variant.htmlContent.replace(/\[שם המשתמש\]/g, displayName),
+            campaignId: campaign.id,
+            userId: user.id.startsWith('external-') ? null : user.id,
+            variantId: variant.id,
+          };
+        });
+
+      const emailsA = makeEmails(groupA, variants[0]);
+      const emailsB = makeEmails(groupB, variants[1]);
+
+      // Send in background
+      void (async () => {
+        try {
+          const allEmails = [...emailsA, ...emailsB];
+          const allUsers = [...groupA, ...groupB];
+          const results = await sendBatchEmails(allEmails);
+
+          const successful = results.filter((r) => r.id).length;
+          const failed = results.filter((r) => r.error).length;
+
+          const eventsToCreate: Array<{
+            campaignId: string;
+            userId: string;
+            emailId: string;
+            eventType: 'SENT';
+            metadata: Record<string, string>;
+          }> = [];
+
+          for (let i = 0; i < results.length; i++) {
+            const result = results[i];
+            const user = allUsers[i];
+            const email = allEmails[i];
+
+            if (!result.id) continue;
+            if (user.id.startsWith('external-')) continue;
+
+            eventsToCreate.push({
+              campaignId: campaign.id,
+              userId: user.id,
+              emailId: result.id,
+              eventType: 'SENT' as const,
+              metadata: { variantId: email.variantId },
+            });
+          }
+
+          if (eventsToCreate.length > 0) {
+            await prisma.marketingEvent.createMany({
+              data: eventsToCreate,
+              skipDuplicates: true,
+            });
+          }
+
+          await prisma.marketingCampaign.update({
+            where: { id: campaign.id },
+            data: { sentCount: successful },
+          });
+
+          console.log(`[Campaign A/B] ${campaign.id} test sent: ${successful} successful, ${failed} failed`);
+        } catch (error) {
+          console.error(`[Campaign A/B] Error sending ${campaign.id}:`, error);
+          await prisma.marketingCampaign.update({
+            where: { id: campaign.id },
+            data: { status: 'DRAFT' },
+          });
+        }
+      })();
+
+      return NextResponse.json({
+        success: true,
+        message: `בדיקת A/B התחילה: ${groupA.length} משתמשים קיבלו וריאנט A, ${groupB.length} קיבלו וריאנט B`,
+        testGroupSize: groupA.length + groupB.length,
+        totalUsers: users.length,
+      });
+    }
+
+    // ─── Standard Send Path ──────────────────────────────────────────
     try {
       await prisma.marketingCampaign.update({
         where: { id },
@@ -141,9 +276,6 @@ export async function POST(
       );
     }
 
-    // Prepare emails
-    // Handle both regular users and external emails (from CSV)
-    // Replace [שם המשתמש] with the actual user name per recipient
     const emails = users.map((user) => {
       const displayName = user.name || 'משתמש';
       return {
@@ -151,23 +283,17 @@ export async function POST(
         subject: campaign.subject.replace(/\[שם המשתמש\]/g, displayName),
         html: campaign.content.replace(/\[שם המשתמש\]/g, displayName),
         campaignId: campaign.id,
-        userId: user.id.startsWith('external-') ? null : user.id, // null for external emails
+        userId: user.id.startsWith('external-') ? null : user.id,
       };
     });
 
-    // Send emails in background (don't wait for completion)
-    // This allows the API to return quickly
     void (async () => {
       try {
         const results = await sendBatchEmails(emails);
 
-        // Count successful sends
         const successful = results.filter((r) => r.id).length;
         const failed = results.filter((r) => r.error).length;
 
-        // Create marketing events for sent emails
-        // IMPORTANT: results[i] corresponds to emails[i] which corresponds to users[i]
-        // We iterate WITH the original index to keep the correct user mapping
         const eventsToCreate: Array<{
           campaignId: string;
           userId: string;
@@ -179,10 +305,7 @@ export async function POST(
           const result = results[i];
           const user = users[i];
 
-          // Skip failed sends (no Resend email ID)
           if (!result.id) continue;
-
-          // Skip events for external emails (they don't have a real userId in the DB)
           if (user.id.startsWith('external-')) continue;
 
           eventsToCreate.push({
@@ -200,7 +323,6 @@ export async function POST(
           });
         }
 
-        // Update campaign statistics with real count
         await prisma.marketingCampaign.update({
           where: { id: campaign.id },
           data: {
@@ -213,11 +335,10 @@ export async function POST(
         console.log(`[Campaign] ${campaign.id} sent: ${successful} successful, ${failed} failed`);
       } catch (error) {
         console.error(`[Campaign] Error sending ${campaign.id}:`, error);
-        // Update status to allow retry
         await prisma.marketingCampaign.update({
           where: { id: campaign.id },
           data: {
-            status: 'DRAFT', // Reset to draft so it can be retried
+            status: 'DRAFT',
           },
         });
       }

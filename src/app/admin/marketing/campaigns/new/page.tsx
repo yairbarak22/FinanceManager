@@ -17,6 +17,7 @@ import {
   Pencil,
   ClipboardList,
   X,
+  Split,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
 import SegmentSelector from '@/components/admin/SegmentSelector';
@@ -57,6 +58,17 @@ export default function NewCampaignPage() {
   const [userCount, setUserCount] = useState<number>(0);
   const [sendOption, setSendOption] = useState<'draft' | 'now' | 'scheduled'>('draft');
   const [scheduledAt, setScheduledAt] = useState('');
+
+  // A/B Testing state
+  const [isAbTest, setIsAbTest] = useState(false);
+  const [abTestPercentage, setAbTestPercentage] = useState(20);
+  const [abTestDurationHours, setAbTestDurationHours] = useState(4);
+  const [abTestWinningMetric, setAbTestWinningMetric] = useState<'OPEN_RATE' | 'CLICK_RATE'>('OPEN_RATE');
+  const [variants, setVariants] = useState<Array<{ id: 'A' | 'B'; subject: string; htmlContent: string }>>([
+    { id: 'A', subject: '', htmlContent: '' },
+    { id: 'B', subject: '', htmlContent: '' },
+  ]);
+  const [activeVariantTab, setActiveVariantTab] = useState<'A' | 'B'>('A');
 
   const [templates, setTemplates] = useState<Template[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(true);
@@ -107,7 +119,15 @@ export default function NewCampaignPage() {
 
   const handleTestEmail = async () => {
     if (!session?.user?.email) return;
-    if (!subject || !content) {
+
+    const testSubject = isAbTest
+      ? variants.find(v => v.id === activeVariantTab)?.subject || ''
+      : subject;
+    const testContent = isAbTest
+      ? variants.find(v => v.id === activeVariantTab)?.htmlContent || ''
+      : content;
+
+    if (!testSubject || !testContent) {
       setInlineMessage({ type: 'error', text: 'נא למלא נושא ותוכן לפני שליחת מייל בדיקה' });
       return;
     }
@@ -117,7 +137,7 @@ export default function NewCampaignPage() {
       const res = await apiFetch('/api/admin/marketing/test-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: session.user.email, subject, html: content }),
+        body: JSON.stringify({ to: session.user.email, subject: testSubject, html: testContent }),
       });
 
       if (!res.ok) {
@@ -151,9 +171,20 @@ export default function NewCampaignPage() {
   };
 
   const handleSubmit = async () => {
-    if (!name || !subject || !content) {
-      setError('נא למלא את כל השדות החובה');
-      return;
+    if (isAbTest) {
+      if (!name) {
+        setError('נא למלא שם קמפיין');
+        return;
+      }
+      if (!variants[0].subject || !variants[0].htmlContent || !variants[1].subject || !variants[1].htmlContent) {
+        setError('נא למלא את כל השדות עבור שני הוריאנטים');
+        return;
+      }
+    } else {
+      if (!name || !subject || !content) {
+        setError('נא למלא את כל השדות החובה');
+        return;
+      }
     }
 
     // If send now, show confirmation modal
@@ -167,16 +198,30 @@ export default function NewCampaignPage() {
     setError(null);
 
     try {
+      const payload: Record<string, unknown> = {
+        name,
+        subject: isAbTest ? variants[0].subject : subject,
+        content: isAbTest ? variants[0].htmlContent : content,
+        segmentFilter,
+        scheduledAt: sendOption === 'scheduled' && scheduledAt ? scheduledAt : null,
+      };
+
+      if (isAbTest) {
+        payload.isAbTest = true;
+        payload.abTestPercentage = abTestPercentage;
+        payload.abTestDurationHours = abTestDurationHours;
+        payload.abTestWinningMetric = abTestWinningMetric;
+        payload.variants = variants.map(v => ({
+          id: v.id,
+          subject: v.subject,
+          htmlContent: v.htmlContent,
+        }));
+      }
+
       const res = await apiFetch('/api/admin/marketing/campaigns', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          subject,
-          content,
-          segmentFilter,
-          scheduledAt: sendOption === 'scheduled' && scheduledAt ? scheduledAt : null,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -256,8 +301,13 @@ export default function NewCampaignPage() {
                 נמענים: <span className="font-medium text-[#303150]">{getRecipientCount().toLocaleString()}</span>
               </p>
               <p className="text-sm text-[#7E7F90]">
-                נושא: <span className="font-medium text-[#303150]">{subject}</span>
+                נושא: <span className="font-medium text-[#303150]">{isAbTest ? `A: ${variants[0].subject} | B: ${variants[1].subject}` : subject}</span>
               </p>
+              {isAbTest && (
+                <p className="text-sm text-[#7E7F90]">
+                  סוג: <span className="font-medium text-[#303150]">בדיקת A/B ({abTestPercentage}% קבוצת בדיקה, {abTestDurationHours} שעות)</span>
+                </p>
+              )}
             </div>
             <p className="text-sm text-[#7E7F90] mb-6">
               הקמפיין יישלח מיד ל-{getRecipientCount().toLocaleString()} נמענים. פעולה זו לא ניתנת לביטול.
@@ -391,24 +441,118 @@ export default function NewCampaignPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-[#303150] mb-2">
-                נושא המייל *
-              </label>
-              <input
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="נושא המייל שיוצג לנמענים"
-                className="w-full px-4 py-3 border border-[#E8E8ED] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent"
-              />
-            </div>
+            {!isAbTest && (
+              <div>
+                <label className="block text-sm font-medium text-[#303150] mb-2">
+                  נושא המייל *
+                </label>
+                <input
+                  type="text"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="נושא המייל שיוצג לנמענים"
+                  className="w-full px-4 py-3 border border-[#E8E8ED] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent"
+                />
+              </div>
+            )}
 
             <SegmentSelector
               value={segmentFilter}
               onChange={setSegmentFilter}
               onCountChange={setUserCount}
             />
+
+            {/* A/B Testing Toggle */}
+            <div className="pt-6 border-t border-[#F7F7F8]">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Split className="w-4 h-4 text-[#7E7F90]" strokeWidth={1.75} />
+                  <label className="text-sm font-medium text-[#303150]">
+                    הפעל בדיקת A/B
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newVal = !isAbTest;
+                    setIsAbTest(newVal);
+                    if (newVal && subject && content) {
+                      setVariants([
+                        { id: 'A', subject, htmlContent: content },
+                        { id: 'B', subject: '', htmlContent: '' },
+                      ]);
+                    }
+                    if (!newVal && variants[0].subject && variants[0].htmlContent) {
+                      setSubject(variants[0].subject);
+                      setContent(variants[0].htmlContent);
+                    }
+                  }}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ${
+                    isAbTest ? 'bg-[#69ADFF]' : 'bg-[#E8E8ED]'
+                  }`}
+                  aria-label={isAbTest ? 'כבה בדיקת A/B' : 'הפעל בדיקת A/B'}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                      isAbTest ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {isAbTest && (
+                <div className="bg-[#F7F7F8] p-6 rounded-3xl border border-[#E8E8ED] grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-[#303150] mb-1.5">
+                      גודל קבוצת הבדיקה (%)
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={abTestPercentage}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        if (val >= 1 && val <= 50) setAbTestPercentage(val);
+                      }}
+                      className="w-full px-4 py-3 border border-[#E8E8ED] rounded-xl bg-white text-sm text-[#303150] placeholder:text-[#BDBDCB] focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent transition-colors"
+                    />
+                    <p className="text-xs text-[#7E7F90] mt-1.5">
+                      למשל, 20% משמע 10% יקבלו A, 10% יקבלו B
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-[#303150] mb-1.5">
+                      משך הבדיקה (שעות)
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={72}
+                      value={abTestDurationHours}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        if (val >= 1 && val <= 72) setAbTestDurationHours(val);
+                      }}
+                      className="w-full px-4 py-3 border border-[#E8E8ED] rounded-xl bg-white text-sm text-[#303150] placeholder:text-[#BDBDCB] focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-[#303150] mb-1.5">
+                      מדד ניצחון
+                    </label>
+                    <select
+                      value={abTestWinningMetric}
+                      onChange={(e) => setAbTestWinningMetric(e.target.value as 'OPEN_RATE' | 'CLICK_RATE')}
+                      className="w-full px-4 py-3 border border-[#E8E8ED] rounded-xl bg-white text-sm text-[#303150] focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent transition-colors appearance-none cursor-pointer"
+                    >
+                      <option value="OPEN_RATE">שיעור פתיחה</option>
+                      <option value="CLICK_RATE">שיעור לחיצה</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="mt-6 lg:mt-8 flex justify-end">
@@ -416,7 +560,7 @@ export default function NewCampaignPage() {
               onClick={() => setStep(2)}
               disabled={
                 !name ||
-                !subject ||
+                (!isAbTest && !subject) ||
                 (segmentFilter.type !== 'manual' &&
                   segmentFilter.type !== 'csv' &&
                   userCount === 0) ||
@@ -441,28 +585,27 @@ export default function NewCampaignPage() {
             <h2 className="text-lg lg:text-xl font-bold text-[#303150]">תוכן ועיצוב</h2>
             <button
               onClick={handleTestEmail}
-              disabled={loading || !subject || !content}
+              disabled={loading || (isAbTest ? !(variants.find(v => v.id === activeVariantTab)?.subject && variants.find(v => v.id === activeVariantTab)?.htmlContent) : (!subject || !content))}
               className="flex items-center gap-2 px-4 py-2 text-sm bg-[#F7F7F8] text-[#303150] rounded-xl hover:bg-[#E8E8ED] transition-colors disabled:opacity-50"
             >
-              <Send className="w-4 h-4" />
               שלח מייל בדיקה
+              <Send className="w-4 h-4" />
             </button>
           </div>
 
           <div className="space-y-6">
             {/* Template Selection Cards */}
-            {!templatesLoading && templates.length > 0 && (
+            {!templatesLoading && templates.length > 0 && !isAbTest && (
               <div>
                 <label className="block text-sm font-medium text-[#303150] mb-3">
                   בחר תבנית (אופציונלי)
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {/* No template card */}
                   <button
                     onClick={() => {
                       setSelectedTemplateId('');
                       setContent('');
-                      setSubject(subject); // Keep subject
+                      setSubject(subject);
                     }}
                     className={`text-right p-4 rounded-xl border-2 transition-all ${
                       !selectedTemplateId
@@ -506,69 +649,187 @@ export default function NewCampaignPage() {
               </div>
             )}
 
-            {/* Subject field - prominent in step 2 */}
-            <div className={`p-4 rounded-xl border-2 ${!subject || subject === '{{title}}' ? 'border-[#F18AB5] bg-[#F18AB5]/5' : 'border-[#0DBACC] bg-[#0DBACC]/5'}`}>
-              <label className="block text-sm font-bold text-[#303150] mb-2">
-                נושא המייל (מה הנמענים יראו בתיבת הדואר) *
-              </label>
-              <input
-                type="text"
-                value={subject === '{{title}}' ? '' : subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="הקלד כאן את נושא המייל..."
-                className="w-full px-4 py-3 border border-[#E8E8ED] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent text-base"
-              />
-              {(!subject || subject === '{{title}}') && (
-                <p className="text-xs text-[#F18AB5] mt-2 font-medium">
-                  חובה למלא נושא למייל -- זה מה שהנמענים יראו בתיבת הדואר שלהם
-                </p>
-              )}
-            </div>
+            {isAbTest ? (
+              <>
+                {/* Variant Tabs */}
+                <div className="flex gap-2 mb-2 border-b border-[#F7F7F8]">
+                  <button
+                    type="button"
+                    onClick={() => setActiveVariantTab('A')}
+                    className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${
+                      activeVariantTab === 'A'
+                        ? 'text-[#69ADFF] border-[#69ADFF]'
+                        : 'text-[#7E7F90] border-transparent hover:text-[#303150]'
+                    }`}
+                  >
+                    וריאנט A
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveVariantTab('B')}
+                    className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 ${
+                      activeVariantTab === 'B'
+                        ? 'text-[#8B5CF6] border-[#8B5CF6]'
+                        : 'text-[#7E7F90] border-transparent hover:text-[#303150]'
+                    }`}
+                  >
+                    וריאנט B
+                  </button>
+                </div>
 
-            {/* Split-screen: Editor + Preview */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Editor */}
-              <div>
-                <label className="block text-sm font-medium text-[#303150] mb-2">
-                  תוכן HTML *
-                </label>
-                <textarea
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="הכנס כאן את תוכן המייל ב-HTML..."
-                  rows={18}
-                  className="w-full px-4 py-3 border border-[#E8E8ED] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent font-mono text-sm resize-none"
-                />
-                <p className="text-xs text-[#BDBDCB] mt-2">
-                  קישור ביטול מנוי יתווסף אוטומטית בתחתית המייל.
-                </p>
-              </div>
-
-              {/* Live Preview */}
-              <div>
-                <label className="block text-sm font-medium text-[#303150] mb-2">
-                  תצוגה מקדימה
-                </label>
-                <div className="rounded-xl bg-white overflow-hidden" style={{ height: 'calc(18 * 1.5rem + 1.5rem)' }}>
-                  {content ? (
-                    <div>
-                      <div className="px-4 pt-3 pb-2 border-b border-[#F7F7F8]">
-                        <p className="text-xs text-[#BDBDCB]">מ: myneto &lt;admin@myneto.co.il&gt;</p>
-                        <p className="text-xs text-[#BDBDCB]">נושא: {subject || '(ללא נושא)'}</p>
-                      </div>
-                      <EmailPreview
-                        htmlContent={content}
-                        maxHeight="calc(18 * 1.5rem - 2rem)"
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-[#BDBDCB] text-sm border border-[#E8E8ED] rounded-xl">
-                      התצוגה המקדימה תופיע כאן
-                    </div>
+                {/* Active Variant Content */}
+                <div className={`p-4 rounded-xl border-2 ${
+                  !variants.find(v => v.id === activeVariantTab)?.subject
+                    ? 'border-[#F18AB5] bg-[#F18AB5]/5'
+                    : 'border-[#0DBACC] bg-[#0DBACC]/5'
+                }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-bold text-[#303150]">
+                      נושא המייל (וריאנט {activeVariantTab}) *
+                    </label>
+                    {activeVariantTab === 'B' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setVariants([
+                            variants[0],
+                            { ...variants[1], subject: variants[0].subject, htmlContent: variants[0].htmlContent },
+                          ]);
+                        }}
+                        className="text-xs text-[#69ADFF] hover:text-[#5A9EE6] transition-colors font-medium"
+                      >
+                        העתק מוריאנט A
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={variants.find(v => v.id === activeVariantTab)?.subject || ''}
+                    onChange={(e) => {
+                      setVariants(variants.map(v =>
+                        v.id === activeVariantTab ? { ...v, subject: e.target.value } : v
+                      ));
+                    }}
+                    placeholder={`הקלד כאן את נושא המייל לוריאנט ${activeVariantTab}...`}
+                    className="w-full px-4 py-3 border border-[#E8E8ED] rounded-xl bg-white text-base text-[#303150] placeholder:text-[#BDBDCB] focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent transition-colors"
+                  />
+                  {!variants.find(v => v.id === activeVariantTab)?.subject && (
+                    <p className="text-xs text-[#F18AB5] mt-2 font-medium">
+                      חובה למלא נושא למייל -- זה מה שהנמענים יראו בתיבת הדואר שלהם
+                    </p>
                   )}
                 </div>
-              </div>
-            </div>
+
+                {/* Split-screen: Editor + Preview */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-[#303150] mb-2">
+                      תוכן HTML (וריאנט {activeVariantTab}) *
+                    </label>
+                    <textarea
+                      value={variants.find(v => v.id === activeVariantTab)?.htmlContent || ''}
+                      onChange={(e) => {
+                        setVariants(variants.map(v =>
+                          v.id === activeVariantTab ? { ...v, htmlContent: e.target.value } : v
+                        ));
+                      }}
+                      placeholder={`הכנס כאן את תוכן המייל ב-HTML לוריאנט ${activeVariantTab}...`}
+                      rows={18}
+                      className="w-full px-4 py-3 border border-[#E8E8ED] rounded-xl bg-white font-mono text-sm text-[#303150] placeholder:text-[#BDBDCB] focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent resize-none transition-colors"
+                    />
+                    <p className="text-xs text-[#BDBDCB] mt-2">
+                      קישור ביטול מנוי יתווסף אוטומטית בתחתית המייל.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#303150] mb-2">
+                      תצוגה מקדימה
+                    </label>
+                    <div className="rounded-xl bg-white overflow-hidden" style={{ height: 'calc(18 * 1.5rem + 1.5rem)' }}>
+                      {variants.find(v => v.id === activeVariantTab)?.htmlContent ? (
+                        <div>
+                          <div className="px-4 pt-3 pb-2 border-b border-[#F7F7F8]">
+                            <p className="text-xs text-[#BDBDCB]">מ: myneto &lt;admin@myneto.co.il&gt;</p>
+                            <p className="text-xs text-[#BDBDCB]">נושא: {variants.find(v => v.id === activeVariantTab)?.subject || '(ללא נושא)'}</p>
+                          </div>
+                          <EmailPreview
+                            htmlContent={variants.find(v => v.id === activeVariantTab)?.htmlContent || ''}
+                            maxHeight="calc(18 * 1.5rem - 2rem)"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-[#BDBDCB] text-sm border border-[#E8E8ED] rounded-xl">
+                          התצוגה המקדימה תופיע כאן
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Standard Subject field */}
+                <div className={`p-4 rounded-xl border-2 ${!subject || subject === '{{title}}' ? 'border-[#F18AB5] bg-[#F18AB5]/5' : 'border-[#0DBACC] bg-[#0DBACC]/5'}`}>
+                  <label className="block text-sm font-bold text-[#303150] mb-2">
+                    נושא המייל (מה הנמענים יראו בתיבת הדואר) *
+                  </label>
+                  <input
+                    type="text"
+                    value={subject === '{{title}}' ? '' : subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="הקלד כאן את נושא המייל..."
+                    className="w-full px-4 py-3 border border-[#E8E8ED] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent text-base"
+                  />
+                  {(!subject || subject === '{{title}}') && (
+                    <p className="text-xs text-[#F18AB5] mt-2 font-medium">
+                      חובה למלא נושא למייל -- זה מה שהנמענים יראו בתיבת הדואר שלהם
+                    </p>
+                  )}
+                </div>
+
+                {/* Standard Split-screen: Editor + Preview */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-[#303150] mb-2">
+                      תוכן HTML *
+                    </label>
+                    <textarea
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      placeholder="הכנס כאן את תוכן המייל ב-HTML..."
+                      rows={18}
+                      className="w-full px-4 py-3 border border-[#E8E8ED] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#69ADFF] focus:border-transparent font-mono text-sm resize-none"
+                    />
+                    <p className="text-xs text-[#BDBDCB] mt-2">
+                      קישור ביטול מנוי יתווסף אוטומטית בתחתית המייל.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#303150] mb-2">
+                      תצוגה מקדימה
+                    </label>
+                    <div className="rounded-xl bg-white overflow-hidden" style={{ height: 'calc(18 * 1.5rem + 1.5rem)' }}>
+                      {content ? (
+                        <div>
+                          <div className="px-4 pt-3 pb-2 border-b border-[#F7F7F8]">
+                            <p className="text-xs text-[#BDBDCB]">מ: myneto &lt;admin@myneto.co.il&gt;</p>
+                            <p className="text-xs text-[#BDBDCB]">נושא: {subject || '(ללא נושא)'}</p>
+                          </div>
+                          <EmailPreview
+                            htmlContent={content}
+                            maxHeight="calc(18 * 1.5rem - 2rem)"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-[#BDBDCB] text-sm border border-[#E8E8ED] rounded-xl">
+                          התצוגה המקדימה תופיע כאן
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="mt-6 lg:mt-8 flex justify-between">
@@ -581,7 +842,11 @@ export default function NewCampaignPage() {
             </button>
             <button
               onClick={() => setStep(3)}
-              disabled={!content || !subject || subject === '{{title}}'}
+              disabled={
+                isAbTest
+                  ? !variants[0].subject || !variants[0].htmlContent || !variants[1].subject || !variants[1].htmlContent
+                  : !content || !subject || subject === '{{title}}'
+              }
               className="flex items-center gap-2 px-5 py-2.5 lg:px-6 lg:py-3 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm lg:text-base"
             >
               הבא
@@ -597,6 +862,21 @@ export default function NewCampaignPage() {
           <h2 className="text-lg lg:text-xl font-bold text-[#303150] mb-4 lg:mb-6">סיכום ושליחה</h2>
 
           <div className="space-y-6">
+            {/* A/B Test Info */}
+            {isAbTest && (
+              <div className="bg-[#0DBACC]/10 border border-[#0DBACC]/20 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Split className="w-4 h-4 text-[#0DBACC]" />
+                  <span className="text-sm font-medium text-[#303150]">בדיקת A/B פעילה</span>
+                </div>
+                <div className="text-xs text-[#7E7F90] space-y-1">
+                  <p>גודל קבוצה: {abTestPercentage}% ({Math.floor(abTestPercentage / 2)}% לכל וריאנט)</p>
+                  <p>משך בדיקה: {abTestDurationHours} שעות</p>
+                  <p>מדד ניצחון: {abTestWinningMetric === 'OPEN_RATE' ? 'שיעור פתיחה' : 'שיעור לחיצה'}</p>
+                </div>
+              </div>
+            )}
+
             {/* Summary */}
             <div className="bg-[#F7F7F8] rounded-xl p-6 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -606,7 +886,9 @@ export default function NewCampaignPage() {
                 </div>
                 <div>
                   <p className="text-xs text-[#7E7F90] mb-1">נושא</p>
-                  <p className="text-sm font-medium text-[#303150]">{subject}</p>
+                  <p className="text-sm font-medium text-[#303150]">
+                    {isAbTest ? `A: ${variants[0].subject} | B: ${variants[1].subject}` : subject}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-[#7E7F90] mb-1">נמענים</p>
@@ -626,7 +908,7 @@ export default function NewCampaignPage() {
               <p className="text-sm font-medium text-[#303150] mb-2">תצוגה מקדימה של התוכן</p>
               <div className="rounded-xl bg-[#FAFAFE] overflow-hidden">
                 <EmailPreview
-                  htmlContent={content}
+                  htmlContent={isAbTest ? variants[0].htmlContent : content}
                   maxHeight="192px"
                 />
               </div>

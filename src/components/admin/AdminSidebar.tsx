@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { Users, Mail, Shield, LogOut, ChevronDown, BarChart3, FileText, List, LayoutDashboard, Inbox, X, Timer, FolderOpen, Map, DollarSign } from 'lucide-react';
+import { Users, Mail, Shield, LogOut, ChevronDown, BarChart3, FileText, List, LayoutDashboard, Inbox, X, FolderOpen, Map, DollarSign, Workflow } from 'lucide-react';
 import { SensitiveData } from '@/components/common/SensitiveData';
 
 interface SubNavItem {
@@ -72,10 +72,10 @@ const navItems: NavItem[] = [
         icon: FileText,
       },
       {
-        id: 'marketing-sequences',
-        label: 'סדרות מיילים',
-        path: '/admin/marketing/email-sequences',
-        icon: Timer,
+        id: 'marketing-workflows',
+        label: 'תהליכי עבודה',
+        path: '/admin/marketing/workflows',
+        icon: Workflow,
       },
       {
         id: 'marketing-groups',
@@ -161,6 +161,12 @@ export default function AdminSidebar({ isMobileOpen, onMobileClose }: AdminSideb
   const isSubItemActive = (path: string) => {
     if (path === '/admin/marketing/inbox') {
       return pathname.startsWith('/admin/marketing/inbox');
+    }
+    if (path === '/admin/marketing/workflows') {
+      return pathname.startsWith('/admin/marketing/workflows');
+    }
+    if (path === '/admin/marketing/campaigns') {
+      return pathname.startsWith('/admin/marketing/campaigns');
     }
     return pathname === path;
   };

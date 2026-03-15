@@ -29,11 +29,10 @@ interface ResendWebhookEvent {
     to: string[];
     subject?: string;
     created_at?: string;
-    // For click events
     link?: string;
-    // For bounce/complaint events
     bounce_type?: string;
     complaint_feedback_type?: string;
+    tags?: Array<{ name: string; value: string }>;
   };
 }
 
@@ -109,8 +108,8 @@ async function verifyWebhookSignature(
 async function findCampaignAndUser(emailId: string): Promise<{
   campaignId: string | null;
   userId: string | null;
+  metadata: Record<string, unknown> | null;
 } | null> {
-  // Find the SENT event with this email ID (created during campaign send)
   const event = await prisma.marketingEvent.findFirst({
     where: {
       emailId,
@@ -119,6 +118,7 @@ async function findCampaignAndUser(emailId: string): Promise<{
     select: {
       campaignId: true,
       userId: true,
+      metadata: true,
     },
   });
 
@@ -129,6 +129,7 @@ async function findCampaignAndUser(emailId: string): Promise<{
   return {
     campaignId: event.campaignId,
     userId: event.userId,
+    metadata: event.metadata as Record<string, unknown> | null,
   };
 }
 
@@ -212,11 +213,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
+    // Resolve variantId: prefer SENT event metadata, fallback to webhook tags
+    let variantId: string | undefined;
+    if (campaignUser.metadata?.variantId) {
+      variantId = campaignUser.metadata.variantId as string;
+    } else if (event.data.tags && Array.isArray(event.data.tags)) {
+      const variantTag = event.data.tags.find((t) => t.name === 'variant_id');
+      variantId = variantTag?.value;
+    }
+
     // Prepare metadata
     const metadata: Record<string, string> = {
       emailId,
       timestamp: event.created_at,
     };
+
+    if (variantId) {
+      metadata.variantId = variantId;
+    }
 
     if (eventType === MarketingEventType.CLICKED && event.data.link) {
       metadata.link = event.data.link;
