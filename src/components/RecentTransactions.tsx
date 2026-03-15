@@ -147,6 +147,10 @@ export default function RecentTransactions({
   const [quickAddCatDropdownPos, setQuickAddCatDropdownPos] = useState<{ top: number; left: number } | null>(null);
   const quickAddCategoryButtonRef = useRef<HTMLButtonElement>(null);
   const quickAddCategoryDropdownRef = useRef<HTMLDivElement>(null);
+  const [quickAddCategorySearchQuery, setQuickAddCategorySearchQuery] = useState('');
+  const [quickAddNewCategoryName, setQuickAddNewCategoryName] = useState('');
+  const [quickAddAddingCategorySaving, setQuickAddAddingCategorySaving] = useState(false);
+  const quickAddCategorySearchInputRef = useRef<HTMLInputElement>(null);
   const [isQuickAddTypeOpen, setIsQuickAddTypeOpen] = useState(false);
   const [quickAddTypeDropdownPos, setQuickAddTypeDropdownPos] = useState<{ top: number; left: number } | null>(null);
   const quickAddTypeButtonRef = useRef<HTMLButtonElement>(null);
@@ -287,6 +291,16 @@ export default function RecentTransactions({
       quickAddDescRef.current.focus();
     }
   }, [isQuickAddActive]);
+
+  // Auto-focus Quick-Add category search input & reset state when dropdown opens/closes
+  useEffect(() => {
+    if (isQuickAddCategoryOpen) {
+      setTimeout(() => quickAddCategorySearchInputRef.current?.focus(), 50);
+    } else {
+      setQuickAddCategorySearchQuery('');
+      setQuickAddNewCategoryName('');
+    }
+  }, [isQuickAddCategoryOpen]);
 
   /* ──────────────────────── Inline Edit Handlers ──────────────────────── */
 
@@ -465,6 +479,27 @@ export default function RecentTransactions({
       resetQuickAdd();
     }
   }, [quickAddValues, onSaveTransaction, onNewTransaction, resetQuickAdd]);
+
+  const handleQuickAddAddNewCategory = useCallback(async (nameOverride?: string) => {
+    if (!onAddCategory) return;
+    const trimmedName = (nameOverride ?? quickAddNewCategoryName).trim();
+    if (!trimmedName) return;
+
+    const categoryType = quickAddValues.type;
+    setQuickAddAddingCategorySaving(true);
+    try {
+      const created = await onAddCategory(trimmedName, categoryType);
+      if (created) {
+        setQuickAddValues(v => ({ ...v, category: created.id }));
+        setQuickAddNewCategoryName('');
+        setIsQuickAddCategoryOpen(false);
+      }
+    } catch {
+      /* parent handles error */
+    } finally {
+      setQuickAddAddingCategorySaving(false);
+    }
+  }, [onAddCategory, quickAddNewCategoryName, quickAddValues.type]);
 
   /* ──────────────────────── Shared Helpers ──────────────────────── */
 
@@ -1456,7 +1491,7 @@ export default function RecentTransactions({
               {/* Search */}
               <div className="p-2 flex-shrink-0" style={{ borderBottom: '1px solid #F7F7F8' }}>
                 <div className="relative">
-                  <Search className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: '#BDBDCB' }} strokeWidth={1.75} />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: '#BDBDCB' }} strokeWidth={1.75} />
                   <input
                     ref={categorySearchInputRef}
                     type="text"
@@ -1470,7 +1505,7 @@ export default function RecentTransactions({
                       }
                     }}
                     placeholder="חפש קטגוריה..."
-                    className="w-full pe-8 ps-3 py-2 rounded-lg text-sm outline-none transition-colors"
+                    className="w-full pe-3 ps-8 py-2 rounded-lg text-sm outline-none transition-colors"
                     style={{
                       fontFamily: 'var(--font-nunito), system-ui, sans-serif',
                       color: '#303150',
@@ -1488,7 +1523,7 @@ export default function RecentTransactions({
                 <div className="flex-shrink-0 p-2" style={{ borderBottom: '1px solid #F7F7F8' }}>
                   <div className="relative flex items-center gap-1.5">
                     <div className="relative flex-1">
-                      <Plus className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: '#BDBDCB' }} strokeWidth={1.75} />
+                      <Plus className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: '#BDBDCB' }} strokeWidth={1.75} />
                       <input
                         type="text"
                         value={newCategoryName}
@@ -1502,7 +1537,7 @@ export default function RecentTransactions({
                         }}
                         placeholder="הוסף קטגוריה חדשה..."
                         disabled={addingCategorySaving}
-                        className="w-full pe-8 ps-3 py-2 rounded-lg text-sm outline-none transition-colors"
+                        className="w-full pe-3 ps-8 py-2 rounded-lg text-sm outline-none transition-colors"
                         style={{
                           fontFamily: 'var(--font-nunito), system-ui, sans-serif',
                           color: '#303150',
@@ -1587,45 +1622,149 @@ export default function RecentTransactions({
 
       {/* Quick-Add Category Dropdown (portal) */}
       {isQuickAddCategoryOpen && quickAddCatDropdownPos && createPortal(
-        <div
-          ref={quickAddCategoryDropdownRef}
-          className="fixed rounded-xl shadow-lg max-h-64 overflow-y-auto scrollbar-ghost"
-          style={{
-            top: quickAddCatDropdownPos.top,
-            left: quickAddCatDropdownPos.left,
-            minWidth: 220,
-            zIndex: 10000,
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E8E8ED',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.12)',
-          }}
-          dir="rtl"
-        >
-          <div className="p-1.5">
-            {getCategoriesForType(quickAddValues.type).map((cat) => {
-              const isCurrentCat = cat.id === quickAddValues.category;
-              const CatIcon = cat.icon;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => {
-                    setQuickAddValues(v => ({ ...v, category: cat.id }));
-                    setIsQuickAddCategoryOpen(false);
-                  }}
-                  className={cn('w-full px-3 py-2 rounded-lg text-sm text-right flex items-center gap-2 transition-colors', isCurrentCat ? 'bg-[#C1DDFF]/40' : 'hover:bg-[#F7F7F8]')}
-                  style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif', color: '#303150' }}
-                >
-                  <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: cat.bgColor, color: cat.color }}>
-                    {CatIcon && <CatIcon className="w-3 h-3" strokeWidth={1.75} />}
+        (() => {
+          const allCats = getCategoriesForType(quickAddValues.type);
+          const filteredQA = filterCategoriesBySearch(allCats, quickAddCategorySearchQuery);
+          return (
+            <div
+              ref={quickAddCategoryDropdownRef}
+              className="fixed rounded-xl shadow-lg"
+              style={{
+                top: quickAddCatDropdownPos.top,
+                left: quickAddCatDropdownPos.left,
+                minWidth: 280,
+                maxWidth: 320,
+                zIndex: 10000,
+                backgroundColor: '#FFFFFF',
+                border: '1px solid #E8E8ED',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.12)',
+                maxHeight: '400px',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+              dir="rtl"
+            >
+              {/* Search */}
+              <div className="p-2 flex-shrink-0" style={{ borderBottom: '1px solid #F7F7F8' }}>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: '#BDBDCB' }} strokeWidth={1.75} />
+                  <input
+                    ref={quickAddCategorySearchInputRef}
+                    type="text"
+                    value={quickAddCategorySearchQuery}
+                    onChange={(e) => setQuickAddCategorySearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setIsQuickAddCategoryOpen(false);
+                      } else if (e.key === 'Enter' && filteredQA.length === 1) {
+                        setQuickAddValues(v => ({ ...v, category: filteredQA[0].id }));
+                        setIsQuickAddCategoryOpen(false);
+                      }
+                    }}
+                    placeholder="חפש קטגוריה..."
+                    className="w-full pe-3 ps-8 py-2 rounded-lg text-sm outline-none transition-colors"
+                    style={{
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                      color: '#303150',
+                      border: '1.5px solid #E8E8ED',
+                      backgroundColor: '#FAFAFA',
+                    }}
+                    onFocus={(e) => { e.target.style.borderColor = '#69ADFF'; e.target.style.backgroundColor = '#FFFFFF'; }}
+                    onBlur={(e) => { e.target.style.borderColor = '#E8E8ED'; e.target.style.backgroundColor = '#FAFAFA'; }}
+                  />
+                </div>
+              </div>
+
+              {/* Add New Category */}
+              {onAddCategory && (
+                <div className="flex-shrink-0 p-2" style={{ borderBottom: '1px solid #F7F7F8' }}>
+                  <div className="relative flex items-center gap-1.5">
+                    <div className="relative flex-1">
+                      <Plus className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: '#BDBDCB' }} strokeWidth={1.75} />
+                      <input
+                        type="text"
+                        value={quickAddNewCategoryName}
+                        onChange={(e) => setQuickAddNewCategoryName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && quickAddNewCategoryName.trim()) {
+                            handleQuickAddAddNewCategory();
+                          } else if (e.key === 'Escape') {
+                            setQuickAddNewCategoryName('');
+                          }
+                        }}
+                        placeholder="הוסף קטגוריה חדשה..."
+                        disabled={quickAddAddingCategorySaving}
+                        className="w-full pe-3 ps-8 py-2 rounded-lg text-sm outline-none transition-colors"
+                        style={{
+                          fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                          color: '#303150',
+                          border: '1.5px solid #E8E8ED',
+                          backgroundColor: '#FAFAFA',
+                          opacity: quickAddAddingCategorySaving ? 0.6 : 1,
+                          cursor: quickAddAddingCategorySaving ? 'wait' : 'text',
+                        }}
+                        onFocus={(e) => { e.target.style.borderColor = '#69ADFF'; e.target.style.backgroundColor = '#FFFFFF'; }}
+                        onBlur={(e) => { e.target.style.borderColor = '#E8E8ED'; e.target.style.backgroundColor = '#FAFAFA'; }}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { if (quickAddNewCategoryName.trim()) handleQuickAddAddNewCategory(); }}
+                      disabled={!quickAddNewCategoryName.trim() || quickAddAddingCategorySaving}
+                      className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all"
+                      style={{
+                        backgroundColor: quickAddNewCategoryName.trim() ? '#69ADFF' : '#F0F0F4',
+                        color: quickAddNewCategoryName.trim() ? '#FFFFFF' : '#BDBDCB',
+                        cursor: !quickAddNewCategoryName.trim() || quickAddAddingCategorySaving ? 'default' : 'pointer',
+                        opacity: quickAddAddingCategorySaving ? 0.6 : 1,
+                      }}
+                    >
+                      {quickAddAddingCategorySaving ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" strokeWidth={2} />
+                      ) : (
+                        <Plus className="w-4 h-4" strokeWidth={2} />
+                      )}
+                    </button>
                   </div>
-                  <span className="flex-1 text-right font-medium">{cat.nameHe}</span>
-                  {isCurrentCat && <Check className="w-4 h-4 text-[#69ADFF]" strokeWidth={2} />}
-                </button>
-              );
-            })}
-          </div>
-        </div>,
+                </div>
+              )}
+
+              {/* Categories List */}
+              <div className="overflow-y-auto scrollbar-ghost flex-1" style={{ maxHeight: '280px' }}>
+                <div className="p-1.5">
+                  {filteredQA.length === 0 ? (
+                    <div className="px-3 py-4 text-center text-sm" style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}>
+                      לא נמצאו קטגוריות
+                    </div>
+                  ) : (
+                    filteredQA.map((cat) => {
+                      const isCurrentCat = cat.id === quickAddValues.category;
+                      const CatIcon = cat.icon;
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            setQuickAddValues(v => ({ ...v, category: cat.id }));
+                            setIsQuickAddCategoryOpen(false);
+                          }}
+                          className={cn('w-full px-3 py-2 rounded-lg text-sm text-right flex items-center gap-2 transition-colors', isCurrentCat ? 'bg-[#C1DDFF]/40' : 'hover:bg-[#F7F7F8]')}
+                          style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif', color: '#303150' }}
+                        >
+                          <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: cat.bgColor, color: cat.color }}>
+                            {CatIcon && <CatIcon className="w-3 h-3" strokeWidth={1.75} />}
+                          </div>
+                          <span className="flex-1 text-right font-medium">{cat.nameHe}</span>
+                          {isCurrentCat && <Check className="w-4 h-4 text-[#69ADFF]" strokeWidth={2} />}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })(),
         document.body,
       )}
 
