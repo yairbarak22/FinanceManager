@@ -73,8 +73,7 @@ export default function MonthFilter({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const currentMonthRef = useRef<HTMLButtonElement>(null);
 
-  // Get customDateRange from context
-  const { customDateRange, setCustomDateRange } = useMonth();
+  const { customDateRange, setCustomDateRange, financialMonthStartDay } = useMonth();
 
   // Initialize date inputs when custom range exists
   useEffect(() => {
@@ -174,7 +173,6 @@ export default function MonthFilter({
     setShowDatePicker(false);
   };
 
-  // Determine trigger display text
   const getTriggerText = (): string => {
     if (selectedMonth === 'custom' && customDateRange) {
       return formatDateRangeDisplay(customDateRange, compact);
@@ -197,10 +195,12 @@ export default function MonthFilter({
         className={`month-option ${isSelected ? 'selected' : ''} ${hasData ? 'has-data' : 'no-data'} ${isCurrent ? 'current' : ''}`}
       >
         <span className={`indicator ${hasData ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-        <span className="flex-1 text-right">{formatMonthDisplay(monthKey)}</span>
-        {isSelected && <Check className="w-4 h-4 text-blue-400" />}
+        <span className="flex-1 text-right">
+          {formatMonthDisplay(monthKey)}
+        </span>
+        {isSelected && <Check className="w-4 h-4 text-blue-400 flex-shrink-0" />}
         {isCurrent && !isSelected && (
-          <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">נוכחי</span>
+          <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full flex-shrink-0">נוכחי</span>
         )}
       </button>
     );
@@ -220,13 +220,18 @@ export default function MonthFilter({
         {isCustomActive && (
           <CalendarRange className="w-4 h-4 flex-shrink-0 text-[#69ADFF]" strokeWidth={1.75} />
         )}
-        <span className={`text-right font-medium whitespace-nowrap ${compact ? 'text-sm' : 'text-sm'} ${
+        <span className={`text-right font-medium whitespace-nowrap text-sm ${
           isCustomActive
             ? 'text-[#69ADFF]'
             : isDark ? 'text-[#1D1D1F]' : 'text-slate-800'
         }`}>
           {getTriggerText()}
         </span>
+        {financialMonthStartDay > 1 && !isCustomActive && (
+          <span className="ms-2 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-normal bg-gray-100 text-gray-500 whitespace-nowrap">
+            מתחיל ב-{financialMonthStartDay} לחודש
+          </span>
+        )}
         {isCustomActive ? (
           <span
             role="button"

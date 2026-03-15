@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getSharedUserIds } from '@/lib/authHelpers';
-import { getMonthKey } from '@/lib/utils';
+import { isInFinancialMonth } from '@/lib/utils';
 import {
   getRemainingBalance,
   getEffectiveMonthlyExpense,
@@ -47,7 +47,8 @@ function getPreviousMonthKey(monthKey: string): string {
 
 export async function calculateMonthlyReport(
   userId: string,
-  monthKey: string
+  monthKey: string,
+  monthStartDay: number = 1
 ): Promise<MonthlyReportData> {
   const userIds = await getSharedUserIds(userId);
   const prevMonthKey = getPreviousMonthKey(monthKey);
@@ -100,9 +101,8 @@ export async function calculateMonthlyReport(
 
   const isFirstMonth = existingReportsCount === 0;
 
-  // Filter transactions for this month
   const monthTransactions = transactions.filter(
-    (tx) => getMonthKey(tx.date) === monthKey
+    (tx) => isInFinancialMonth(tx.date, monthKey, monthStartDay)
   );
 
   // Map custom categories to CategoryInfo format

@@ -6,7 +6,7 @@ import { FileText, Download, Plus, Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout';
 import { useMonth } from '@/context/MonthContext';
 import { useSession } from 'next-auth/react';
-import { apiFetch } from '@/lib/utils';
+import { apiFetch, formatFinancialMonthRange } from '@/lib/utils';
 import MonthSelector from '@/components/monthly-summary/MonthSelector';
 import MonthlyBalanceCard from '@/components/monthly-summary/MonthlyBalanceCard';
 import AIInsightsCard from '@/components/monthly-summary/AIInsightsCard';
@@ -69,6 +69,7 @@ export default function MonthlySummaryPage() {
     allMonths,
     monthsWithData,
     currentMonth,
+    financialMonthStartDay,
   } = useMonth();
 
   const exportMode = searchParams.get('export') === 'true';
@@ -186,6 +187,8 @@ export default function MonthlySummaryPage() {
     return `${MONTH_NAMES[month]} ${year}`;
   })();
 
+  const monthRangeStr = formatFinancialMonthRange(reportMonthKey, financialMonthStartDay);
+
   const userName = session?.user?.name?.split(' ')[0];
 
   const pageContent = (
@@ -267,6 +270,7 @@ export default function MonthlySummaryPage() {
           {/* Hero */}
           <MonthlyBalanceCard
             monthLabel={monthLabel}
+            monthRangeStr={monthRangeStr}
             netCashflow={report.netCashflow}
             totalIncome={report.totalIncome}
             totalExpenses={report.totalExpenses}

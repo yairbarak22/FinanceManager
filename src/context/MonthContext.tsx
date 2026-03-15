@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode, useMemo } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
+import { apiFetch } from '@/lib/utils';
 
 export interface CustomDateRange {
   start: string; // YYYY-MM-DD format
@@ -16,6 +17,8 @@ interface MonthContextValue {
   setMonthsWithData: (months: Set<string>) => void;
   customDateRange: CustomDateRange | null;
   setCustomDateRange: (range: CustomDateRange | null) => void;
+  financialMonthStartDay: number;
+  setFinancialMonthStartDay: (day: number) => void;
 }
 
 const MonthContext = createContext<MonthContextValue | undefined>(undefined);
@@ -44,10 +47,28 @@ export function MonthProvider({ children }: { children: ReactNode }) {
   const [selectedMonth, setSelectedMonthState] = useState(currentMonth);
   const [monthsWithData, setMonthsWithData] = useState<Set<string>>(new Set());
   const [customDateRange, setCustomDateRangeState] = useState<CustomDateRange | null>(null);
+  const [financialMonthStartDay, setFinancialMonthStartDayState] = useState<number>(1);
   
   const allMonths = useMemo(() => generateAllMonths(), []);
 
-  // When selecting a month, clear the custom date range
+  useEffect(() => {
+    apiFetch('/api/user/settings')
+      .then((res) => {
+        if (res.ok) return res.json();
+        return null;
+      })
+      .then((data) => {
+        if (data?.monthStartDay) {
+          setFinancialMonthStartDayState(data.monthStartDay);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const setFinancialMonthStartDay = useCallback((day: number) => {
+    setFinancialMonthStartDayState(day);
+  }, []);
+
   const handleMonthChange = useCallback((month: string) => {
     setSelectedMonthState(month);
     if (month !== 'custom') {
@@ -55,7 +76,6 @@ export function MonthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // When setting a custom date range, switch selectedMonth to 'custom'
   const handleCustomDateRangeChange = useCallback((range: CustomDateRange | null) => {
     setCustomDateRangeState(range);
     if (range) {
@@ -74,7 +94,9 @@ export function MonthProvider({ children }: { children: ReactNode }) {
     setMonthsWithData,
     customDateRange,
     setCustomDateRange: handleCustomDateRangeChange,
-  }), [selectedMonth, handleMonthChange, currentMonth, allMonths, monthsWithData, customDateRange, handleCustomDateRangeChange]);
+    financialMonthStartDay,
+    setFinancialMonthStartDay,
+  }), [selectedMonth, handleMonthChange, currentMonth, allMonths, monthsWithData, customDateRange, handleCustomDateRangeChange, financialMonthStartDay, setFinancialMonthStartDay]);
 
   return (
     <MonthContext.Provider value={value}>

@@ -4,6 +4,7 @@ import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { validateRequest } from '@/lib/validateRequest';
 import { createBudgetSchema } from '@/lib/validationSchemas';
+import { getFinancialMonthBounds } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,8 +31,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid month or year' }, { status: 400 });
     }
 
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0, 23, 59, 59);
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { monthStartDay: true },
+    });
+    const monthStartDay = user?.monthStartDay ?? 1;
+
+    const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+    const { startDate, endDate } = getFinancialMonthBounds(monthKey, monthStartDay);
 
     const budgetWhere = await withSharedAccount(userId, { month, year });
     const expenseWhere = await withSharedAccount(userId, {

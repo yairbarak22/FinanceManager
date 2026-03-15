@@ -1,3 +1,6 @@
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale/he';
+
 // Utility functions for the finance manager
 
 export type CurrencyCode = 'ILS' | 'USD';
@@ -103,6 +106,103 @@ export function getMonthsBetween(startDate: Date, endDate: Date): Date[] {
 export function parseMonthKey(monthKey: string): Date {
   const [year, month] = monthKey.split('-').map(Number);
   return new Date(year, month - 1, 1);
+}
+
+/**
+ * Calculate the actual date boundaries for a financial month.
+ *
+ * When startDay === 1 the result matches a normal calendar month.
+ * When startDay > 1 (e.g. 10), "2026-03" represents the period
+ * from the 10th of the previous calendar month to the 9th of the
+ * current calendar month.
+ *
+ * Handles year rollover and short-month clamping automatically.
+ */
+export function getFinancialMonthBounds(
+  monthKey: string,
+  startDay: number
+): { startDate: Date; endDate: Date } {
+  const [year, monthNum] = monthKey.split('-').map(Number);
+
+  if (startDay <= 1) {
+    const startDate = new Date(year, monthNum - 1, 1, 0, 0, 0, 0);
+    const endDate = new Date(year, monthNum, 0, 23, 59, 59, 999);
+    return { startDate, endDate };
+  }
+
+  // Previous calendar month (handles year rollover via JS Date)
+  const prevMonth = monthNum - 2; // 0-indexed: monthNum-1 is current, monthNum-2 is prev
+  const prevYear = year;
+
+  // Clamp startDay to the number of days in the previous calendar month
+  const daysInPrevMonth = new Date(prevYear, prevMonth + 1, 0).getDate();
+  const clampedStartDay = Math.min(startDay, daysInPrevMonth);
+
+  const startDate = new Date(prevYear, prevMonth, clampedStartDay, 0, 0, 0, 0);
+
+  // End day = startDay - 1 of the current calendar month, clamped
+  const endDayTarget = startDay - 1;
+  const daysInCurrentMonth = new Date(year, monthNum, 0).getDate();
+  const clampedEndDay = Math.min(endDayTarget, daysInCurrentMonth);
+
+  const endDate = new Date(year, monthNum - 1, clampedEndDay, 23, 59, 59, 999);
+
+  return { startDate, endDate };
+}
+
+/**
+ * Format the financial month date range for display in human-readable Hebrew.
+ * Returns null when startDay is 1 (standard calendar month).
+ * Otherwise returns e.g. "10 בפברואר - 9 במרץ".
+ */
+export function formatFinancialMonthRange(monthKey: string, startDay: number): string | null {
+  if (startDay <= 1) return null;
+
+  const { startDate, endDate } = getFinancialMonthBounds(monthKey, startDay);
+  const startStr = format(startDate, 'd בMMMM', { locale: he });
+  const endStr = format(endDate, 'd בMMMM', { locale: he });
+
+  return `${startStr} - ${endStr}`;
+}
+
+/**
+ * Check whether a date falls within a given financial month.
+ */
+export function isInFinancialMonth(
+  txDate: string | Date,
+  monthKey: string,
+  startDay: number
+): boolean {
+  const { startDate, endDate } = getFinancialMonthBounds(monthKey, startDay);
+  const d = new Date(txDate);
+  return d >= startDate && d <= endDate;
+}
+
+/**
+ * Return the financial-month key (YYYY-MM) that a date belongs to.
+ * When startDay is 1 this is identical to getMonthKey.
+ * When startDay > 1, dates on or after startDay belong to the *next*
+ * calendar month's financial period.
+ */
+export function getFinancialMonthKey(
+  date: string | Date,
+  startDay: number
+): string {
+  if (startDay <= 1) return getMonthKey(date);
+
+  const d = new Date(date);
+  const day = d.getDate();
+  const month = d.getMonth(); // 0-indexed
+  const year = d.getFullYear();
+
+  if (day >= startDay) {
+    const nextMonth = month + 1;
+    if (nextMonth > 11) {
+      return `${year + 1}-01`;
+    }
+    return `${year}-${String(nextMonth + 1).padStart(2, '0')}`;
+  }
+  return `${year}-${String(month + 1).padStart(2, '0')}`;
 }
 
 /**

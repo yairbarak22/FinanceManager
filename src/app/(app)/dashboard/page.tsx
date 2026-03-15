@@ -41,7 +41,7 @@ import {
   NetWorthHistory,
   MonthlySummary as MonthlySummaryType,
 } from '@/lib/types';
-import { getMonthKey, calculateSavingsRate, apiFetch, isRecurringActiveInMonth, getAmountInILS } from '@/lib/utils';
+import { getMonthKey, calculateSavingsRate, apiFetch, isRecurringActiveInMonth, getAmountInILS, isInFinancialMonth, getFinancialMonthKey } from '@/lib/utils';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { getEffectiveMonthlyExpense, getRemainingBalance, isLiabilityActiveInCashFlow } from '@/lib/loanCalculations';
 import { getTotalAssetsForMonth } from '@/lib/assetUtils';
@@ -70,6 +70,7 @@ export default function DashboardPage() {
     setMonthsWithData,
     currentMonth,
     customDateRange,
+    financialMonthStartDay,
   } = useMonth();
   
   const { rate: exchangeRate } = useExchangeRate();
@@ -196,13 +197,6 @@ export default function DashboardPage() {
       setAssetHistory(detailedHistoryData);
       setLiabilities(liabData);
 
-      // Track which months have transaction data
-      const dataMonths = new Set<string>();
-      txData.forEach((tx: Transaction) => {
-        dataMonths.add(getMonthKey(tx.date));
-      });
-      setMonthsWithData(dataMonths);
-
       // Use net worth history from database
       const netWorthData: NetWorthHistory[] = netWorthHistoryData.map((item: { id: string; date: string; netWorth: number; assets: number; liabilities: number }) => ({
         id: item.id,
@@ -231,12 +225,22 @@ export default function DashboardPage() {
       console.error('Error fetching data:', error);
       setIsLoading(false);
     }
-  }, [setMonthsWithData]);
+  }, []);
 
   // Fetch data on mount
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Recalculate monthsWithData when transactions or financialMonthStartDay change
+  useEffect(() => {
+    if (transactions.length === 0) return;
+    const dataMonths = new Set<string>();
+    transactions.forEach((tx) => {
+      dataMonths.add(getFinancialMonthKey(tx.date, financialMonthStartDay));
+    });
+    setMonthsWithData(dataMonths);
+  }, [transactions, financialMonthStartDay, setMonthsWithData]);
 
   // ============================================================
   // Onboarding modal handlers — called when user picks an option
@@ -335,7 +339,7 @@ export default function DashboardPage() {
       })
     : selectedMonth === 'all'
       ? transactions
-      : transactions.filter((tx) => getMonthKey(tx.date) === selectedMonth);
+      : transactions.filter((tx) => isInFinancialMonth(tx.date, selectedMonth, financialMonthStartDay));
 
   // Filter by category as well (for display in Activity section)
   const filteredTransactions = monthFilteredTransactions.filter((tx) => {
@@ -393,7 +397,7 @@ export default function DashboardPage() {
   const monthlySummaries: MonthlySummaryType[] = monthsWithDataArray.map((monthKey) => {
     const [year, month] = monthKey.split('-');
     const monthDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-    const monthTransactions = transactions.filter((tx) => getMonthKey(tx.date) === monthKey);
+    const monthTransactions = transactions.filter((tx) => isInFinancialMonth(tx.date, monthKey, financialMonthStartDay));
 
     const txIncome = monthTransactions
       .filter((tx) => tx.type === 'income')

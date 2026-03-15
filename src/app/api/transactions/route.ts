@@ -5,6 +5,7 @@ import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { recalculateDeadline } from '@/lib/goalCalculations';
 import { validateRequest } from '@/lib/validateRequest';
 import { createTransactionSchema } from '@/lib/validationSchemas';
+import { getFinancialMonthBounds } from '@/lib/utils';
 
 // Helper function to find a goal by category ID (handles both default and custom categories)
 async function findGoalByCategory(userId: string, categoryId: string) {
@@ -106,12 +107,17 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(100, Math.max(1, parseInt(limitParam || '50', 10))); // Max 100, default 50
     const skip = (page - 1) * limit;
     
+    // Fetch user's custom financial month start day
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { monthStartDay: true },
+    });
+    const monthStartDay = user?.monthStartDay ?? 1;
+
     let whereClause: Record<string, unknown> = {};
     
     if (month && month !== 'all') {
-      const [year, monthNum] = month.split('-').map(Number);
-      const startDate = new Date(year, monthNum - 1, 1);
-      const endDate = new Date(year, monthNum, 0, 23, 59, 59);
+      const { startDate, endDate } = getFinancialMonthBounds(month, monthStartDay);
       
       whereClause = {
         date: {

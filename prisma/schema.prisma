@@ -19,6 +19,7 @@ model User {
   signupSource          String?                // Signup source tracking (e.g., "prog", "facebook", "google_ads")
   isMarketingSubscribed Boolean               @default(true) // Whether subscribed to marketing emails
   marketingUnsubscribedAt DateTime?            // When user unsubscribed from marketing
+  monthStartDay         Int                    @default(1) // Day of month when financial month starts (1-28)
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   accounts              Account[]

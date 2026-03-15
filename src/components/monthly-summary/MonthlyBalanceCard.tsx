@@ -7,6 +7,7 @@ import { SensitiveData } from '@/components/common/SensitiveData';
 
 interface MonthlyBalanceCardProps {
   monthLabel: string;
+  monthRangeStr?: string | null;
   netCashflow: number;
   totalIncome: number;
   totalExpenses: number;
@@ -15,6 +16,7 @@ interface MonthlyBalanceCardProps {
 
 export default function MonthlyBalanceCard({
   monthLabel,
+  monthRangeStr,
   netCashflow,
   totalIncome,
   totalExpenses,
@@ -41,6 +43,11 @@ export default function MonthlyBalanceCard({
         <div>
           <p className="text-[0.8125rem] font-medium text-[#7E7F90] mb-1">
             {greeting} ל{monthLabel}
+            {monthRangeStr && (
+              <span className="ms-2 inline-flex items-center px-2 py-0.5 rounded-full text-[0.6875rem] font-medium bg-gray-100 text-gray-500" dir="ltr">
+                {monthRangeStr}
+              </span>
+            )}
           </p>
 
           <div className="mt-3 flex items-center gap-3">

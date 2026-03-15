@@ -12,6 +12,7 @@ import {
   Shield,
   AlertTriangle,
   Trash2,
+  Calendar,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AppLayout } from '@/components/layout';
@@ -84,6 +85,7 @@ export default function SettingsPage() {
     allMonths,
     monthsWithData,
     currentMonth,
+    setFinancialMonthStartDay: setGlobalFinancialMonthStartDay,
   } = useMonth();
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
@@ -100,6 +102,9 @@ export default function SettingsPage() {
     monthlyIncome: null,
     riskTolerance: null,
   });
+  const [monthStartDay, setMonthStartDay] = useState<number>(1);
+  const [savingMonthStartDay, setSavingMonthStartDay] = useState(false);
+  const [monthStartDaySaved, setMonthStartDaySaved] = useState(false);
 
   const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
   const [indicatorStyle, setIndicatorStyle] = useState({ width: 0, right: 0 });
@@ -123,10 +128,17 @@ export default function SettingsPage() {
   const fetchProfile = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await apiFetch('/api/profile');
-      if (res.ok) {
-        const data = await res.json();
+      const [profileRes, settingsRes] = await Promise.all([
+        apiFetch('/api/profile'),
+        apiFetch('/api/user/settings'),
+      ]);
+      if (profileRes.ok) {
+        const data = await profileRes.json();
         setProfile(data);
+      }
+      if (settingsRes.ok) {
+        const data = await settingsRes.json();
+        setMonthStartDay(data.monthStartDay ?? 1);
       }
     } catch {
       setError('שגיאה בטעינת הפרופיל');
@@ -159,6 +171,31 @@ export default function SettingsPage() {
       setError('שגיאה בשמירת הפרופיל');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleMonthStartDayChange = async (value: string) => {
+    const newValue = Number(value);
+    setMonthStartDay(newValue);
+    setSavingMonthStartDay(true);
+    setMonthStartDaySaved(false);
+    try {
+      const res = await apiFetch('/api/user/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ monthStartDay: newValue }),
+      });
+      if (res.ok) {
+        setGlobalFinancialMonthStartDay(newValue);
+        setMonthStartDaySaved(true);
+        setTimeout(() => setMonthStartDaySaved(false), 3000);
+      } else {
+        setError('שגיאה בשמירת ההגדרה');
+      }
+    } catch {
+      setError('שגיאה בשמירת ההגדרה');
+    } finally {
+      setSavingMonthStartDay(false);
     }
   };
 
@@ -425,6 +462,58 @@ export default function SettingsPage() {
                       )}
                     </button>
                     {saved && (
+                      <div
+                        className="flex items-center gap-1.5 text-sm animate-fade-in"
+                        style={{ color: '#0DBACC', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                      >
+                        <Check className="w-4 h-4" strokeWidth={2.5} />
+                        <span>נשמר</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* --- Divider --- */}
+                <div className="mx-6 my-6" style={{ borderTop: '1px solid #F7F7F8' }} />
+
+                {/* --- Financial Month Start Section --- */}
+                <div className="px-6 pb-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Calendar className="w-[18px] h-[18px]" style={{ color: '#303150' }} strokeWidth={1.75} />
+                    <h3
+                      className="font-semibold"
+                      style={{
+                        fontSize: '1.125rem',
+                        color: '#303150',
+                        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                      }}
+                    >
+                      תחילת חודש פיננסי
+                    </h3>
+                  </div>
+                  <p
+                    className="text-xs mt-1 mb-4"
+                    style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                  >
+                    בחר את היום שבו מתחיל החודש הכלכלי שלך (למשל, יום ירידת כרטיס האשראי). טווחי התאריכים יותאמו אוטומטית.
+                  </p>
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-40">
+                      <StyledSelect
+                        value={String(monthStartDay)}
+                        onChange={(value) => handleMonthStartDayChange(value)}
+                        options={Array.from({ length: 28 }, (_, i) => ({
+                          value: String(i + 1),
+                          label: `יום ${i + 1}`,
+                        }))}
+                        disabled={savingMonthStartDay}
+                      />
+                    </div>
+                    {savingMonthStartDay && (
+                      <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#BDBDCB' }} />
+                    )}
+                    {monthStartDaySaved && (
                       <div
                         className="flex items-center gap-1.5 text-sm animate-fade-in"
                         style={{ color: '#0DBACC', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}

@@ -4,7 +4,7 @@ import { requireAuth } from '@/lib/authHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { fetchNetWorthTimeline, fetchCategoryHistory, calculateUpcomingObligations } from '@/lib/monthlyReport/calculations';
 import { getSharedUserIds } from '@/lib/authHelpers';
-import { getMonthKey } from '@/lib/utils';
+import { isInFinancialMonth } from '@/lib/utils';
 
 export async function GET(
   _request: NextRequest,
@@ -51,7 +51,12 @@ export async function GET(
       calculateUpcomingObligations(userId, monthKey),
     ]);
 
-    // Fetch transactions for this month for drill-down
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { monthStartDay: true },
+    });
+    const monthStartDay = user?.monthStartDay ?? 1;
+
     const userIds = await getSharedUserIds(userId);
     const transactions = await prisma.transaction.findMany({
       where: {
@@ -61,7 +66,7 @@ export async function GET(
     });
 
     const monthTransactions = transactions
-      .filter((tx) => getMonthKey(tx.date) === monthKey)
+      .filter((tx) => isInFinancialMonth(tx.date, monthKey, monthStartDay))
       .map((tx) => ({
         id: tx.id,
         type: tx.type,

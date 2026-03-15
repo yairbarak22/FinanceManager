@@ -69,8 +69,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate all report data
-    const reportData = await calculateMonthlyReport(userId, monthKey);
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { monthStartDay: true },
+    });
+    const monthStartDay = user?.monthStartDay ?? 1;
+
+    const reportData = await calculateMonthlyReport(userId, monthKey, monthStartDay);
 
     // Calculate upcoming obligations
     const obligations = await calculateUpcomingObligations(userId, monthKey);
