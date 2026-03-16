@@ -21,12 +21,24 @@ function buildYemotAudioUrl(relativePath: string): string {
   return `https://www.call2all.co.il/ym/api/DownloadFile?token=${token}&path=ivr/${cleanPath}`;
 }
 
+const DOWNLOAD_TIMEOUT_MS = 20_000;
+
 async function downloadAudioBuffer(url: string): Promise<Buffer> {
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed to download audio from ${url}: ${res.status}`);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
+  const start = Date.now();
+
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) {
+      throw new Error(`Failed to download audio from ${url}: ${res.status}`);
+    }
+    const buf = Buffer.from(await res.arrayBuffer());
+    console.log(`[IVR] Download OK: ${buf.byteLength} bytes in ${Date.now() - start}ms`);
+    return buf;
+  } finally {
+    clearTimeout(timeout);
   }
-  return Buffer.from(await res.arrayBuffer());
 }
 
 async function downloadWithRetry(url: string, retries = 3): Promise<Buffer> {
@@ -34,9 +46,17 @@ async function downloadWithRetry(url: string, retries = 3): Promise<Buffer> {
     try {
       return await downloadAudioBuffer(url);
     } catch (error) {
-      console.error(`[IVR] Download attempt ${i + 1}/${retries} failed for ${url}:`, error);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      const cause = error instanceof Error && error.cause
+        ? (error.cause instanceof Error ? `${error.cause.message} (code=${(error.cause as NodeJS.ErrnoException).code})` : String(error.cause))
+        : 'no cause';
+      console.error(
+        `[IVR] Download attempt ${i + 1}/${retries} failed for ${url}: ${errMsg} | cause: ${cause}`
+      );
       if (i === retries - 1) throw error;
-      await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
+      const backoffMs = 2000 * (i + 1);
+      console.log(`[IVR] Retrying in ${backoffMs}ms...`);
+      await new Promise((r) => setTimeout(r, backoffMs));
     }
   }
   throw new Error(`Download failed after ${retries} retries: ${url}`);
