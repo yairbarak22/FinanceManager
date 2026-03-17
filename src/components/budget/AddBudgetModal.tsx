@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ChevronDown, Check } from 'lucide-react';
+import { X, ChevronDown, Check, Plus } from 'lucide-react';
 import { CategoryInfo, getCategoryInfo as getBuiltinCategoryInfo, expenseCategories } from '@/lib/categories';
+import AddCategoryModal from '@/components/ui/AddCategoryModal';
 
 interface DropdownRect {
   top: number;
@@ -19,6 +20,7 @@ interface AddBudgetModalProps {
   customCategories: CategoryInfo[];
   editingCategoryId?: string | null;
   editingAmount?: number | null;
+  onAddCategory?: (name: string, isMaaserEligible?: boolean) => Promise<CategoryInfo>;
 }
 
 export default function AddBudgetModal({
@@ -29,8 +31,10 @@ export default function AddBudgetModal({
   customCategories,
   editingCategoryId,
   editingAmount,
+  onAddCategory,
 }: AddBudgetModalProps) {
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [showAddCategory, setShowAddCategory] = useState(false);
   const [amount, setAmount] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -251,6 +255,48 @@ export default function AddBudgetModal({
                         scrollbarColor: 'rgba(126,127,144,0.3) transparent',
                       }}
                     >
+                      {onAddCategory && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDropdownOpen(false);
+                              setShowAddCategory(true);
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-right"
+                            style={{
+                              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                              fontSize: '14px',
+                              fontWeight: 500,
+                              color: '#69ADFF',
+                              background: 'transparent',
+                              cursor: 'pointer',
+                              transition: 'background 100ms',
+                            }}
+                            onMouseEnter={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.background = 'rgba(105,173,255,0.08)';
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                            }}
+                          >
+                            <div
+                              className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                              style={{ backgroundColor: 'rgba(105,173,255,0.15)' }}
+                            >
+                              <Plus className="w-3.5 h-3.5 text-[#69ADFF]" strokeWidth={2} />
+                            </div>
+                            <span>הוסף קטגוריה חדשה...</span>
+                          </button>
+                          <div
+                            style={{
+                              height: 1,
+                              background: '#F7F7F8',
+                              margin: '0 16px',
+                            }}
+                          />
+                        </>
+                      )}
                       {availableCategories.length === 0 ? (
                         <div
                           className="px-4 py-3 text-center"
@@ -353,6 +399,19 @@ export default function AddBudgetModal({
             </button>
           </div>
         </form>
+
+        {onAddCategory && (
+          <AddCategoryModal
+            isOpen={showAddCategory}
+            onClose={() => setShowAddCategory(false)}
+            categoryType="expense"
+            onSave={async (name, isMaaserEligible) => {
+              const newCat = await onAddCategory(name, isMaaserEligible);
+              setSelectedCategory(newCat.id);
+              setShowAddCategory(false);
+            }}
+          />
+        )}
       </div>
     </div>
   );

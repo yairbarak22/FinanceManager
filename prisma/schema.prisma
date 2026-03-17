@@ -49,6 +49,7 @@ model User {
   ctaClicks             CtaClick[]             // CTA click tracking
   monthlyReports        MonthlyReport[]        // Monthly financial reports
   budgets               Budget[]               // Monthly budget entries
+  passoverSections      PassoverSection[]       // Passover budget planning sections
   ivrCallSessions       IvrCallSession[]       // IVR phone-based expense reports
   ivrPin                IvrPin?                // PIN for IVR authentication
 }
@@ -836,6 +837,27 @@ model Budget {
   @@unique([userId, categoryId, month, year])
   @@index([userId, month, year])
   @@index([userId])
+}
+
+// ============================================
+// PASSOVER BUDGET - Holiday expense planning sections
+// Each section links to a CustomCategory (type='passover')
+// Spent amounts are derived from transactions, not stored
+// ============================================
+model PassoverSection {
+  id            String   @id @default(cuid())
+  userId        String
+  month         Int
+  year          Int
+  categoryId    String   // CustomCategory.id (type='passover')
+  plannedAmount Float    @default(0)
+  orderIndex    Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month, year, categoryId])
+  @@index([userId, month, year])
 }
 
 // ============================================

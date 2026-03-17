@@ -138,6 +138,27 @@ export const createBudgetSchema = z.object({
   year: z.number().int().min(2020).max(2100),
 });
 
+// --- Passover Budget schemas ---
+
+export const upsertPassoverSectionSchema = z.object({
+  categoryId: z.string().trim().min(1).max(200),
+  categoryName: shortString(100).optional(),
+  plannedAmount: nonNegativeAmount.optional(),
+  orderIndex: z.number().int().min(0).optional(),
+  month: z.number().int().min(1).max(12),
+  year: z.number().int().min(2020).max(2100),
+});
+
+export const deletePassoverSectionSchema = z.object({
+  sectionId: z.string().trim().min(1),
+});
+
+export const bulkCreatePassoverSectionsSchema = z.object({
+  template: z.enum(['hosting', 'guest']),
+  month: z.number().int().min(1).max(12),
+  year: z.number().int().min(2020).max(2100),
+});
+
 export const copyBudgetSchema = z.object({
   fromMonth: z.number().int().min(1).max(12),
   fromYear: z.number().int().min(2020).max(2100),

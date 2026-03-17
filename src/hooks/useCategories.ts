@@ -25,6 +25,7 @@ interface CustomCategoriesData {
   income: CustomCategoryResponse[];
   asset: CustomCategoryResponse[];
   liability: CustomCategoryResponse[];
+  passover: CustomCategoryResponse[];
 }
 
 // Simple goal interface for category matching
@@ -41,6 +42,7 @@ export function useCategories() {
     income: [],
     asset: [],
     liability: [],
+    passover: [],
   });
   const [goalCategories, setGoalCategories] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -72,6 +74,7 @@ export function useCategories() {
         income: [],
         asset: [],
         liability: [],
+        passover: [],
       });
       setGoalCategories(new Set());
       setError(null);
@@ -164,9 +167,15 @@ export function useCategories() {
         ...convertToInfo(cat),
         type,
       }));
-      // Prepend haredi expense categories for Haredi users
-      if (type === 'expense' && isHaredi) {
-        return [...harediExpenseCategories.map(c => ({ ...c, type })), ...customCats];
+      if (type === 'expense') {
+        const passoverCats = customCategories.passover.map(cat => ({
+          ...convertToInfo(cat),
+          type: 'expense' as const,
+        }));
+        if (isHaredi) {
+          return [...harediExpenseCategories.map(c => ({ ...c, type })), ...customCats, ...passoverCats];
+        }
+        return [...customCats, ...passoverCats];
       }
       return customCats;
     },
@@ -184,7 +193,7 @@ export function useCategories() {
   const addCustomCategory = useCallback(
     async (
       name: string,
-      type: 'expense' | 'income' | 'asset' | 'liability',
+      type: 'expense' | 'income' | 'asset' | 'liability' | 'passover',
       isMaaserEligible?: boolean
     ): Promise<CategoryInfo> => {
       const response = await apiFetch('/api/categories', {
@@ -212,7 +221,7 @@ export function useCategories() {
   );
 
   const updateCustomCategory = useCallback(
-    (id: string, type: 'expense' | 'income' | 'asset' | 'liability', isMaaserEligible: boolean) => {
+    (id: string, type: 'expense' | 'income' | 'asset' | 'liability' | 'passover', isMaaserEligible: boolean) => {
       setCustomCategories((prev) => ({
         ...prev,
         [type]: prev[type].map((c) =>
@@ -224,7 +233,7 @@ export function useCategories() {
   );
 
   const deleteCustomCategory = useCallback(
-    async (id: string, type: 'expense' | 'income' | 'asset' | 'liability') => {
+    async (id: string, type: 'expense' | 'income' | 'asset' | 'liability' | 'passover') => {
       const response = await apiFetch(`/api/categories/${id}`, {
         method: 'DELETE',
       });

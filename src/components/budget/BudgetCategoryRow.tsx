@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Trash2 } from 'lucide-react';
 import { CategoryInfo } from '@/lib/categories';
-import BudgetProgressBar from './BudgetProgressBar';
+import { BUDGET_GRID_COLS } from './budgetGridCols';
 
 interface BudgetCategoryRowProps {
   categoryInfo: CategoryInfo | undefined;
@@ -12,9 +12,8 @@ interface BudgetCategoryRowProps {
   spent: number;
   remaining: number;
   percentage: number;
-  onEdit: () => void;
+  onUpdateAmount: (categoryId: string, newAmount: number) => Promise<void>;
   onDelete: () => void;
-  animationDelay?: number;
 }
 
 function formatCurrency(amount: number) {
@@ -25,6 +24,12 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
+function getPercentColor(pct: number): string {
+  if (pct > 100) return '#F18AB5';
+  if (pct > 75) return '#E9A800';
+  return '#0DBACC';
+}
+
 export default function BudgetCategoryRow({
   categoryInfo,
   categoryId,
@@ -32,103 +37,146 @@ export default function BudgetCategoryRow({
   spent,
   remaining,
   percentage,
-  onEdit,
+  onUpdateAmount,
   onDelete,
-  animationDelay = 0,
 }: BudgetCategoryRowProps) {
   const Icon = categoryInfo?.icon;
   const iconBgColor = categoryInfo?.bgColor || 'bg-gray-100';
   const iconTextColor = categoryInfo?.textColor || 'text-gray-600';
   const categoryName = categoryInfo?.nameHe || categoryId;
-
   const remainingColor = remaining >= 0 ? '#0DBACC' : '#F18AB5';
+  const pctColor = getPercentColor(percentage);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedAmount, setEditedAmount] = useState(budgetAmount.toString());
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setEditedAmount(budgetAmount.toString());
+  }, [budgetAmount]);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  const handleSave = useCallback(async () => {
+    const parsed = parseFloat(editedAmount);
+    if (parsed && parsed > 0 && parsed !== budgetAmount) {
+      try {
+        await onUpdateAmount(categoryId, parsed);
+      } catch {
+        setEditedAmount(budgetAmount.toString());
+      }
+    } else {
+      setEditedAmount(budgetAmount.toString());
+    }
+    setIsEditing(false);
+  }, [editedAmount, budgetAmount, categoryId, onUpdateAmount]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    }
+    if (e.key === 'Escape') {
+      setEditedAmount(budgetAmount.toString());
+      setIsEditing(false);
+    }
+  }, [handleSave, budgetAmount]);
 
   return (
     <div
-      className="flex items-center gap-4 py-4 px-2 rounded-2xl transition-all duration-200 hover:bg-[#F7F7F8] group"
+      className={`${BUDGET_GRID_COLS} group items-center border-b transition-colors hover:bg-[#F7F7F8]`}
       style={{
-        animation: `fadeSlideIn 400ms ease-out ${animationDelay}ms both`,
+        borderColor: '#F7F7F8',
+        fontFamily: 'var(--font-nunito), system-ui, sans-serif',
       }}
     >
-      {/* Category icon */}
-      <div
-        className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBgColor}`}
-      >
-        {Icon && <Icon className={`w-5 h-5 ${iconTextColor}`} strokeWidth={1.75} />}
+      {/* Icon */}
+      <div className="flex items-center justify-center py-3">
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBgColor}`}>
+          {Icon && <Icon className={`w-[18px] h-[18px] ${iconTextColor}`} strokeWidth={1.75} />}
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-1.5">
-          <span
+      {/* Category name */}
+      <div className="py-3 pe-3 min-w-0">
+        <span className="block truncate" style={{ fontSize: '14px', fontWeight: 600, color: '#303150' }}>
+          {categoryName}
+        </span>
+      </div>
+
+      {/* Budget amount - inline editable */}
+      <div className="py-3 px-2">
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            type="number"
+            value={editedAmount}
+            onChange={(e) => setEditedAmount(e.target.value)}
+            onBlur={handleSave}
+            onKeyDown={handleKeyDown}
+            min="1"
+            step="1"
+            dir="ltr"
+            className="w-full px-2 py-1 rounded-lg border text-sm text-center"
             style={{
-              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-              fontWeight: 600,
-              fontSize: '15px',
+              borderColor: '#69ADFF',
+              boxShadow: '0 0 0 3px rgba(105,173,255,0.2)',
               color: '#303150',
+              outline: 'none',
+              fontFamily: 'var(--font-nunito)',
             }}
-          >
-            {categoryName}
-          </span>
-          <div className="flex items-center gap-2">
-            <span
-              style={{
-                fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-                fontWeight: 500,
-                fontSize: '14px',
-                color: '#303150',
-              }}
-              dir="ltr"
-            >
-              {formatCurrency(spent)} / {formatCurrency(budgetAmount)}
-            </span>
-          </div>
-        </div>
-
-        <BudgetProgressBar percentage={percentage} height={6} />
-
-        <div className="flex items-center justify-between mt-1.5">
+          />
+        ) : (
           <span
-            style={{
-              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-              fontWeight: 400,
-              fontSize: '12px',
-              color: remainingColor,
-            }}
-          >
-            {remaining >= 0
-              ? `נותרו ${formatCurrency(remaining)}`
-              : `חריגה של ${formatCurrency(Math.abs(remaining))}`}
-          </span>
-          <span
-            style={{
-              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-              fontWeight: 500,
-              fontSize: '12px',
-              color: '#BDBDCB',
-            }}
+            onClick={() => setIsEditing(true)}
+            className="block text-center cursor-text px-2 py-1 rounded-lg transition-colors hover:bg-[#F7F7F8]"
+            style={{ fontSize: '14px', fontWeight: 500, color: '#303150' }}
             dir="ltr"
           >
-            {percentage.toFixed(1)}%
+            {formatCurrency(budgetAmount)}
+          </span>
+        )}
+      </div>
+
+      {/* Spent */}
+      <div className="py-3 px-2 text-center" dir="ltr">
+        <span style={{ fontSize: '14px', fontWeight: 500, color: '#303150' }}>
+          {formatCurrency(spent)}
+        </span>
+      </div>
+
+      {/* Remaining */}
+      <div className="py-3 px-2 text-center" dir="ltr">
+        <span style={{ fontSize: '14px', fontWeight: 600, color: remainingColor }}>
+          {formatCurrency(remaining)}
+        </span>
+      </div>
+
+      {/* Percentage badge */}
+      <div className="py-3 px-2 flex items-center justify-center">
+        <div
+          className="w-full h-7 rounded flex items-center justify-center"
+          style={{ backgroundColor: `${pctColor}18` }}
+        >
+          <span style={{ fontSize: '12px', fontWeight: 600, color: pctColor }} dir="ltr">
+            {percentage.toFixed(0)}%
           </span>
         </div>
       </div>
 
-      {/* Action buttons */}
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <button
-          onClick={onEdit}
-          className="p-2 rounded-lg hover:bg-[#E8E8ED] transition-colors cursor-pointer"
-          aria-label="ערוך תקציב"
-        >
-          <Pencil className="w-4 h-4 text-[#7E7F90]" strokeWidth={1.75} />
-        </button>
+      {/* Delete */}
+      <div className="py-3 flex items-center justify-center">
         <button
           onClick={onDelete}
-          className="p-2 rounded-lg hover:bg-[#F18AB5]/10 transition-colors cursor-pointer"
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-[#F18AB5]/10 cursor-pointer"
           aria-label="מחק תקציב"
         >
-          <Trash2 className="w-4 h-4 text-[#BDBDCB] hover:text-[#F18AB5]" strokeWidth={1.75} />
+          <Trash2 className="w-4 h-4 text-[#BDBDCB] hover:text-[#F18AB5] transition-colors" strokeWidth={1.75} />
         </button>
       </div>
     </div>

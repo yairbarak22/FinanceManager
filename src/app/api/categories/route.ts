@@ -27,11 +27,11 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'asc' },
     });
 
-    // Group custom categories by type (return only serializable data)
     const customExpense: CustomCategoryResponse[] = [];
     const customIncome: CustomCategoryResponse[] = [];
     const customAsset: CustomCategoryResponse[] = [];
     const customLiability: CustomCategoryResponse[] = [];
+    const customPassover: CustomCategoryResponse[] = [];
 
     customCategories.forEach((cat) => {
       const categoryResponse: CustomCategoryResponse = {
@@ -57,15 +57,18 @@ export async function GET(request: NextRequest) {
         case 'liability':
           customLiability.push(categoryResponse);
           break;
+        case 'passover':
+          customPassover.push(categoryResponse);
+          break;
       }
     });
 
-    // Return only custom categories (default categories are on client-side)
     return NextResponse.json({
       expense: customExpense,
       income: customIncome,
       asset: customAsset,
       liability: customLiability,
+      passover: customPassover,
     });
   } catch (error) {
     console.error('Error fetching categories:', error);
@@ -93,7 +96,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!type || !['expense', 'income', 'asset', 'liability'].includes(type)) {
+    if (!type || !['expense', 'income', 'asset', 'liability', 'passover'].includes(type)) {
       return NextResponse.json(
         { error: 'Invalid category type' },
         { status: 400 }

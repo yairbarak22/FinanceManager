@@ -4,33 +4,69 @@ function Pulse({ className }: { className: string }) {
   return <div className={`bg-[#E8E8ED] rounded-full animate-pulse ${className}`} />;
 }
 
-function SummaryCardSkeleton() {
+function SummaryStripSkeleton() {
   return (
-    <div className="rounded-3xl p-8 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-      <div className="flex items-center justify-between mb-4">
-        <Pulse className="h-4 w-20" />
-        <Pulse className="h-9 w-9 !rounded-xl" />
+    <div
+      className="rounded-2xl px-5 py-4 mb-4"
+      style={{ background: '#F7F7F8' }}
+    >
+      <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-0">
+        <div className="flex-1 flex flex-col gap-1.5 md:pe-5">
+          <Pulse className="h-3 w-12" />
+          <Pulse className="h-5 w-20" />
+        </div>
+        <div className="hidden md:block w-px h-10 bg-[#E8E8ED]" />
+        <div className="flex-1 flex flex-col gap-1.5 md:px-5">
+          <Pulse className="h-3 w-12" />
+          <Pulse className="h-5 w-20" />
+        </div>
+        <div className="hidden md:block w-px h-10 bg-[#E8E8ED]" />
+        <div className="flex-1 flex flex-col gap-1.5 md:px-5">
+          <Pulse className="h-3 w-12" />
+          <Pulse className="h-5 w-20" />
+        </div>
+        <div className="hidden md:block w-px h-10 bg-[#E8E8ED]" />
+        <div className="flex-[1.5] flex flex-col gap-1.5 md:ps-5">
+          <div className="flex items-center justify-between">
+            <Pulse className="h-3 w-8" />
+            <Pulse className="h-3 w-10" />
+          </div>
+          <Pulse className="h-1.5 w-full" />
+        </div>
       </div>
-      <Pulse className="h-9 w-32 mb-6" />
-      <div className="w-full border-t border-[#F7F7F8] mb-4" />
-      <Pulse className="h-3 w-28" />
     </div>
   );
 }
 
-function CategoryRowSkeleton() {
+function CardSkeleton() {
   return (
-    <div className="flex items-center justify-between py-4">
+    <div
+      className="rounded-3xl p-5 flex flex-col gap-4"
+      style={{
+        background: '#FFFFFF',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+      }}
+    >
       <div className="flex items-center gap-3">
-        <Pulse className="h-9 w-9 !rounded-xl flex-shrink-0" />
-        <div>
-          <Pulse className="h-4 w-20 mb-1.5" />
-          <Pulse className="h-3 w-28" />
-        </div>
+        <Pulse className="h-9 w-9 !rounded-lg flex-shrink-0" />
+        <Pulse className="h-4 flex-1 max-w-[120px]" />
       </div>
-      <div className="flex items-center gap-4">
-        <Pulse className="h-2 w-32 !rounded-full" />
-        <Pulse className="h-4 w-16" />
+      <div className="flex justify-center">
+        <Pulse className="h-[72px] w-[72px] !rounded-full" />
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="flex flex-col gap-1 items-center">
+          <Pulse className="h-3 w-10" />
+          <Pulse className="h-4 w-14" />
+        </div>
+        <div className="flex flex-col gap-1 items-center">
+          <Pulse className="h-3 w-10" />
+          <Pulse className="h-4 w-14" />
+        </div>
+        <div className="flex flex-col gap-1 items-center">
+          <Pulse className="h-3 w-10" />
+          <Pulse className="h-4 w-14" />
+        </div>
       </div>
     </div>
   );
@@ -38,23 +74,23 @@ function CategoryRowSkeleton() {
 
 export default function BudgetSkeleton() {
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Summary cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <SummaryCardSkeleton />
-        <SummaryCardSkeleton />
-        <SummaryCardSkeleton />
-      </div>
+    <div className="space-y-4 animate-in fade-in duration-300">
+      <div
+        className="rounded-3xl p-5"
+        style={{
+          background: '#FFFFFF',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
+        }}
+      >
+        <SummaryStripSkeleton />
 
-      {/* Category list */}
-      <div className="rounded-3xl p-6 bg-white shadow-[0_4px_20px_rgba(0,0,0,0.08)]">
-        <div className="flex items-center justify-between mb-4">
-          <Pulse className="h-5 w-32" />
-          <Pulse className="h-8 w-16 !rounded-lg" />
+        <div className="flex justify-between mb-4">
+          <Pulse className="h-5 w-28" />
         </div>
-        <div className="divide-y divide-[#F7F7F8]">
-          {[...Array(5)].map((_, i) => (
-            <CategoryRowSkeleton key={i} />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <CardSkeleton key={i} />
           ))}
         </div>
       </div>

@@ -38,60 +38,18 @@ export default function CopyBudgetButton({
   const sourceLabel = `${MONTH_NAMES[fromMonth]} ${fromYear}`;
 
   return (
-    <div
-      className="rounded-3xl p-8 text-center"
-      style={{
-        background: '#FFFFFF',
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
-        border: '2px dashed #E8E8ED',
-      }}
+    <button
+      onClick={handleClick}
+      disabled={disabled || isLoading}
+      className="btn-secondary flex items-center gap-2 text-sm"
+      style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
     >
-      <div className="flex flex-col items-center gap-4">
-        <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center"
-          style={{ backgroundColor: '#69ADFF15' }}
-        >
-          <Copy className="w-7 h-7 text-[#69ADFF]" strokeWidth={1.5} />
-        </div>
-
-        <div>
-          <h3
-            style={{
-              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-              fontWeight: 700,
-              fontSize: '18px',
-              color: '#303150',
-              marginBottom: '8px',
-            }}
-          >
-            עדיין לא הגדרת תקציב לחודש זה
-          </h3>
-          <p
-            style={{
-              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-              fontWeight: 400,
-              fontSize: '14px',
-              color: '#7E7F90',
-            }}
-          >
-            העתק את הגדרות התקציב מ{sourceLabel} בלחיצה אחת
-          </p>
-        </div>
-
-        <button
-          onClick={handleClick}
-          disabled={disabled || isLoading}
-          className="btn-primary flex items-center gap-2 text-base px-8 py-3"
-          style={{ fontSize: '15px' }}
-        >
-          העתק תקציב מחודש קודם
-          {isLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <Copy className="w-5 h-5" strokeWidth={1.75} />
-          )}
-        </button>
-      </div>
-    </div>
+      העתק מ{sourceLabel}
+      {isLoading ? (
+        <Loader2 className="w-4 h-4 animate-spin" />
+      ) : (
+        <Copy className="w-4 h-4" strokeWidth={1.75} />
+      )}
+    </button>
   );
 }
