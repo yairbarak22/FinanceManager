@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth, withSharedAccountId, checkPermission } from '@/lib/authHelpers';
 import { syncPortfolioAsset } from '@/lib/portfolioAssetSync';
+import { invalidatePortfolioCache } from '@/lib/finance/portfolioCache';
 import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 
 // GET single holding
@@ -104,7 +105,7 @@ export async function PUT(
       where: sharedWhere,
     });
 
-    // Sync portfolio asset after updating holding - AWAIT to ensure sync completes before response
+    await invalidatePortfolioCache(userId);
     try {
       await syncPortfolioAsset(userId, true);
     } catch (err) {
@@ -161,7 +162,7 @@ export async function DELETE(
       );
     }
 
-    // Sync portfolio asset after deleting holding - AWAIT to ensure sync completes before response
+    await invalidatePortfolioCache(userId);
     try {
       await syncPortfolioAsset(userId, true);
     } catch (err) {

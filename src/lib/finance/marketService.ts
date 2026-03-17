@@ -117,24 +117,17 @@ async function enrichHolding(
   exchangeRate: number
 ): Promise<EnrichedHolding | null> {
   try {
-    // Get enriched quote (price + fundamentals in parallel)
-    // This already includes Hebrew enrichment from EOD provider
-    const enrichedQuote = await eodProvider.getEnrichedQuote(holding.symbol);
+    // Fetch enriched quote and sparkline in parallel
+    const [enrichedQuote, sparklineData] = await Promise.all([
+      eodProvider.getEnrichedQuote(holding.symbol),
+      eodProvider.getSparkline(holding.symbol).catch(() => [] as number[]),
+    ]);
 
     if (!enrichedQuote) {
       console.error(`[MarketService] No quote for ${holding.symbol}`);
       return null;
     }
 
-    // Get sparkline (separate call, optional)
-    let sparklineData: number[] = [];
-    try {
-      sparklineData = await eodProvider.getSparkline(holding.symbol);
-    } catch {
-      // Sparkline is optional - continue without it
-    }
-
-    // Calculate values
     const price = enrichedQuote.price;
     const currency = enrichedQuote.currency;
     const priceILS = currency === 'ILS' ? price : price * exchangeRate;
@@ -158,7 +151,7 @@ async function enrichHolding(
       provider: 'EOD',
       priceDisplayUnit: holding.priceDisplayUnit || 'ILS',
       changePercent: enrichedQuote.changePercent,
-      weight: 0, // Calculated later
+      weight: 0,
       sparklineData,
       isEnriched: enrichedQuote.isEnriched,
     };

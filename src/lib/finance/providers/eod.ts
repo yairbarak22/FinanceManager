@@ -23,6 +23,7 @@ import type {
   AssetType,
 } from '../types';
 import { getEnrichment, enrichQuoteData, searchBySecurityNumber } from '../enrichmentService';
+import { cacheGet, cacheSet, CacheKeys, CacheTTL } from '@/lib/cache';
 
 const EOD_API_TOKEN = process.env.EOD_API_TOKEN || '';
 const EOD_BASE_URL = 'https://eodhistoricaldata.com/api';
@@ -266,22 +267,31 @@ export class EODProvider implements MarketDataProvider {
 
   /**
    * Get USD to ILS exchange rate
-   * NEVER fails - always returns a valid rate
+   * L1 (in-memory) -> L2 (Redis) -> EOD API. NEVER fails.
    */
   async getUsdIlsRate(): Promise<number> {
     const now = Date.now();
 
-    // Return cached rate if still valid
+    // L1: in-memory
     if (cachedUsdIlsRate && (now - rateLastFetched) < RATE_CACHE_MS) {
       return cachedUsdIlsRate;
     }
 
-    // Try real-time endpoint first
+    // L2: Redis
+    const redisRate = await cacheGet<number>(CacheKeys.exchangeRate());
+    if (redisRate && redisRate > 0) {
+      cachedUsdIlsRate = redisRate;
+      rateLastFetched = now;
+      return redisRate;
+    }
+
+    // EOD API
     try {
       const data = await this.fetchEOD<EODRealTimeQuote>('real-time/USDILS.FOREX');
       if (data.close && data.close > 0) {
         cachedUsdIlsRate = data.close;
         rateLastFetched = now;
+        void cacheSet(CacheKeys.exchangeRate(), data.close, CacheTTL.EXCHANGE_RATE);
         if (isDev) console.log(`[EOD] USD/ILS rate: ${cachedUsdIlsRate}`);
         return cachedUsdIlsRate;
       }
@@ -289,7 +299,6 @@ export class EODProvider implements MarketDataProvider {
       console.warn('[EOD] Real-time FOREX failed:', error instanceof Error ? error.message : error);
     }
 
-    // Fallback: Try EOD endpoint
     try {
       const data = await this.fetchEOD<EODHistoricalData[]>('eod/USDILS.FOREX', {
         period: 'd',
@@ -298,6 +307,7 @@ export class EODProvider implements MarketDataProvider {
       if (Array.isArray(data) && data.length > 0 && data[0].close > 0) {
         cachedUsdIlsRate = data[0].close;
         rateLastFetched = now;
+        void cacheSet(CacheKeys.exchangeRate(), data[0].close, CacheTTL.EXCHANGE_RATE);
         if (isDev) console.log(`[EOD] USD/ILS rate (fallback): ${cachedUsdIlsRate}`);
         return cachedUsdIlsRate;
       }
@@ -305,23 +315,35 @@ export class EODProvider implements MarketDataProvider {
       console.warn('[EOD] EOD FOREX fallback failed:', error instanceof Error ? error.message : error);
     }
 
-    // Final fallback
     const fallbackRate = cachedUsdIlsRate ?? FALLBACK_USD_ILS_RATE;
     if (isDev) console.log(`[EOD] Using fallback USD/ILS rate: ${fallbackRate}`);
     return fallbackRate;
   }
 
   /**
-   * Get asset info (sector, name, type) - checks enrichment first, then cache, then estimates
-   * Beta is calculated separately by betaEngine
-   * IMPORTANT: Enrichment is checked BEFORE cache to ensure Hebrew names are always fresh
+   * Get asset info (sector, name, type)
+   * L1 (in-memory) -> L2 (Redis) -> enrichment DB -> estimate
    */
   async getAssetInfo(symbol: string): Promise<CachedAssetInfo> {
     const normalizedSymbol = normalizeSymbol(symbol);
     const { isIsraeli } = detectAssetType(symbol);
     const now = Date.now();
 
-    // Check enrichment first (always fresh from DB) - this ensures Hebrew names override cache
+    // L1: in-memory
+    const l1 = assetInfoCache.get(normalizedSymbol);
+    if (l1 && (now - l1.timestamp) < ASSET_INFO_CACHE_MS) {
+      return l1;
+    }
+
+    // L2: Redis
+    const redisKey = CacheKeys.marketInfo(normalizedSymbol);
+    const l2 = await cacheGet<CachedAssetInfo>(redisKey);
+    if (l2 && (now - l2.timestamp) < ASSET_INFO_CACHE_MS) {
+      assetInfoCache.set(normalizedSymbol, l2);
+      return l2;
+    }
+
+    // Enrichment DB
     const enrichment = await getEnrichment(symbol);
     if (enrichment) {
       const result: CachedAssetInfo = {
@@ -330,66 +352,58 @@ export class EODProvider implements MarketDataProvider {
         type: enrichment.assetType,
         timestamp: now,
       };
-      // Update cache with enriched data (overwrites any stale cache)
       assetInfoCache.set(normalizedSymbol, result);
+      void cacheSet(redisKey, result, CacheTTL.MARKET_INFO);
       return result;
     }
 
-    // If no enrichment, check cache
-    const cached = assetInfoCache.get(normalizedSymbol);
-    if (cached && (now - cached.timestamp) < ASSET_INFO_CACHE_MS) {
-      return cached;
-    }
-
-    // Fallback: Estimate sector from symbol pattern
+    // Fallback: estimate
     const { sector, type } = estimateSector(symbol, isIsraeli);
     const name = symbol.toUpperCase().split('.')[0];
-
-    const result: CachedAssetInfo = {
-      sector,
-      name,
-      type,
-      timestamp: now,
-    };
-
-    // Cache the result
+    const result: CachedAssetInfo = { sector, name, type, timestamp: now };
     assetInfoCache.set(normalizedSymbol, result);
-
+    void cacheSet(redisKey, result, CacheTTL.MARKET_INFO);
     return result;
   }
 
   /**
-   * Get real-time price with caching
+   * Get real-time price with L1/L2 caching
    */
-  private async getPriceData(symbol: string): Promise<{ price: number; changePercent: number } | null> {
+  async getPriceData(symbol: string): Promise<{ price: number; changePercent: number } | null> {
     const normalizedSymbol = normalizeSymbol(symbol);
     const { isIsraeli } = detectAssetType(symbol);
     const now = Date.now();
-
-    // Check price cache
-    const cached = priceCache.get(normalizedSymbol);
     const cacheMs = isIsraeli ? PRICE_CACHE_MS_IL : PRICE_CACHE_MS_US;
-    if (cached && (now - cached.timestamp) < cacheMs) {
-      return { price: cached.price, changePercent: cached.changePercent };
+    const cacheTtlSec = isIsraeli ? CacheTTL.MARKET_QUOTE_IL : CacheTTL.MARKET_QUOTE_US;
+    const redisKey = CacheKeys.marketQuote(normalizedSymbol);
+
+    // L1: in-memory
+    const l1 = priceCache.get(normalizedSymbol);
+    if (l1 && (now - l1.timestamp) < cacheMs) {
+      return { price: l1.price, changePercent: l1.changePercent };
     }
 
-    // Try real-time endpoint
+    // L2: Redis
+    const l2 = await cacheGet<{ price: number; changePercent: number; timestamp: number }>(redisKey);
+    if (l2 && (now - l2.timestamp) < cacheMs) {
+      priceCache.set(normalizedSymbol, l2);
+      return { price: l2.price, changePercent: l2.changePercent };
+    }
+
+    // EOD API - real-time
     try {
       const rtData = await this.fetchEOD<EODRealTimeQuote>(`real-time/${normalizedSymbol}`);
       if (rtData.close && rtData.close > 0) {
-        const result = {
-          price: rtData.close,
-          changePercent: rtData.change_p || 0,
-          timestamp: now,
-        };
-        priceCache.set(normalizedSymbol, result);
-        return { price: result.price, changePercent: result.changePercent };
+        const entry = { price: rtData.close, changePercent: rtData.change_p || 0, timestamp: now };
+        priceCache.set(normalizedSymbol, entry);
+        void cacheSet(redisKey, entry, cacheTtlSec);
+        return { price: entry.price, changePercent: entry.changePercent };
       }
     } catch {
       // Fall through to EOD endpoint
     }
 
-    // Fallback to EOD endpoint
+    // EOD API - historical fallback
     try {
       const eodData = await this.fetchEOD<EODHistoricalData[]>(`eod/${normalizedSymbol}`, {
         period: 'd',
@@ -403,13 +417,10 @@ export class EODProvider implements MarketDataProvider {
           ? ((latest.close - previous.close) / previous.close) * 100
           : 0;
 
-        const result = {
-          price: latest.close,
-          changePercent,
-          timestamp: now,
-        };
-        priceCache.set(normalizedSymbol, result);
-        return { price: result.price, changePercent: result.changePercent };
+        const entry = { price: latest.close, changePercent, timestamp: now };
+        priceCache.set(normalizedSymbol, entry);
+        void cacheSet(redisKey, entry, cacheTtlSec);
+        return { price: entry.price, changePercent: entry.changePercent };
       }
     } catch (error) {
       console.error(`[EOD] Price fetch failed for ${normalizedSymbol}:`, error);
@@ -484,28 +495,65 @@ export class EODProvider implements MarketDataProvider {
 
   /**
    * Get quote with beta and sector (enriched)
-   * Beta is calculated from historical data using CAPM model
-   * Checks enrichment service for Hebrew names and sectors
-   * OPTIMIZED: All data fetched in parallel for maximum performance
+   * OPTIMIZED: Each data source is called exactly once (no duplicates).
+   * Previous version had 4x getEnrichment and 2x getAssetInfo per symbol.
    */
   async getEnrichedQuote(symbol: string): Promise<(AssetData & { beta: number; sector: string; sectorHe?: string; nameHe?: string; isEnriched?: boolean }) | null> {
-    // Import betaEngine dynamically to avoid circular dependency
     const { calculateBeta } = await import('../math/betaEngine');
+    const { isIsraeli, isCrypto } = detectAssetType(symbol);
 
-    // Fetch all data in parallel for maximum performance
-    const [quote, assetInfo, betaResult, enrichment] = await Promise.all([
-      this.getQuote(symbol),
-      this.getAssetInfo(symbol),
-      calculateBeta(symbol),
+    // Fetch all independent data sources in parallel — each called exactly once
+    const [priceData, enrichment, betaResult] = await Promise.all([
+      this.getPriceData(symbol),
       getEnrichment(symbol),
+      calculateBeta(symbol),
     ]);
 
-    if (!quote) return null;
+    if (!priceData || priceData.price <= 0) return null;
+
+    // Derive asset info from enrichment or estimate (no separate getAssetInfo call)
+    let sector: string;
+    let name: string;
+    let type: string;
+    if (enrichment) {
+      sector = enrichment.sectorHe;
+      name = enrichment.nameHe;
+      type = enrichment.assetType;
+    } else {
+      const estimated = estimateSector(symbol, isIsraeli);
+      sector = estimated.sector;
+      type = estimated.type;
+      name = symbol.toUpperCase().split('.')[0];
+    }
+
+    const mappedType = mapEODType(type);
+    const currency: 'USD' | 'ILS' = isIsraeli ? 'ILS' : 'USD';
+
+    // Agorot adjustment for Israeli securities
+    const enrichmentCurrency = enrichment?.currency?.toUpperCase();
+    const isAgorot = isIsraeli && enrichmentCurrency !== 'ILS' && enrichmentCurrency !== 'USD';
+    let adjustedPrice = priceData.price;
+    if (isAgorot) {
+      adjustedPrice = priceData.price / 100;
+    }
+
+    let priceILS = adjustedPrice;
+    if (currency === 'USD') {
+      const exchangeRate = await this.getUsdIlsRate();
+      priceILS = adjustedPrice * exchangeRate;
+    }
 
     const enrichedQuote = {
-      ...quote,
+      symbol: symbol.toUpperCase().split('.')[0],
+      name,
+      price: adjustedPrice,
+      priceILS,
+      currency,
+      changePercent: Math.round(priceData.changePercent * 100) / 100,
+      provider: 'EOD' as const,
+      type: isCrypto ? 'crypto' : mappedType,
       beta: betaResult.beta,
-      sector: assetInfo.sector,
+      sector,
       ...(enrichment && {
         sectorHe: enrichment.sectorHe,
         nameHe: enrichment.nameHe,
@@ -513,7 +561,7 @@ export class EODProvider implements MarketDataProvider {
       }),
     };
 
-    if (isDev) console.log(`[EOD] Enriched ${symbol}: Beta=${betaResult.beta} (${betaResult.source}), Sector=${enrichedQuote.sector}${enrichment ? ` (Hebrew: ${enrichment.sectorHe})` : ''}`);
+    if (isDev) console.log(`[EOD] Enriched ${symbol}: Beta=${betaResult.beta} (${betaResult.source}), Sector=${sector}`);
 
     return enrichedQuote;
   }
