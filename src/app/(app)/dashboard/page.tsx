@@ -36,9 +36,7 @@ import {
   Transaction,
   RecurringTransaction,
   Asset,
-  AssetValueHistory,
   Liability,
-  NetWorthHistory,
   MonthlySummary as MonthlySummaryType,
 } from '@/lib/types';
 import { getMonthKey, calculateSavingsRate, apiFetch, isRecurringActiveInMonth, getAmountInILS, isInFinancialMonth, getFinancialMonthKey } from '@/lib/utils';
@@ -59,6 +57,7 @@ import {
   assetCategories as defaultAssetCategories,
   liabilityTypes as defaultLiabilityTypes,
 } from '@/lib/categories';
+import { useDashboardData } from '@/hooks/useDashboardData';
 
 export default function DashboardPage() {
   // Use shared month context
@@ -75,13 +74,21 @@ export default function DashboardPage() {
   
   const { rate: exchangeRate } = useExchangeRate();
 
-  // Data state
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [recurringTransactions, setRecurringTransactions] = useState<RecurringTransaction[]>([]);
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [assetHistory, setAssetHistory] = useState<AssetValueHistory[]>([]);
-  const [liabilities, setLiabilities] = useState<Liability[]>([]);
-  const [netWorthHistory, setNetWorthHistory] = useState<NetWorthHistory[]>([]);
+  // React Query-backed data (selective invalidation per resource)
+  const {
+    transactions,
+    recurringTransactions,
+    assets,
+    assetHistory,
+    liabilities,
+    netWorthHistory,
+    isLoading,
+    refetchTransactions,
+    refetchRecurring,
+    refetchAssets,
+    refetchLiabilities,
+    setLiabilitiesOptimistic,
+  } = useDashboardData();
 
   // Local modal state (for modals with edit data)
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
@@ -112,9 +119,6 @@ export default function DashboardPage() {
     id: string;
     name: string;
   } | null>(null);
-
-  // Loading state
-  const [isLoading, setIsLoading] = useState(true);
 
   // Category filter state
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -165,72 +169,6 @@ export default function DashboardPage() {
     default: defaultLiabilityTypes,
     custom: getCustomByType('liability'),
   }), [getCustomByType]);
-
-  // Fetch all data
-  const fetchData = useCallback(async () => {
-    try {
-      const [txRes, recRes, assetsRes, liabRes, detailedHistoryRes, netWorthHistoryRes] = await Promise.all([
-        apiFetch('/api/transactions', { cache: 'no-store' }),
-        apiFetch('/api/recurring', { cache: 'no-store' }),
-        apiFetch('/api/assets', { cache: 'no-store' }),
-        apiFetch('/api/liabilities', { cache: 'no-store' }),
-        apiFetch('/api/assets/history?detailed=true', { cache: 'no-store' }),
-        apiFetch('/api/networth/history', { cache: 'no-store' }),
-      ]);
-
-      if (!txRes.ok || !recRes.ok || !assetsRes.ok || !liabRes.ok || !detailedHistoryRes.ok || !netWorthHistoryRes.ok) {
-        throw new Error('Failed to fetch data from one or more endpoints');
-      }
-
-      const [txData, recData, assetsData, liabData, detailedHistoryData, netWorthHistoryData] = await Promise.all([
-        txRes.json(),
-        recRes.json(),
-        assetsRes.json(),
-        liabRes.json(),
-        detailedHistoryRes.json(),
-        netWorthHistoryRes.json(),
-      ]);
-
-      setTransactions(txData);
-      setRecurringTransactions(recData);
-      setAssets(assetsData);
-      setAssetHistory(detailedHistoryData);
-      setLiabilities(liabData);
-
-      // Use net worth history from database
-      const netWorthData: NetWorthHistory[] = netWorthHistoryData.map((item: { id: string; date: string; netWorth: number; assets: number; liabilities: number }) => ({
-        id: item.id,
-        date: item.date,
-        netWorth: item.netWorth,
-        assets: item.assets,
-        liabilities: item.liabilities,
-      }));
-
-      // If no history exists, calculate current values as fallback
-      if (netWorthData.length === 0) {
-        const totalAssets = assetsData.reduce((sum: number, a: Asset) => sum + a.value, 0);
-        const totalLiabilities = liabData.reduce((sum: number, l: Liability) => sum + getRemainingBalance(l, new Date()), 0);
-        netWorthData.push({
-          id: '1',
-          date: new Date().toISOString(),
-          netWorth: totalAssets - totalLiabilities,
-          assets: totalAssets,
-          liabilities: totalLiabilities,
-        });
-      }
-
-      setNetWorthHistory(netWorthData);
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Fetch data on mount
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   // Recalculate monthsWithData when transactions or financialMonthStartDay change
   useEffect(() => {
@@ -466,7 +404,7 @@ export default function DashboardPage() {
         const errData = await res.json();
         throw new Error(errData.error || 'Failed to add transaction');
       }
-      await fetchData();
+      refetchTransactions();
       toast.success('העסקה נוספה בהצלחה');
       analytics.trackAddTransaction(data.type, data.category, data.amount);
     } catch (error) {
@@ -479,7 +417,7 @@ export default function DashboardPage() {
     try {
       const res = await apiFetch(`/api/transactions/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
-      await fetchData();
+      refetchTransactions();
       toast.success('העסקה נמחקה');
       analytics.trackDeleteTransaction();
     } catch (error) {
@@ -495,7 +433,7 @@ export default function DashboardPage() {
       );
 
       const failedCount = results.filter(r => !r.ok).length;
-      await fetchData();
+      refetchTransactions();
 
       if (failedCount === 0) {
         toast.success(`${ids.length} עסקאות נמחקו בהצלחה`);
@@ -517,7 +455,7 @@ export default function DashboardPage() {
       });
       if (!res.ok) throw new Error('Failed to bulk update');
       const data = await res.json();
-      await fetchData();
+      refetchTransactions();
       toast.success(`${data.updatedCount} עסקאות עודכנו בהצלחה`);
     } catch (error) {
       console.error('Error bulk updating transactions:', error);
@@ -575,7 +513,7 @@ export default function DashboardPage() {
         });
       }
 
-      await fetchData();
+      refetchTransactions();
       analytics.trackEditTransaction();
 
       // Show appropriate toast message
@@ -615,7 +553,7 @@ export default function DashboardPage() {
         throw new Error(errData.error || 'Failed to save');
       }
       setEditingRecurring(null);
-      await fetchData();
+      refetchRecurring();
       toast.success(isNewRecurring ? 'העסקה הקבועה נוספה' : 'העסקה הקבועה עודכנה');
       if (isNewRecurring) {
         analytics.trackAddRecurring(data.type, data.category, data.amount);
@@ -635,7 +573,7 @@ export default function DashboardPage() {
         body: JSON.stringify({ isActive }),
       });
       if (!res.ok) throw new Error('Failed to toggle');
-      await fetchData();
+      refetchRecurring();
     } catch (error) {
       console.error('Error toggling recurring transaction:', error);
       toast.error('שגיאה בעדכון סטטוס');
@@ -646,7 +584,7 @@ export default function DashboardPage() {
     try {
       const res = await apiFetch(`/api/recurring/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
-      await fetchData();
+      refetchRecurring();
       toast.success('העסקה הקבועה נמחקה');
     } catch (error) {
       console.error('Error deleting recurring transaction:', error);
@@ -672,7 +610,7 @@ export default function DashboardPage() {
         throw new Error(errData.error || 'Failed to save');
       }
       setEditingAsset(null);
-      await fetchData();
+      refetchAssets();
       toast.success(isNewAsset ? 'הנכס נוסף בהצלחה' : 'הנכס עודכן');
       if (isNewAsset) {
         analytics.trackAddAsset(data.category, data.value);
@@ -687,7 +625,7 @@ export default function DashboardPage() {
     try {
       const res = await apiFetch(`/api/assets/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
-      await fetchData();
+      refetchAssets();
       toast.success('הנכס נמחק');
       analytics.trackDeleteAsset();
     } catch (error) {
@@ -712,7 +650,7 @@ export default function DashboardPage() {
         throw new Error(errData.error || 'Failed to save mortgage');
       }
       setEditingMortgage(null);
-      await fetchData();
+      refetchLiabilities();
       toast.success(isEdit ? 'המשכנתא עודכנה בהצלחה' : 'המשכנתא נוספה בהצלחה');
     } catch (error) {
       console.error('Error saving mortgage:', error);
@@ -739,7 +677,7 @@ export default function DashboardPage() {
         throw new Error(errData.error || 'Failed to save');
       }
       setEditingLiability(null);
-      await fetchData();
+      refetchLiabilities();
       toast.success(isNewLiability ? 'ההתחייבות נוספה' : 'ההתחייבות עודכנה');
       if (isNewLiability) {
         analytics.trackAddLiability(data.type, data.totalAmount);
@@ -754,7 +692,7 @@ export default function DashboardPage() {
     try {
       const res = await apiFetch(`/api/liabilities/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
-      await fetchData();
+      refetchLiabilities();
       toast.success('ההתחייבות נמחקה');
       analytics.trackDeleteLiability();
     } catch (error) {
@@ -780,7 +718,7 @@ export default function DashboardPage() {
         const errData = await res.json();
         throw new Error(errData.error || 'Failed to create gemach plan');
       }
-      await fetchData();
+      refetchLiabilities();
       toast.success('תוכנית גמ"ח נוצרה בהצלחה');
     } catch (error) {
       console.error('Error creating gemach plan:', error);
@@ -791,10 +729,10 @@ export default function DashboardPage() {
 
   // Optimistic toggle for cash flow inclusion
   const handleToggleLiabilityCashFlow = useCallback((id: string, isActive: boolean) => {
-    setLiabilities((prev) =>
+    setLiabilitiesOptimistic((prev) =>
       prev.map((l) => (l.id === id ? { ...l, isActiveInCashFlow: isActive } : l))
     );
-  }, []);
+  }, [setLiabilitiesOptimistic]);
 
   return (
     <AppLayout

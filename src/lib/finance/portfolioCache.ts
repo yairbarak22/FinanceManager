@@ -1,84 +1,71 @@
 /**
- * Portfolio Cache - In-memory cache for portfolio values
+ * Portfolio Cache - Redis-backed (L2) with in-memory (L1) cache for portfolio values
  * Prevents excessive EOD API calls by caching portfolio value for 5 hours
+ * Redis ensures cache survives across serverless invocations
  */
 
-// Constants
+import { cacheGet, cacheSet, cacheDelete } from '@/lib/cache';
+
 export const PORTFOLIO_SYNC_ASSET_NAME = 'תיק מסחר עצמאי';
 export const PORTFOLIO_ASSET_CATEGORY = 'stocks';
 export const PORTFOLIO_CACHE_DURATION_MS = 5 * 60 * 60 * 1000; // 5 hours
 export const PORTFOLIO_ASSET_UPDATE_THRESHOLD_MS = 5 * 60 * 60 * 1000; // 5 hours
+const PORTFOLIO_CACHE_TTL_SECONDS = 5 * 60 * 60; // 5 hours in seconds
 
-// Cache structure
 interface PortfolioCacheEntry {
-  value: number; // equityILS + cashBalance
+  value: number;
   timestamp: number;
 }
 
-// In-memory cache map (userId -> cache entry)
-const portfolioCache = new Map<string, PortfolioCacheEntry>();
+const portfolioL1 = new Map<string, PortfolioCacheEntry>();
+
+function redisKey(userId: string): string {
+  return `portfolio:value:${userId}`;
+}
 
 /**
- * Get cached portfolio value if still valid (less than 5 hours old)
- * @param userId - The user ID
- * @returns The cached value or null if expired/not found
+ * Get cached portfolio value - checks L1 (in-memory) then L2 (Redis)
  */
-export function getCachedPortfolioValue(userId: string): number | null {
-  const cached = portfolioCache.get(userId);
-  
-  if (!cached) {
-    return null;
-  }
-  
+export async function getCachedPortfolioValue(userId: string): Promise<number | null> {
   const now = Date.now();
-  if (now - cached.timestamp >= PORTFOLIO_CACHE_DURATION_MS) {
-    // Cache expired, remove it
-    portfolioCache.delete(userId);
-    return null;
+
+  const l1 = portfolioL1.get(userId);
+  if (l1 && now - l1.timestamp < PORTFOLIO_CACHE_DURATION_MS) {
+    return l1.value;
   }
-  
-  return cached.value;
+  if (l1) portfolioL1.delete(userId);
+
+  const l2 = await cacheGet<PortfolioCacheEntry>(redisKey(userId));
+  if (l2 && now - l2.timestamp < PORTFOLIO_CACHE_DURATION_MS) {
+    portfolioL1.set(userId, l2);
+    return l2.value;
+  }
+
+  return null;
 }
 
 /**
- * Set cached portfolio value
- * @param userId - The user ID
- * @param value - The portfolio value to cache
+ * Set cached portfolio value in both L1 and L2
  */
-export function setCachedPortfolioValue(userId: string, value: number): void {
-  portfolioCache.set(userId, {
-    value,
-    timestamp: Date.now(),
-  });
+export async function setCachedPortfolioValue(userId: string, value: number): Promise<void> {
+  const entry: PortfolioCacheEntry = { value, timestamp: Date.now() };
+  portfolioL1.set(userId, entry);
+  await cacheSet(redisKey(userId), entry, PORTFOLIO_CACHE_TTL_SECONDS);
 }
 
 /**
- * Invalidate (clear) cached portfolio value for a user
- * Should be called when holdings change
- * @param userId - The user ID
+ * Invalidate (clear) cached portfolio value for a user.
+ * Should ONLY be called when holdings actually change (add/delete holding).
  */
-export function invalidatePortfolioCache(userId: string): void {
-  portfolioCache.delete(userId);
+export async function invalidatePortfolioCache(userId: string): Promise<void> {
+  portfolioL1.delete(userId);
+  await cacheDelete(redisKey(userId));
 }
 
-/**
- * Check if a portfolio sync asset should be updated
- * Returns true if the asset was last updated more than 5 hours ago
- * @param assetUpdatedAt - The asset's updatedAt timestamp
- * @returns True if the asset should be updated
- */
 export function shouldUpdatePortfolioAsset(assetUpdatedAt: Date): boolean {
-  const now = Date.now();
-  const lastUpdate = assetUpdatedAt.getTime();
-  return now - lastUpdate >= PORTFOLIO_ASSET_UPDATE_THRESHOLD_MS;
+  return Date.now() - assetUpdatedAt.getTime() >= PORTFOLIO_ASSET_UPDATE_THRESHOLD_MS;
 }
 
-/**
- * Check if an asset is a portfolio sync asset by name
- * @param assetName - The asset name to check
- * @returns True if this is the portfolio sync asset
- */
 export function isPortfolioSyncAsset(assetName: string): boolean {
   return assetName === PORTFOLIO_SYNC_ASSET_NAME;
 }
-

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
 import { syncPortfolioAsset } from '@/lib/portfolioAssetSync';
+import { invalidatePortfolioCache } from '@/lib/finance/portfolioCache';
 
 // GET all holdings
 export async function GET() {
@@ -78,7 +79,8 @@ export async function POST(request: Request) {
       },
     });
 
-    // Sync portfolio asset after creating holding - AWAIT to ensure sync completes before response
+    // Holdings changed — bust cache then recalculate
+    await invalidatePortfolioCache(userId);
     try {
       await syncPortfolioAsset(userId, true);
     } catch (err) {

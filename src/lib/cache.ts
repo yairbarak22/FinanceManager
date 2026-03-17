@@ -117,18 +117,17 @@ export async function cacheDeletePattern(pattern: string): Promise<boolean> {
 // ============================================================================
 
 export const CacheKeys = {
-  // Auth cache - user existence check
   authUser: (userId: string) => `auth:user:${userId}`,
 
-  // Transactions list cache
   transactions: (userId: string, month?: string) =>
     month ? `transactions:${userId}:${month}` : `transactions:${userId}:all`,
 
-  // Market data cache
   marketQuote: (symbol: string) => `market:quote:${symbol}`,
   marketBatch: (symbols: string) => `market:batch:${symbols}`,
+  marketInfo: (symbol: string) => `market:info:${symbol}`,
+  marketBeta: (symbol: string) => `market:beta:${symbol}`,
+  exchangeRate: () => 'market:usdils',
 
-  // User's shared account members
   sharedMembers: (userId: string) => `shared:members:${userId}`,
 };
 
@@ -137,17 +136,13 @@ export const CacheKeys = {
 // ============================================================================
 
 export const CacheTTL = {
-  // Auth - 1 hour (user won't be deleted frequently)
   AUTH_USER: 60 * 60,
-
-  // Transactions - 60 seconds (balance between freshness and performance)
   TRANSACTIONS: 60,
-
-  // Market data - 5 minutes for US markets, longer for others
   MARKET_QUOTE_US: 5 * 60,
-  MARKET_QUOTE_IL: 15 * 60, // TASE has less frequent updates
-
-  // Shared account members - 5 minutes
+  MARKET_QUOTE_IL: 15 * 60,
+  MARKET_INFO: 24 * 60 * 60, // 24 hours
+  MARKET_BETA: 7 * 24 * 60 * 60, // 7 days
+  EXCHANGE_RATE: 60 * 60, // 1 hour
   SHARED_MEMBERS: 5 * 60,
 };
 

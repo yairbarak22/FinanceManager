@@ -9,6 +9,7 @@
  */
 
 import { normalizeSymbol, detectAssetType } from '../providers/eod';
+import { cacheGet, cacheSet, CacheKeys, CacheTTL } from '@/lib/cache';
 
 const EOD_API_TOKEN = process.env.EOD_API_TOKEN || '';
 const EOD_BASE_URL = 'https://eodhistoricaldata.com/api';
@@ -232,24 +233,26 @@ export async function calculateBeta(symbol: string): Promise<{ beta: number; dat
   const normalizedSymbol = normalizeSymbol(symbol);
   const { isIsraeli, isCrypto } = detectAssetType(symbol);
   const now = Date.now();
+  const redisKey = CacheKeys.marketBeta(normalizedSymbol);
 
-  // Check cache first
-  const cached = betaCache.get(normalizedSymbol);
-  if (cached && (now - cached.timestamp) < BETA_CACHE_MS) {
-    return {
-      beta: cached.beta,
-      dataPoints: cached.dataPoints,
-      source: 'cache'
-    };
+  // L1: in-memory
+  const l1 = betaCache.get(normalizedSymbol);
+  if (l1 && (now - l1.timestamp) < BETA_CACHE_MS) {
+    return { beta: l1.beta, dataPoints: l1.dataPoints, source: 'cache' };
   }
 
-  // Special cases: Crypto has no meaningful beta vs S&P
+  // L2: Redis
+  const l2 = await cacheGet<CachedBeta>(redisKey);
+  if (l2 && (now - l2.timestamp) < BETA_CACHE_MS) {
+    betaCache.set(normalizedSymbol, l2);
+    return { beta: l2.beta, dataPoints: l2.dataPoints, source: 'cache_redis' };
+  }
+
   if (isCrypto) {
     return { beta: 1.5, dataPoints: 0, source: 'default_crypto' };
   }
 
   try {
-    // Fetch benchmark and asset data in parallel
     const [benchmarkReturns, assetPrices] = await Promise.all([
       getBenchmarkReturns(),
       fetchHistoricalPrices(normalizedSymbol, 36),
@@ -268,7 +271,6 @@ export async function calculateBeta(symbol: string): Promise<{ beta: number; dat
       return { beta: defaultBeta, dataPoints: assetReturns.length, source: 'insufficient_data' };
     }
 
-    // Align returns by date
     const { assetValues, benchmarkValues } = alignReturns(assetReturns, benchmarkReturns);
 
     if (assetValues.length < MIN_MONTHS_REQUIRED) {
@@ -277,7 +279,6 @@ export async function calculateBeta(symbol: string): Promise<{ beta: number; dat
       return { beta: defaultBeta, dataPoints: assetValues.length, source: 'insufficient_aligned' };
     }
 
-    // Calculate Beta: Cov(Ra, Rm) / Var(Rm)
     const cov = covariance(assetValues, benchmarkValues);
     const benchmarkVar = variance(benchmarkValues);
 
@@ -286,20 +287,13 @@ export async function calculateBeta(symbol: string): Promise<{ beta: number; dat
     }
 
     let beta = cov / benchmarkVar;
-
-    // Sanity check: Beta should typically be between -1 and 4
     if (beta < -1) beta = -1;
     if (beta > 4) beta = 4;
-
-    // Round to 2 decimal places
     beta = Math.round(beta * 100) / 100;
 
-    // Cache the result
-    betaCache.set(normalizedSymbol, {
-      beta,
-      dataPoints: assetValues.length,
-      timestamp: now,
-    });
+    const entry: CachedBeta = { beta, dataPoints: assetValues.length, timestamp: now };
+    betaCache.set(normalizedSymbol, entry);
+    void cacheSet(redisKey, entry, CacheTTL.MARKET_BETA);
 
     if (isDev) console.log(`[BetaEngine] ${normalizedSymbol}: Beta=${beta} (${assetValues.length} data points)`);
 
@@ -308,12 +302,10 @@ export async function calculateBeta(symbol: string): Promise<{ beta: number; dat
   } catch (error) {
     console.error(`[BetaEngine] Error calculating beta for ${normalizedSymbol}:`, error);
 
-    // Return cached if available
-    if (cached) {
-      return { beta: cached.beta, dataPoints: cached.dataPoints, source: 'cache_fallback' };
+    if (l1) {
+      return { beta: l1.beta, dataPoints: l1.dataPoints, source: 'cache_fallback' };
     }
 
-    // Default based on asset type
     const defaultBeta = isIsraeli ? 0.9 : 1.0;
     return { beta: defaultBeta, dataPoints: 0, source: 'error_default' };
   }
