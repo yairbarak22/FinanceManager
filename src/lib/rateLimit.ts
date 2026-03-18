@@ -56,6 +56,9 @@ export const RATE_LIMITS = {
 
   // IVR phone-based expense reporting - per phone number
   ivr: { maxRequests: 10, windowSeconds: 60 } as RateLimitConfig,
+
+  // WhatsApp bot - per phone number
+  whatsapp: { maxRequests: 15, windowSeconds: 60 } as RateLimitConfig,
 };
 
 // ============================================================================

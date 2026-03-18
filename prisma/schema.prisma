@@ -896,6 +896,21 @@ model IvrPin {
 }
 
 // ============================================
+// WHATSAPP BOT - Pending transaction sessions
+// ============================================
+model WhatsappSession {
+  id          String   @id @default(cuid())
+  phoneNumber String   @unique
+  type        Int      // 1 = Expense, 2 = Income
+  category    String
+  business    String
+  amount      Float
+  createdAt   DateTime @default(now())
+
+  @@index([phoneNumber])
+}
+
+// ============================================
 // GLOBAL MERCHANT STATS - Cross-user consensus classification cache
 // ============================================
 model GlobalMerchantStats {
