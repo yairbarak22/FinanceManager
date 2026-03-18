@@ -117,7 +117,8 @@ export async function middleware(request: NextRequest) {
     pathname === '/api/webhooks/resend' ||
     pathname === '/api/marketing/unsubscribe' ||
     pathname === '/api/marketing/unsubscribe-email' ||
-    pathname === '/api/ivr/webhook'
+    pathname === '/api/ivr/webhook' ||
+    pathname === '/api/whatsapp/webhook'
   ) {
     return NextResponse.next();
   }
