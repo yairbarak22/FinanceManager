@@ -855,8 +855,15 @@ export default function DashboardPage() {
                   selectedCategory={selectedCategory}
                   onClearCategoryFilter={handleClearCategoryFilter}
                   onOpenMaaserCalculator={() => setIsMaaserModalOpen(true)}
+                  onIvrSetupSuccess={() => toast.success('מוכן לשיחה! המספר שלך אומת במערכת. נסה לחייג אלינו עכשיו.')}
                   onAddCategory={addCustomCategory}
                   onDeleteCategory={handleDeleteCategory}
+                  recurringTransactions={recurringTransactions}
+                  effectiveMonth={effectiveMonth}
+                  onEditRecurring={(r) => {
+                    setEditingRecurring(r);
+                    setIsRecurringModalOpen(true);
+                  }}
                 />
               </Card>
             </div>

@@ -4,7 +4,8 @@ import { requireAuth, withSharedAccount } from '@/lib/authHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { validateRequest } from '@/lib/validateRequest';
 import { createBudgetSchema } from '@/lib/validationSchemas';
-import { getFinancialMonthBounds } from '@/lib/utils';
+import { getFinancialMonthBounds, isRecurringActiveInMonth, getAmountInILS } from '@/lib/utils';
+import { getUsdIlsRate } from '@/lib/finance/marketService';
 
 export async function GET(request: NextRequest) {
   try {
@@ -46,18 +47,35 @@ export async function GET(request: NextRequest) {
       date: { gte: startDate, lte: endDate },
     });
 
-    const [budgets, expenseAggregation] = await Promise.all([
+    const recurringWhere = await withSharedAccount(userId, {
+      type: 'expense',
+      isActive: true,
+    });
+
+    const [budgets, expenseAggregation, recurringExpenses, exchangeRate] = await Promise.all([
       prisma.budget.findMany({ where: budgetWhere }),
       prisma.transaction.groupBy({
         by: ['category'],
         where: expenseWhere,
         _sum: { amount: true },
       }),
+      prisma.recurringTransaction.findMany({
+        where: recurringWhere,
+        select: { amount: true, currency: true, category: true, isActive: true, activeMonths: true },
+      }),
+      getUsdIlsRate(),
     ]);
 
     const spendingMap = new Map<string, number>();
     for (const row of expenseAggregation) {
       spendingMap.set(row.category, row._sum.amount || 0);
+    }
+
+    for (const r of recurringExpenses) {
+      const activeMonths = Array.isArray(r.activeMonths) ? r.activeMonths as string[] : null;
+      if (!isRecurringActiveInMonth({ isActive: r.isActive, activeMonths }, monthKey)) continue;
+      const amountILS = getAmountInILS(r.amount, (r.currency as string) || 'ILS', exchangeRate);
+      spendingMap.set(r.category, (spendingMap.get(r.category) || 0) + amountILS);
     }
 
     const budgetedCategoryIds = new Set(budgets.map(b => b.categoryId));

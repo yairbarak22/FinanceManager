@@ -6,11 +6,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trash2, Receipt, Plus, Upload, CheckSquare, Square, X,
   ChevronDown, ChevronLeft, Check, Loader2, Filter, Search,
-  Tag, Calculator, SlidersHorizontal, FileSpreadsheet, ArrowUpDown, Pencil,
+  Tag, Calculator, SlidersHorizontal, FileSpreadsheet, ArrowUpDown, Pencil, Phone, Repeat,
 } from 'lucide-react';
 import ExportExcelModal from './modals/ExportExcelModal';
-import { Transaction } from '@/lib/types';
-import { formatCurrency, formatCurrencyAmount, formatDate, cn } from '@/lib/utils';
+import IvrReportModal from './modals/IvrReportModal';
+import { Transaction, RecurringTransaction } from '@/lib/types';
+import { formatCurrency, formatCurrencyAmount, formatDate, cn, isRecurringActiveInMonth } from '@/lib/utils';
 import { getCategoryInfo, expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
 import ConfirmDialog from './modals/ConfirmDialog';
 import { SensitiveData } from './common/SensitiveData';
@@ -57,8 +58,12 @@ interface RecentTransactionsProps {
   selectedCategory?: string | null;
   onClearCategoryFilter?: () => void;
   onOpenMaaserCalculator?: () => void;
+  onIvrSetupSuccess?: () => void;
   onAddCategory?: (name: string, type: 'expense' | 'income') => Promise<CategoryInfo | void>;
   onDeleteCategory?: (categoryId: string, type: 'expense' | 'income') => Promise<void>;
+  recurringTransactions?: RecurringTransaction[];
+  effectiveMonth?: string;
+  onEditRecurring?: (r: RecurringTransaction) => void;
 }
 
 export default function RecentTransactions({
@@ -75,10 +80,15 @@ export default function RecentTransactions({
   selectedCategory = null,
   onClearCategoryFilter,
   onOpenMaaserCalculator,
+  onIvrSetupSuccess,
   onAddCategory,
   onDeleteCategory,
+  recurringTransactions = [],
+  effectiveMonth,
+  onEditRecurring,
 }: RecentTransactionsProps) {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isIvrReportModalOpen, setIsIvrReportModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; description: string }>({
     isOpen: false, id: '', description: '',
   });
@@ -586,6 +596,18 @@ export default function RecentTransactions({
     return sorted;
   }, [transactions, debouncedSearchQuery, selectedCategories, sortBy, customExpenseCategories, customIncomeCategories]);
 
+  const hasCategoryFilter = !!selectedCategory || selectedCategories.size > 0;
+
+  const filteredRecurringExpenses = useMemo(() => {
+    if (!hasCategoryFilter || !effectiveMonth || recurringTransactions.length === 0) return [];
+    return recurringTransactions.filter(r => {
+      if (r.type !== 'expense') return false;
+      if (!isRecurringActiveInMonth(r, effectiveMonth)) return false;
+      if (selectedCategory) return r.category === selectedCategory;
+      return selectedCategories.has(r.category);
+    });
+  }, [recurringTransactions, hasCategoryFilter, effectiveMonth, selectedCategory, selectedCategories]);
+
   const groupedByCategory = useMemo(() => {
     if (sortBy !== 'category') return [];
     const groups = new Map<string, { transactions: Transaction[]; total: number; info: ReturnType<typeof getCategoryInfo>; isIncome: boolean }>();
@@ -924,6 +946,93 @@ export default function RecentTransactions({
     );
   };
 
+  const renderRecurringRow = (recurring: RecurringTransaction, isLast: boolean) => {
+    const catInfo = getCategoryInfo(recurring.category, 'expense', customExpenseCategories);
+    const Icon = catInfo?.icon;
+    const iconBg = 'rgba(241, 138, 181, 0.1)';
+    const iconColor = '#F18AB5';
+
+    return (
+      <div
+        key={`rec_${recurring.id}`}
+        className={cn(
+          GRID_COLS,
+          'items-center group bg-white transition-colors duration-150',
+          !isLast && 'border-b border-[#F7F7F8]',
+          'hover:bg-[#FAFAFA]',
+        )}
+      >
+        {/* Category cell */}
+        <div className="px-3 py-2.5 flex items-center gap-2 min-w-0">
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ background: iconBg }}
+          >
+            {Icon && <Icon className="w-3.5 h-3.5" style={{ color: iconColor }} strokeWidth={1.5} />}
+          </div>
+          <SensitiveData
+            as="span"
+            className="text-sm font-medium truncate"
+            style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif', color: '#303150' }}
+          >
+            {catInfo?.nameHe || recurring.category}
+          </SensitiveData>
+        </div>
+
+        {/* Description cell (name) */}
+        <div className="px-3 py-2.5 min-w-0">
+          <SensitiveData
+            as="p"
+            className="text-sm truncate"
+            style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif', color: '#7E7F90' }}
+          >
+            {recurring.name}
+          </SensitiveData>
+        </div>
+
+        {/* Date cell — recurring badge */}
+        <div className="px-3 py-2.5">
+          <span
+            className="inline-flex items-center gap-1 text-xs whitespace-nowrap"
+            style={{ color: '#7E7F90' }}
+          >
+            <Repeat className="w-3 h-3" strokeWidth={1.75} />
+            מחזורי
+          </span>
+        </div>
+
+        {/* Amount cell */}
+        <div className="px-3 py-2.5">
+          <SensitiveData
+            as="span"
+            className="text-sm font-semibold whitespace-nowrap"
+            style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif', color: '#F18AB5' }}
+            dir="ltr"
+          >
+            {`-${formatCurrencyAmount(recurring.amount, recurring.currency || 'ILS')}`}
+          </SensitiveData>
+        </div>
+
+        {/* Actions cell */}
+        <div className="flex items-center justify-center">
+          {onEditRecurring && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEditRecurring(recurring);
+              }}
+              className="p-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-indigo-50"
+              aria-label={`ערוך הוצאה קבועה: ${recurring.name}`}
+            >
+              <Pencil className="w-3 h-3 text-[#BDBDCB] hover:text-indigo-500 transition-colors" strokeWidth={1.5} />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   /* ══════════════════════════════ RENDER ══════════════════════════════ */
 
   return (
@@ -946,8 +1055,11 @@ export default function RecentTransactions({
             </h3>
             <p className="text-xs font-medium" style={{ color: '#F18AB5' }}>
               {hasActiveFilters
-                ? `${filteredTransactions.length} מתוך ${transactions.length} עסקאות`
+                ? `${filteredTransactions.length + filteredRecurringExpenses.length} מתוך ${transactions.length} עסקאות`
                 : `${transactions.length} עסקאות`}
+              {filteredRecurringExpenses.length > 0 && (
+                <span style={{ color: '#7E7F90' }}>{` (${filteredRecurringExpenses.length} קבועות)`}</span>
+              )}
             </p>
             {pendingIvrCount > 0 && (
               <div className="flex items-center gap-1.5 text-xs" style={{ color: '#7E7F90' }}>
@@ -983,6 +1095,10 @@ export default function RecentTransactions({
                   <Calculator className="w-4 h-4" strokeWidth={1.5} />
                 </button>
               )}
+              <button onClick={() => setIsIvrReportModalOpen(true)} className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: '#7E7F90' }}>
+                דיווח בשיחה
+                <Phone className="w-4 h-4" strokeWidth={1.5} />
+              </button>
               <button onClick={() => setIsExportModalOpen(true)} className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: '#7E7F90' }}>
                 ייצוא
                 <FileSpreadsheet className="w-4 h-4" strokeWidth={1.5} />
@@ -1302,17 +1418,21 @@ export default function RecentTransactions({
                     </button>
 
                     <AnimatePresence initial={false}>
-                      {isExpanded && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ type: 'spring', stiffness: 350, damping: 35 }}
-                          className="overflow-hidden"
-                        >
-                          {group.transactions.map((tx, idx) => renderGridRow(tx, idx === group.transactions.length - 1))}
-                        </motion.div>
-                      )}
+                      {isExpanded && (() => {
+                        const groupRecurring = filteredRecurringExpenses.filter(r => r.category === group.categoryId);
+                        return (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ type: 'spring', stiffness: 350, damping: 35 }}
+                            className="overflow-hidden"
+                          >
+                            {group.transactions.map((tx, idx) => renderGridRow(tx, idx === group.transactions.length - 1 && groupRecurring.length === 0))}
+                            {groupRecurring.map((r, idx) => renderRecurringRow(r, idx === groupRecurring.length - 1))}
+                          </motion.div>
+                        );
+                      })()}
                     </AnimatePresence>
                   </div>
                 );
@@ -1321,7 +1441,12 @@ export default function RecentTransactions({
           )}
 
           {/* Flat list (date / amount sort) */}
-          {sortBy !== 'category' && filteredTransactions.map((tx, idx) => renderGridRow(tx, idx === filteredTransactions.length - 1))}
+          {sortBy !== 'category' && (
+            <>
+              {filteredTransactions.map((tx, idx) => renderGridRow(tx, idx === filteredTransactions.length - 1 && filteredRecurringExpenses.length === 0))}
+              {filteredRecurringExpenses.map((r, idx) => renderRecurringRow(r, idx === filteredRecurringExpenses.length - 1))}
+            </>
+          )}
 
           {/* Empty States */}
           {transactions.length === 0 && !hasActiveFilters && (
@@ -1331,7 +1456,7 @@ export default function RecentTransactions({
               </p>
             </div>
           )}
-          {filteredTransactions.length === 0 && transactions.length > 0 && hasActiveFilters && (
+          {filteredTransactions.length === 0 && filteredRecurringExpenses.length === 0 && transactions.length > 0 && hasActiveFilters && (
             <div className="text-center py-8">
               <Filter className="w-8 h-8 mx-auto mb-2" style={{ color: '#BDBDCB' }} strokeWidth={1.5} />
               <p className="text-sm font-medium mb-1" style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif', color: '#7E7F90' }}>
@@ -2043,6 +2168,12 @@ export default function RecentTransactions({
       <ExportExcelModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
+      />
+
+      <IvrReportModal
+        isOpen={isIvrReportModalOpen}
+        onClose={() => setIsIvrReportModalOpen(false)}
+        onSuccess={onIvrSetupSuccess}
       />
     </div>
   );
