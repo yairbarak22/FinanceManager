@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trash2, Receipt, Plus, Upload, CheckSquare, Square, X,
   ChevronDown, ChevronLeft, Check, Loader2, Filter, Search,
-  Tag, Calculator, SlidersHorizontal, FileSpreadsheet, ArrowUpDown,
+  Tag, Calculator, SlidersHorizontal, FileSpreadsheet, ArrowUpDown, Pencil,
 } from 'lucide-react';
 import ExportExcelModal from './modals/ExportExcelModal';
 import { Transaction } from '@/lib/types';
@@ -39,7 +39,8 @@ interface RecentTransactionsProps {
     newDescription?: string,
     newAmount?: number,
     updateExistingTransactions?: boolean,
-    newDate?: string
+    newDate?: string,
+    needsDetailsReview?: boolean
   ) => Promise<void> | void;
   onBulkUpdateCategory?: (ids: string[], category: string) => Promise<void> | void;
   onNewTransaction: () => void;
@@ -353,7 +354,8 @@ export default function RecentTransactions({
 
     setCellSaving(true);
     try {
-      await onUpdateTransaction(tx.id, tx.category, tx.description, 'once', newDesc, newAmt, undefined, newDate);
+      const clearReviewFlag = tx.source === 'ivr' && tx.needsDetailsReview ? false : undefined;
+      await onUpdateTransaction(tx.id, tx.category, tx.description, 'once', newDesc, newAmt, undefined, newDate, clearReviewFlag);
     } catch { /* parent handles error */ } finally {
       setCellSaving(false);
     }
@@ -615,6 +617,11 @@ export default function RecentTransactions({
     });
   }, []);
 
+  const pendingIvrCount = useMemo(() =>
+    transactions.filter(t => t.source === 'ivr' && t.needsDetailsReview === true).length,
+    [transactions]
+  );
+
   /* ──────────────────────── Select-mode helpers ──────────────────────── */
 
   const toggleSelectMode = () => { setIsSelectMode(!isSelectMode); setSelectedIds(new Set()); };
@@ -787,15 +794,24 @@ export default function RecentTransactions({
                 </div>
               )}
             </div>
+          ) : transaction.source === 'ivr' && transaction.needsDetailsReview ? (
+              <button
+                className="flex items-center gap-1.5 bg-blue-50 text-blue-600 rounded-full px-3 py-1 text-sm hover:bg-blue-100 cursor-pointer transition-colors"
+                style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                onClick={() => { if (!isSelectMode) startCellEdit(transaction, 'description'); }}
+              >
+                <Pencil className="w-3 h-3" strokeWidth={2} />
+                הוסף שם עסק
+              </button>
           ) : (
-            <SensitiveData
-              as="p"
-              className="text-sm truncate cursor-pointer hover:text-[#69ADFF] transition-colors"
-              style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif', color: '#7E7F90' }}
-              onClick={() => { if (!isSelectMode) startCellEdit(transaction, 'description'); }}
-            >
-              {transaction.description}
-            </SensitiveData>
+              <SensitiveData
+                as="p"
+                className="text-sm truncate cursor-pointer hover:text-[#69ADFF] transition-colors"
+                style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif', color: '#7E7F90' }}
+                onClick={() => { if (!isSelectMode) startCellEdit(transaction, 'description'); }}
+              >
+                {transaction.description}
+              </SensitiveData>
           )}
         </div>
 
@@ -933,6 +949,12 @@ export default function RecentTransactions({
                 ? `${filteredTransactions.length} מתוך ${transactions.length} עסקאות`
                 : `${transactions.length} עסקאות`}
             </p>
+            {pendingIvrCount > 0 && (
+              <div className="flex items-center gap-1.5 text-xs" style={{ color: '#7E7F90' }}>
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                <span>יש לך {pendingIvrCount} פעולות להשלמה</span>
+              </div>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-3">

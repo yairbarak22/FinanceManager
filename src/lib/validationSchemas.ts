@@ -34,6 +34,7 @@ export const updateTransactionSchema = z.object({
   merchantName: z.string().max(500).optional(),
   originalCategory: z.string().max(50).optional(),
   originalAmount: z.number().optional(),
+  needsDetailsReview: z.boolean().optional(),
 });
 
 // --- Recurring transaction schemas ---

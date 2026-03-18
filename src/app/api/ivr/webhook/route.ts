@@ -33,10 +33,9 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
 
   const apiPhone = params.ApiPhone || null;
   const pin = params.PIN || null;
-  const categoryAudio = params.CategoryAudio || null;
   const txType = params.TxType || null;
+  const categoryKey = params.CategoryKey || null;
   const amount = params.Amount || null;
-  const nameAudio = params.NameAudio || null;
   const hangup = params.hangup || null;
 
   if (hangup === "yes") {
@@ -45,57 +44,122 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
   }
 
   try {
-    // State 0: Ask for PIN (DTMF, instant, no DB)
+    // State 0: Ask for PIN
     if (apiPhone && !pin) {
-      console.log(`[IVR] State 0: Asking PIN from ${apiPhone} (${Date.now() - reqStart}ms)`);
-      return respond("read=f-M1798=PIN,no,4,4,7,No,no,no,,,,,,");
+      console.log(
+        `[IVR] State 0: Asking PIN from ${apiPhone} (${Date.now() - reqStart}ms)`
+      );
+      return respond("read=f-M1000=PIN,no,4,4,7,No,no,no,,,,,,");
     }
 
-    // State 1: Validate PIN + Ask expense/income (DB work, then DTMF)
+    // State 1: Validate PIN, create session, ask TxType
     if (apiPhone && pin && !txType) {
-      console.log(`[IVR] State 1: Validating PIN + asking expense/income for ${apiPhone}`);
+      console.log(
+        `[IVR] State 1: Validating PIN for ${apiPhone}`
+      );
       const dbStart = Date.now();
 
-      const { findUserByPhone, validatePin } = await import("@/lib/ivr/helpers");
+      const { findUserByPhone, validatePin } = await import(
+        "@/lib/ivr/helpers"
+      );
 
       const ivrPinRecord = await findUserByPhone(apiPhone);
       if (!ivrPinRecord || ivrPinRecord.phoneNumber !== apiPhone) {
-        console.log(`[IVR] Phone ${apiPhone} not found or mismatch (${Date.now() - dbStart}ms)`);
-        return respond("id_list_message=t-מספר הטלפון אינו מזוהה במערכת&hangup");
+        console.log(
+          `[IVR] Phone ${apiPhone} not found (${Date.now() - dbStart}ms)`
+        );
+        return respond("id_list_message=f-052&hangup");
       }
 
       const isValidPin = await validatePin(ivrPinRecord.user.id, pin);
       if (!isValidPin) {
-        console.log(`[IVR] Invalid PIN for user ${ivrPinRecord.user.id} (${Date.now() - dbStart}ms)`);
-        return respond("id_list_message=t-קוד שגוי&hangup");
+        console.log(
+          `[IVR] Invalid PIN for user ${ivrPinRecord.user.id} (${Date.now() - dbStart}ms)`
+        );
+        return respond("id_list_message=f-052&hangup");
       }
 
-      console.log(`[IVR] State 1: PIN valid, asking expense/income type (${Date.now() - dbStart}ms)`);
-      return respond("read=f-034=TxType,no,1,1,7,No,no,no,,1.2,,,,");
+      // Create or reuse an active IVR session
+      const { prisma } = await import("@/lib/prisma");
+      await prisma.ivrCallSession.upsert({
+        where: {
+          id:
+            (
+              await prisma.ivrCallSession.findFirst({
+                where: {
+                  phoneNumber: apiPhone,
+                  status: "started",
+                },
+                orderBy: { createdAt: "desc" },
+                select: { id: true },
+              })
+            )?.id ?? "",
+        },
+        update: { updatedAt: new Date() },
+        create: {
+          userId: ivrPinRecord.user.id,
+          phoneNumber: apiPhone,
+          status: "started",
+        },
+      });
+
+      console.log(
+        `[IVR] State 1: PIN valid, asking TxType (${Date.now() - dbStart}ms)`
+      );
+      return respond('read=f-M1799=TxType,no,1,1,7,No,no,no,,1.2,,,,');
     }
 
-    // State 2: Play M1799 + Record category (instant, no DB)
-    if (apiPhone && pin && txType && !categoryAudio) {
-      console.log(`[IVR] State 2: Playing M1799 + recording category for ${apiPhone} (${Date.now() - reqStart}ms)`);
-      return respond("id_list_message=f-M1799&read=f-M1799=CategoryAudio,no,record,,,no,,,,");
+    // State 2: Got TxType, update session, ask CategoryKey
+    if (apiPhone && pin && txType && !categoryKey) {
+      console.log(
+        `[IVR] State 2: TxType=${txType}, asking CategoryKey (${Date.now() - reqStart}ms)`
+      );
+
+      const { prisma } = await import("@/lib/prisma");
+      const session = await prisma.ivrCallSession.findFirst({
+        where: { phoneNumber: apiPhone, status: "started" },
+        orderBy: { createdAt: "desc" },
+      });
+      if (session) {
+        await prisma.ivrCallSession.update({
+          where: { id: session.id },
+          data: { type: parseInt(txType, 10) },
+        });
+      }
+
+      const categoryFile = txType === "2" ? "M1803" : "M1802";
+      return respond(
+        `read=f-${categoryFile}=CategoryKey,no,1,1,7,No,no,no,,0.9,,,,`
+      );
     }
 
-    // State 3: Ask for Amount (DTMF, instant, no DB)
-    if (apiPhone && pin && txType && categoryAudio && !amount) {
-      console.log(`[IVR] State 3: Asking amount (${Date.now() - reqStart}ms)`);
-      return respond("read=f-M1802=Amount,no,7,1,7,No,no,no,,,,,,");
+    // State 3: Got CategoryKey, update session, ask Amount
+    if (apiPhone && pin && txType && categoryKey && !amount) {
+      console.log(
+        `[IVR] State 3: CategoryKey=${categoryKey}, asking Amount (${Date.now() - reqStart}ms)`
+      );
+
+      const { prisma } = await import("@/lib/prisma");
+      const session = await prisma.ivrCallSession.findFirst({
+        where: { phoneNumber: apiPhone, status: "started" },
+        orderBy: { createdAt: "desc" },
+      });
+      if (session) {
+        await prisma.ivrCallSession.update({
+          where: { id: session.id },
+          data: { selectedCategoryKey: parseInt(categoryKey, 10) },
+        });
+      }
+
+      return respond("read=f-M1804=Amount,no,1,7,7,No,no,no,,,,,,");
     }
 
-    // State 4: Play M1803 + Record description (instant, no DB)
-    if (apiPhone && pin && txType && categoryAudio && amount && !nameAudio) {
-      console.log(`[IVR] State 4: Playing M1803 + recording description, amount=${amount} (${Date.now() - reqStart}ms)`);
-      return respond("id_list_message=f-M1803&read=f-M1803=NameAudio,no,record,,,no,,,,");
-    }
-
-    // State 5: Validate, Process & Finish (DB work)
-    if (apiPhone && pin && categoryAudio && txType && amount && nameAudio) {
+    // State 4: Got Amount — validate, create transaction, complete session
+    if (apiPhone && pin && txType && categoryKey && amount) {
       const transactionType = txType === "2" ? "income" : "expense";
-      console.log(`[IVR] State 5: All data collected, type=${transactionType} (${Date.now() - reqStart}ms)`);
+      console.log(
+        `[IVR] State 4: Creating transaction, type=${transactionType}, amount=${amount} (${Date.now() - reqStart}ms)`
+      );
 
       const amountNum = parseFloat(amount);
       if (isNaN(amountNum) || amountNum <= 0) {
@@ -103,50 +167,54 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
         return respond("id_list_message=t-סכום לא תקין&hangup");
       }
 
-      const { findUserByPhone } = await import("@/lib/ivr/helpers");
       const { prisma } = await import("@/lib/prisma");
-      const { processExpenseBackground } = await import("@/lib/ivr/processExpense");
-
-      const ivrPinRecord = await findUserByPhone(apiPhone);
-      if (!ivrPinRecord) {
-        console.error(`[IVR] State 5: User not found for phone ${apiPhone}`);
-        return respond("id_list_message=f-M1805&hangup");
-      }
-
-      const userId = ivrPinRecord.user.id;
-      const isHaredi = ivrPinRecord.user.signupSource === "prog";
-
-      console.log(
-        `[IVR] Processing: userId=${userId}, type=${transactionType}, amount=${amountNum}, ` +
-          `category=${categoryAudio}, name=${nameAudio}`
+      const { getCategoryIdForIvr } = await import(
+        "@/lib/ivr/categoriesMap"
       );
 
-      try {
-        const session = await prisma.ivrCallSession.create({
-          data: {
-            userId,
-            phoneNumber: apiPhone,
-            amount: amountNum,
-            status: "pending",
-          },
-        });
+      const session = await prisma.ivrCallSession.findFirst({
+        where: { phoneNumber: apiPhone, status: "started" },
+        orderBy: { createdAt: "desc" },
+        include: { user: { select: { id: true } } },
+      });
 
-        processExpenseBackground({
-          sessionId: session.id,
-          userId,
-          phoneNumber: apiPhone,
-          amount: amountNum,
-          categoryAudioUrl: categoryAudio,
-          nameAudioUrl: nameAudio,
-          isHaredi,
-          transactionType,
-        }).catch((error) => {
-          console.error("[IVR] Background processing failed:", error);
-        });
-      } catch (error) {
-        console.error("[IVR] Failed to create session:", error);
+      if (!session) {
+        console.error(
+          `[IVR] State 4: No active session for phone ${apiPhone}`
+        );
+        return respond("id_list_message=f-M1804&hangup");
       }
 
+      const categoryKeyNum = parseInt(categoryKey, 10);
+      const categoryId = getCategoryIdForIvr(transactionType, categoryKeyNum);
+
+      await prisma.transaction.create({
+        data: {
+          userId: session.userId,
+          type: transactionType,
+          amount: amountNum,
+          currency: "ILS",
+          category: categoryId,
+          description: "",
+          date: new Date(new Date().setHours(0, 0, 0, 0)),
+          source: "ivr",
+          needsDetailsReview: true,
+        },
+      });
+
+      await prisma.ivrCallSession.update({
+        where: { id: session.id },
+        data: {
+          amount: amountNum,
+          selectedCategoryKey: categoryKeyNum,
+          type: parseInt(txType, 10),
+          status: "completed",
+        },
+      });
+
+      console.log(
+        `[IVR] Session ${session.id} completed — category=${categoryId}, amount=${amountNum}`
+      );
       return respond("id_list_message=f-M1805&hangup");
     }
 

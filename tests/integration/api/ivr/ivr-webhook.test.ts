@@ -1,7 +1,7 @@
 /**
- * IVR Webhook Integration Tests
+ * IVR Webhook Integration Tests — DTMF State Machine
  *
- * Tests for the IVR webhook State Machine, PIN validation, and command generation.
+ * Tests the 5-state DTMF flow: PIN → TxType → CategoryKey → Amount → Transaction.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -13,41 +13,16 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: vi.fn(),
     },
     ivrCallSession: {
-      create: vi.fn().mockResolvedValue({ id: 'session-1' }),
+      create: vi.fn().mockResolvedValue({ id: 'session-1', userId: 'user-1', phoneNumber: '0501234567', status: 'started' }),
+      findFirst: vi.fn(),
       update: vi.fn(),
+      upsert: vi.fn().mockResolvedValue({ id: 'session-1' }),
     },
-    transaction: { create: vi.fn() },
+    transaction: {
+      create: vi.fn().mockResolvedValue({ id: 'tx-1' }),
+    },
     customCategory: { findMany: vi.fn().mockResolvedValue([]) },
-    user: {
-      findUnique: vi.fn().mockResolvedValue({ id: 'test-user-1' }),
-    },
-    sharedAccountMember: {
-      findFirst: vi.fn().mockResolvedValue(null),
-      findMany: vi.fn().mockResolvedValue([]),
-    },
   },
-}));
-
-vi.mock('@/lib/cache', () => ({
-  cacheGet: vi.fn().mockResolvedValue(null),
-  cacheSet: vi.fn(),
-  cacheDelete: vi.fn(),
-  CacheKeys: { authUser: (id: string) => `auth:${id}` },
-  CacheTTL: { AUTH_USER: 3600 },
-}));
-
-vi.mock('@/lib/rateLimit', () => ({
-  checkRateLimit: vi.fn().mockResolvedValue({ success: true, limit: 10, remaining: 9, resetTime: Date.now() + 60000 }),
-  RATE_LIMITS: { ivr: { maxRequests: 10, windowSeconds: 60 } },
-}));
-
-vi.mock('@/lib/config', () => ({
-  config: { encryptionKey: 'a'.repeat(64), nodeEnv: 'test' },
-}));
-
-vi.mock('@/lib/auditLog', () => ({
-  logAuditEvent: vi.fn(),
-  AuditAction: { RATE_LIMITED: 'RATE_LIMITED' },
 }));
 
 vi.mock('bcryptjs', () => ({
@@ -57,19 +32,13 @@ vi.mock('bcryptjs', () => ({
   },
 }));
 
-vi.mock('@/lib/ivr/processExpense', () => ({
-  processExpenseBackground: vi.fn(),
-}));
-
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { GET } from '@/app/api/ivr/webhook/route';
 import { NextRequest } from 'next/server';
-import { checkRateLimit } from '@/lib/rateLimit';
 
 const mockPrisma = vi.mocked(prisma);
 const mockBcrypt = vi.mocked(bcrypt);
-const mockRateLimit = vi.mocked(checkRateLimit);
 
 function makeRequest(params: Record<string, string>) {
   const url = new URL('http://localhost/api/ivr/webhook');
@@ -79,245 +48,329 @@ function makeRequest(params: Record<string, string>) {
   return new NextRequest(url);
 }
 
+const validPinRecord = {
+  id: 'pin-1',
+  userId: 'user-1',
+  hashedPin: 'hashed',
+  phoneNumber: '0501234567',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  user: { id: 'user-1', signupSource: null },
+} as never;
+
+const validPinUnique = {
+  id: 'pin-1',
+  userId: 'user-1',
+  hashedPin: 'hashed',
+  phoneNumber: '0501234567',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
+const activeSession = {
+  id: 'session-1',
+  userId: 'user-1',
+  phoneNumber: '0501234567',
+  amount: null,
+  type: null,
+  selectedCategoryKey: null,
+  status: 'started',
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  user: { id: 'user-1' },
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
-  mockRateLimit.mockResolvedValue({ success: true, limit: 10, remaining: 9, resetTime: Date.now() + 60000 });
 });
 
-describe('IVR Webhook - State Machine', () => {
-  it('State 0: should ask for PIN when only ApiPhone is provided', async () => {
+describe('IVR Webhook — DTMF State Machine', () => {
+  // =====================
+  // State 0: Ask for PIN
+  // =====================
+  it('State 0: should ask for PIN (M1000) when only ApiPhone is provided', async () => {
     const res = await GET(makeRequest({ ApiPhone: '0501234567' }));
     const text = await res.text();
 
     expect(res.status).toBe(200);
-    expect(res.headers.get('content-type')).toContain('text/plain');
-    expect(text).toContain('PIN');
-    expect(text).toContain('ברוך הבא');
+    expect(text).toBe('read=f-M1000=PIN,no,4,4,7,No,no,no,,,,,,');
   });
 
-  it('State 1: should reject invalid PIN format', async () => {
-    const res = await GET(makeRequest({ ApiPhone: '0501234567', PIN: '12' }));
-    const text = await res.text();
-
-    expect(text).toContain('קוד שגוי');
-    expect(text).toContain('hangup');
-  });
-
-  it('State 1: should reject unknown phone number', async () => {
+  // =====================
+  // State 1: Validate PIN
+  // =====================
+  it('State 1: should reject unknown phone with 052 and hangup', async () => {
     mockPrisma.ivrPin.findFirst.mockResolvedValue(null);
 
     const res = await GET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
     const text = await res.text();
 
-    expect(text).toContain('מספר טלפון לא מזוהה');
-    expect(text).toContain('hangup');
+    expect(text).toBe('id_list_message=f-052&hangup');
   });
 
-  it('State 1: should reject wrong PIN', async () => {
-    mockPrisma.ivrPin.findFirst.mockResolvedValue({
-      id: 'pin-1',
-      userId: 'user-1',
-      hashedPin: 'hashed',
-      phoneNumber: '0501234567',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      user: { id: 'user-1', signupSource: null },
-    } as never);
-    mockPrisma.ivrPin.findUnique.mockResolvedValue({
-      id: 'pin-1',
-      userId: 'user-1',
-      hashedPin: 'hashed',
-      phoneNumber: '0501234567',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+  it('State 1: should reject wrong PIN with 052 and hangup', async () => {
+    mockPrisma.ivrPin.findFirst.mockResolvedValue(validPinRecord);
+    mockPrisma.ivrPin.findUnique.mockResolvedValue(validPinUnique);
     mockBcrypt.compare.mockResolvedValue(false as never);
 
     const res = await GET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
     const text = await res.text();
 
-    expect(text).toContain('קוד שגוי');
+    expect(text).toBe('id_list_message=f-052&hangup');
   });
 
-  it('State 1: should accept valid PIN and ask for category', async () => {
-    mockPrisma.ivrPin.findFirst.mockResolvedValue({
-      id: 'pin-1',
-      userId: 'user-1',
-      hashedPin: 'hashed',
-      phoneNumber: '0501234567',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      user: { id: 'user-1', signupSource: null },
-    } as never);
-    mockPrisma.ivrPin.findUnique.mockResolvedValue({
-      id: 'pin-1',
-      userId: 'user-1',
-      hashedPin: 'hashed',
-      phoneNumber: '0501234567',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+  it('State 1: should accept valid PIN, create session, and ask TxType (M1799)', async () => {
+    mockPrisma.ivrPin.findFirst.mockResolvedValue(validPinRecord);
+    mockPrisma.ivrPin.findUnique.mockResolvedValue(validPinUnique);
     mockBcrypt.compare.mockResolvedValue(true as never);
+    mockPrisma.ivrCallSession.findFirst.mockResolvedValue(null);
 
     const res = await GET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
     const text = await res.text();
 
-    expect(text).toContain('קוד התקבל');
-    expect(text).toContain('record=CategoryAudio');
-  });
-
-  it('State 2: should ask for amount when category audio is provided', async () => {
-    const res = await GET(makeRequest({
-      ApiPhone: '0501234567',
-      PIN: '1234',
-      CategoryAudio: 'https://example.com/audio.wav',
-    }));
-    const text = await res.text();
-
-    expect(text).toContain('סכום');
-    expect(text).toContain('Amount');
-  });
-
-  it('State 3: should ask for name when amount is provided', async () => {
-    const res = await GET(makeRequest({
-      ApiPhone: '0501234567',
-      PIN: '1234',
-      CategoryAudio: 'https://example.com/cat.wav',
-      Amount: '150',
-    }));
-    const text = await res.text();
-
-    expect(text).toContain('פרטי ההוצאה');
-    expect(text).toContain('record=NameAudio');
-  });
-
-  it('State 4: should confirm and hangup when all data is provided', async () => {
-    mockPrisma.ivrPin.findFirst.mockResolvedValue({
-      id: 'pin-1',
-      userId: 'user-1',
-      hashedPin: 'hashed',
-      phoneNumber: '0501234567',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      user: { id: 'user-1', signupSource: null },
-    } as never);
-    mockPrisma.ivrPin.findUnique.mockResolvedValue({
-      id: 'pin-1',
-      userId: 'user-1',
-      hashedPin: 'hashed',
-      phoneNumber: '0501234567',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    mockBcrypt.compare.mockResolvedValue(true as never);
-
-    const res = await GET(makeRequest({
-      ApiPhone: '0501234567',
-      PIN: '1234',
-      CategoryAudio: 'https://example.com/cat.wav',
-      Amount: '150',
-      NameAudio: 'https://example.com/name.wav',
-    }));
-    const text = await res.text();
-
-    expect(text).toContain('ההוצאה נקלטה');
-    expect(text).toContain('hangup');
-    expect(mockPrisma.ivrCallSession.create).toHaveBeenCalledWith(
+    expect(text).toContain('M1799');
+    expect(text).toContain('TxType');
+    expect(mockPrisma.ivrCallSession.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
+        create: expect.objectContaining({
           userId: 'user-1',
           phoneNumber: '0501234567',
-          status: 'pending',
+          status: 'started',
         }),
       })
     );
   });
 
-  it('should reject when no phone number is provided', async () => {
-    const res = await GET(makeRequest({}));
-    const text = await res.text();
-
-    expect(text).toContain('שגיאה');
-    expect(text).toContain('hangup');
-  });
-
-  it('should rate limit excessive calls', async () => {
-    mockRateLimit.mockResolvedValue({ success: false, limit: 10, remaining: 0, resetTime: Date.now() + 60000 });
-
-    const res = await GET(makeRequest({ ApiPhone: '0501234567' }));
-    const text = await res.text();
-
-    expect(text).toContain('יותר מדי שיחות');
-    expect(text).toContain('hangup');
-  });
-
-  it('should reject invalid amount (zero)', async () => {
-    mockPrisma.ivrPin.findFirst.mockResolvedValue({
-      id: 'pin-1',
-      userId: 'user-1',
-      hashedPin: 'hashed',
-      phoneNumber: '0501234567',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      user: { id: 'user-1', signupSource: null },
-    } as never);
-    mockPrisma.ivrPin.findUnique.mockResolvedValue({
-      id: 'pin-1',
-      userId: 'user-1',
-      hashedPin: 'hashed',
-      phoneNumber: '0501234567',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    mockBcrypt.compare.mockResolvedValue(true as never);
+  // =====================
+  // State 2: TxType → CategoryKey
+  // =====================
+  it('State 2: expense (TxType=1) should ask CategoryKey with M1802', async () => {
+    mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
 
     const res = await GET(makeRequest({
       ApiPhone: '0501234567',
       PIN: '1234',
-      CategoryAudio: 'https://example.com/cat.wav',
+      TxType: '1',
+    }));
+    const text = await res.text();
+
+    expect(text).toContain('M1802');
+    expect(text).toContain('CategoryKey');
+    expect(mockPrisma.ivrCallSession.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ type: 1 }),
+      })
+    );
+  });
+
+  it('State 2: income (TxType=2) should ask CategoryKey with M1803', async () => {
+    mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
+
+    const res = await GET(makeRequest({
+      ApiPhone: '0501234567',
+      PIN: '1234',
+      TxType: '2',
+    }));
+    const text = await res.text();
+
+    expect(text).toContain('M1803');
+    expect(text).toContain('CategoryKey');
+  });
+
+  // =====================
+  // State 3: CategoryKey → Amount
+  // =====================
+  it('State 3: should ask Amount (M1804) after CategoryKey', async () => {
+    mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
+
+    const res = await GET(makeRequest({
+      ApiPhone: '0501234567',
+      PIN: '1234',
+      TxType: '1',
+      CategoryKey: '2',
+    }));
+    const text = await res.text();
+
+    expect(text).toContain('M1804');
+    expect(text).toContain('Amount');
+    expect(mockPrisma.ivrCallSession.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ selectedCategoryKey: 2 }),
+      })
+    );
+  });
+
+  // =====================
+  // State 4: Amount → Create Transaction
+  // =====================
+  it('State 4: should create transaction with source=ivr and needsDetailsReview=true', async () => {
+    mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
+
+    const res = await GET(makeRequest({
+      ApiPhone: '0501234567',
+      PIN: '1234',
+      TxType: '1',
+      CategoryKey: '2',
+      Amount: '150',
+    }));
+    const text = await res.text();
+
+    expect(text).toContain('M1805');
+    expect(text).toContain('hangup');
+
+    expect(mockPrisma.transaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          userId: 'user-1',
+          type: 'expense',
+          amount: 150,
+          currency: 'ILS',
+          category: 'food', // CategoryKey 2 maps to 'מזון' → 'food'
+          source: 'ivr',
+          needsDetailsReview: true,
+        }),
+      })
+    );
+
+    expect(mockPrisma.ivrCallSession.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'completed',
+          amount: 150,
+          selectedCategoryKey: 2,
+        }),
+      })
+    );
+  });
+
+  it('State 4: income transaction should use income category map', async () => {
+    mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
+
+    const res = await GET(makeRequest({
+      ApiPhone: '0501234567',
+      PIN: '1234',
+      TxType: '2',
+      CategoryKey: '2',
+      Amount: '5000',
+    }));
+    const text = await res.text();
+
+    expect(text).toContain('M1805');
+    expect(mockPrisma.transaction.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          type: 'income',
+          amount: 5000,
+          category: 'salary', // CategoryKey 2 maps to 'משכורת' → 'salary'
+          source: 'ivr',
+        }),
+      })
+    );
+  });
+
+  it('State 4: should reject invalid amount (zero)', async () => {
+    mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
+
+    const res = await GET(makeRequest({
+      ApiPhone: '0501234567',
+      PIN: '1234',
+      TxType: '1',
+      CategoryKey: '2',
       Amount: '0',
-      NameAudio: 'https://example.com/name.wav',
+    }));
+    const text = await res.text();
+
+    expect(text).toContain('סכום לא תקין');
+    expect(text).toContain('hangup');
+    expect(mockPrisma.transaction.create).not.toHaveBeenCalled();
+  });
+
+  it('State 4: should reject NaN amount', async () => {
+    mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
+
+    const res = await GET(makeRequest({
+      ApiPhone: '0501234567',
+      PIN: '1234',
+      TxType: '1',
+      CategoryKey: '2',
+      Amount: 'abc',
     }));
     const text = await res.text();
 
     expect(text).toContain('סכום לא תקין');
   });
+
+  it('State 4: should handle missing session gracefully', async () => {
+    mockPrisma.ivrCallSession.findFirst.mockResolvedValue(null);
+
+    const res = await GET(makeRequest({
+      ApiPhone: '0501234567',
+      PIN: '1234',
+      TxType: '1',
+      CategoryKey: '2',
+      Amount: '100',
+    }));
+    const text = await res.text();
+
+    expect(text).toContain('M1804');
+    expect(text).toContain('hangup');
+    expect(mockPrisma.transaction.create).not.toHaveBeenCalled();
+  });
+
+  // =====================
+  // Edge cases
+  // =====================
+  it('should handle hangup signal', async () => {
+    const res = await GET(makeRequest({
+      ApiPhone: '0501234567',
+      hangup: 'yes',
+    }));
+    const text = await res.text();
+
+    expect(text).toBe('ok');
+  });
+
+  it('should fallback to M1804 error for unhandled state', async () => {
+    const res = await GET(makeRequest({}));
+    const text = await res.text();
+
+    expect(text).toContain('M1804');
+    expect(text).toContain('hangup');
+  });
 });
 
-describe('IVR Helpers - Category Matching', () => {
-  it('should match exact Hebrew category name', async () => {
-    const { matchCategory } = await import('@/lib/ivr/helpers');
-    const categories = [
-      { id: 'food', nameHe: 'מזון' },
-      { id: 'transport', nameHe: 'תחבורה' },
-    ];
+describe('IVR Category Map', () => {
+  it('should resolve expense DTMF keys to correct category IDs', async () => {
+    const { getCategoryIdForIvr } = await import('@/lib/ivr/categoriesMap');
 
-    expect(matchCategory('מזון', categories)).toBe('food');
-    expect(matchCategory('תחבורה', categories)).toBe('transport');
+    expect(getCategoryIdForIvr('expense', 2)).toBe('food');
+    expect(getCategoryIdForIvr('expense', 3)).toBe('shopping');
+    expect(getCategoryIdForIvr('expense', 4)).toBe('transport');
+    expect(getCategoryIdForIvr('expense', 5)).toBe('entertainment');
+    expect(getCategoryIdForIvr('expense', 6)).toBe('bills');
+    expect(getCategoryIdForIvr('expense', 7)).toBe('health');
+    expect(getCategoryIdForIvr('expense', 8)).toBe('education');
+    expect(getCategoryIdForIvr('expense', 9)).toBe('housing');
+    expect(getCategoryIdForIvr('expense', 1)).toBe('other');
   });
 
-  it('should match partial category name', async () => {
-    const { matchCategory } = await import('@/lib/ivr/helpers');
-    const categories = [
-      { id: 'food', nameHe: 'מזון' },
-      { id: 'gifts', nameHe: 'מתנות ותרומות' },
-    ];
+  it('should resolve income DTMF keys to correct category IDs', async () => {
+    const { getCategoryIdForIvr } = await import('@/lib/ivr/categoriesMap');
 
-    expect(matchCategory('מתנות', categories)).toBe('gifts');
+    expect(getCategoryIdForIvr('income', 2)).toBe('salary');
+    expect(getCategoryIdForIvr('income', 3)).toBe('freelance');
+    expect(getCategoryIdForIvr('income', 4)).toBe('child_allowance');
+    expect(getCategoryIdForIvr('income', 5)).toBe('rental');
+    expect(getCategoryIdForIvr('income', 6)).toBe('investment');
+    expect(getCategoryIdForIvr('income', 7)).toBe('bonus');
+    expect(getCategoryIdForIvr('income', 8)).toBe('pension');
+    expect(getCategoryIdForIvr('income', 1)).toBe('other');
   });
 
-  it('should fallback to "other" when no match', async () => {
-    const { matchCategory } = await import('@/lib/ivr/helpers');
-    const categories = [
-      { id: 'food', nameHe: 'מזון' },
-    ];
+  it('should fallback to "other" for unknown keys', async () => {
+    const { getCategoryIdForIvr } = await import('@/lib/ivr/categoriesMap');
 
-    expect(matchCategory('ספורט', categories)).toBe('other');
-  });
-
-  it('should fallback to "other" for empty text', async () => {
-    const { matchCategory } = await import('@/lib/ivr/helpers');
-    expect(matchCategory('', [{ id: 'food', nameHe: 'מזון' }])).toBe('other');
-    expect(matchCategory('  ', [{ id: 'food', nameHe: 'מזון' }])).toBe('other');
+    expect(getCategoryIdForIvr('expense', 99)).toBe('other');
+    expect(getCategoryIdForIvr('income', -1)).toBe('other');
   });
 });

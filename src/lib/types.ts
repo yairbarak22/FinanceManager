@@ -8,6 +8,8 @@ export interface Transaction {
   category: string;
   description: string;
   date: string;
+  source?: 'web' | 'ivr';
+  needsDetailsReview?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

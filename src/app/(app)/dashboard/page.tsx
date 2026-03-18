@@ -472,7 +472,8 @@ export default function DashboardPage() {
     newDescription?: string,
     newAmount?: number,
     updateExistingTransactions?: boolean,
-    newDate?: string
+    newDate?: string,
+    needsDetailsReview?: boolean
   ) => {
     try {
       // Build update body with all changed fields
@@ -489,6 +490,9 @@ export default function DashboardPage() {
       }
       if (newDate !== undefined) {
         updateBody.date = newDate;
+      }
+      if (needsDetailsReview !== undefined) {
+        updateBody.needsDetailsReview = needsDetailsReview;
       }
 
       const res = await apiFetch(`/api/transactions/${transactionId}`, {

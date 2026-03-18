@@ -112,6 +112,7 @@ export async function PUT(
     if (data.category !== undefined) updateData.category = data.category;
     if (data.description !== undefined) updateData.description = data.description;
     if (data.date !== undefined) updateData.date = new Date(data.date);
+    if (data.needsDetailsReview !== undefined) updateData.needsDetailsReview = data.needsDetailsReview;
 
     const result = await prisma.transaction.updateMany({
       where: sharedWhere,
