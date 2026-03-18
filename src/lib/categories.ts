@@ -509,12 +509,22 @@ export const customCategoryColors = [
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
+
+const UNKNOWN_CATEGORY_INFO: CategoryInfo = {
+  id: 'other',
+  name: 'Other',
+  nameHe: 'אחר',
+  icon: MoreHorizontal,
+  color: '#64748b',
+  bgColor: 'bg-slate-100',
+  textColor: 'text-slate-600',
+};
+
 export function getCategoryInfo(
   categoryId: string,
   type: 'income' | 'expense' | 'asset' | 'liability',
   customCategories?: CategoryInfo[]
-): CategoryInfo | undefined {
-  // First check default categories
+): CategoryInfo {
   let result: CategoryInfo | undefined;
 
   switch (type) {
@@ -533,13 +543,11 @@ export function getCategoryInfo(
       break;
   }
 
-  // If not found in defaults, check custom categories
   if (!result && customCategories) {
     result = customCategories.find(c => c.id === categoryId);
   }
 
-  // Fallback: if still not found, search ALL category lists so at least the Hebrew name is shown
-  // (handles edge case where a category was saved with the wrong type, e.g. expense category on income transaction)
+  // Cross-type fallback (e.g. expense category stored on income transaction)
   if (!result) {
     result = incomeCategories.find(c => c.id === categoryId)
       || expenseCategories.find(c => c.id === categoryId)
@@ -548,7 +556,7 @@ export function getCategoryInfo(
       || liabilityTypes.find(c => c.id === categoryId);
   }
 
-  return result;
+  return result ?? UNKNOWN_CATEGORY_INFO;
 }
 
 export function getAllCategories(type: 'income' | 'expense'): CategoryInfo[] {
