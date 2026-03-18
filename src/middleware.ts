@@ -132,11 +132,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Public invite info — lets the invite landing page render before sign-in
-  if (pathname === '/api/account/invite/info') {
-    return NextResponse.next();
-  }
-
   // Capture signup source from URL parameters and set cookie
   const source = request.nextUrl.searchParams.get('source') || request.nextUrl.searchParams.get('utm_source');
   let response: NextResponse | null = null;
