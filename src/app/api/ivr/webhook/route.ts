@@ -71,7 +71,7 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
       );
       return respond(
         buildReadTap({
-          message: "f-M1000",
+          message: "f-M1798",
           valName: "PIN",
           maxDigits: 4,
           minDigits: 4,

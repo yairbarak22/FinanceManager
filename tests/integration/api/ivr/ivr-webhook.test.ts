@@ -88,12 +88,12 @@ describe('IVR Webhook — DTMF State Machine', () => {
   // =====================
   // State 0: Ask for PIN
   // =====================
-  it('State 0: should ask for PIN (M1000) when only ApiPhone is provided', async () => {
+  it('State 0: should ask for PIN (M1798) when only ApiPhone is provided', async () => {
     const res = await GET(makeRequest({ ApiPhone: '0501234567' }));
     const text = await res.text();
 
     expect(res.status).toBe(200);
-    expect(text).toBe('read=f-M1000=PIN,no,4,4,7,No,no,no,,,,,,');
+    expect(text).toBe('read=f-M1798=PIN,no,4,4,7,No,no,no,,,,,,');
   });
 
   // =====================
@@ -344,7 +344,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
     const res = await GET(makeRequest({ ApiPhone: '0501234567' }));
     const text = await res.text();
 
-    expect(text).toBe('read=f-M1000=PIN,no,4,4,7,No,no,no,,,,,,');
+    expect(text).toBe('read=f-M1798=PIN,no,4,4,7,No,no,no,,,,,,');
   });
 
   it('TxType read should restrict to digits 1 and 2', async () => {
