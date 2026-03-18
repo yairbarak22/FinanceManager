@@ -8,7 +8,7 @@ import { Metadata } from 'next';
  */
 export const metadata: Metadata = {
   title: 'הזמנה לשיתוף חשבון',
-  description: 'הצטרף לחשבון משותף ב-NETO',
+  description: 'הצטרף לחשבון משותף ב-MyNeto',
   robots: {
     index: false,
     follow: false,
