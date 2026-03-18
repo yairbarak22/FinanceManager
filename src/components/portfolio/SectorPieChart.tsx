@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { PieChart as PieChartIcon } from 'lucide-react';
+import { getChartColor } from '@/lib/chartColors';
 import { SensitiveData } from '../common/SensitiveData';
 
 interface SectorAllocation {
@@ -140,15 +141,15 @@ export function SectorPieChart({
 
   // Prepare data with colors and calculate total
   const { chartData, totalValue } = useMemo(() => {
-    const data = sectorAllocation.map((s) => {
+    const data = sectorAllocation.map((s, index) => {
       const displayName = s.sectorHe || SECTOR_NAMES[s.sector] || s.sector;
       return {
-        id: displayName, // Use displayName as unique ID
+        id: displayName,
         name: s.sector,
         displayName,
         value: s.value,
         percent: s.percent,
-        color: SECTOR_COLORS[displayName] || SECTOR_COLORS[s.sector] || SECTOR_COLORS['Unknown'],
+        color: SECTOR_COLORS[displayName] || SECTOR_COLORS[s.sector] || getChartColor(index),
       };
     });
     

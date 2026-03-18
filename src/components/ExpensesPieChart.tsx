@@ -7,6 +7,7 @@ import { PieChart as PieChartIcon } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Transaction, RecurringTransaction } from '@/lib/types';
 import { getCategoryInfo, CategoryInfo } from '@/lib/categories';
+import { getChartColor } from '@/lib/chartColors';
 import { SensitiveData } from './common/SensitiveData';
 
 type BreakdownMode = 'expense' | 'income';
@@ -19,31 +20,6 @@ interface ExpensesPieChartProps {
   selectedCategory?: string | null;
   onCategoryClick?: (category: string) => void;
 }
-
-const EXPENSE_COLORS: Record<string, string> = {
-  food: '#F18AB5',
-  transportation: '#69ADFF',
-  housing: '#0DBACC',
-  utilities: '#9F7FE0',
-  entertainment: '#74ACEF',
-  shopping: '#F18AB5',
-  health: '#0DBACC',
-  education: '#69ADFF',
-  other: '#BDBDCB',
-};
-
-const INCOME_COLORS: Record<string, string> = {
-  salary: '#0DBACC',
-  freelance: '#69ADFF',
-  rental: '#74ACEF',
-  investments: '#9F7FE0',
-  gifts: '#F18AB5',
-  government: '#0DBACC',
-  business: '#69ADFF',
-  pension: '#74ACEF',
-  other_income: '#BDBDCB',
-  other: '#BDBDCB',
-};
 
 const MODE_CONFIG = {
   expense: {
@@ -140,11 +116,12 @@ export default function ExpensesPieChart({
           id: category,
           name: categoryInfo?.nameHe || category,
           value: amount,
-          color: EXPENSE_COLORS[category] || categoryInfo?.color || '#BDBDCB',
+          color: '', // assigned after sort
           percentage: total > 0 ? ((amount / total) * 100).toFixed(0) : '0',
         };
       })
-      .sort((a, b) => b.value - a.value);
+      .sort((a, b) => b.value - a.value)
+      .map((item, index) => ({ ...item, color: getChartColor(index) }));
 
     return { data: chartData, total };
   }, [transactions, recurringExpenses, allCustomCategories]);
@@ -172,11 +149,12 @@ export default function ExpensesPieChart({
           id: category,
           name: categoryInfo?.nameHe || category,
           value: amount,
-          color: INCOME_COLORS[category] || categoryInfo?.color || '#BDBDCB',
+          color: '', // assigned after sort
           percentage: total > 0 ? ((amount / total) * 100).toFixed(0) : '0',
         };
       })
-      .sort((a, b) => b.value - a.value);
+      .sort((a, b) => b.value - a.value)
+      .map((item, index) => ({ ...item, color: getChartColor(index) }));
 
     return { data: chartData, total };
   }, [transactions, recurringExpenses, allCustomCategories]);

@@ -4,26 +4,9 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { formatCurrency } from '@/lib/utils';
+import { getChartColor } from '@/lib/chartColors';
 import { SensitiveData } from '@/components/common/SensitiveData';
 import type { CategoryBreakdownItem } from '@/lib/monthlyReport/calculations';
-
-const CATEGORY_COLORS: Record<string, string> = {
-  housing: '#303150',
-  food: '#69ADFF',
-  transport: '#0DBACC',
-  entertainment: '#9F7FE0',
-  bills: '#74ACEF',
-  shopping: '#F18AB5',
-  health: '#0DBACC',
-  education: '#69ADFF',
-  subscriptions: '#9F7FE0',
-  savings: '#0DBACC',
-  pets: '#74ACEF',
-  gifts: '#F18AB5',
-  personal_care: '#E9A800',
-  communication: '#69ADFF',
-  other: '#BDBDCB',
-};
 
 interface ExpensesByCategoryCardProps {
   categoryBreakdown: CategoryBreakdownItem[];
@@ -40,9 +23,9 @@ export default function ExpensesByCategoryCard({
 }: ExpensesByCategoryCardProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  const chartData = categoryBreakdown.map((item) => ({
+  const chartData = categoryBreakdown.map((item, index) => ({
     ...item,
-    color: CATEGORY_COLORS[item.category] || '#BDBDCB',
+    color: getChartColor(index),
   }));
 
   const isEmpty = chartData.length === 0;

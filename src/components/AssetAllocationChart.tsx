@@ -6,25 +6,12 @@ import { PieChartIcon } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { Asset } from '@/lib/types';
 import { assetCategories, getCategoryInfo } from '@/lib/categories';
+import { getChartColor } from '@/lib/chartColors';
 import { SensitiveData } from './common/SensitiveData';
 
 interface AssetAllocationChartProps {
   assets: Asset[];
 }
-
-// Fincheck style color palette - pastel gradients
-const CATEGORY_COLORS: Record<string, string> = {
-  real_estate: '#0DBACC',    // Turquoise
-  stocks: '#69ADFF',          // Dodger Blue
-  crypto: '#9F7FE0',          // Lavender
-  pension_fund: '#F18AB5',    // Cotton Candy
-  education_fund: '#74ACEF',  // Baby Blue
-  savings_account: '#B4F1F1', // Light Turquoise
-  investments: '#69ADFF',     // Dodger Blue
-  vehicle: '#F18AB5',         // Cotton Candy
-  cash: '#0DBACC',            // Turquoise
-  other: '#BDBDCB',           // Light Grey
-};
 
 export default function AssetAllocationChart({ assets }: AssetAllocationChartProps) {
   // Hover state for synchronized chart/legend interaction
@@ -50,10 +37,11 @@ export default function AssetAllocationChart({ assets }: AssetAllocationChartPro
           name: categoryInfo?.nameHe || categoryId,
           value,
           percentage: total > 0 ? ((value / total) * 100).toFixed(0) : '0',
-          color: CATEGORY_COLORS[categoryId] || '#BDBDCB',
+          color: '', // assigned after sort
         };
       })
-      .sort((a, b) => b.value - a.value); // Sort by value descending
+      .sort((a, b) => b.value - a.value)
+      .map((item, index) => ({ ...item, color: getChartColor(index) }));
 
     return { chartData: data, totalAssets: total };
   }, [assets]);

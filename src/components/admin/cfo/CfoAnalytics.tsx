@@ -15,14 +15,13 @@ import {
   Legend,
 } from 'recharts';
 import { formatCurrencyAmount, type CurrencyCode } from '@/lib/utils';
+import { getChartColor } from '@/lib/chartColors';
 import type { AdminSubscription, AdminTransaction } from '@/types/admin-cfo';
 
 interface CfoAnalyticsProps {
   subscriptions: AdminSubscription[];
   transactions: AdminTransaction[];
 }
-
-const PIE_COLORS = ['#2B4699', '#0DBACC', '#69ADFF', '#8B5CF6', '#E2E8F0', '#F18AB5'];
 
 function formatILS(value: number): string {
   return formatCurrencyAmount(value, 'ILS' as CurrencyCode);
@@ -160,7 +159,7 @@ export default function CfoAnalytics({ subscriptions, transactions }: CfoAnalyti
                 paddingAngle={5}
               >
                 {expenseChartData.map((_, idx) => (
-                  <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
+                  <Cell key={idx} fill={getChartColor(idx)} />
                 ))}
               </Pie>
               <Tooltip content={<PieTooltipContent />} />

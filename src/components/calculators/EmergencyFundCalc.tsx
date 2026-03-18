@@ -7,6 +7,7 @@ import { CurrencySlider } from '@/components/ui/Slider';
 import Slider from '@/components/ui/Slider';
 import { formatCurrency } from '@/lib/utils';
 import { calculateEmergencyFund } from '@/lib/calculations';
+import { CHART_PALETTE } from '@/lib/chartColors';
 import Card from '@/components/ui/Card';
 
 interface EmergencyFundCalcProps {
@@ -54,15 +55,11 @@ export default function EmergencyFundCalc({ className = '', showHeader = false }
     return calculateEmergencyFund(monthlyExpenses, monthsOfSecurity);
   }, [monthlyExpenses, monthsOfSecurity]);
 
-  // Chart colors matching design system
-  const COLORS = ['#69ADFF', '#0DBACC', '#9F7FE0', '#F18AB5', '#FFB84D', '#BDBDCB'];
-
-  // Add id to categories for hover state
   const categoriesWithId = useMemo(() => {
     return fundData.categories.map((cat, index) => ({
       ...cat,
       id: `cat-${index}`,
-      color: COLORS[index % COLORS.length],
+      color: CHART_PALETTE[index % CHART_PALETTE.length],
     }));
   }, [fundData.categories]);
 
