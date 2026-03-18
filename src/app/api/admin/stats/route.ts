@@ -42,7 +42,7 @@ export async function GET() {
       getUsersWithMultipleLoginDaysCount(),
       prisma.ivrPin.count(),
       prisma.ivrCallSession.count({
-        where: { status: 'completed', transactionId: { not: null } },
+        where: { status: 'completed' },
       }),
       prisma.budget.count(),
       prisma.financialGoal.count(),
