@@ -1,4 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import {
+  buildReadTap,
+  buildFileAndHangup,
+  buildTtsAndHangup,
+} from "@/lib/ivr/yemotFormat";
+import type { IvrWebhookParams } from "@/lib/ivr/types";
 
 const HEADERS = {
   "Content-Type": "text/html; charset=utf-8",
@@ -9,27 +15,36 @@ function respond(body: string): NextResponse {
   return new NextResponse(body, { status: 200, headers: HEADERS });
 }
 
-function getParams(request: NextRequest): Record<string, string> {
-  return Object.fromEntries(request.nextUrl.searchParams.entries());
+/**
+ * Parse Yemot parameters from both GET and POST requests.
+ * Handles duplicate keys by keeping the last value
+ * (mirrors yemot-router2 `shiftDuplicatedValues` behaviour).
+ */
+function parseParams(request: NextRequest): IvrWebhookParams {
+  return Object.fromEntries(
+    request.nextUrl.searchParams.entries()
+  ) as IvrWebhookParams;
 }
 
-async function getPostParams(
+async function parsePostParams(
   request: NextRequest
-): Promise<Record<string, string>> {
+): Promise<IvrWebhookParams> {
   const contentType = request.headers.get("content-type") || "";
   if (contentType.includes("application/x-www-form-urlencoded")) {
     const text = await request.text();
-    return Object.fromEntries(new URLSearchParams(text).entries());
+    return Object.fromEntries(
+      new URLSearchParams(text).entries()
+    ) as IvrWebhookParams;
   }
-  return getParams(request);
+  return parseParams(request);
 }
 
 async function handleIvr(request: NextRequest): Promise<NextResponse> {
   const reqStart = Date.now();
   const params =
     request.method === "POST"
-      ? await getPostParams(request)
-      : getParams(request);
+      ? await parsePostParams(request)
+      : parseParams(request);
 
   const apiPhone = params.ApiPhone || null;
   const pin = params.PIN || null;
@@ -38,25 +53,36 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
   const amount = params.Amount || null;
   const hangup = params.hangup || null;
 
+  if (!apiPhone) {
+    console.log("[IVR] Missing ApiPhone, returning error");
+    return respond(buildTtsAndHangup("שגיאה במערכת"));
+  }
+
   if (hangup === "yes") {
     console.log(`[IVR] Call hangup from ${apiPhone}`);
     return respond("ok");
   }
 
   try {
-    // State 0: Ask for PIN
-    if (apiPhone && !pin) {
+    // ── State 0: Ask for PIN ──────────────────────────────────────
+    if (!pin) {
       console.log(
         `[IVR] State 0: Asking PIN from ${apiPhone} (${Date.now() - reqStart}ms)`
       );
-      return respond("read=f-M1000=PIN,no,4,4,7,No,no,no,,,,,,");
+      return respond(
+        buildReadTap({
+          message: "f-M1000",
+          valName: "PIN",
+          maxDigits: 4,
+          minDigits: 4,
+          secWait: 7,
+        })
+      );
     }
 
-    // State 1: Validate PIN, create session, ask TxType
-    if (apiPhone && pin && !txType) {
-      console.log(
-        `[IVR] State 1: Validating PIN for ${apiPhone}`
-      );
+    // ── State 1: Validate PIN, create session, ask TxType ─────────
+    if (pin && !txType) {
+      console.log(`[IVR] State 1: Validating PIN for ${apiPhone}`);
       const dbStart = Date.now();
 
       const { findUserByPhone, validatePin } = await import(
@@ -68,7 +94,7 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
         console.log(
           `[IVR] Phone ${apiPhone} not found (${Date.now() - dbStart}ms)`
         );
-        return respond("id_list_message=f-052&hangup");
+        return respond(buildFileAndHangup("052"));
       }
 
       const isValidPin = await validatePin(ivrPinRecord.user.id, pin);
@@ -76,20 +102,16 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
         console.log(
           `[IVR] Invalid PIN for user ${ivrPinRecord.user.id} (${Date.now() - dbStart}ms)`
         );
-        return respond("id_list_message=f-052&hangup");
+        return respond(buildFileAndHangup("052"));
       }
 
-      // Create or reuse an active IVR session
       const { prisma } = await import("@/lib/prisma");
       await prisma.ivrCallSession.upsert({
         where: {
           id:
             (
               await prisma.ivrCallSession.findFirst({
-                where: {
-                  phoneNumber: apiPhone,
-                  status: "started",
-                },
+                where: { phoneNumber: apiPhone, status: "started" },
                 orderBy: { createdAt: "desc" },
                 select: { id: true },
               })
@@ -106,11 +128,20 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
       console.log(
         `[IVR] State 1: PIN valid, asking TxType (${Date.now() - dbStart}ms)`
       );
-      return respond('read=f-M1799=TxType,no,1,1,7,No,no,no,,1.2,,,,');
+      return respond(
+        buildReadTap({
+          message: "f-M1799",
+          valName: "TxType",
+          maxDigits: 1,
+          minDigits: 1,
+          secWait: 7,
+          digitsAllowed: "1.2",
+        })
+      );
     }
 
-    // State 2: Got TxType, update session, ask CategoryKey
-    if (apiPhone && pin && txType && !categoryKey) {
+    // ── State 2: Got TxType, update session, ask CategoryKey ──────
+    if (pin && txType && !categoryKey) {
       console.log(
         `[IVR] State 2: TxType=${txType}, asking CategoryKey (${Date.now() - reqStart}ms)`
       );
@@ -129,12 +160,18 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
 
       const categoryFile = txType === "2" ? "M1803" : "M1802";
       return respond(
-        `read=f-${categoryFile}=CategoryKey,no,1,1,7,No,no,no,,0.9,,,,`
+        buildReadTap({
+          message: `f-${categoryFile}`,
+          valName: "CategoryKey",
+          maxDigits: 1,
+          minDigits: 1,
+          secWait: 7,
+        })
       );
     }
 
-    // State 3: Got CategoryKey, update session, ask Amount
-    if (apiPhone && pin && txType && categoryKey && !amount) {
+    // ── State 3: Got CategoryKey, update session, ask Amount ──────
+    if (pin && txType && categoryKey && !amount) {
       console.log(
         `[IVR] State 3: CategoryKey=${categoryKey}, asking Amount (${Date.now() - reqStart}ms)`
       );
@@ -151,11 +188,19 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
         });
       }
 
-      return respond("read=f-M1804=Amount,no,1,7,7,No,no,no,,,,,,");
+      return respond(
+        buildReadTap({
+          message: "f-M1804",
+          valName: "Amount",
+          maxDigits: 7,
+          minDigits: 1,
+          secWait: 7,
+        })
+      );
     }
 
-    // State 4: Got Amount — validate, create transaction, complete session
-    if (apiPhone && pin && txType && categoryKey && amount) {
+    // ── State 4: Got Amount — create transaction, complete session ─
+    if (pin && txType && categoryKey && amount) {
       const transactionType = txType === "2" ? "income" : "expense";
       console.log(
         `[IVR] State 4: Creating transaction, type=${transactionType}, amount=${amount} (${Date.now() - reqStart}ms)`
@@ -164,7 +209,7 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
       const amountNum = parseFloat(amount);
       if (isNaN(amountNum) || amountNum <= 0) {
         console.log(`[IVR] Invalid amount: "${amount}"`);
-        return respond("id_list_message=t-סכום לא תקין&hangup");
+        return respond(buildTtsAndHangup("סכום לא תקין"));
       }
 
       const { prisma } = await import("@/lib/prisma");
@@ -182,7 +227,7 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
         console.error(
           `[IVR] State 4: No active session for phone ${apiPhone}`
         );
-        return respond("id_list_message=f-M1804&hangup");
+        return respond(buildFileAndHangup("M1804"));
       }
 
       const categoryKeyNum = parseInt(categoryKey, 10);
@@ -215,14 +260,14 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
       console.log(
         `[IVR] Session ${session.id} completed — category=${categoryId}, amount=${amountNum}`
       );
-      return respond("id_list_message=f-M1805&hangup");
+      return respond(buildFileAndHangup("M1805"));
     }
 
     console.log("[IVR] Fallback: unhandled state", params);
-    return respond("id_list_message=f-M1804&hangup");
+    return respond(buildFileAndHangup("M1804"));
   } catch (error) {
     console.error("[IVR] Webhook error:", error);
-    return respond("id_list_message=f-M1804&hangup");
+    return respond(buildFileAndHangup("M1804"));
   }
 }
 

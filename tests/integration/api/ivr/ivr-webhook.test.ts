@@ -330,12 +330,142 @@ describe('IVR Webhook — DTMF State Machine', () => {
     expect(text).toBe('ok');
   });
 
-  it('should fallback to M1804 error for unhandled state', async () => {
+  it('should return error for missing ApiPhone', async () => {
     const res = await GET(makeRequest({}));
     const text = await res.text();
 
-    expect(text).toContain('M1804');
-    expect(text).toContain('hangup');
+    expect(text).toBe('id_list_message=t-שגיאה במערכת&hangup');
+  });
+
+  // =====================
+  // Exact read format verification
+  // =====================
+  it('PIN read should have exact correct format', async () => {
+    const res = await GET(makeRequest({ ApiPhone: '0501234567' }));
+    const text = await res.text();
+
+    expect(text).toBe('read=f-M1000=PIN,no,4,4,7,No,no,no,,,,,,');
+  });
+
+  it('TxType read should restrict to digits 1 and 2', async () => {
+    mockPrisma.ivrPin.findFirst.mockResolvedValue(validPinRecord);
+    mockPrisma.ivrPin.findUnique.mockResolvedValue(validPinUnique);
+    mockBcrypt.compare.mockResolvedValue(true as never);
+    mockPrisma.ivrCallSession.findFirst.mockResolvedValue(null);
+
+    const res = await GET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
+    const text = await res.text();
+
+    expect(text).toBe('read=f-M1799=TxType,no,1,1,7,No,no,no,,1.2,,,,');
+  });
+
+  it('CategoryKey read should allow all digits (empty digits_allowed)', async () => {
+    mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
+
+    const res = await GET(makeRequest({
+      ApiPhone: '0501234567',
+      PIN: '1234',
+      TxType: '1',
+    }));
+    const text = await res.text();
+
+    expect(text).toBe('read=f-M1802=CategoryKey,no,1,1,7,No,no,no,,,,,,');
+  });
+
+  it('Amount read should have max_digits=7, min_digits=1 (not reversed)', async () => {
+    mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
+
+    const res = await GET(makeRequest({
+      ApiPhone: '0501234567',
+      PIN: '1234',
+      TxType: '1',
+      CategoryKey: '2',
+    }));
+    const text = await res.text();
+
+    expect(text).toBe('read=f-M1804=Amount,no,7,1,7,No,no,no,,,,,,');
+  });
+});
+
+describe('Yemot Format Builders', () => {
+  it('buildReadTap should produce correct 14-param format', async () => {
+    const { buildReadTap } = await import('@/lib/ivr/yemotFormat');
+
+    const result = buildReadTap({
+      message: 'f-M1000',
+      valName: 'PIN',
+      maxDigits: 4,
+      minDigits: 4,
+      secWait: 7,
+    });
+
+    expect(result).toBe('read=f-M1000=PIN,no,4,4,7,No,no,no,,,,,,');
+  });
+
+  it('buildReadTap should handle digitsAllowed', async () => {
+    const { buildReadTap } = await import('@/lib/ivr/yemotFormat');
+
+    const result = buildReadTap({
+      message: 'f-M1799',
+      valName: 'TxType',
+      maxDigits: 1,
+      minDigits: 1,
+      digitsAllowed: '1.2',
+    });
+
+    expect(result).toBe('read=f-M1799=TxType,no,1,1,7,No,no,no,,1.2,,,,');
+  });
+
+  it('buildReadTap defaults should work for minimal options', async () => {
+    const { buildReadTap } = await import('@/lib/ivr/yemotFormat');
+
+    const result = buildReadTap({
+      message: 'f-M1804',
+      valName: 'Amount',
+      maxDigits: 7,
+      minDigits: 1,
+    });
+
+    expect(result).toBe('read=f-M1804=Amount,no,7,1,7,No,no,no,,,,,,');
+  });
+
+  it('buildReadTap should support TTS message', async () => {
+    const { buildReadTap } = await import('@/lib/ivr/yemotFormat');
+
+    const result = buildReadTap({
+      message: 't-הזן סכום',
+      valName: 'Amount',
+      maxDigits: 7,
+      minDigits: 1,
+    });
+
+    expect(result).toBe('read=t-הזן סכום=Amount,no,7,1,7,No,no,no,,,,,,');
+  });
+
+  it('buildFileAndHangup should format correctly', async () => {
+    const { buildFileAndHangup } = await import('@/lib/ivr/yemotFormat');
+
+    expect(buildFileAndHangup('M1805')).toBe('id_list_message=f-M1805&hangup');
+    expect(buildFileAndHangup('052')).toBe('id_list_message=f-052&hangup');
+  });
+
+  it('buildTtsAndHangup should sanitize forbidden characters', async () => {
+    const { buildTtsAndHangup } = await import('@/lib/ivr/yemotFormat');
+
+    expect(buildTtsAndHangup('שגיאה במערכת')).toBe('id_list_message=t-שגיאה במערכת&hangup');
+    expect(buildTtsAndHangup('test"value')).toBe('id_list_message=t-testvalue&hangup');
+    expect(buildTtsAndHangup("it's.done|now")).toBe('id_list_message=t-itsdonenow&hangup');
+  });
+
+  it('sanitizeTtsText should remove forbidden chars', async () => {
+    const { sanitizeTtsText } = await import('@/lib/ivr/yemotFormat');
+
+    expect(sanitizeTtsText('hello.world')).toBe('helloworld');
+    expect(sanitizeTtsText('"quote"')).toBe('quote');
+    expect(sanitizeTtsText("it's")).toBe('its');
+    expect(sanitizeTtsText('a&b|c')).toBe('abc');
+    expect(sanitizeTtsText('no-dash')).toBe('nodash');
+    expect(sanitizeTtsText('שלום')).toBe('שלום');
   });
 });
 
