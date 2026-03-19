@@ -59,6 +59,12 @@ export const RATE_LIMITS = {
 
   // WhatsApp bot - per phone number
   whatsapp: { maxRequests: 15, windowSeconds: 60 } as RateLimitConfig,
+
+  // WhatsApp global - protect against mass abuse from many numbers
+  whatsappGlobal: { maxRequests: 200, windowSeconds: 60 } as RateLimitConfig,
+
+  // WhatsApp invalid messages circuit breaker - per phone number, 24h window
+  whatsappInvalid: { maxRequests: 5, windowSeconds: 24 * 60 * 60 } as RateLimitConfig,
 };
 
 // ============================================================================

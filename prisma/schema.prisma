@@ -52,6 +52,7 @@ model User {
   passoverSections      PassoverSection[]       // Passover budget planning sections
   ivrCallSessions       IvrCallSession[]       // IVR phone-based expense reports
   ivrPin                IvrPin?                // PIN for IVR authentication
+  whatsappMonthlyUsages WhatsappMonthlyUsage[]
 }
 
 model Account {
@@ -908,6 +909,21 @@ model WhatsappSession {
   createdAt   DateTime @default(now())
 
   @@index([phoneNumber])
+}
+
+model WhatsappMonthlyUsage {
+  id              String    @id @default(cuid())
+  userId          String
+  monthKey        String    // "YYYY-MM" e.g. "2026-03"
+  count           Int       @default(0)
+  limitNotifiedAt DateTime? // When the limit notification was sent (once per month)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, monthKey])
+  @@index([userId])
+  @@index([monthKey])
 }
 
 // ============================================

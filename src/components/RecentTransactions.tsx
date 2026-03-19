@@ -6,10 +6,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trash2, Receipt, Plus, Upload, CheckSquare, Square, X,
   ChevronDown, ChevronLeft, Check, Loader2, Filter, Search,
-  Tag, Calculator, SlidersHorizontal, FileSpreadsheet, ArrowUpDown, Pencil, Phone, Repeat,
+  Tag, Calculator, SlidersHorizontal, FileSpreadsheet, ArrowUpDown, Pencil, Phone, Repeat, MessageCircle,
 } from 'lucide-react';
 import ExportExcelModal from './modals/ExportExcelModal';
 import IvrReportModal from './modals/IvrReportModal';
+import WhatsAppReportModal from './modals/WhatsAppReportModal';
 import { Transaction, RecurringTransaction } from '@/lib/types';
 import { formatCurrency, formatCurrencyAmount, formatDate, cn, isRecurringActiveInMonth } from '@/lib/utils';
 import { getCategoryInfo, expenseCategories, incomeCategories, CategoryInfo } from '@/lib/categories';
@@ -89,6 +90,7 @@ export default function RecentTransactions({
 }: RecentTransactionsProps) {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isIvrReportModalOpen, setIsIvrReportModalOpen] = useState(false);
+  const [isWhatsAppReportModalOpen, setIsWhatsAppReportModalOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string; description: string }>({
     isOpen: false, id: '', description: '',
   });
@@ -1098,6 +1100,10 @@ export default function RecentTransactions({
               <button onClick={() => setIsIvrReportModalOpen(true)} className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: '#7E7F90' }}>
                 דיווח בשיחה
                 <Phone className="w-4 h-4" strokeWidth={1.5} />
+              </button>
+              <button onClick={() => setIsWhatsAppReportModalOpen(true)} className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: '#7E7F90' }}>
+                דיווח בווצאפ
+                <MessageCircle className="w-4 h-4" strokeWidth={1.5} />
               </button>
               <button onClick={() => setIsExportModalOpen(true)} className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: '#7E7F90' }}>
                 ייצוא
@@ -2174,6 +2180,15 @@ export default function RecentTransactions({
         isOpen={isIvrReportModalOpen}
         onClose={() => setIsIvrReportModalOpen(false)}
         onSuccess={onIvrSetupSuccess}
+      />
+
+      <WhatsAppReportModal
+        isOpen={isWhatsAppReportModalOpen}
+        onClose={() => setIsWhatsAppReportModalOpen(false)}
+        onOpenIvrSettings={() => {
+          setIsWhatsAppReportModalOpen(false);
+          setIsIvrReportModalOpen(true);
+        }}
       />
     </div>
   );
