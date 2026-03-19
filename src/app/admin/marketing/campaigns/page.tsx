@@ -160,6 +160,7 @@ export default function CampaignsPage() {
       case 'DRAFT': return 'bg-[#BDBDCB]/20 text-[#7E7F90]';
       case 'SCHEDULED': return 'bg-[#74ACEF]/10 text-[#74ACEF]';
       case 'SENDING': return 'bg-[#69ADFF]/10 text-[#69ADFF]';
+      case 'SMART_QUEUED': return 'bg-[#8B5CF6]/10 text-[#8B5CF6]';
       case 'COMPLETED': return 'bg-[#0DBACC]/10 text-[#0DBACC]';
       case 'CANCELLED': return 'bg-[#F18AB5]/10 text-[#F18AB5]';
       default: return 'bg-[#BDBDCB]/20 text-[#7E7F90]';
@@ -171,6 +172,7 @@ export default function CampaignsPage() {
       case 'DRAFT': return 'טיוטה';
       case 'SCHEDULED': return 'מתוזמן';
       case 'SENDING': return 'בשליחה';
+      case 'SMART_QUEUED': return 'שליחה חכמה';
       case 'COMPLETED': return 'הושלם';
       case 'CANCELLED': return 'בוטל';
       default: return status;

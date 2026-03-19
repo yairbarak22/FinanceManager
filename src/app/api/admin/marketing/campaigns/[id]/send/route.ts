@@ -3,8 +3,11 @@ import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { getSegmentUsers, validateSegmentFilter, type SegmentFilter } from '@/lib/marketing/segment';
-import { sendBatchEmails } from '@/lib/marketing/resend';
+import { sendBatchEmails, type SendBatchOptions } from '@/lib/marketing/resend';
 import { config } from '@/lib/config';
+import { getSenderDisplay } from '@/lib/inbox/constants';
+
+export const maxDuration = 300;
 
 /**
  * POST - Send campaign
@@ -27,6 +30,21 @@ export async function POST(
       );
     }
 
+    const body = await request.json().catch(() => ({}));
+    const rawSpread = body.spreadDurationMinutes as unknown;
+    let batchOptions: SendBatchOptions | undefined;
+
+    if (rawSpread != null) {
+      const spreadDurationMinutes = Number(rawSpread);
+      if (isNaN(spreadDurationMinutes) || spreadDurationMinutes < 1 || spreadDurationMinutes > 60) {
+        return NextResponse.json(
+          { error: 'משך פיזור השליחה חייב להיות בין 1 ל-60 דקות' },
+          { status: 400 }
+        );
+      }
+      batchOptions = { spreadDurationMinutes };
+    }
+
     // Get campaign
     const campaign = await prisma.marketingCampaign.findUnique({
       where: { id },
@@ -40,7 +58,7 @@ export async function POST(
     }
 
     // Check status
-    if (campaign.status === 'SENDING' || campaign.status === 'TESTING') {
+    if (campaign.status === 'SENDING' || campaign.status === 'TESTING' || campaign.status === 'SMART_QUEUED') {
       return NextResponse.json(
         { error: 'הקמפיין כבר בשליחה' },
         { status: 400 }
@@ -120,6 +138,13 @@ export async function POST(
       );
     }
 
+    const fromDisplay = campaign.senderEmail
+      ? getSenderDisplay(campaign.senderEmail)
+      : undefined;
+    if (fromDisplay) {
+      batchOptions = { ...batchOptions, from: fromDisplay };
+    }
+
     // ─── A/B Test Path ────────────────────────────────────────────────
     if (campaign.isAbTest) {
       if (!campaign.abTestPercentage || !campaign.abTestDurationHours || !campaign.abTestWinningMetric || !campaign.variants) {
@@ -195,7 +220,7 @@ export async function POST(
         try {
           const allEmails = [...emailsA, ...emailsB];
           const allUsers = [...groupA, ...groupB];
-          const results = await sendBatchEmails(allEmails);
+          const results = await sendBatchEmails(allEmails, batchOptions);
 
           const successful = results.filter((r) => r.id).length;
           const failed = results.filter((r) => r.error).length;
@@ -255,6 +280,26 @@ export async function POST(
       });
     }
 
+    // ─── Smart Send Path ───────────────────────────────────────────────
+    if (body.sendMode === 'smart') {
+      await prisma.marketingCampaign.update({
+        where: { id },
+        data: {
+          status: 'SMART_QUEUED',
+          sendMode: 'smart',
+          startedAt: new Date(),
+        },
+      });
+
+      console.log('[Campaign Send] Smart Send queued', { campaignId: id, userCount: users.length });
+
+      return NextResponse.json({
+        success: true,
+        message: `הקמפיין ישלח בהדרגה לפי שעות פתיחה אישיות ל-${users.length} משתמשים`,
+        userCount: users.length,
+      });
+    }
+
     // ─── Standard Send Path ──────────────────────────────────────────
     try {
       await prisma.marketingCampaign.update({
@@ -289,7 +334,7 @@ export async function POST(
 
     void (async () => {
       try {
-        const results = await sendBatchEmails(emails);
+        const results = await sendBatchEmails(emails, batchOptions);
 
         const successful = results.filter((r) => r.id).length;
         const failed = results.filter((r) => r.error).length;

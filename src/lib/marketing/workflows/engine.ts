@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { MarketingEventType } from '@prisma/client';
+import { sendWorkflowEmail as resendWorkflowEmail } from '@/lib/marketing/resend';
 import type {
   WorkflowGraph,
   WorkflowNode,
@@ -11,11 +12,11 @@ import { safeParseWorkflowGraph } from './types';
 const MAX_ITERATIONS = 10;
 const LOG_PREFIX = '[Workflow Engine]';
 
-// ============================================
-// STUB — will be replaced with real Resend integration
-// ============================================
-
-async function sendWorkflowEmail(params: {
+/**
+ * Send a workflow email via Resend, then persist a SENT MarketingEvent
+ * so that condition nodes and webhook handlers can track opens/clicks.
+ */
+async function sendAndRecordEmail(params: {
   userId: string;
   email: string;
   subject: string;
@@ -23,15 +24,38 @@ async function sendWorkflowEmail(params: {
   workflowId: string;
   nodeId: string;
 }): Promise<{ id: string } | { error: string }> {
-  console.log(`${LOG_PREFIX} Sending email`, {
+  const result = await resendWorkflowEmail({
     to: params.email,
     subject: params.subject,
+    html: params.html,
+    userId: params.userId,
     workflowId: params.workflowId,
     nodeId: params.nodeId,
   });
-  // TODO: Wire up Resend via sendCampaignEmail from @/lib/marketing/resend
-  // TODO: Store returned emailId for condition-node lookups
-  return { id: `stub-email-${Date.now()}` };
+
+  if ('error' in result) {
+    return result;
+  }
+
+  try {
+    await prisma.marketingEvent.create({
+      data: {
+        workflowId: params.workflowId,
+        nodeId: params.nodeId,
+        userId: params.userId,
+        emailId: result.id,
+        eventType: MarketingEventType.SENT,
+        metadata: {
+          nodeId: params.nodeId,
+          workflowId: params.workflowId,
+        },
+      },
+    });
+  } catch (err) {
+    console.error(`${LOG_PREFIX} Failed to record SENT event for email ${result.id}:`, err);
+  }
+
+  return result;
 }
 
 // ============================================
@@ -202,7 +226,7 @@ async function processEnrollment(
           return 'COMPLETED';
         }
 
-        const emailResult = await sendWorkflowEmail({
+        const emailResult = await sendAndRecordEmail({
           userId: enrollment.userId,
           email: enrollment.user.email,
           subject: currentNode.data.subject,
@@ -260,11 +284,23 @@ async function processEnrollment(
             ? MarketingEventType.OPENED
             : MarketingEventType.CLICKED;
 
+        const conditionWhere: {
+          userId: string;
+          eventType: MarketingEventType;
+          workflowId?: string;
+          nodeId?: string;
+        } = {
+          userId: enrollment.userId,
+          eventType,
+          workflowId: enrollment.workflowId,
+        };
+
+        if (currentNode.data.targetEmailNodeId) {
+          conditionWhere.nodeId = currentNode.data.targetEmailNodeId;
+        }
+
         const event = await prisma.marketingEvent.findFirst({
-          where: {
-            userId: enrollment.userId,
-            eventType,
-          },
+          where: conditionWhere,
         });
 
         const conditionMet = event !== null;

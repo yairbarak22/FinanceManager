@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSegmentUsers, type SegmentFilter } from '@/lib/marketing/segment';
 import { sendBatchEmails } from '@/lib/marketing/resend';
+import { getSenderDisplay } from '@/lib/inbox/constants';
 
 /**
  * GET /api/cron/evaluate-ab-tests
@@ -125,7 +126,10 @@ export async function GET(request: NextRequest) {
             };
           });
 
-          const results = await sendBatchEmails(emails);
+          const fromDisplay = campaign.senderEmail
+            ? getSenderDisplay(campaign.senderEmail)
+            : undefined;
+          const results = await sendBatchEmails(emails, { spreadDurationMinutes: 5, from: fromDisplay });
 
           const eventsToCreate: Array<{
             campaignId: string;

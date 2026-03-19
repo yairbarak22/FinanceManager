@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Save, AlertCircle, CheckCircle2, Split, Send } from 'lucide-react';
+import { ArrowLeft, Save, AlertCircle, CheckCircle2, Split, Send, ChevronDown } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
-import SegmentSelector from '@/components/admin/SegmentSelector';
+import GroupOnlyAudienceSelector from '@/components/admin/GroupOnlyAudienceSelector';
 import type { SegmentFilter } from '@/lib/marketing/segment';
 import EmailPreview from '@/components/admin/EmailPreview';
+import { SENDER_ADDRESSES, DEFAULT_SENDER } from '@/lib/inbox/constants';
 
 export default function EditCampaignPage() {
   const { data: session, status } = useSession();
@@ -22,11 +23,13 @@ export default function EditCampaignPage() {
 
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');
-  const [segmentFilter, setSegmentFilter] = useState<SegmentFilter>({ type: 'all' });
+  const [segmentFilter, setSegmentFilter] = useState<SegmentFilter>({ type: 'group' });
   const [content, setContent] = useState('');
   const [userCount, setUserCount] = useState<number>(0);
   const [campaignStatus, setCampaignStatus] = useState<string>('');
   const [inlineMessage, setInlineMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [senderEmail, setSenderEmail] = useState(DEFAULT_SENDER.email);
+  const [showSenderDropdown, setShowSenderDropdown] = useState(false);
 
   // A/B Testing state
   const [isAbTest, setIsAbTest] = useState(false);
@@ -77,8 +80,10 @@ export default function EditCampaignPage() {
       setName(campaign.name);
       setSubject(campaign.subject);
       setContent(campaign.content);
-      setSegmentFilter(campaign.segmentFilter || { type: 'all' });
+      const sf = campaign.segmentFilter;
+      setSegmentFilter(sf && sf.type === 'group' && sf.groupId ? sf : { type: 'group' });
       setCampaignStatus(campaign.status);
+      setSenderEmail(campaign.senderEmail || DEFAULT_SENDER.email);
 
       setIsAbTest(campaign.isAbTest || false);
       if (campaign.isAbTest) {
@@ -179,6 +184,7 @@ export default function EditCampaignPage() {
         subject: isAbTest ? variants[0].subject : subject,
         content: isAbTest ? variants[0].htmlContent : content,
         segmentFilter,
+        senderEmail,
       };
 
       if (isAbTest) {
@@ -323,11 +329,42 @@ export default function EditCampaignPage() {
                 </div>
               )}
 
-              <SegmentSelector
+              <GroupOnlyAudienceSelector
                 value={segmentFilter}
                 onChange={setSegmentFilter}
                 onCountChange={setUserCount}
               />
+
+              {/* Sender Address */}
+              <div className="relative">
+                <label className="block text-sm font-medium text-[#303150] mb-2">שולח</label>
+                <button
+                  type="button"
+                  onClick={() => setShowSenderDropdown(!showSenderDropdown)}
+                  disabled={campaignStatus !== 'DRAFT'}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-[#E8E8ED] text-sm text-[#303150] hover:border-[#69ADFF] transition-colors disabled:opacity-50"
+                >
+                  <span className="truncate">myneto &lt;{senderEmail}&gt;</span>
+                  <ChevronDown className={`w-4 h-4 text-[#7E7F90] transition-transform flex-shrink-0 mr-2 ${showSenderDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                {showSenderDropdown && (
+                  <div className="absolute top-full right-0 left-0 mt-1 bg-white rounded-xl border border-[#E8E8ED] shadow-lg z-10 max-h-48 overflow-y-auto">
+                    {SENDER_ADDRESSES.map((sender) => (
+                      <button
+                        key={sender.email}
+                        type="button"
+                        onClick={() => { setSenderEmail(sender.email); setShowSenderDropdown(false); }}
+                        className={`w-full text-right px-4 py-2.5 text-sm hover:bg-[#F7F7F8] transition-colors first:rounded-t-xl last:rounded-b-xl ${
+                          senderEmail === sender.email ? 'bg-[#69ADFF]/10 text-[#69ADFF]' : 'text-[#303150]'
+                        }`}
+                      >
+                        <span className="font-medium">{sender.label}</span>
+                        <span className="text-[#7E7F90] text-xs mr-2">{sender.email}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* A/B Testing Toggle */}
               <div className="pt-4 border-t border-[#F7F7F8]">
@@ -543,7 +580,7 @@ export default function EditCampaignPage() {
                       {variants.find(v => v.id === activeVariantTab)?.htmlContent ? (
                         <div>
                           <div className="px-4 pt-3 pb-2 border-b border-[#F7F7F8]">
-                            <p className="text-xs text-[#BDBDCB]">מ: myneto &lt;admin@myneto.co.il&gt;</p>
+                            <p className="text-xs text-[#BDBDCB]">מ: myneto &lt;{senderEmail}&gt;</p>
                             <p className="text-xs text-[#BDBDCB]">נושא: {variants.find(v => v.id === activeVariantTab)?.subject || '(ללא נושא)'}</p>
                           </div>
                           <EmailPreview
@@ -608,7 +645,7 @@ export default function EditCampaignPage() {
                       {content ? (
                         <div>
                           <div className="px-4 pt-3 pb-2 border-b border-[#F7F7F8]">
-                            <p className="text-xs text-[#BDBDCB]">מ: myneto &lt;admin@myneto.co.il&gt;</p>
+                            <p className="text-xs text-[#BDBDCB]">מ: myneto &lt;{senderEmail}&gt;</p>
                             <p className="text-xs text-[#BDBDCB]">נושא: {subject || '(ללא נושא)'}</p>
                           </div>
                           <EmailPreview

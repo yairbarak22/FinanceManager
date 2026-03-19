@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { removeUserFromActiveGroup } from '@/lib/activeGroup';
 
 /**
  * GET - Unsubscribe page (redirects to confirmation)
@@ -131,7 +132,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update user
+    // Update user and remove from "פעילים" group
     await prisma.user.update({
       where: { id: userId },
       data: {
@@ -139,6 +140,7 @@ export async function POST(request: NextRequest) {
         marketingUnsubscribedAt: new Date(),
       },
     });
+    await removeUserFromActiveGroup(userId);
 
     // Return success page
     return new NextResponse(

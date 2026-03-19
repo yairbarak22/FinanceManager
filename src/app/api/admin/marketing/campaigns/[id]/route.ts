@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { validateSegmentFilter, type SegmentFilter } from '@/lib/marketing/segment';
+import { isValidSenderAddress } from '@/lib/inbox/constants';
 
 /**
  * GET - Get campaign details
@@ -100,7 +101,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, subject, content, segmentFilter, scheduledAt, status } = body;
+    const { name, subject, content, segmentFilter, scheduledAt, status, senderEmail } = body;
 
     // Check if campaign exists
     const existing = await prisma.marketingCampaign.findUnique({
@@ -130,6 +131,13 @@ export async function PUT(
       );
     }
 
+    if (senderEmail && !isValidSenderAddress(senderEmail)) {
+      return NextResponse.json(
+        { error: 'כתובת שולח לא תקינה' },
+        { status: 400 }
+      );
+    }
+
     // Build update data
     const updateData: {
       name?: string;
@@ -138,6 +146,7 @@ export async function PUT(
       segmentFilter?: Prisma.InputJsonValue;
       scheduledAt?: Date | null;
       status?: CampaignStatus;
+      senderEmail?: string | null;
     } = {};
 
     if (name !== undefined) updateData.name = name;
@@ -148,6 +157,7 @@ export async function PUT(
       updateData.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
     }
     if (status !== undefined) updateData.status = status as CampaignStatus;
+    if (senderEmail !== undefined) updateData.senderEmail = senderEmail || null;
 
     const campaign = await prisma.marketingCampaign.update({
       where: { id },

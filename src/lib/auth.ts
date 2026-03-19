@@ -8,6 +8,7 @@ import { logAuditEvent, AuditAction } from './auditLog';
 import { processCalculatorInvites } from './calculatorInvites';
 import { addSubscriberToMailerLite } from './mailerlite';
 import { getGlobalStats } from './globalStats';
+import { addUserToActiveGroup } from './activeGroup';
 
 // Cookie name for signup source tracking
 const SIGNUP_SOURCE_COOKIE = 'signup_source';
@@ -113,6 +114,15 @@ export const authOptions: NextAuthOptions = {
           await addSubscriberToMailerLite(user.email, user.name);
         } catch (error) {
           console.error('[Auth] Failed to add user to MailerLite:', error);
+        }
+      }
+
+      // Add to "פעילים" base group (for marketing segments)
+      if (user?.id) {
+        try {
+          await addUserToActiveGroup(user.id);
+        } catch (error) {
+          console.error('[Auth] Failed to add user to פעילים group:', error);
         }
       }
 

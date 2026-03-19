@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { removeUserFromActiveGroup } from '@/lib/activeGroup';
 
 /**
  * Sanitize string for safe HTML insertion (prevent XSS)
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (user) {
-      // User exists in system - unsubscribe them
+      // User exists in system - unsubscribe them and remove from "פעילים" group
       await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -136,6 +137,7 @@ export async function POST(request: NextRequest) {
           marketingUnsubscribedAt: new Date(),
         },
       });
+      await removeUserFromActiveGroup(user.id);
     }
     // For external emails (not in system) - they won't receive future emails anyway
 

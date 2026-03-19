@@ -19,6 +19,8 @@ model User {
   signupSource          String?                // Signup source tracking (e.g., "prog", "facebook", "google_ads")
   isMarketingSubscribed Boolean               @default(true) // Whether subscribed to marketing emails
   marketingUnsubscribedAt DateTime?            // When user unsubscribed from marketing
+  openHoursLog          Int[]                  @default([])   // Hours (0-23 Israel time) when user opens emails
+  preferredSendHour     Int?                   // Computed average open hour (0-23); set after 3+ opens
   monthStartDay         Int                    @default(1) // Day of month when financial month starts (1-28)
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
@@ -545,6 +547,7 @@ enum CampaignStatus {
   DRAFT
   SCHEDULED
   SENDING
+  SMART_QUEUED
   TESTING
   COMPLETED
   CANCELLED
@@ -578,6 +581,8 @@ model MarketingCampaign {
   abTestWinningMetric   String?           // 'OPEN_RATE' or 'CLICK_RATE'
   variants              Json?             // [{id:'A',subject:'...',htmlContent:'...'}, {id:'B',...}]
   winningVariantId      String?           // 'A' or 'B' after test completes
+  senderEmail           String?           // e.g. admin@myneto.co.il; null = default
+  sendMode              String?           // 'instant' | 'spread' | 'smart'; null = instant
   scheduledAt     DateTime?         // Scheduled send time
   startedAt       DateTime?         // When sending started
   completedAt     DateTime?         // When sending completed
@@ -594,17 +599,21 @@ model MarketingCampaign {
 
 model MarketingEvent {
   id          String              @id @default(cuid())
-  campaignId  String
+  campaignId  String?
+  workflowId  String?
+  nodeId      String?             // Workflow node that sent this email
   userId      String
   emailId     String              // Resend email ID
   eventType   MarketingEventType
   metadata    Json?               // Additional data (clicked URL, IP, user agent)
   timestamp   DateTime            @default(now())
-  campaign    MarketingCampaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign    MarketingCampaign?  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  workflow    AutomationWorkflow? @relation(fields: [workflowId], references: [id], onDelete: Cascade)
   user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([emailId, eventType]) // Prevent duplicate events for same email
+  @@unique([emailId, eventType])
   @@index([campaignId])
+  @@index([workflowId])
   @@index([userId])
   @@index([emailId])
   @@index([eventType])
@@ -650,15 +659,16 @@ enum EnrollmentStatus {
 }
 
 model AutomationWorkflow {
-  id          String              @id @default(uuid())
-  name        String
-  status      WorkflowStatus      @default(DRAFT)
-  triggerType TriggerType         @default(MANUAL)
-  nodes       Json                // React Flow nodes array: [{ id, type, data, position }]
-  edges       Json                // React Flow edges array: [{ id, source, target, type }]
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  enrollments WorkflowEnrollment[]
+  id              String              @id @default(uuid())
+  name            String
+  status          WorkflowStatus      @default(DRAFT)
+  triggerType     TriggerType         @default(MANUAL)
+  nodes           Json                // React Flow nodes array: [{ id, type, data, position }]
+  edges           Json                // React Flow edges array: [{ id, source, target, type }]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  enrollments     WorkflowEnrollment[]
+  marketingEvents MarketingEvent[]
 
   @@index([status])
   @@index([triggerType])

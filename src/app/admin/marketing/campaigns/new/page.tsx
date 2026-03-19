@@ -18,11 +18,15 @@ import {
   ClipboardList,
   X,
   Split,
+  Shield,
+  ChevronDown,
+  Zap,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
-import SegmentSelector from '@/components/admin/SegmentSelector';
+import GroupOnlyAudienceSelector from '@/components/admin/GroupOnlyAudienceSelector';
 import type { SegmentFilter } from '@/lib/marketing/segment';
 import EmailPreview from '@/components/admin/EmailPreview';
+import { SENDER_ADDRESSES, DEFAULT_SENDER } from '@/lib/inbox/constants';
 
 interface Template {
   id: string;
@@ -52,12 +56,16 @@ export default function NewCampaignPage() {
   // Form data
   const [name, setName] = useState('');
   const [subject, setSubject] = useState('');
-  const [segmentFilter, setSegmentFilter] = useState<SegmentFilter>({ type: 'all' });
+  const [segmentFilter, setSegmentFilter] = useState<SegmentFilter>({ type: 'group' });
   const [content, setContent] = useState('');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [userCount, setUserCount] = useState<number>(0);
   const [sendOption, setSendOption] = useState<'draft' | 'now' | 'scheduled'>('draft');
   const [scheduledAt, setScheduledAt] = useState('');
+  const [spreadDuration, setSpreadDuration] = useState<number | null>(null);
+  const [sendMode, setSendMode] = useState<'instant' | 'smart'>('instant');
+  const [senderEmail, setSenderEmail] = useState(DEFAULT_SENDER.email);
+  const [showSenderDropdown, setShowSenderDropdown] = useState(false);
 
   // A/B Testing state
   const [isAbTest, setIsAbTest] = useState(false);
@@ -204,6 +212,7 @@ export default function NewCampaignPage() {
         content: isAbTest ? variants[0].htmlContent : content,
         segmentFilter,
         scheduledAt: sendOption === 'scheduled' && scheduledAt ? scheduledAt : null,
+        senderEmail,
       };
 
       if (isAbTest) {
@@ -233,10 +242,17 @@ export default function NewCampaignPage() {
       const data = await res.json();
       const campaignId = data.campaign.id;
 
-      // If send now, trigger send
       if (sendOption === 'now') {
+        const sendBody: Record<string, unknown> = {};
+        if (sendMode === 'smart') {
+          sendBody.sendMode = 'smart';
+        } else if (spreadDuration) {
+          sendBody.spreadDurationMinutes = spreadDuration;
+        }
         const sendRes = await apiFetch(`/api/admin/marketing/campaigns/${campaignId}/send`, {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sendBody),
         });
 
         if (!sendRes.ok) {
@@ -256,11 +272,7 @@ export default function NewCampaignPage() {
     }
   };
 
-  const getRecipientCount = () => {
-    if (segmentFilter.type === 'manual') return (segmentFilter.selectedUserIds || []).length;
-    if (segmentFilter.type === 'csv') return (segmentFilter.csvEmails || []).length;
-    return userCount;
-  };
+  const getRecipientCount = () => userCount;
 
   if (success) {
     return (
@@ -308,9 +320,22 @@ export default function NewCampaignPage() {
                   סוג: <span className="font-medium text-[#303150]">בדיקת A/B ({abTestPercentage}% קבוצת בדיקה, {abTestDurationHours} שעות)</span>
                 </p>
               )}
+              {sendMode === 'smart' && (
+                <p className="text-sm text-[#7E7F90]">
+                  קצב שליחה: <span className="font-medium text-[#303150]">שליחה חכמה (Smart Send)</span>
+                </p>
+              )}
+              {sendMode !== 'smart' && spreadDuration && (
+                <p className="text-sm text-[#7E7F90]">
+                  קצב שליחה: <span className="font-medium text-[#303150]">פיזור על פני {spreadDuration} דקות</span>
+                </p>
+              )}
             </div>
             <p className="text-sm text-[#7E7F90] mb-6">
-              הקמפיין יישלח מיד ל-{getRecipientCount().toLocaleString()} נמענים. פעולה זו לא ניתנת לביטול.
+              {sendMode === 'smart'
+                ? `הקמפיין יישלח בהדרגה על פני 24 שעות — כל משתמש בשעה שהוא רגיל לפתוח מיילים. ${getRecipientCount().toLocaleString()} נמענים. פעולה זו לא ניתנת לביטול.`
+                : `הקמפיין יישלח${spreadDuration ? ` בפיזור של ${spreadDuration} דקות` : ' מיד'} ל-${getRecipientCount().toLocaleString()} נמענים. פעולה זו לא ניתנת לביטול.`
+              }
             </p>
             <div className="flex items-center gap-3 justify-end">
               <button
@@ -456,7 +481,7 @@ export default function NewCampaignPage() {
               </div>
             )}
 
-            <SegmentSelector
+            <GroupOnlyAudienceSelector
               value={segmentFilter}
               onChange={setSegmentFilter}
               onCountChange={setUserCount}
@@ -561,13 +586,9 @@ export default function NewCampaignPage() {
               disabled={
                 !name ||
                 (!isAbTest && !subject) ||
-                (segmentFilter.type !== 'manual' &&
-                  segmentFilter.type !== 'csv' &&
-                  userCount === 0) ||
-                (segmentFilter.type === 'manual' &&
-                  (!segmentFilter.selectedUserIds || segmentFilter.selectedUserIds.length === 0)) ||
-                (segmentFilter.type === 'csv' &&
-                  (!segmentFilter.csvEmails || segmentFilter.csvEmails.length === 0))
+                segmentFilter.type !== 'group' ||
+                !segmentFilter.groupId ||
+                userCount === 0
               }
               className="flex items-center gap-2 px-5 py-2.5 lg:px-6 lg:py-3 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm lg:text-base"
             >
@@ -749,7 +770,7 @@ export default function NewCampaignPage() {
                       {variants.find(v => v.id === activeVariantTab)?.htmlContent ? (
                         <div>
                           <div className="px-4 pt-3 pb-2 border-b border-[#F7F7F8]">
-                            <p className="text-xs text-[#BDBDCB]">מ: myneto &lt;admin@myneto.co.il&gt;</p>
+                            <p className="text-xs text-[#BDBDCB]">מ: myneto &lt;{senderEmail}&gt;</p>
                             <p className="text-xs text-[#BDBDCB]">נושא: {variants.find(v => v.id === activeVariantTab)?.subject || '(ללא נושא)'}</p>
                           </div>
                           <EmailPreview
@@ -812,7 +833,7 @@ export default function NewCampaignPage() {
                       {content ? (
                         <div>
                           <div className="px-4 pt-3 pb-2 border-b border-[#F7F7F8]">
-                            <p className="text-xs text-[#BDBDCB]">מ: myneto &lt;admin@myneto.co.il&gt;</p>
+                            <p className="text-xs text-[#BDBDCB]">מ: myneto &lt;{senderEmail}&gt;</p>
                             <p className="text-xs text-[#BDBDCB]">נושא: {subject || '(ללא נושא)'}</p>
                           </div>
                           <EmailPreview
@@ -896,9 +917,33 @@ export default function NewCampaignPage() {
                     {getRecipientCount().toLocaleString()} משתמשים
                   </p>
                 </div>
-                <div>
+                <div className="relative">
                   <p className="text-xs text-[#7E7F90] mb-1">שולח</p>
-                  <p className="text-sm font-medium text-[#303150]">myneto &lt;admin@myneto.co.il&gt;</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowSenderDropdown(!showSenderDropdown)}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-[#E8E8ED] text-sm text-[#303150] hover:border-[#69ADFF] transition-colors"
+                  >
+                    <span className="truncate">myneto &lt;{senderEmail}&gt;</span>
+                    <ChevronDown className={`w-4 h-4 text-[#7E7F90] transition-transform flex-shrink-0 mr-2 ${showSenderDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+                  {showSenderDropdown && (
+                    <div className="absolute top-full right-0 left-0 mt-1 bg-white rounded-xl border border-[#E8E8ED] shadow-lg z-10 max-h-48 overflow-y-auto">
+                      {SENDER_ADDRESSES.map((sender) => (
+                        <button
+                          key={sender.email}
+                          type="button"
+                          onClick={() => { setSenderEmail(sender.email); setShowSenderDropdown(false); }}
+                          className={`w-full text-right px-3 py-2.5 text-sm hover:bg-[#F7F7F8] transition-colors first:rounded-t-xl last:rounded-b-xl ${
+                            senderEmail === sender.email ? 'bg-[#69ADFF]/10 text-[#69ADFF]' : 'text-[#303150]'
+                          }`}
+                        >
+                          <span className="font-medium">{sender.label}</span>
+                          <span className="text-[#7E7F90] text-xs mr-2">{sender.email}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -972,6 +1017,65 @@ export default function NewCampaignPage() {
                 </button>
               </div>
             </div>
+
+            {/* Send Rate & Smart Send — only visible when "send now" is selected */}
+            {sendOption === 'now' && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Shield className="w-4 h-4 text-[#0DBACC]" />
+                  <label className="text-sm font-medium text-[#303150]">קצב שליחה (מניעת ספאם)</label>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[
+                    { value: null, label: 'מהיר' },
+                    { value: 5, label: '5 דקות' },
+                    { value: 15, label: '15 דקות' },
+                    { value: 30, label: '30 דקות' },
+                    { value: 60, label: '60 דקות' },
+                  ].map((opt) => (
+                    <button
+                      key={String(opt.value)}
+                      onClick={() => { setSpreadDuration(opt.value); setSendMode('instant'); }}
+                      className={`px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                        sendMode === 'instant' && spreadDuration === opt.value
+                          ? 'border-[#69ADFF] bg-[#69ADFF]/5 text-[#303150]'
+                          : 'border-[#E8E8ED] bg-white text-[#7E7F90] hover:border-[#69ADFF]/50'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {!isAbTest && (
+                  <button
+                    onClick={() => { setSendMode('smart'); setSpreadDuration(null); }}
+                    className={`w-full mt-3 flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-right ${
+                      sendMode === 'smart'
+                        ? 'border-[#8B5CF6] bg-[#8B5CF6]/5'
+                        : 'border-[#E8E8ED] bg-white hover:border-[#8B5CF6]/50'
+                    }`}
+                  >
+                    <Zap className={`w-5 h-5 flex-shrink-0 ${sendMode === 'smart' ? 'text-[#8B5CF6]' : 'text-[#7E7F90]'}`} />
+                    <div className="flex-1">
+                      <p className={`text-sm font-medium ${sendMode === 'smart' ? 'text-[#303150]' : 'text-[#7E7F90]'}`}>
+                        שליחה חכמה (Smart Send)
+                      </p>
+                      <p className="text-xs text-[#BDBDCB]">
+                        כל משתמש מקבל את המייל בשעה שבה הוא רגיל לפתוח מיילים (על פני 24 שעות)
+                      </p>
+                    </div>
+                  </button>
+                )}
+
+                <p className="text-xs text-[#BDBDCB] mt-2">
+                  {sendMode === 'smart'
+                    ? 'הקמפיין יישלח על פני 24 שעות. משתמשים ללא נתוני פתיחה יקבלו בשעה 10:00.'
+                    : 'פיזור השליחה על פני זמן מפחית את הסיכוי שהמיילים יסומנו כספאם.'
+                  }
+                </p>
+              </div>
+            )}
 
             {/* Date Picker for Scheduled */}
             {sendOption === 'scheduled' && (

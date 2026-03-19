@@ -102,11 +102,13 @@ async function verifyWebhookSignature(
 }
 
 /**
- * Find campaign and user from email ID
- * We store the email ID in MarketingEvent when sending
+ * Find the original SENT event for a given Resend emailId.
+ * Works for both campaign emails (campaignId set) and workflow emails (workflowId set).
  */
-async function findCampaignAndUser(emailId: string): Promise<{
+async function findSentEvent(emailId: string): Promise<{
   campaignId: string | null;
+  workflowId: string | null;
+  nodeId: string | null;
   userId: string | null;
   metadata: Record<string, unknown> | null;
 } | null> {
@@ -117,6 +119,8 @@ async function findCampaignAndUser(emailId: string): Promise<{
     },
     select: {
       campaignId: true,
+      workflowId: true,
+      nodeId: true,
       userId: true,
       metadata: true,
     },
@@ -128,6 +132,8 @@ async function findCampaignAndUser(emailId: string): Promise<{
 
   return {
     campaignId: event.campaignId,
+    workflowId: event.workflowId,
+    nodeId: event.nodeId,
     userId: event.userId,
     metadata: event.metadata as Record<string, unknown> | null,
   };
@@ -159,6 +165,50 @@ async function syncCampaignStats(campaignId: string): Promise<void> {
       complaintCount: countMap['COMPLAINED'] ?? 0,
     },
   });
+}
+
+const ISRAEL_TZ = 'Asia/Jerusalem';
+const MAX_OPEN_LOG_ENTRIES = 50;
+const MIN_OPENS_FOR_PREFERRED = 3;
+
+function getIsraelHour(date: Date): number {
+  const hourStr = new Intl.DateTimeFormat('en-US', {
+    timeZone: ISRAEL_TZ,
+    hour: 'numeric',
+    hour12: false,
+  }).format(date);
+  return parseInt(hourStr, 10) % 24;
+}
+
+function computeCircularMeanHour(hours: number[]): number {
+  let sinSum = 0;
+  let cosSum = 0;
+  for (const h of hours) {
+    const rad = (h / 24) * 2 * Math.PI;
+    sinSum += Math.sin(rad);
+    cosSum += Math.cos(rad);
+  }
+  let meanRad = Math.atan2(sinSum / hours.length, cosSum / hours.length);
+  if (meanRad < 0) meanRad += 2 * Math.PI;
+  return Math.round((meanRad / (2 * Math.PI)) * 24) % 24;
+}
+
+async function updateUserOpenHours(userId: string, openDate: Date): Promise<void> {
+  const israelHour = getIsraelHour(openDate);
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { openHoursLog: true },
+  });
+
+  const log = [...(user?.openHoursLog ?? []), israelHour].slice(-MAX_OPEN_LOG_ENTRIES);
+
+  const data: { openHoursLog: number[]; preferredSendHour?: number } = { openHoursLog: log };
+  if (log.length >= MIN_OPENS_FOR_PREFERRED) {
+    data.preferredSendHour = computeCircularMeanHour(log);
+  }
+
+  await prisma.user.update({ where: { id: userId }, data });
 }
 
 /**
@@ -198,62 +248,60 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing email_id' }, { status: 400 });
     }
 
-    // Find campaign and user from email ID (look up the SENT event)
-    const campaignUser = await findCampaignAndUser(emailId);
-    if (!campaignUser || !campaignUser.campaignId || !campaignUser.userId) {
-      // Email not found in our system - might be transactional email, ignore
+    // Find the original SENT event for this emailId
+    const sentEvent = await findSentEvent(emailId);
+    if (!sentEvent || !sentEvent.userId) {
       console.log(`[Marketing Webhook] Email ${emailId} not found in marketing events`);
       return NextResponse.json({ received: true });
     }
 
-    const { campaignId, userId } = campaignUser;
+    // Need at least one of campaignId or workflowId
+    if (!sentEvent.campaignId && !sentEvent.workflowId) {
+      console.log(`[Marketing Webhook] Email ${emailId} has no campaign or workflow`);
+      return NextResponse.json({ received: true });
+    }
 
-    // Don't create duplicate SENT events (the SENT event is already created during campaign send)
+    const { campaignId, workflowId, nodeId, userId } = sentEvent;
+
+    // SENT events are recorded at send time — skip duplicates from webhook
     if (eventType === MarketingEventType.SENT) {
       return NextResponse.json({ received: true });
     }
 
-    // Resolve variantId: prefer SENT event metadata, fallback to webhook tags
+    // Resolve variantId (campaign A/B tests)
     let variantId: string | undefined;
-    if (campaignUser.metadata?.variantId) {
-      variantId = campaignUser.metadata.variantId as string;
+    if (sentEvent.metadata?.variantId) {
+      variantId = sentEvent.metadata.variantId as string;
     } else if (event.data.tags && Array.isArray(event.data.tags)) {
       const variantTag = event.data.tags.find((t) => t.name === 'variant_id');
       variantId = variantTag?.value;
     }
 
-    // Prepare metadata
     const metadata: Record<string, string> = {
       emailId,
       timestamp: event.created_at,
     };
 
-    if (variantId) {
-      metadata.variantId = variantId;
-    }
+    if (variantId) metadata.variantId = variantId;
+    if (workflowId) metadata.workflowId = workflowId;
+    if (nodeId) metadata.nodeId = nodeId;
 
     if (eventType === MarketingEventType.CLICKED && event.data.link) {
       metadata.link = event.data.link;
     }
-
     if (eventType === MarketingEventType.BOUNCED && event.data.bounce_type) {
       metadata.bounceType = event.data.bounce_type;
     }
-
     if (eventType === MarketingEventType.COMPLAINED && event.data.complaint_feedback_type) {
       metadata.complaintFeedbackType = event.data.complaint_feedback_type;
     }
 
-    // Check if this exact event already exists (dedup)
+    // Dedup: check if this exact event already exists
     const existing = await prisma.marketingEvent.findFirst({
-      where: {
-        emailId,
-        eventType,
-      },
+      where: { emailId, eventType },
     });
 
     if (existing) {
-      // Update existing event timestamp only, don't create new one
       await prisma.marketingEvent.update({
         where: { id: existing.id },
         data: {
@@ -262,10 +310,11 @@ export async function POST(request: NextRequest) {
         },
       });
     } else {
-      // Create new event
       await prisma.marketingEvent.create({
         data: {
-          campaignId,
+          campaignId: campaignId ?? undefined,
+          workflowId: workflowId ?? undefined,
+          nodeId: nodeId ?? undefined,
           userId,
           emailId,
           eventType,
@@ -275,8 +324,17 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Sync campaign statistics from real event counts (avoids double-counting)
-    await syncCampaignStats(campaignId);
+    if (eventType === MarketingEventType.OPENED) {
+      try {
+        await updateUserOpenHours(userId, new Date(event.created_at));
+      } catch (err) {
+        console.error(`[Marketing Webhook] Failed to update open hours for user ${userId}:`, err);
+      }
+    }
+
+    if (campaignId) {
+      await syncCampaignStats(campaignId);
+    }
 
     return NextResponse.json({ received: true });
   } catch (error) {

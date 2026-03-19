@@ -16,11 +16,13 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { Mail, Clock, GitBranch, Save, X } from 'lucide-react';
+import { Mail, Clock, GitBranch, Save, X, Play, Pause, Users } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { apiFetch } from '@/lib/utils';
 import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/ui/Toast';
 import SegmentSelector from '@/components/admin/SegmentSelector';
+import UserSelector from '@/components/admin/UserSelector';
 import type { SegmentFilter } from '@/lib/marketing/segment';
 import {
   TriggerNode,
@@ -33,10 +35,13 @@ import {
 // Types
 // ────────────────────────────────────────────────────────────
 
+type WorkflowStatus = 'DRAFT' | 'ACTIVE' | 'PAUSED';
+
 interface WorkflowBuilderProps {
   initialNodes: Node[];
   initialEdges: Edge[];
   workflowId: string;
+  initialStatus?: WorkflowStatus;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -47,11 +52,15 @@ export default function WorkflowBuilder({
   initialNodes,
   initialEdges,
   workflowId,
+  initialStatus = 'DRAFT',
 }: WorkflowBuilderProps) {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<WorkflowStatus>(initialStatus);
+  const [togglingStatus, setTogglingStatus] = useState(false);
+  const [showEnrollModal, setShowEnrollModal] = useState(false);
   const { toasts, removeToast, success, error: showError } = useToast();
 
   const nodeTypes = useMemo(
@@ -187,6 +196,60 @@ export default function WorkflowBuilder({
     }
   }, [nodes, edges, workflowId, success, showError]);
 
+  // ── Status toggle ──────────────────────────────────────
+
+  const handleToggleStatus = useCallback(async () => {
+    const newStatus: WorkflowStatus = status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
+    setTogglingStatus(true);
+    try {
+      const res = await apiFetch(
+        `/api/admin/marketing/workflows/${workflowId}`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({ status: newStatus }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        showError(data.error || 'שגיאה בשינוי סטטוס');
+        return;
+      }
+      setStatus(newStatus);
+      success(newStatus === 'ACTIVE' ? 'התהליך הופעל' : 'התהליך הושהה');
+    } catch {
+      showError('שגיאה בשינוי סטטוס');
+    } finally {
+      setTogglingStatus(false);
+    }
+  }, [status, workflowId, success, showError]);
+
+  // ── Enroll users ──────────────────────────────────────
+
+  const handleEnroll = useCallback(async (userIds: string[]) => {
+    if (userIds.length === 0) {
+      showError('יש לבחור לפחות משתמש אחד');
+      return;
+    }
+    try {
+      const res = await apiFetch(
+        `/api/admin/marketing/workflows/${workflowId}/enroll`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ userIds }),
+        },
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        showError(data.error || 'שגיאה ברישום משתמשים');
+        return;
+      }
+      success(`${data.enrolled} משתמשים נרשמו בהצלחה${data.skipped ? ` (${data.skipped} דולגו)` : ''}`);
+      setShowEnrollModal(false);
+    } catch {
+      showError('שגיאה ברישום משתמשים');
+    }
+  }, [workflowId, success, showError]);
+
   // ── Email nodes list (for condition target picker) ─────
 
   const emailNodes = useMemo(
@@ -237,6 +300,22 @@ export default function WorkflowBuilder({
 
         <div className="flex-1" />
 
+        {/* Status badge */}
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold ${
+            status === 'ACTIVE'
+              ? 'bg-emerald-50 text-emerald-700'
+              : status === 'PAUSED'
+                ? 'bg-amber-50 text-amber-700'
+                : 'bg-gray-100 text-gray-600'
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              status === 'ACTIVE' ? 'bg-emerald-500' : status === 'PAUSED' ? 'bg-amber-500' : 'bg-gray-400'
+            }`} />
+            {status === 'ACTIVE' ? 'פעיל' : status === 'PAUSED' ? 'מושהה' : 'טיוטה'}
+          </span>
+        </div>
+
         <button
           type="button"
           onClick={handleSave}
@@ -246,6 +325,35 @@ export default function WorkflowBuilder({
           <Save className="w-4 h-4" />
           {saving ? 'שומר...' : 'שמור'}
         </button>
+
+        {/* Activate / Pause */}
+        <button
+          type="button"
+          onClick={handleToggleStatus}
+          disabled={togglingStatus}
+          className={`flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl text-sm font-medium transition-colors shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
+            status === 'ACTIVE'
+              ? 'bg-amber-500 text-white hover:bg-amber-600'
+              : 'bg-emerald-500 text-white hover:bg-emerald-600'
+          }`}
+        >
+          {status === 'ACTIVE' ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+          {togglingStatus
+            ? 'מעדכן...'
+            : status === 'ACTIVE' ? 'השהה' : 'הפעל'}
+        </button>
+
+        {/* Enroll users (only when active) */}
+        {status === 'ACTIVE' && (
+          <button
+            type="button"
+            onClick={() => setShowEnrollModal(true)}
+            className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl border border-[#69ADFF] text-[#69ADFF] text-sm font-medium hover:bg-[#69ADFF]/5 transition-colors"
+          >
+            <Users className="w-4 h-4" />
+            רשום משתמשים
+          </button>
+        )}
       </div>
 
       {/* ── Center: React Flow canvas ──────────────── */}
@@ -495,7 +603,82 @@ export default function WorkflowBuilder({
         </div>
       )}
 
+      {/* ── Enrollment modal ─────────────────────── */}
+      {showEnrollModal && createPortal(
+        <EnrollModal
+          onEnroll={handleEnroll}
+          onClose={() => setShowEnrollModal(false)}
+        />,
+        document.body,
+      )}
+
       <ToastContainer toasts={toasts} removeToast={removeToast} />
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────
+// Enrollment modal (inline — uses UserSelector)
+// ────────────────────────────────────────────────────────────
+
+function EnrollModal({
+  onEnroll,
+  onClose,
+}: {
+  onEnroll: (userIds: string[]) => void;
+  onClose: () => void;
+}) {
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    await onEnroll(selectedUserIds);
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal-content max-w-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold text-[#303150]">רישום משתמשים לתהליך</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <X className="w-5 h-5 text-[#7E7F90]" />
+          </button>
+        </div>
+
+        <UserSelector
+          selectedUserIds={selectedUserIds}
+          onChange={setSelectedUserIds}
+        />
+
+        <div className="flex items-center justify-between mt-6 pt-4 border-t border-[#F7F7F8]">
+          <span className="text-sm text-[#7E7F90]">
+            {selectedUserIds.length} משתמשים נבחרו
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2.5 rounded-xl border border-gray-200 text-sm text-[#7E7F90] hover:bg-[#F7F7F8] transition-colors"
+            >
+              ביטול
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={selectedUserIds.length === 0 || submitting}
+              className="px-4 py-2.5 rounded-xl bg-[#69ADFF] text-white text-sm font-medium hover:bg-[#5A9EE6] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {submitting ? 'רושם...' : 'רשום'}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

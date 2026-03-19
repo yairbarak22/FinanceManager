@@ -49,6 +49,7 @@ export default async function WorkflowEditPage({ params }: PageProps) {
           initialNodes={nodes as any[]}
           initialEdges={edges as any[]}
           workflowId={id}
+          initialStatus={workflow.status}
         />
       </ReactFlowProvider>
     </div>

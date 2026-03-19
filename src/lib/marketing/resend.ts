@@ -5,6 +5,7 @@
 
 import { Resend } from 'resend';
 import { config } from '@/lib/config';
+import { getSenderDisplay } from '@/lib/inbox/constants';
 
 let resendClient: Resend | null = null;
 
@@ -21,6 +22,15 @@ export interface SendCampaignEmailParams {
   html: string;
   campaignId: string;
   userId: string | null; // null for external emails from CSV
+}
+
+export interface SendWorkflowEmailParams {
+  to: string;
+  subject: string;
+  html: string;
+  userId: string;
+  workflowId: string;
+  nodeId: string;
 }
 
 export interface SendTestEmailParams {
@@ -111,17 +121,73 @@ export async function sendCampaignEmail(
   }
 }
 
-const CONCURRENCY = 2;
-const DELAY_BETWEEN_PAIRS_MS = 600;
+/**
+ * Send a workflow automation email via Resend.
+ * Tags include workflow_id / node_id so webhooks can route events back.
+ */
+export async function sendWorkflowEmail(
+  params: SendWorkflowEmailParams,
+): Promise<{ id: string } | { error: string }> {
+  const resend = getResend();
+  if (!resend) {
+    return { error: 'Resend API key not configured' };
+  }
+
+  try {
+    const htmlWithUnsubscribe = addUnsubscribeLink(params.html, params.userId, params.to);
+
+    const result = await resend.emails.send({
+      from: 'myneto <admin@myneto.co.il>',
+      to: params.to,
+      subject: params.subject,
+      html: htmlWithUnsubscribe,
+      tags: [
+        { name: 'workflow_id', value: params.workflowId },
+        { name: 'node_id', value: params.nodeId },
+        { name: 'user_id', value: params.userId },
+        { name: 'type', value: 'workflow' },
+      ],
+    });
+
+    if (result.error) {
+      console.error('[Workflow] Resend error:', result.error);
+      return { error: result.error.message || 'Failed to send email' };
+    }
+
+    if (!result.data?.id) {
+      return { error: 'No email ID returned from Resend' };
+    }
+
+    return { id: result.data.id };
+  } catch (error) {
+    console.error('[Workflow] Send email error:', error);
+    return { error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+export interface SendBatchOptions {
+  /** Spread sending over X minutes to improve deliverability */
+  spreadDurationMinutes?: number;
+  /** Emails sent in parallel per chunk (default 2; gradual mode defaults to 1) */
+  concurrency?: number;
+  /** Resend "from" display string, e.g. "myneto <support@myneto.co.il>" */
+  from?: string;
+}
+
+const DEFAULT_CONCURRENCY = 2;
+const DEFAULT_DELAY_MS = 600;
 const RETRY_DELAY_MS = 2000;
 const MAX_RETRIES = 3;
 
 /**
  * Send a single email with retry on 429 (rate limit)
  */
+const DEFAULT_FROM = 'myneto <admin@myneto.co.il>';
+
 async function sendSingleWithRetry(
   resend: Resend,
   email: { to: string; subject: string; html: string; campaignId: string; userId: string | null; variantId?: string },
+  from?: string,
 ): Promise<{ email: string; id?: string; error?: string }> {
   const htmlWithUnsubscribe = addUnsubscribeLink(email.html, email.userId, email.to);
 
@@ -137,7 +203,7 @@ async function sendSingleWithRetry(
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const result = await resend.emails.send({
-        from: 'myneto <admin@myneto.co.il>',
+        from: from || DEFAULT_FROM,
         to: email.to,
         subject: email.subject,
         html: htmlWithUnsubscribe,
@@ -174,23 +240,39 @@ async function sendSingleWithRetry(
 }
 
 /**
- * Send batch emails with rate limiting (max 2 req/s to stay within Resend limits)
+ * Send batch emails with rate limiting.
+ * When `spreadDurationMinutes` is set the delay between chunks is calculated
+ * so that sending is evenly distributed over the requested window, reducing
+ * the chance of being flagged as spam by mail providers.
  */
 export async function sendBatchEmails(
-  emails: Array<{ to: string; subject: string; html: string; campaignId: string; userId: string | null; variantId?: string }>
+  emails: Array<{ to: string; subject: string; html: string; campaignId: string; userId: string | null; variantId?: string }>,
+  options?: SendBatchOptions,
 ): Promise<Array<{ email: string; id?: string; error?: string }>> {
   const resend = getResend();
   if (!resend) {
     return emails.map((e) => ({ email: e.to, error: 'Resend API key not configured' }));
   }
 
+  const concurrency = options?.concurrency
+    ?? (options?.spreadDurationMinutes ? 1 : DEFAULT_CONCURRENCY);
+
+  let delayMs = DEFAULT_DELAY_MS;
+  if (options?.spreadDurationMinutes && options.spreadDurationMinutes > 0) {
+    const totalMs = options.spreadDurationMinutes * 60 * 1000;
+    const totalChunks = Math.ceil(emails.length / concurrency);
+    delayMs = totalChunks > 1 ? Math.floor(totalMs / totalChunks) : 0;
+  }
+
+  console.log(`[Marketing] sendBatchEmails: ${emails.length} emails, concurrency=${concurrency}, delay=${delayMs}ms${options?.spreadDurationMinutes ? ` (spread over ${options.spreadDurationMinutes}min)` : ''}`);
+
   const results: Array<{ email: string; id?: string; error?: string }> = [];
 
-  for (let i = 0; i < emails.length; i += CONCURRENCY) {
-    const chunk = emails.slice(i, i + CONCURRENCY);
+  for (let i = 0; i < emails.length; i += concurrency) {
+    const chunk = emails.slice(i, i + concurrency);
 
     const chunkResults = await Promise.allSettled(
-      chunk.map((email) => sendSingleWithRetry(resend, email))
+      chunk.map((email) => sendSingleWithRetry(resend, email, options?.from))
     );
 
     for (let j = 0; j < chunkResults.length; j++) {
@@ -202,8 +284,8 @@ export async function sendBatchEmails(
       }
     }
 
-    if (i + CONCURRENCY < emails.length) {
-      await new Promise((r) => setTimeout(r, DELAY_BETWEEN_PAIRS_MS));
+    if (i + concurrency < emails.length && delayMs > 0) {
+      await new Promise((r) => setTimeout(r, delayMs));
     }
   }
 

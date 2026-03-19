@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Edit, Send, Trash2, AlertCircle, Calendar, RefreshCw, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Edit, Send, Trash2, AlertCircle, Calendar, RefreshCw, BarChart3, Shield } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
 import CampaignStats from '@/components/admin/CampaignStats';
 import EmailPreview from '@/components/admin/EmailPreview';
@@ -43,6 +43,8 @@ export default function CampaignDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [spreadDuration, setSpreadDuration] = useState<number | null>(null);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -79,15 +81,23 @@ export default function CampaignDetailPage() {
     }
   };
 
-  const handleSend = async () => {
-    if (!confirm(`האם אתה בטוח שברצונך לשלוח את הקמפיין "${campaign?.name}"?`)) {
-      return;
-    }
+  const handleSendClick = () => {
+    setShowSendModal(true);
+  };
 
+  const handleSendConfirm = async () => {
+    setShowSendModal(false);
     setSending(true);
     try {
+      const body: Record<string, unknown> = {};
+      if (spreadDuration) {
+        body.spreadDurationMinutes = spreadDuration;
+      }
+
       const res = await apiFetch(`/api/admin/marketing/campaigns/${campaignId}/send`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) {
@@ -96,7 +106,10 @@ export default function CampaignDetailPage() {
         return;
       }
 
-      alert('הקמפיין התחיל להישלח!');
+      alert(spreadDuration
+        ? `הקמפיין התחיל להישלח בפיזור של ${spreadDuration} דקות!`
+        : 'הקמפיין התחיל להישלח!'
+      );
       fetchCampaign();
     } catch {
       alert('שגיאה בשליחת הקמפיין');
@@ -173,6 +186,8 @@ export default function CampaignDetailPage() {
         return 'bg-[#74ACEF] text-white';
       case 'SENDING':
         return 'bg-[#69ADFF] text-white';
+      case 'SMART_QUEUED':
+        return 'bg-[#8B5CF6] text-white';
       case 'COMPLETED':
         return 'bg-[#0DBACC] text-white';
       case 'CANCELLED':
@@ -190,6 +205,8 @@ export default function CampaignDetailPage() {
         return 'מתוזמן';
       case 'SENDING':
         return 'בשליחה';
+      case 'SMART_QUEUED':
+        return 'שליחה חכמה';
       case 'COMPLETED':
         return 'הושלם';
       case 'CANCELLED':
@@ -230,8 +247,80 @@ export default function CampaignDetailPage() {
     );
   }
 
+  const SPREAD_OPTIONS = [
+    { value: null, label: 'מהיר (ברירת מחדל)', desc: 'שליחה מיידית ברציפות' },
+    { value: 5, label: '5 דקות', desc: 'פיזור על פני 5 דקות' },
+    { value: 15, label: '15 דקות', desc: 'פיזור על פני 15 דקות' },
+    { value: 30, label: '30 דקות', desc: 'פיזור על פני 30 דקות' },
+    { value: 60, label: '60 דקות', desc: 'פיזור על פני שעה' },
+  ];
+
   return (
     <div>
+      {/* Send Confirmation Modal */}
+      {showSendModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-[0_8px_40px_rgba(0,0,0,0.15)] max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold text-[#303150] mb-1">אישור שליחה</h3>
+            <p className="text-sm text-[#7E7F90] mb-5">
+              הקמפיין &quot;{campaign.name}&quot; יישלח. פעולה זו לא ניתנת לביטול.
+            </p>
+
+            <div className="mb-5">
+              <div className="flex items-center gap-2 mb-3">
+                <Shield className="w-4 h-4 text-[#0DBACC]" />
+                <label className="text-sm font-medium text-[#303150]">קצב שליחה (מניעת ספאם)</label>
+              </div>
+              <div className="space-y-2">
+                {SPREAD_OPTIONS.map((opt) => (
+                  <button
+                    key={String(opt.value)}
+                    onClick={() => setSpreadDuration(opt.value)}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all text-right ${
+                      spreadDuration === opt.value
+                        ? 'border-[#69ADFF] bg-[#69ADFF]/5'
+                        : 'border-[#E8E8ED] bg-white hover:border-[#69ADFF]/50'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                      spreadDuration === opt.value ? 'border-[#69ADFF]' : 'border-[#BDBDCB]'
+                    }`}>
+                      {spreadDuration === opt.value && (
+                        <div className="w-2 h-2 rounded-full bg-[#69ADFF]" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-sm font-medium ${spreadDuration === opt.value ? 'text-[#303150]' : 'text-[#7E7F90]'}`}>
+                        {opt.label}
+                      </p>
+                      <p className="text-xs text-[#BDBDCB]">{opt.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 justify-end">
+              <button
+                onClick={() => setShowSendModal(false)}
+                className="px-5 py-2.5 bg-[#F7F7F8] text-[#303150] rounded-xl hover:bg-[#E8E8ED] transition-colors text-sm font-medium"
+              >
+                ביטול
+              </button>
+              <button
+                onClick={handleSendConfirm}
+                className="px-5 py-2.5 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors text-sm font-medium shadow-[0_4px_12px_rgba(105,173,255,0.3)]"
+              >
+                <span className="flex items-center gap-2">
+                  <Send className="w-4 h-4" />
+                  שלח
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 sm:mb-6 lg:mb-8">
         <div className="flex items-center gap-3 sm:gap-4">
@@ -247,7 +336,7 @@ export default function CampaignDetailPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 mr-10 sm:mr-0">
-          {(campaign.status === 'COMPLETED' || campaign.status === 'SENDING') && (
+          {(campaign.status === 'COMPLETED' || campaign.status === 'SENDING' || campaign.status === 'SMART_QUEUED') && (
             <button
               onClick={() => router.push(`/admin/marketing/campaigns/${campaignId}/report`)}
               className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#0DBACC] text-white rounded-xl hover:bg-[#0AA8B9] transition-colors text-xs sm:text-sm"
@@ -266,7 +355,7 @@ export default function CampaignDetailPage() {
                 עריכה
               </button>
               <button
-                onClick={handleSend}
+                onClick={handleSendClick}
                 disabled={sending}
                 className="flex items-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 bg-[#69ADFF] text-white rounded-xl hover:bg-[#5A9EE6] transition-colors disabled:opacity-50 text-xs sm:text-sm"
               >

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { countSegmentUsers, validateSegmentFilter, type SegmentFilter } from '@/lib/marketing/segment';
+import { isValidSenderAddress } from '@/lib/inbox/constants';
 
 /**
  * GET - List all campaigns with statistics
@@ -95,12 +96,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, subject, content, segmentFilter, scheduledAt } = body;
+    const { name, subject, content, segmentFilter, scheduledAt, senderEmail } = body;
 
     // Validation
     if (!name || !subject || !content) {
       return NextResponse.json(
         { error: 'שם, נושא ותוכן הם שדות חובה' },
+        { status: 400 }
+      );
+    }
+
+    if (senderEmail && !isValidSenderAddress(senderEmail)) {
+      return NextResponse.json(
+        { error: 'כתובת שולח לא תקינה' },
         { status: 400 }
       );
     }
@@ -123,6 +131,7 @@ export async function POST(request: NextRequest) {
         subject,
         content,
         segmentFilter: segmentFilter as unknown as Prisma.InputJsonValue,
+        senderEmail: senderEmail || null,
         status: scheduledAt ? 'SCHEDULED' : 'DRAFT',
         scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
         createdBy: userId,
