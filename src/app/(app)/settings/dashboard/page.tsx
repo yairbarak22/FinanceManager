@@ -49,7 +49,7 @@ export default function DashboardSettingsPage() {
 
   const [localConfig, setLocalConfig] = useState<DashboardSectionConfig[] | null>(null);
   const [isResetting, setIsResetting] = useState(false);
-  const resetTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const config = useMemo(() => {
     if (localConfig) return sortVisibleFirst(localConfig);
