@@ -38,6 +38,7 @@ npx prisma generate  # Regenerate Prisma client
 1. `src/lib/auth.ts` - NextAuth configuration (server-only)
 2. `src/lib/authHelpers.ts` - `requireAuth()` for API routes
 3. `src/lib/adminHelpers.ts` - `requireAdmin()` for admin routes (server-only, don't import in client components)
+4. **Deep links**: Unauthenticated access to any protected route (e.g. `/budget`) preserves the target as `callbackUrl` in the redirect to `/`. After login the user lands on the original page, not `/dashboard`. For marketing links use `/?callbackUrl=/budget`. Validation in `src/lib/safePostLoginPath.ts`.
 
 **API Route Pattern**: All routes in `src/app/api/` follow this structure:
 ```typescript

@@ -12,6 +12,7 @@ import {
   isValidOrigin,
 } from './lib/csrf';
 import { generateCspNonce, buildCspHeader } from './lib/csp';
+import { isSafePostLoginPath } from './lib/safePostLoginPath';
 
 /**
  * Edge-safe request info extraction (no Prisma dependency).
@@ -201,9 +202,13 @@ export async function middleware(request: NextRequest) {
   }
 
   // If trying to access protected route without token, redirect to landing page
+  // and preserve the intended destination as callbackUrl for post-login redirect
   if (!token) {
     const landingUrl = new URL('/', request.url);
-    // Preserve source parameter
+    const returnPath = pathname + request.nextUrl.search;
+    if (isSafePostLoginPath(returnPath)) {
+      landingUrl.searchParams.set('callbackUrl', returnPath);
+    }
     if (source) {
       landingUrl.searchParams.set('source', source);
     }
