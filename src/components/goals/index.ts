@@ -8,3 +8,4 @@ export { default as GoalSimulatorIdentity } from './GoalSimulatorIdentity';
 export { default as GoalSimulatorParams } from './GoalSimulatorParams';
 export { default as GoalSimulatorResults } from './GoalSimulatorResults';
 export { default as GoalsSkeleton } from './GoalsSkeleton';
+export { getGoalIcon, GOAL_ICONS } from './goalIcons';

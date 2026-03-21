@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import {
   User,
   Settings,
@@ -15,18 +14,16 @@ import {
   Accessibility,
   Menu,
   HelpCircle,
-  Trash2,
 } from 'lucide-react';
+import Link from 'next/link';
 import SupportModal from '@/components/layout/SupportModal';
 import ProgressBell from '@/components/haredi/ProgressBell';
-import { QuickAddHeaderButton } from '@/components/quick-add';
 import { useOnboarding } from '@/context/OnboardingContext';
 import { useAccessibility } from '@/context/AccessibilityContext';
 import { useSidebar } from '@/context/SidebarContext';
 import MonthFilter from '@/components/MonthFilter';
 import { SensitiveData } from '@/components/common/SensitiveData';
 import { trackMixpanelEvent, resetMixpanel } from '@/lib/mixpanel';
-import DeleteAllDataModal from '@/components/modals/DeleteAllDataModal';
 
 interface MinimalHeaderProps {
   pageTitle: string;
@@ -50,13 +47,11 @@ export default function MinimalHeader({
   showMonthFilter = true,
 }: MinimalHeaderProps) {
   const { data: session } = useSession();
-  const router = useRouter();
   const { startTour } = useOnboarding();
   const { openAccessibility } = useAccessibility();
   const { isCollapsed, toggleSidebar, openMobileSidebar } = useSidebar();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -144,8 +139,15 @@ export default function MinimalHeader({
             {/* Progress Bell - visible for Haredi users (self-manages visibility) */}
             <ProgressBell />
 
-            {/* Quick Add - desktop only */}
-            <QuickAddHeaderButton />
+            {/* Settings */}
+            <Link
+              href="/settings"
+              className="relative p-2 text-slate-400 hover:text-slate-600 transition-colors rounded-lg hover:bg-slate-50"
+              aria-label="הגדרות"
+              title="הגדרות"
+            >
+              <Settings className="w-[18px] h-[18px]" strokeWidth={1.75} />
+            </Link>
 
             {/* Help / Support Button */}
             <button
@@ -214,17 +216,6 @@ export default function MinimalHeader({
                         type="button"
                         onClick={() => {
                           setIsUserMenuOpen(false);
-                          router.push('/settings');
-                        }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-50 transition-colors"
-                      >
-                        <Settings className="w-4 h-4 text-slate-400" />
-                        <span>הגדרות</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsUserMenuOpen(false);
                           startTour();
                         }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-50 transition-colors"
@@ -235,14 +226,6 @@ export default function MinimalHeader({
                     </div>
 
                     <div className="border-t border-slate-100 py-1">
-                      <button
-                        type="button"
-                        onClick={() => { setIsUserMenuOpen(false); setIsDeleteModalOpen(true); }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-[13px] text-rose-400 hover:bg-rose-50 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>מחיקת כל הנתונים</span>
-                      </button>
                       <button
                         type="button"
                         onClick={() => { trackMixpanelEvent('logout'); resetMixpanel(); signOut({ callbackUrl: '/' }); }}
@@ -274,10 +257,6 @@ export default function MinimalHeader({
     <SupportModal
       isOpen={isSupportModalOpen}
       onClose={() => setIsSupportModalOpen(false)}
-    />
-    <DeleteAllDataModal
-      isOpen={isDeleteModalOpen}
-      onClose={() => setIsDeleteModalOpen(false)}
     />
     </>
   );

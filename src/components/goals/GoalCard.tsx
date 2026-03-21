@@ -1,13 +1,6 @@
 'use client';
 
 import { 
-  Plane, 
-  Car, 
-  Home, 
-  GraduationCap, 
-  Umbrella, 
-  Wallet,
-  Shield,
   Trash2,
   RefreshCw,
   Link,
@@ -20,18 +13,10 @@ import {
   formatGoalStatus,
 } from '@/lib/goalCalculations';
 import GoalProgressBar from './GoalProgressBar';
+import { GOAL_ICONS } from './goalIcons';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import type { FinancialGoal } from '@/lib/api/goals';
-
-const GOAL_ICONS: Record<string, React.ElementType> = {
-  travel: Plane,
-  car: Car,
-  home: Home,
-  education: GraduationCap,
-  vacation: Umbrella,
-  saving: Wallet,
-  emergency: Shield,
-};
+import { Wallet } from 'lucide-react';
 
 interface GoalCardProps {
   goal: FinancialGoal;

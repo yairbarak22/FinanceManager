@@ -10,7 +10,14 @@ import type {
   AssetValueHistory,
   Liability,
   NetWorthHistory,
+  BudgetSummary,
 } from '@/lib/types';
+import type { PortfolioAnalysis } from '@/lib/finance/types';
+import type { DashboardSectionConfig } from '@/types/dashboardConfig';
+import { fetchGoals, type FinancialGoal } from '@/lib/api/goals';
+import { goalKeys } from '@/hooks/useGoals';
+import { useMonth } from '@/context/MonthContext';
+import { mergeDashboardLayout } from '@/lib/dashboardLayout';
 
 // ────────────────────────────────────────────────
 // Query key factories
@@ -23,6 +30,10 @@ export const dashboardKeys = {
   liabilities: ['dashboard', 'liabilities'] as const,
   assetHistory: ['dashboard', 'assetHistory'] as const,
   netWorthHistory: ['dashboard', 'netWorthHistory'] as const,
+  portfolioAnalyze: ['dashboard', 'portfolioAnalyze'] as const,
+  portfolioHistory: ['dashboard', 'portfolioHistory'] as const,
+  budget: (monthKey: string) => ['dashboard', 'budget', monthKey] as const,
+  dashboardLayout: ['dashboard', 'layout'] as const,
 };
 
 // ────────────────────────────────────────────────
@@ -73,6 +84,12 @@ const STALE_TIME = 30_000; // 30 seconds
 
 export function useDashboardData() {
   const queryClient = useQueryClient();
+  const { selectedMonth, currentMonth } = useMonth();
+
+  const effectiveMonthKey = selectedMonth === 'all' || selectedMonth === 'custom'
+    ? currentMonth
+    : selectedMonth;
+  const [budgetYear, budgetMonth] = effectiveMonthKey.split('-').map(Number);
 
   // ── Critical path queries (block dashboard render) ──
 
@@ -132,6 +149,51 @@ export function useDashboardData() {
       ),
   });
 
+  const portfolioAnalyzeQ = useQuery({
+    queryKey: dashboardKeys.portfolioAnalyze,
+    queryFn: () => fetchJSON<PortfolioAnalysis>('/api/portfolio/analyze'),
+    staleTime: 60_000,
+    enabled: primaryDataReady,
+    refetchOnWindowFocus: false,
+  });
+
+  const portfolioHistoryQ = useQuery({
+    queryKey: dashboardKeys.portfolioHistory,
+    queryFn: () =>
+      fetchJSON<Array<{ date: string; value: number }>>('/api/portfolio/history'),
+    staleTime: 60_000,
+    enabled: primaryDataReady,
+    refetchOnWindowFocus: false,
+  });
+
+  const goalsQ = useQuery<FinancialGoal[]>({
+    queryKey: goalKeys.list(),
+    queryFn: fetchGoals,
+    staleTime: STALE_TIME,
+    enabled: primaryDataReady,
+  });
+
+  const budgetQ = useQuery<BudgetSummary>({
+    queryKey: dashboardKeys.budget(effectiveMonthKey),
+    queryFn: () =>
+      fetchJSON<BudgetSummary>(
+        `/api/budgets?month=${budgetMonth}&year=${budgetYear}`,
+      ),
+    staleTime: STALE_TIME,
+    enabled: primaryDataReady,
+  });
+
+  const dashboardLayoutQ = useQuery<DashboardSectionConfig[]>({
+    queryKey: dashboardKeys.dashboardLayout,
+    queryFn: async () => {
+      const res = await apiFetch('/api/user/dashboard-layout', { cache: 'no-store' });
+      if (!res.ok) throw new Error('Failed to fetch dashboard layout');
+      const json = await res.json();
+      return mergeDashboardLayout(json.layout);
+    },
+    staleTime: 60_000,
+  });
+
   // Only critical-path queries block the loading skeleton
   const isLoading = !primaryDataReady;
 
@@ -167,6 +229,9 @@ export function useDashboardData() {
     );
   };
 
+  const refetchPortfolioAnalysis = () =>
+    queryClient.invalidateQueries({ queryKey: dashboardKeys.portfolioAnalyze });
+
   return {
     transactions: transactionsQ.data ?? [],
     recurringTransactions: recurringQ.data ?? [],
@@ -174,12 +239,26 @@ export function useDashboardData() {
     assetHistory: assetHistoryQ.data ?? [],
     liabilities: liabilitiesQ.data ?? [],
     netWorthHistory: netWorthHistoryQ.data ?? [],
+    portfolioAnalysis: portfolioAnalyzeQ.data ?? null,
+    portfolioHistory: portfolioHistoryQ.data ?? [],
+    isPortfolioLoading: portfolioAnalyzeQ.isLoading,
+    portfolioError: portfolioAnalyzeQ.error,
+    financialGoals: goalsQ.data ?? [],
+    isGoalsLoading: goalsQ.isLoading,
+    goalsError: goalsQ.error,
+    budgetSummary: budgetQ.data ?? null,
+    isBudgetLoading: budgetQ.isLoading,
+    budgetError: budgetQ.error,
+    budgetMonth,
+    budgetYear,
+    dashboardLayout: dashboardLayoutQ.data ?? null,
     isLoading,
 
     refetchTransactions,
     refetchRecurring,
     refetchAssets,
     refetchLiabilities,
+    refetchPortfolioAnalysis,
     refetchAll,
     setLiabilitiesOptimistic,
   };

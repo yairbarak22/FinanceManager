@@ -1,21 +1,18 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import {
   User,
   Loader2,
   Check,
   Save,
-  UserCog,
-  Users,
-  Shield,
   AlertTriangle,
   Trash2,
   Calendar,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { AppLayout } from '@/components/layout';
 import Card from '@/components/ui/Card';
 import StyledSelect from '@/components/ui/StyledSelect';
 import IvrPinSettings from '@/components/IvrPinSettings';
@@ -71,24 +68,14 @@ const RISK_OPTIONS = [
 
 type SettingsTab = 'profile' | 'account' | 'privacy';
 
-const SETTINGS_TABS: { id: SettingsTab; label: string; icon: typeof UserCog }[] = [
-  { id: 'profile', label: 'פרטים אישיים', icon: UserCog },
-  { id: 'account', label: 'חשבון משותף', icon: Users },
-  { id: 'privacy', label: 'פרטיות', icon: Shield },
-];
-
 export default function SettingsPage() {
   const { data: session } = useSession();
-  const {
-    selectedMonth,
-    setSelectedMonth,
-    allMonths,
-    monthsWithData,
-    currentMonth,
-    setFinancialMonthStartDay: setGlobalFinancialMonthStartDay,
-  } = useMonth();
+  const searchParams = useSearchParams();
+  const { setFinancialMonthStartDay: setGlobalFinancialMonthStartDay } = useMonth();
 
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const tabParam = searchParams.get('tab');
+  const activeTab: SettingsTab =
+    tabParam === 'account' ? 'account' : tabParam === 'privacy' ? 'privacy' : 'profile';
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -105,25 +92,6 @@ export default function SettingsPage() {
   const [monthStartDay, setMonthStartDay] = useState<number>(1);
   const [savingMonthStartDay, setSavingMonthStartDay] = useState(false);
   const [monthStartDaySaved, setMonthStartDaySaved] = useState(false);
-
-  const tabsRef = useRef<(HTMLButtonElement | null)[]>([]);
-  const [indicatorStyle, setIndicatorStyle] = useState({ width: 0, right: 0 });
-
-  useEffect(() => {
-    const activeIdx = SETTINGS_TABS.findIndex((t) => t.id === activeTab);
-    const el = tabsRef.current[activeIdx];
-    if (el) {
-      const parent = el.parentElement;
-      if (parent) {
-        const parentRect = parent.getBoundingClientRect();
-        const elRect = el.getBoundingClientRect();
-        setIndicatorStyle({
-          width: elRect.width,
-          right: parentRect.right - elRect.right,
-        });
-      }
-    }
-  }, [activeTab]);
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -202,49 +170,7 @@ export default function SettingsPage() {
   const { name, email, image } = session?.user || {};
 
   return (
-    <AppLayout
-      pageTitle="הגדרות"
-      selectedMonth={selectedMonth}
-      onMonthChange={setSelectedMonth}
-      allMonths={allMonths}
-      monthsWithData={monthsWithData}
-      currentMonth={currentMonth}
-      showMonthFilter={false}
-    >
-      <div className="max-w-2xl mx-auto">
-        {/* Tab Bar */}
-        <Card padding="none" className="overflow-hidden mb-6">
-          <div className="relative flex">
-            {SETTINGS_TABS.map((tab, i) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  ref={(el) => { tabsRef.current[i] = el; }}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`
-                    flex-1 flex items-center justify-center gap-2 py-3.5 text-[0.8125rem] font-semibold
-                    transition-colors duration-200 cursor-pointer relative z-10
-                    ${isActive ? 'text-[#69ADFF]' : 'text-[#7E7F90] hover:text-[#303150]'}
-                  `}
-                  style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-                >
-                  <Icon className="w-4 h-4" strokeWidth={1.75} />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-            <motion.div
-              className="absolute bottom-0 h-[2px] rounded-full"
-              style={{ backgroundColor: '#69ADFF' }}
-              animate={{ right: indicatorStyle.right, width: indicatorStyle.width }}
-              transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-            />
-          </div>
-        </Card>
-
+    <div className="max-w-2xl mx-auto">
         {/* Profile Tab */}
         {activeTab === 'profile' && (
           <div className="animate-fade-in">
@@ -567,8 +493,7 @@ export default function SettingsPage() {
             <PrivacySettingsInline />
           </div>
         )}
-      </div>
-    </AppLayout>
+    </div>
   );
 }
 

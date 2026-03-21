@@ -1,23 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Fragment, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout';
-import { 
-  SectionHeader, 
-  NetWorthHeroCard, 
-  MonthlySummaryCards,
-  PortfolioList,
-  DashboardSkeleton
-} from '@/components/dashboard';
-import AssetAllocationChart from '@/components/AssetAllocationChart';
-import AssetsSection from '@/components/AssetsSection';
-import LiabilitiesSection from '@/components/LiabilitiesSection';
-import RecurringTransactions from '@/components/RecurringTransactions';
-import MonthlyTrendsCharts from '@/components/MonthlyTrendsCharts';
-import MonthlySummary from '@/components/MonthlySummary';
-import ExpensesPieChart from '@/components/ExpensesPieChart';
-import RecentTransactions from '@/components/RecentTransactions';
+import { DashboardSkeleton } from '@/components/dashboard';
 import TransactionModal from '@/components/modals/TransactionModal';
 import RecurringModal from '@/components/modals/RecurringModal';
 import AssetModal from '@/components/modals/AssetModal';
@@ -31,7 +17,6 @@ import NewUserOnboardingModal from '@/components/modals/NewUserOnboardingModal';
 import DocumentsModal from '@/components/modals/DocumentsModal';
 import { QuickAddModal } from '@/components/quick-add';
 import MaaserCalculatorModal from '@/components/modals/MaaserCalculatorModal';
-import { PeriodicReportTrigger } from '@/components/PeriodicReportModal';
 import {
   Transaction,
   RecurringTransaction,
@@ -50,7 +35,6 @@ import { useOnboarding } from '@/context/OnboardingContext';
 import { useMonth } from '@/context/MonthContext';
 import { useSession } from 'next-auth/react';
 import ToastContainer from '@/components/ui/Toast';
-import Card from '@/components/ui/Card';
 import {
   expenseCategories as defaultExpenseCategories,
   incomeCategories as defaultIncomeCategories,
@@ -58,6 +42,9 @@ import {
   liabilityTypes as defaultLiabilityTypes,
 } from '@/lib/categories';
 import { useDashboardData } from '@/hooks/useDashboardData';
+import { DEFAULT_DASHBOARD_CONFIG } from '@/types/dashboardConfig';
+import { renderDashboardSection, type DashboardSectionPropsBundles } from '@/components/dashboard/sections/sectionRenderer';
+import { PeriodicReportTrigger } from '@/components/PeriodicReportModal';
 
 export default function DashboardPage() {
   // Use shared month context
@@ -82,6 +69,19 @@ export default function DashboardPage() {
     assetHistory,
     liabilities,
     netWorthHistory,
+    portfolioAnalysis,
+    portfolioHistory,
+    isPortfolioLoading,
+    portfolioError,
+    financialGoals,
+    isGoalsLoading,
+    goalsError,
+    budgetSummary,
+    isBudgetLoading,
+    budgetError,
+    budgetMonth,
+    budgetYear,
+    dashboardLayout,
     isLoading,
     refetchTransactions,
     refetchRecurring,
@@ -286,14 +286,13 @@ export default function DashboardPage() {
   });
 
   // Category filter handlers
-  const handleCategoryClick = (category: string) => {
-    // Toggle: if already selected, clear it
+  const handleCategoryClick = useCallback((category: string) => {
     setSelectedCategory(prev => prev === category ? null : category);
-  };
+  }, []);
 
-  const handleClearCategoryFilter = () => {
+  const handleClearCategoryFilter = useCallback(() => {
     setSelectedCategory(null);
-  };
+  }, []);
 
   // Calculate months count for recurring transactions multiplication
   const monthsCount = selectedMonth === 'custom' && customDateRange
@@ -393,7 +392,7 @@ export default function DashboardPage() {
   }, [selectedMonth, monthlySummaries]);
 
   // Transaction handlers
-  const handleAddTransaction = async (data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const handleAddTransaction = useCallback(async (data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       const res = await apiFetch('/api/transactions', {
         method: 'POST',
@@ -411,9 +410,9 @@ export default function DashboardPage() {
       console.error('Error adding transaction:', error);
       toast.error(error instanceof Error ? error.message : 'שגיאה בהוספת עסקה');
     }
-  };
+  }, [refetchTransactions, toast, analytics]);
 
-  const handleDeleteTransaction = async (id: string) => {
+  const handleDeleteTransaction = useCallback(async (id: string) => {
     try {
       const res = await apiFetch(`/api/transactions/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
@@ -424,9 +423,9 @@ export default function DashboardPage() {
       console.error('Error deleting transaction:', error);
       toast.error('שגיאה במחיקת עסקה');
     }
-  };
+  }, [refetchTransactions, toast, analytics]);
 
-  const handleDeleteMultipleTransactions = async (ids: string[]) => {
+  const handleDeleteMultipleTransactions = useCallback(async (ids: string[]) => {
     try {
       const results = await Promise.all(
         ids.map(id => apiFetch(`/api/transactions/${id}`, { method: 'DELETE' }))
@@ -444,9 +443,9 @@ export default function DashboardPage() {
       console.error('Error deleting transactions:', error);
       toast.error('שגיאה במחיקת עסקאות');
     }
-  };
+  }, [refetchTransactions, toast]);
 
-  const handleBulkUpdateCategory = async (ids: string[], category: string) => {
+  const handleBulkUpdateCategory = useCallback(async (ids: string[], category: string) => {
     try {
       const res = await apiFetch('/api/transactions/bulk', {
         method: 'PUT',
@@ -462,9 +461,9 @@ export default function DashboardPage() {
       toast.error('שגיאה בעדכון עסקאות');
       throw error;
     }
-  };
+  }, [refetchTransactions, toast]);
 
-  const handleUpdateTransaction = async (
+  const handleUpdateTransaction = useCallback(async (
     transactionId: string,
     newCategory: string,
     merchantName: string,
@@ -476,7 +475,6 @@ export default function DashboardPage() {
     needsDetailsReview?: boolean
   ) => {
     try {
-      // Build update body with all changed fields
       const updateBody: Record<string, unknown> = { 
         category: newCategory,
         updateExistingTransactions,
@@ -520,7 +518,6 @@ export default function DashboardPage() {
       refetchTransactions();
       analytics.trackEditTransaction();
 
-      // Show appropriate toast message
       if (responseData.updatedTransactionsCount > 0) {
         toast.success(`העסקה עודכנה ו-${responseData.updatedTransactionsCount} עסקאות נוספות עודכנו`);
       } else if (saveBehavior === 'once') {
@@ -533,9 +530,9 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error updating transaction:', error);
       toast.error('שגיאה בעדכון עסקה');
-      throw error; // Re-throw to let the modal know about the error
+      throw error;
     }
-  };
+  }, [refetchTransactions, toast, analytics]);
 
   // Recurring transaction handlers
   const handleAddRecurring = async (data: Omit<RecurringTransaction, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -569,7 +566,7 @@ export default function DashboardPage() {
     }
   };
 
-  const handleToggleRecurring = async (id: string, isActive: boolean) => {
+  const handleToggleRecurring = useCallback(async (id: string, isActive: boolean) => {
     try {
       const res = await apiFetch(`/api/recurring/${id}`, {
         method: 'PATCH',
@@ -582,9 +579,9 @@ export default function DashboardPage() {
       console.error('Error toggling recurring transaction:', error);
       toast.error('שגיאה בעדכון סטטוס');
     }
-  };
+  }, [refetchRecurring, toast]);
 
-  const handleDeleteRecurring = async (id: string) => {
+  const handleDeleteRecurring = useCallback(async (id: string) => {
     try {
       const res = await apiFetch(`/api/recurring/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
@@ -594,7 +591,7 @@ export default function DashboardPage() {
       console.error('Error deleting recurring transaction:', error);
       toast.error('שגיאה במחיקה');
     }
-  };
+  }, [refetchRecurring, toast]);
 
   // Asset handlers
   const handleAddAsset = async (data: Omit<Asset, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -625,7 +622,7 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDeleteAsset = async (id: string) => {
+  const handleDeleteAsset = useCallback(async (id: string) => {
     try {
       const res = await apiFetch(`/api/assets/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
@@ -636,7 +633,7 @@ export default function DashboardPage() {
       console.error('Error deleting asset:', error);
       toast.error('שגיאה במחיקת נכס');
     }
-  };
+  }, [refetchAssets, toast, analytics]);
 
   // Liability handlers
   const handleAddMortgage = async (data: Record<string, unknown>) => {
@@ -692,7 +689,7 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDeleteLiability = async (id: string) => {
+  const handleDeleteLiability = useCallback(async (id: string) => {
     try {
       const res = await apiFetch(`/api/liabilities/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
@@ -703,7 +700,7 @@ export default function DashboardPage() {
       console.error('Error deleting liability:', error);
       toast.error('שגיאה במחיקה');
     }
-  };
+  }, [refetchLiabilities, toast, analytics]);
 
   // Gemach Plan handler
   const handleCreateGemach = async (data: {
@@ -738,6 +735,173 @@ export default function DashboardPage() {
     );
   }, [setLiabilitiesOptimistic]);
 
+  const layoutConfig = dashboardLayout ?? DEFAULT_DASHBOARD_CONFIG;
+
+  const sectionPropsBundles = useMemo<DashboardSectionPropsBundles>(() => ({
+    financial_status: {
+      netWorth,
+      totalAssets,
+      totalLiabilities,
+      totalIncome,
+      totalExpenses,
+      fixedIncome,
+      fixedExpenses,
+      monthlyLiabilityPayments,
+      netWorthHistory,
+      assets,
+    },
+    cash_flow: {
+      totalIncome,
+      totalExpenses,
+      monthlyCashflow,
+      previousMonthIncome: previousMonthData.income,
+      previousMonthExpenses: previousMonthData.expenses,
+      previousMonthCashflow: previousMonthData.cashflow,
+    },
+    activity: {
+      monthFilteredTransactions,
+      filteredTransactions,
+      recurringTransactions,
+      customExpenseCategories: expenseCats.custom,
+      customIncomeCategories: incomeCats.custom,
+      selectedCategory,
+      onCategoryClick: handleCategoryClick,
+      onClearCategoryFilter: handleClearCategoryFilter,
+      effectiveMonth,
+      transactionsRef,
+      onDelete: handleDeleteTransaction,
+      onDeleteMultiple: handleDeleteMultipleTransactions,
+      onUpdateTransaction: handleUpdateTransaction,
+      onBulkUpdateCategory: handleBulkUpdateCategory,
+      onNewTransaction: () => setIsTransactionModalOpen(true),
+      onSaveTransaction: async (data) => {
+        await handleAddTransaction({
+          type: data.type,
+          amount: data.amount,
+          category: data.category,
+          description: data.description,
+          date: data.date,
+        });
+      },
+      onImport: () => router.push('/workspace'),
+      onOpenMaaserCalculator: () => setIsMaaserModalOpen(true),
+      onIvrSetupSuccess: () => toast.success('מוכן לשיחה! המספר שלך אומת במערכת. נסה לחייג אלינו עכשיו.'),
+      onAddCategory: addCustomCategory,
+      onDeleteCategory: handleDeleteCategory,
+      onEditRecurring: (r) => {
+        setEditingRecurring(r);
+        setIsRecurringModalOpen(true);
+      },
+    },
+    portfolio: {
+      assets,
+      selectedMonth,
+      assetHistory,
+      liabilities,
+      recurringTransactions,
+      customExpenseCategories: expenseCats.custom,
+      customIncomeCategories: incomeCats.custom,
+      isHaredi,
+      assetsRef,
+      liabilitiesRef,
+      recurringRef,
+      onAddAsset: () => {
+        setEditingAsset(null);
+        setIsAssetModalOpen(true);
+      },
+      onEditAsset: (asset) => {
+        setEditingAsset(asset);
+        setIsAssetModalOpen(true);
+      },
+      onDeleteAsset: handleDeleteAsset,
+      onViewAssetDocuments: (asset) => {
+        setDocumentsEntity({ type: 'asset', id: asset.id, name: asset.name });
+        setIsDocumentsModalOpen(true);
+      },
+      onAddLiability: () => {
+        setEditingLiability(null);
+        if (isHaredi) {
+          setIsLiabilityTypeSelectionOpen(true);
+        } else {
+          setIsLiabilityModalOpen(true);
+        }
+      },
+      onEditLiability: (liability) => {
+        if (liability.isMortgage) {
+          setEditingMortgage(liability);
+          setIsMortgageModalOpen(true);
+        } else {
+          setEditingLiability(liability);
+          setIsLiabilityModalOpen(true);
+        }
+      },
+      onDeleteLiability: handleDeleteLiability,
+      onToggleLiabilityCashFlow: handleToggleLiabilityCashFlow,
+      onViewAmortization: (liability) => {
+        setViewingLiability(liability);
+        setIsAmortizationModalOpen(true);
+      },
+      onViewLiabilityDocuments: (liability) => {
+        setDocumentsEntity({ type: 'liability', id: liability.id, name: liability.name });
+        setIsDocumentsModalOpen(true);
+      },
+      onAddRecurring: () => {
+        setEditingRecurring(null);
+        setIsRecurringModalOpen(true);
+      },
+      onEditRecurring: (tx) => {
+        setEditingRecurring(tx);
+        setIsRecurringModalOpen(true);
+      },
+      onDeleteRecurring: handleDeleteRecurring,
+      onToggleRecurring: handleToggleRecurring,
+    },
+    trends: {
+      monthlySummaries,
+      totalIncome,
+      totalExpenses,
+      totalBalance,
+    },
+    investment_portfolio: {
+      portfolioAnalysis,
+      portfolioHistory,
+      isLoading: isPortfolioLoading,
+      error: portfolioError,
+    },
+    goals: {
+      financialGoals,
+      isLoading: isGoalsLoading,
+      error: goalsError,
+    },
+    budgets: {
+      budgetSummary,
+      isLoading: isBudgetLoading,
+      error: budgetError,
+      customExpenseCategories: expenseCats.custom,
+      month: budgetMonth,
+      year: budgetYear,
+    },
+  }), [
+    netWorth, totalAssets, totalLiabilities, totalIncome, totalExpenses,
+    fixedIncome, fixedExpenses, monthlyLiabilityPayments, netWorthHistory, assets,
+    monthlyCashflow, previousMonthData,
+    monthFilteredTransactions, filteredTransactions, recurringTransactions,
+    expenseCats.custom, incomeCats.custom, selectedCategory,
+    handleCategoryClick, handleClearCategoryFilter, effectiveMonth, transactionsRef,
+    handleDeleteTransaction, handleDeleteMultipleTransactions,
+    handleUpdateTransaction, handleBulkUpdateCategory,
+    handleAddTransaction, router, toast,
+    addCustomCategory, handleDeleteCategory,
+    selectedMonth, assetHistory, liabilities, isHaredi,
+    assetsRef, liabilitiesRef, recurringRef,
+    handleDeleteAsset, handleDeleteLiability, handleToggleLiabilityCashFlow,
+    handleDeleteRecurring, handleToggleRecurring,
+    monthlySummaries, totalBalance,
+    portfolioAnalysis, portfolioHistory, isPortfolioLoading, portfolioError,
+    financialGoals, isGoalsLoading, goalsError,
+    budgetSummary, isBudgetLoading, budgetError, budgetMonth, budgetYear,
+  ]);
+
   return (
     <AppLayout
       pageTitle="דשבורד"
@@ -749,238 +913,22 @@ export default function DashboardPage() {
       showQuickAddFab={true}
       showMonthFilter={true}
     >
-      {/* Loading State */}
+      <div className="flex items-center justify-end gap-4 mb-6">
+        <PeriodicReportTrigger />
+      </div>
+
       {isLoading ? (
         <DashboardSkeleton />
       ) : (
-        /* Main Dashboard Content - Fincheck Style */
         <div className="space-y-12 pb-12">
-
-          {/* ============================================
-              SECTION 1: Financial Snapshot (המצב הפיננסי)
-              ============================================ */}
-          <section>
-            <SectionHeader
-              title="המצב הפיננסי"
-              subtitle="השווי הנקי שלך וחלוקת הנכסים"
-              action={<PeriodicReportTrigger />}
-            />
-            
-            {/* 12-column grid: 8 cols for hero, 4 cols for chart */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Net Worth Hero Card - 8 columns */}
-              <div className="lg:col-span-8">
-                <NetWorthHeroCard
-                  netWorth={netWorth}
-                  totalAssets={totalAssets}
-                  totalLiabilities={totalLiabilities}
-                  totalIncome={totalIncome}
-                  totalExpenses={totalExpenses}
-                  fixedIncome={fixedIncome}
-                  fixedExpenses={fixedExpenses}
-                  monthlyLiabilityPayments={monthlyLiabilityPayments}
-                  netWorthHistory={netWorthHistory}
-                  className="h-full"
-                />
-              </div>
-              
-              {/* Asset Allocation Chart - 4 columns */}
-              <div className="lg:col-span-4">
-                <AssetAllocationChart assets={assets} />
-              </div>
-            </div>
-          </section>
-
-          {/* ============================================
-              SECTION 2: Monthly Cashflow (תזרים חודשי)
-              ============================================ */}
-          <section>
-            <SectionHeader
-              title="תזרים חודשי"
-              subtitle="הכנסות מול הוצאות החודש"
-            />
-            
-            {/* 3 cards in a row: Income, Expenses, Cashflow */}
-            <MonthlySummaryCards
-              totalIncome={totalIncome}
-              totalExpenses={totalExpenses}
-              monthlyCashflow={monthlyCashflow}
-              previousMonthIncome={previousMonthData.income}
-              previousMonthExpenses={previousMonthData.expenses}
-              previousMonthCashflow={previousMonthData.cashflow}
-            />
-          </section>
-
-          {/* ============================================
-              SECTION 3: Activity (פעילות)
-              ============================================ */}
-          <section>
-            <SectionHeader
-              title="פעילות"
-              subtitle="פילוח הוצאות והכנסות ועסקאות אחרונות"
-            />
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card padding="sm" className="h-[500px] flex flex-col lg:col-span-1">
-                <ExpensesPieChart 
-                  transactions={monthFilteredTransactions} 
-                  recurringExpenses={recurringTransactions}
-                  customExpenseCategories={expenseCats.custom}
-                  customIncomeCategories={incomeCats.custom}
-                  selectedCategory={selectedCategory}
-                  onCategoryClick={handleCategoryClick}
-                />
-              </Card>
-
-              <Card ref={transactionsRef} padding="sm" className="h-[500px] flex flex-col lg:col-span-2">
-                <RecentTransactions
-                  transactions={filteredTransactions}
-                  onDelete={handleDeleteTransaction}
-                  onDeleteMultiple={handleDeleteMultipleTransactions}
-                  onUpdateTransaction={handleUpdateTransaction}
-                  onBulkUpdateCategory={handleBulkUpdateCategory}
-                  onNewTransaction={() => setIsTransactionModalOpen(true)}
-                  onSaveTransaction={async (data) => {
-                    await handleAddTransaction({
-                      type: data.type,
-                      amount: data.amount,
-                      category: data.category,
-                      description: data.description,
-                      date: data.date,
-                    });
-                  }}
-                  onImport={() => router.push('/workspace')}
-                  customExpenseCategories={expenseCats.custom}
-                  customIncomeCategories={incomeCats.custom}
-                  selectedCategory={selectedCategory}
-                  onClearCategoryFilter={handleClearCategoryFilter}
-                  onOpenMaaserCalculator={() => setIsMaaserModalOpen(true)}
-                  onIvrSetupSuccess={() => toast.success('מוכן לשיחה! המספר שלך אומת במערכת. נסה לחייג אלינו עכשיו.')}
-                  onAddCategory={addCustomCategory}
-                  onDeleteCategory={handleDeleteCategory}
-                  recurringTransactions={recurringTransactions}
-                  effectiveMonth={effectiveMonth}
-                  onEditRecurring={(r) => {
-                    setEditingRecurring(r);
-                    setIsRecurringModalOpen(true);
-                  }}
-                />
-              </Card>
-            </div>
-          </section>
-
-          {/* ============================================
-              SECTION 4: Portfolio Details (פירוט תיק)
-              ============================================ */}
-          <section>
-            <SectionHeader
-              title="פירוט תיק"
-              subtitle="פירוט מלא של נכסים, התחייבויות ותשלומים קבועים"
-            />
-            
-            {/* 12-column grid: 4 cols each */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Assets List */}
-              <Card ref={assetsRef} padding="sm" className="h-[500px] flex flex-col">
-                <AssetsSection
-                  assets={assets}
-                  selectedMonth={selectedMonth}
-                  assetHistory={assetHistory}
-                  onAdd={() => {
-                    setEditingAsset(null);
-                    setIsAssetModalOpen(true);
-                  }}
-                  onEdit={(asset) => {
-                    setEditingAsset(asset);
-                    setIsAssetModalOpen(true);
-                  }}
-                  onDelete={handleDeleteAsset}
-                  onViewDocuments={(asset) => {
-                    setDocumentsEntity({ type: 'asset', id: asset.id, name: asset.name });
-                    setIsDocumentsModalOpen(true);
-                  }}
-                />
-              </Card>
-
-              {/* Liabilities List */}
-              <Card ref={liabilitiesRef} padding="sm" className="h-[500px] flex flex-col">
-                <LiabilitiesSection
-                  liabilities={liabilities}
-                  selectedMonth={selectedMonth}
-                  onAdd={() => {
-                    setEditingLiability(null);
-                    if (isHaredi) {
-                      setIsLiabilityTypeSelectionOpen(true);
-                    } else {
-                      setIsLiabilityModalOpen(true);
-                    }
-                  }}
-                  onEdit={(liability) => {
-                    if (liability.isMortgage) {
-                      setEditingMortgage(liability);
-                      setIsMortgageModalOpen(true);
-                    } else {
-                      setEditingLiability(liability);
-                      setIsLiabilityModalOpen(true);
-                    }
-                  }}
-                  onDelete={handleDeleteLiability}
-                  onToggleCashFlow={handleToggleLiabilityCashFlow}
-                  onViewAmortization={(liability) => {
-                    setViewingLiability(liability);
-                    setIsAmortizationModalOpen(true);
-                  }}
-                  onViewDocuments={(liability) => {
-                    setDocumentsEntity({ type: 'liability', id: liability.id, name: liability.name });
-                    setIsDocumentsModalOpen(true);
-                  }}
-                />
-              </Card>
-
-              {/* Recurring Transactions */}
-              <Card ref={recurringRef} padding="sm" className="h-[500px] flex flex-col md:col-span-2 lg:col-span-1">
-                <RecurringTransactions
-                  transactions={recurringTransactions}
-                  onAdd={() => {
-                    setEditingRecurring(null);
-                    setIsRecurringModalOpen(true);
-                  }}
-                  onEdit={(tx) => {
-                    setEditingRecurring(tx);
-                    setIsRecurringModalOpen(true);
-                  }}
-                  onDelete={handleDeleteRecurring}
-                  onToggle={handleToggleRecurring}
-                  customExpenseCategories={expenseCats.custom}
-                  customIncomeCategories={incomeCats.custom}
-                />
-              </Card>
-            </div>
-          </section>
-
-          {/* ============================================
-              SECTION 5: Monthly Trends (מגמות חודשיות)
-              ============================================ */}
-          <section>
-            <SectionHeader
-              title="מגמות חודשיות"
-              subtitle="ניתוח הכנסות והוצאות לאורך זמן"
-            />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="min-h-[350px] md:min-h-[420px]">
-                <MonthlyTrendsCharts data={monthlySummaries} />
-              </div>
-              <div className="min-h-[350px] md:min-h-[420px]">
-                <MonthlySummary
-                  summaries={monthlySummaries}
-                  totalIncome={totalIncome}
-                  totalExpenses={totalExpenses}
-                  totalBalance={totalBalance}
-                />
-              </div>
-            </div>
-          </section>
+          {[...layoutConfig]
+            .filter((s) => s.isVisible)
+            .sort((a, b) => a.order - b.order)
+            .map((cfg) => (
+              <Fragment key={cfg.id}>
+                {renderDashboardSection(cfg.id, sectionPropsBundles)}
+              </Fragment>
+            ))}
         </div>
       )}
 

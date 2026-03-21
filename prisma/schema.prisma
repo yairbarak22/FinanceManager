@@ -22,6 +22,7 @@ model User {
   openHoursLog          Int[]                  @default([])   // Hours (0-23 Israel time) when user opens emails
   preferredSendHour     Int?                   // Computed average open hour (0-23); set after 3+ opens
   monthStartDay         Int                    @default(1) // Day of month when financial month starts (1-28)
+  dashboardLayout       Json?                  // Ordered section visibility config; null = DEFAULT_DASHBOARD_CONFIG
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   accounts              Account[]
