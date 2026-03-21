@@ -334,10 +334,11 @@ export const config = {
      * - /invite/* (invite pages - handle their own auth)
      * - /api/auth (NextAuth.js authentication routes)
      * - /api/webhook/receive, /api/webhooks/resend (webhook endpoints - verify signatures themselves)
+     * - /api/cron/* (cron jobs - authenticate via CRON_SECRET query param)
      * - /_next/static (static files)
      * - /_next/image (image optimization)
      * - /favicon.ico, /images, /screenshots, /videos (static assets)
      */
-    '/((?!invite|api/auth|api/webhook|api/csp-report|api/marketing/unsubscribe|_next/static|_next/image|favicon.ico|images|screenshots|videos).*)',
+    '/((?!invite|api/auth|api/webhook|api/cron|api/csp-report|api/marketing/unsubscribe|_next/static|_next/image|favicon.ico|images|screenshots|videos).*)',
   ],
 };
