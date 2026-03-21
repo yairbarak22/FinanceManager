@@ -322,7 +322,7 @@ export const updateCampaignSchema = z.object({
   content: z.string().min(1, 'Content is required').optional(),
   segmentFilter: z.any().optional(),
   scheduledAt: isoDate.nullable().optional(),
-  status: z.enum(['DRAFT', 'SCHEDULED', 'SENDING', 'TESTING', 'COMPLETED', 'CANCELLED']).optional(),
+  status: z.enum(['DRAFT', 'SCHEDULED', 'SENDING', 'SMART_QUEUED', 'TESTING', 'COMPLETED', 'CANCELLED']).optional(),
   isAbTest: z.boolean().optional(),
   abTestPercentage: z.number().int().min(1).max(50).optional(),
   abTestDurationHours: z.number().int().min(1).max(72).optional(),

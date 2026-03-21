@@ -64,7 +64,7 @@ export default function NewCampaignPage() {
   const [scheduledAt, setScheduledAt] = useState('');
   const [spreadDuration, setSpreadDuration] = useState<number | null>(null);
   const [sendMode, setSendMode] = useState<'instant' | 'smart'>('instant');
-  const [senderEmail, setSenderEmail] = useState(DEFAULT_SENDER.email);
+  const [senderEmail, setSenderEmail] = useState<string>(DEFAULT_SENDER.email);
   const [showSenderDropdown, setShowSenderDropdown] = useState(false);
 
   // A/B Testing state
