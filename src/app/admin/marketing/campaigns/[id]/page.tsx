@@ -13,7 +13,7 @@ interface Campaign {
   name: string;
   subject: string;
   content: string;
-  status: 'DRAFT' | 'SCHEDULED' | 'SENDING' | 'COMPLETED' | 'CANCELLED';
+  status: 'DRAFT' | 'SCHEDULED' | 'SENDING' | 'SMART_QUEUED' | 'COMPLETED' | 'CANCELLED';
   sentCount: number;
   openCount: number;
   clickCount: number;
