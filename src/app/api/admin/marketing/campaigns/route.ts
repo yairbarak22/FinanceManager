@@ -51,10 +51,12 @@ export async function GET() {
     // Build a lookup: campaignId -> { SENT: n, OPENED: n, CLICKED: n, ... }
     const countLookup: Record<string, Record<string, number>> = {};
     for (const ec of eventCounts) {
-      if (!countLookup[ec.campaignId]) {
-        countLookup[ec.campaignId] = {};
+      const cid = ec.campaignId;
+      if (cid == null) continue;
+      if (!countLookup[cid]) {
+        countLookup[cid] = {};
       }
-      countLookup[ec.campaignId][ec.eventType] = ec._count.id;
+      countLookup[cid][ec.eventType] = ec._count.id;
     }
 
     const enrichedCampaigns = campaigns.map((campaign) => {
