@@ -85,7 +85,7 @@ export const DEFAULT_DASHBOARD_CONFIG: DashboardSectionConfig[] = [
   { id: 'activity',              isVisible: true, order: 2 },
   { id: 'portfolio',             isVisible: true, order: 3 },
   { id: 'trends',                isVisible: true, order: 4 },
-  { id: 'investment_portfolio',  isVisible: true, order: 5 },
-  { id: 'goals',                 isVisible: true, order: 6 },
-  { id: 'budgets',               isVisible: true, order: 7 },
+  { id: 'investment_portfolio',  isVisible: false, order: 5 },
+  { id: 'goals',                 isVisible: false, order: 6 },
+  { id: 'budgets',               isVisible: false, order: 7 },
 ];
