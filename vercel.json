@@ -21,7 +21,7 @@
     },
     {
       "path": "/api/cron/smart-send?secret=${CRON_SECRET}",
-      "schedule": "0 * * * *"
+      "schedule": "*/2 * * * *"
     }
   ]
 }

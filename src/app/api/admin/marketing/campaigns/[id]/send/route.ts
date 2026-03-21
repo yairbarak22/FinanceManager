@@ -3,14 +3,15 @@ import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { getSegmentUsers, validateSegmentFilter, type SegmentFilter } from '@/lib/marketing/segment';
-import { sendBatchEmails, type SendBatchOptions } from '@/lib/marketing/resend';
 import { config } from '@/lib/config';
-import { getSenderDisplay } from '@/lib/inbox/constants';
-
-export const maxDuration = 300;
 
 /**
- * POST - Send campaign
+ * POST - Queue campaign for sending.
+ *
+ * Validates the campaign and marks it as SENDING (or TESTING / SMART_QUEUED).
+ * Actual email delivery is handled by the cron at /api/cron/smart-send which
+ * picks up campaigns in SENDING / SMART_QUEUED / TESTING status and sends
+ * them in small batches across multiple invocations (serverless-safe).
  */
 export async function POST(
   request: NextRequest,
@@ -31,19 +32,6 @@ export async function POST(
     }
 
     const body = await request.json().catch(() => ({}));
-    const rawSpread = body.spreadDurationMinutes as unknown;
-    let batchOptions: SendBatchOptions | undefined;
-
-    if (rawSpread != null) {
-      const spreadDurationMinutes = Number(rawSpread);
-      if (isNaN(spreadDurationMinutes) || spreadDurationMinutes < 1 || spreadDurationMinutes > 60) {
-        return NextResponse.json(
-          { error: 'משך פיזור השליחה חייב להיות בין 1 ל-60 דקות' },
-          { status: 400 }
-        );
-      }
-      batchOptions = { spreadDurationMinutes };
-    }
 
     // Get campaign
     const campaign = await prisma.marketingCampaign.findUnique({
@@ -90,11 +78,6 @@ export async function POST(
       );
     }
 
-    console.log('[Campaign Send] Validating segment filter', {
-      campaignId: id,
-      segmentFilterType: (campaign.segmentFilter as unknown as SegmentFilter)?.type,
-    });
-
     if (!validateSegmentFilter(campaign.segmentFilter)) {
       console.error('[Campaign Send] Invalid segment filter', {
         campaignId: id,
@@ -106,24 +89,14 @@ export async function POST(
       );
     }
 
-    // Get users matching segment
-    console.log('[Campaign Send] Getting segment users', {
-      campaignId: id,
-      segmentFilterType: (campaign.segmentFilter as unknown as SegmentFilter).type,
-    });
-
+    // Verify there are matching users
     let users;
     try {
       users = await getSegmentUsers(campaign.segmentFilter as unknown as SegmentFilter);
-      console.log('[Campaign Send] Found users', {
-        campaignId: id,
-        userCount: users.length,
-      });
     } catch (error) {
       console.error('[Campaign Send] Error getting segment users', {
         campaignId: id,
         error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
       });
       return NextResponse.json(
         { error: 'שגיאה בקבלת רשימת המשתמשים' },
@@ -136,13 +109,6 @@ export async function POST(
         { error: 'לא נמצאו משתמשים מתאימים לקמפיין' },
         { status: 400 }
       );
-    }
-
-    const fromDisplay = campaign.senderEmail
-      ? getSenderDisplay(campaign.senderEmail)
-      : undefined;
-    if (fromDisplay) {
-      batchOptions = { ...batchOptions, from: fromDisplay };
     }
 
     // ─── A/B Test Path ────────────────────────────────────────────────
@@ -170,112 +136,16 @@ export async function POST(
         );
       }
 
-      // Fisher-Yates shuffle for fair randomization
-      const shuffledUsers = [...users];
-      for (let i = shuffledUsers.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffledUsers[i], shuffledUsers[j]] = [shuffledUsers[j], shuffledUsers[i]];
-      }
+      await prisma.marketingCampaign.update({
+        where: { id },
+        data: { status: 'TESTING', startedAt: new Date() },
+      });
 
-      const halfTest = Math.floor(testGroupSize / 2);
-      const groupA = shuffledUsers.slice(0, halfTest);
-      const groupB = shuffledUsers.slice(halfTest, halfTest * 2);
-
-      // Update campaign status to TESTING
-      try {
-        await prisma.marketingCampaign.update({
-          where: { id },
-          data: { status: 'TESTING', startedAt: new Date() },
-        });
-        console.log('[Campaign Send] A/B test started', { campaignId: id, groupA: groupA.length, groupB: groupB.length });
-      } catch (error) {
-        console.error('[Campaign Send] Error updating campaign status', {
-          campaignId: id,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-        return NextResponse.json({ error: 'שגיאה בעדכון סטטוס הקמפיין' }, { status: 500 });
-      }
-
-      const makeEmails = (
-        group: typeof users,
-        variant: { id: string; subject: string; htmlContent: string },
-      ) =>
-        group.map((user) => {
-          const displayName = user.name || 'משתמש';
-          return {
-            to: user.email,
-            subject: variant.subject.replace(/\[שם המשתמש\]/g, displayName),
-            html: variant.htmlContent.replace(/\[שם המשתמש\]/g, displayName),
-            campaignId: campaign.id,
-            userId: user.id.startsWith('external-') ? null : user.id,
-            variantId: variant.id,
-          };
-        });
-
-      const emailsA = makeEmails(groupA, variants[0]);
-      const emailsB = makeEmails(groupB, variants[1]);
-
-      // Send in background
-      void (async () => {
-        try {
-          const allEmails = [...emailsA, ...emailsB];
-          const allUsers = [...groupA, ...groupB];
-          const results = await sendBatchEmails(allEmails, batchOptions);
-
-          const successful = results.filter((r) => r.id).length;
-          const failed = results.filter((r) => r.error).length;
-
-          const eventsToCreate: Array<{
-            campaignId: string;
-            userId: string;
-            emailId: string;
-            eventType: 'SENT';
-            metadata: Record<string, string>;
-          }> = [];
-
-          for (let i = 0; i < results.length; i++) {
-            const result = results[i];
-            const user = allUsers[i];
-            const email = allEmails[i];
-
-            if (!result.id) continue;
-            if (user.id.startsWith('external-')) continue;
-
-            eventsToCreate.push({
-              campaignId: campaign.id,
-              userId: user.id,
-              emailId: result.id,
-              eventType: 'SENT' as const,
-              metadata: { variantId: email.variantId },
-            });
-          }
-
-          if (eventsToCreate.length > 0) {
-            await prisma.marketingEvent.createMany({
-              data: eventsToCreate,
-              skipDuplicates: true,
-            });
-          }
-
-          await prisma.marketingCampaign.update({
-            where: { id: campaign.id },
-            data: { sentCount: successful },
-          });
-
-          console.log(`[Campaign A/B] ${campaign.id} test sent: ${successful} successful, ${failed} failed`);
-        } catch (error) {
-          console.error(`[Campaign A/B] Error sending ${campaign.id}:`, error);
-          await prisma.marketingCampaign.update({
-            where: { id: campaign.id },
-            data: { status: 'DRAFT' },
-          });
-        }
-      })();
+      console.log('[Campaign Send] A/B test queued for cron processing', { campaignId: id, userCount: users.length });
 
       return NextResponse.json({
         success: true,
-        message: `בדיקת A/B התחילה: ${groupA.length} משתמשים קיבלו וריאנט A, ${groupB.length} קיבלו וריאנט B`,
-        testGroupSize: groupA.length + groupB.length,
+        message: `בדיקת A/B נכנסה לתור — ${users.length} משתמשים`,
         totalUsers: users.length,
       });
     }
@@ -300,102 +170,27 @@ export async function POST(
       });
     }
 
-    // ─── Standard Send Path ──────────────────────────────────────────
-    try {
-      await prisma.marketingCampaign.update({
-        where: { id },
-        data: {
-          status: 'SENDING',
-          startedAt: new Date(),
-        },
-      });
-      console.log('[Campaign Send] Campaign status updated to SENDING', { campaignId: id });
-    } catch (error) {
-      console.error('[Campaign Send] Error updating campaign status', {
-        campaignId: id,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      return NextResponse.json(
-        { error: 'שגיאה בעדכון סטטוס הקמפיין' },
-        { status: 500 }
-      );
-    }
-
-    const emails = users.map((user) => {
-      const displayName = user.name || 'משתמש';
-      return {
-        to: user.email,
-        subject: campaign.subject.replace(/\[שם המשתמש\]/g, displayName),
-        html: campaign.content.replace(/\[שם המשתמש\]/g, displayName),
-        campaignId: campaign.id,
-        userId: user.id.startsWith('external-') ? null : user.id,
-      };
+    // ─── Standard Send Path (cron-driven) ────────────────────────────
+    await prisma.marketingCampaign.update({
+      where: { id },
+      data: {
+        status: 'SENDING',
+        sendMode: 'instant',
+        startedAt: new Date(),
+      },
     });
 
-    void (async () => {
-      try {
-        const results = await sendBatchEmails(emails, batchOptions);
-
-        const successful = results.filter((r) => r.id).length;
-        const failed = results.filter((r) => r.error).length;
-
-        const eventsToCreate: Array<{
-          campaignId: string;
-          userId: string;
-          emailId: string;
-          eventType: 'SENT';
-        }> = [];
-
-        for (let i = 0; i < results.length; i++) {
-          const result = results[i];
-          const user = users[i];
-
-          if (!result.id) continue;
-          if (user.id.startsWith('external-')) continue;
-
-          eventsToCreate.push({
-            campaignId: campaign.id,
-            userId: user.id,
-            emailId: result.id,
-            eventType: 'SENT' as const,
-          });
-        }
-
-        if (eventsToCreate.length > 0) {
-          await prisma.marketingEvent.createMany({
-            data: eventsToCreate,
-            skipDuplicates: true,
-          });
-        }
-
-        await prisma.marketingCampaign.update({
-          where: { id: campaign.id },
-          data: {
-            sentCount: successful,
-            status: 'COMPLETED',
-            completedAt: new Date(),
-          },
-        });
-
-        console.log(`[Campaign] ${campaign.id} sent: ${successful} successful, ${failed} failed`);
-      } catch (error) {
-        console.error(`[Campaign] Error sending ${campaign.id}:`, error);
-        await prisma.marketingCampaign.update({
-          where: { id: campaign.id },
-          data: {
-            status: 'DRAFT',
-          },
-        });
-      }
-    })();
+    console.log('[Campaign Send] Campaign queued for cron batch sending', {
+      campaignId: id,
+      userCount: users.length,
+    });
 
     return NextResponse.json({
       success: true,
-      message: `הקמפיין התחיל להישלח ל-${users.length} משתמשים`,
+      message: `הקמפיין נכנס לתור שליחה — ${users.length} נמענים`,
       userCount: users.length,
     });
   } catch (error) {
-    // Try to get id from params if available, otherwise use 'unknown'
     let campaignId = 'unknown';
     try {
       const { id } = await params;
