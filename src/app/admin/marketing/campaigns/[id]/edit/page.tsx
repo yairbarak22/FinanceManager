@@ -28,7 +28,7 @@ export default function EditCampaignPage() {
   const [userCount, setUserCount] = useState<number>(0);
   const [campaignStatus, setCampaignStatus] = useState<string>('');
   const [inlineMessage, setInlineMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [senderEmail, setSenderEmail] = useState(DEFAULT_SENDER.email);
+  const [senderEmail, setSenderEmail] = useState<string>(DEFAULT_SENDER.email);
   const [showSenderDropdown, setShowSenderDropdown] = useState(false);
 
   // A/B Testing state
