@@ -26,8 +26,8 @@ import ToastContainer from '@/components/ui/Toast';
 import TaskGroup from './TaskGroup';
 import AddGroupButton from './AddGroupButton';
 import TimelineView from './TimelineView';
-import type { RoadmapData, AdminTaskGroupWithTasks, AdminTaskStatus, AdminTaskPriority } from '@/types/admin-roadmap';
-import { STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS, PRIORITY_LABELS, AdminTaskStatus as StatusEnum, AdminTaskPriority as PriorityEnum } from '@/types/admin-roadmap';
+import type { RoadmapData, AdminTaskGroupWithTasks, AdminTaskStatus, AdminTaskPriority, AdminTaskWithChildren } from '@/types/admin-roadmap';
+import { STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS, PRIORITY_LABELS, STATUS_SORT_ORDER, AdminTaskStatus as StatusEnum, AdminTaskPriority as PriorityEnum } from '@/types/admin-roadmap';
 
 type SortField = 'title' | 'startDate' | 'priority' | null;
 type SortDir = 'asc' | 'desc';
@@ -111,7 +111,10 @@ export default function RoadmapBoard() {
       let tasks = [...group.tasks];
 
       if (q) {
-        tasks = tasks.filter((t) => t.title.toLowerCase().includes(q));
+        tasks = tasks.filter((t) =>
+          t.title.toLowerCase().includes(q) ||
+          t.children?.some((c) => c.title.toLowerCase().includes(q))
+        );
       }
       if (filterStatus) {
         tasks = tasks.filter((t) => t.status === filterStatus);
@@ -133,6 +136,12 @@ export default function RoadmapBoard() {
             cmp = (PRIORITY_ORDER[a.priority] ?? 99) - (PRIORITY_ORDER[b.priority] ?? 99);
           }
           return sortDir === 'desc' ? -cmp : cmp;
+        });
+      } else {
+        tasks.sort((a, b) => {
+          const statusCmp = (STATUS_SORT_ORDER[a.status] ?? 99) - (STATUS_SORT_ORDER[b.status] ?? 99);
+          if (statusCmp !== 0) return statusCmp;
+          return a.orderIndex - b.orderIndex;
         });
       }
 
@@ -169,15 +178,15 @@ export default function RoadmapBoard() {
       if (source.droppableId === destination.droppableId) {
         srcTasks.splice(destination.index, 0, movedTask);
         srcTasks.forEach((t, i) => { t.orderIndex = i; });
-        srcGroup.tasks = srcTasks;
+        srcGroup.tasks = srcTasks as AdminTaskWithChildren[];
       } else {
         srcTasks.forEach((t, i) => { t.orderIndex = i; });
-        srcGroup.tasks = srcTasks;
+        srcGroup.tasks = srcTasks as AdminTaskWithChildren[];
         const destTasks = [...destGroup.tasks].sort((a, b) => a.orderIndex - b.orderIndex);
         movedTask.groupId = destination.droppableId;
         destTasks.splice(destination.index, 0, movedTask);
         destTasks.forEach((t, i) => { t.orderIndex = i; });
-        destGroup.tasks = destTasks;
+        destGroup.tasks = destTasks as AdminTaskWithChildren[];
       }
 
       setData({ groups: newGroups });
@@ -202,17 +211,25 @@ export default function RoadmapBoard() {
       saveSnapshot();
 
       const newGroups: AdminTaskGroupWithTasks[] = JSON.parse(JSON.stringify(data.groups));
+      let found = false;
       for (const group of newGroups) {
-        const task = group.tasks.find((t) => t.id === taskId);
-        if (task) {
-          Object.assign(task, updates);
-          if (updates.endDate && typeof updates.endDate === 'string') {
-            task.endDate = new Date(updates.endDate);
+        if (found) break;
+        for (const task of group.tasks) {
+          if (task.id === taskId) {
+            Object.assign(task, updates);
+            if (updates.endDate && typeof updates.endDate === 'string') task.endDate = new Date(updates.endDate);
+            if (updates.startDate && typeof updates.startDate === 'string') task.startDate = new Date(updates.startDate);
+            found = true;
+            break;
           }
-          if (updates.startDate && typeof updates.startDate === 'string') {
-            task.startDate = new Date(updates.startDate);
+          const child = task.children?.find((c) => c.id === taskId);
+          if (child) {
+            Object.assign(child, updates);
+            if (updates.endDate && typeof updates.endDate === 'string') child.endDate = new Date(updates.endDate);
+            if (updates.startDate && typeof updates.startDate === 'string') child.startDate = new Date(updates.startDate);
+            found = true;
+            break;
           }
-          break;
         }
       }
       setData({ groups: newGroups });
@@ -234,11 +251,22 @@ export default function RoadmapBoard() {
       saveSnapshot();
 
       const newGroups: AdminTaskGroupWithTasks[] = JSON.parse(JSON.stringify(data.groups));
+      let found = false;
       for (const group of newGroups) {
+        if (found) break;
         const idx = group.tasks.findIndex((t) => t.id === taskId);
         if (idx !== -1) {
           group.tasks.splice(idx, 1);
+          found = true;
           break;
+        }
+        for (const task of group.tasks) {
+          const childIdx = task.children?.findIndex((c) => c.id === taskId) ?? -1;
+          if (childIdx !== -1) {
+            task.children.splice(childIdx, 1);
+            found = true;
+            break;
+          }
         }
       }
       setData({ groups: newGroups });
@@ -256,16 +284,78 @@ export default function RoadmapBoard() {
 
   // --- Task create (with proper ID sync) ---
   const handleTaskCreate = useCallback(
-    async (groupId: string, title: string) => {
+    async (groupId: string, title: string, parentId?: string) => {
       if (!data) return;
 
       const group = data.groups.find((g) => g.id === groupId);
-      const maxOrder = group ? Math.max(...group.tasks.map((t) => t.orderIndex), -1) : 0;
+      if (!group) return;
 
       const tempId = `temp_${Date.now()}`;
-      const optimisticTask = {
+
+      if (parentId) {
+        const parentTask = group.tasks.find((t) => t.id === parentId);
+        const maxChildOrder = parentTask
+          ? Math.max(...(parentTask.children ?? []).map((c) => c.orderIndex), -1)
+          : 0;
+
+        const optimisticChild = {
+          id: tempId,
+          groupId,
+          parentId,
+          title,
+          ownerId: null,
+          status: 'NOT_STARTED' as const,
+          priority: 'MEDIUM' as const,
+          startDate: null,
+          endDate: null,
+          orderIndex: maxChildOrder + 1,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        saveSnapshot();
+
+        const newGroups: AdminTaskGroupWithTasks[] = JSON.parse(JSON.stringify(data.groups));
+        const targetParent = newGroups.find((g) => g.id === groupId)?.tasks.find((t) => t.id === parentId);
+        if (targetParent) {
+          if (!targetParent.children) targetParent.children = [];
+          targetParent.children.push(optimisticChild);
+        }
+        setData({ groups: newGroups });
+
+        try {
+          const serverTask = await createTask({
+            groupId,
+            parentId,
+            title,
+            status: 'NOT_STARTED',
+            priority: 'MEDIUM',
+          });
+          setData((prev) => {
+            if (!prev) return prev;
+            const updated = JSON.parse(JSON.stringify(prev)) as RoadmapData;
+            for (const g of updated.groups) {
+              for (const t of g.tasks) {
+                const idx = t.children?.findIndex((c) => c.id === tempId) ?? -1;
+                if (idx !== -1) {
+                  t.children[idx] = serverTask as typeof t.children[0];
+                  return updated;
+                }
+              }
+            }
+            return updated;
+          });
+        } catch {
+          rollback('שגיאה ביצירת תת-משימה');
+        }
+        return;
+      }
+
+      const maxOrder = Math.max(...group.tasks.map((t) => t.orderIndex), -1);
+      const optimisticTask: AdminTaskWithChildren = {
         id: tempId,
         groupId,
+        parentId: null,
         title,
         ownerId: null,
         status: 'NOT_STARTED' as const,
@@ -275,6 +365,7 @@ export default function RoadmapBoard() {
         orderIndex: maxOrder + 1,
         createdAt: new Date(),
         updatedAt: new Date(),
+        children: [],
       };
 
       saveSnapshot();
@@ -300,7 +391,7 @@ export default function RoadmapBoard() {
           for (const g of updated.groups) {
             const idx = g.tasks.findIndex((t) => t.id === tempId);
             if (idx !== -1) {
-              g.tasks[idx] = serverTask;
+              g.tasks[idx] = { ...serverTask, children: [] } as AdminTaskWithChildren;
               break;
             }
           }
@@ -372,6 +463,14 @@ export default function RoadmapBoard() {
       }
     },
     [data, saveSnapshot, rollback],
+  );
+
+  // --- Subtask create handler ---
+  const handleSubtaskCreate = useCallback(
+    async (groupId: string, parentId: string, title: string) => {
+      await handleTaskCreate(groupId, title, parentId);
+    },
+    [handleTaskCreate],
   );
 
   // --- Main "new task" button handler ---
@@ -629,6 +728,7 @@ export default function RoadmapBoard() {
                     onTaskCreate={handleTaskCreate}
                     onTaskDelete={handleTaskDelete}
                     onGroupUpdate={handleGroupUpdate}
+                    onSubtaskCreate={handleSubtaskCreate}
                   />
                 ))}
             </div>

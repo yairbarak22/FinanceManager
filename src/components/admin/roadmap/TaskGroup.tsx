@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Fragment } from 'react';
 import { Droppable } from '@hello-pangea/dnd';
 import { ChevronDown, ChevronLeft, Info, Plus } from 'lucide-react';
 import TaskRow from './TaskRow';
 import AddTaskRow from './AddTaskRow';
-import type { AdminTaskGroupWithTasks, AdminTaskStatus, AdminTask } from '@/types/admin-roadmap';
+import type { AdminTaskGroupWithTasks, AdminTaskStatus, AdminTaskWithChildren } from '@/types/admin-roadmap';
 import { STATUS_COLORS, STATUS_LABELS } from '@/types/admin-roadmap';
 
 interface TaskGroupProps {
@@ -14,11 +14,12 @@ interface TaskGroupProps {
   onTaskCreate?: (groupId: string, title: string) => Promise<void>;
   onTaskDelete?: (taskId: string) => Promise<void>;
   onGroupUpdate?: (groupId: string, updates: Record<string, unknown>) => Promise<void>;
+  onSubtaskCreate?: (groupId: string, parentId: string, title: string) => Promise<void>;
 }
 
 export const GRID_COLS = 'grid grid-cols-[40px_minmax(200px,_1fr)_100px_130px_120px_120px_130px_40px]';
 
-function getStatusBreakdown(tasks: AdminTask[]) {
+function getStatusBreakdown(tasks: AdminTaskWithChildren[]) {
   const total = tasks.length;
   if (total === 0) return [];
   const counts = tasks.reduce((acc, t) => {
@@ -32,10 +33,12 @@ function getStatusBreakdown(tasks: AdminTask[]) {
   }));
 }
 
-export default function TaskGroup({ group, onTaskUpdate, onTaskCreate, onTaskDelete, onGroupUpdate }: TaskGroupProps) {
+export default function TaskGroup({ group, onTaskUpdate, onTaskCreate, onTaskDelete, onGroupUpdate, onSubtaskCreate }: TaskGroupProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(group.title);
+  const [expandedTaskIds, setExpandedTaskIds] = useState<Set<string>>(new Set());
+  const [addingSubtaskFor, setAddingSubtaskFor] = useState<string | null>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -69,7 +72,22 @@ export default function TaskGroup({ group, onTaskUpdate, onTaskCreate, onTaskDel
     }
   };
 
-  const sortedTasks = [...group.tasks].sort((a, b) => a.orderIndex - b.orderIndex);
+  const toggleTaskExpanded = (taskId: string) => {
+    setExpandedTaskIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
+  };
+
+  const handleSubtaskAdd = async (parentId: string, title: string) => {
+    setAddingSubtaskFor(null);
+    await onSubtaskCreate?.(group.id, parentId, title);
+  };
+
+  // Tasks come pre-sorted from RoadmapBoard's filteredData
+  const tasks = group.tasks;
 
   return (
     <div className="mb-8">
@@ -159,15 +177,44 @@ export default function TaskGroup({ group, onTaskUpdate, onTaskCreate, onTaskDel
                   snapshot.isDraggingOver ? 'bg-[#69ADFF]/5' : ''
                 }`}
               >
-                {sortedTasks.map((task, index) => (
-                  <TaskRow
-                    key={task.id}
-                    task={task}
-                    index={index}
-                    onTaskUpdate={onTaskUpdate}
-                    onTaskDelete={onTaskDelete}
-                  />
-                ))}
+                {tasks.map((task, index) => {
+                  const hasChildren = task.children && task.children.length > 0;
+                  const isTaskExpanded = expandedTaskIds.has(task.id);
+
+                  return (
+                    <Fragment key={task.id}>
+                      <TaskRow
+                        task={task}
+                        index={index}
+                        onTaskUpdate={onTaskUpdate}
+                        onTaskDelete={onTaskDelete}
+                        hasChildren={hasChildren || false}
+                        isExpanded={isTaskExpanded}
+                        onToggleExpand={() => toggleTaskExpanded(task.id)}
+                        onAddSubtask={onSubtaskCreate ? () => {
+                          setExpandedTaskIds((prev) => new Set(prev).add(task.id));
+                          setAddingSubtaskFor(task.id);
+                        } : undefined}
+                      />
+                      {isTaskExpanded && task.children?.map((child) => (
+                        <TaskRow
+                          key={child.id}
+                          task={child}
+                          index={-1}
+                          depth={1}
+                          onTaskUpdate={onTaskUpdate}
+                          onTaskDelete={onTaskDelete}
+                        />
+                      ))}
+                      {isTaskExpanded && addingSubtaskFor === task.id && (
+                        <SubtaskAddRow
+                          onSubmit={(title) => handleSubtaskAdd(task.id, title)}
+                          onCancel={() => setAddingSubtaskFor(null)}
+                        />
+                      )}
+                    </Fragment>
+                  );
+                })}
                 {provided.placeholder}
               </div>
             )}
@@ -177,10 +224,10 @@ export default function TaskGroup({ group, onTaskUpdate, onTaskCreate, onTaskDel
           <AddTaskRow groupId={group.id} onCreate={onTaskCreate} />
 
           {/* Progress Bar */}
-          {sortedTasks.length > 0 && (
+          {tasks.length > 0 && (
             <div className="px-4 py-2 border-t border-[#F7F7F8]">
               <div className="flex h-2 rounded-full overflow-hidden">
-                {getStatusBreakdown(sortedTasks).map((item) => (
+                {getStatusBreakdown(tasks).map((item) => (
                   <div
                     key={item.status}
                     className="transition-all duration-200 hover:brightness-110"
@@ -196,6 +243,48 @@ export default function TaskGroup({ group, onTaskUpdate, onTaskCreate, onTaskDel
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function SubtaskAddRow({ onSubmit, onCancel }: { onSubmit: (title: string) => void; onCancel: () => void }) {
+  const [title, setTitle] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const handleSubmit = () => {
+    const trimmed = title.trim();
+    if (trimmed) onSubmit(trimmed);
+    else onCancel();
+  };
+
+  return (
+    <div className={`${GRID_COLS} items-center border-b border-[#F7F7F8] bg-[#FAFAFA]`}>
+      <div className="h-10" />
+      <div className="h-10 flex items-center pe-4 ps-10">
+        <input
+          ref={inputRef}
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); handleSubmit(); }
+            else if (e.key === 'Escape') onCancel();
+          }}
+          onBlur={handleSubmit}
+          placeholder="שם תת-משימה..."
+          className="w-full h-7 text-xs text-[#303150] bg-white border border-[#69ADFF] rounded-lg px-2 focus:outline-none focus:ring-2 focus:ring-[#69ADFF]/20 placeholder-[#BDBDCB]"
+        />
+      </div>
+      <div className="h-10" />
+      <div className="h-10" />
+      <div className="h-10" />
+      <div className="h-10" />
+      <div className="h-10" />
+      <div className="h-10" />
     </div>
   );
 }

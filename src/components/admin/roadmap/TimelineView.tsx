@@ -3,7 +3,7 @@
 import { useMemo, useRef, useCallback, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronLeft } from 'lucide-react';
-import type { RoadmapData, AdminTask, AdminTaskGroupWithTasks } from '@/types/admin-roadmap';
+import type { RoadmapData, AdminTask, AdminTaskGroupWithTasks, AdminTaskWithChildren } from '@/types/admin-roadmap';
 import { STATUS_COLORS } from '@/types/admin-roadmap';
 
 // --- Constants ---
@@ -120,15 +120,14 @@ export default function TimelineView({ data }: TimelineViewProps) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
-  // --- Flatten data into rows ---
+  // --- Flatten data into rows (order already applied by RoadmapBoard) ---
   const flatRows = useMemo<FlatRow[]>(() => {
     const rows: FlatRow[] = [];
     const sorted = [...data.groups].sort((a, b) => a.orderIndex - b.orderIndex);
     for (const group of sorted) {
       rows.push({ type: 'group', group });
       if (!collapsedGroups.has(group.id)) {
-        const tasks = [...group.tasks].sort((a, b) => a.orderIndex - b.orderIndex);
-        for (const task of tasks) {
+        for (const task of group.tasks) {
           rows.push({ type: 'task', group, task });
         }
       }

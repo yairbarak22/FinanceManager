@@ -174,6 +174,7 @@ const adminTaskPriorityEnum = z.enum(['HIGH', 'MEDIUM', 'LOW']);
 
 export const createAdminTaskSchema = z.object({
   groupId: z.string().cuid('Invalid group ID'),
+  parentId: z.string().cuid('Invalid parent ID').nullable().optional(),
   title: shortString(200),
   ownerId: z.string().max(100).optional(),
   status: adminTaskStatusEnum.default('NOT_STARTED'),
@@ -184,6 +185,7 @@ export const createAdminTaskSchema = z.object({
 
 export const updateAdminTaskSchema = z.object({
   groupId: z.string().cuid('Invalid group ID').optional(),
+  parentId: z.string().cuid('Invalid parent ID').nullable().optional(),
   title: shortString(200).optional(),
   ownerId: z.string().max(100).nullable().optional(),
   status: adminTaskStatusEnum.optional(),

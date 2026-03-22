@@ -9,7 +9,7 @@ import {
   updateAdminTaskGroupSchema,
   updateAdminTaskGroupOrderSchema,
 } from '@/lib/validationSchemas';
-import type { RoadmapData, AdminTask, AdminTaskGroupWithTasks } from '@/types/admin-roadmap';
+import type { RoadmapData, AdminTask, AdminTaskGroupWithTasks, AdminTaskWithChildren } from '@/types/admin-roadmap';
 
 async function ensureAdmin() {
   const { userId, error } = await requireAdmin();
@@ -25,13 +25,19 @@ export async function getRoadmapData(): Promise<RoadmapData> {
   const groups = await prisma.adminTaskGroup.findMany({
     include: {
       tasks: {
+        where: { parentId: null },
         orderBy: { orderIndex: 'asc' },
+        include: {
+          children: {
+            orderBy: { orderIndex: 'asc' },
+          },
+        },
       },
     },
     orderBy: { orderIndex: 'asc' },
   });
 
-  return { groups };
+  return { groups } as RoadmapData;
 }
 
 export async function createTask(
@@ -40,8 +46,10 @@ export async function createTask(
   await ensureAdmin();
   const data = createAdminTaskSchema.parse(input);
 
+  const parentId = data.parentId ?? null;
+
   const maxOrder = await prisma.adminTask.findFirst({
-    where: { groupId: data.groupId },
+    where: { groupId: data.groupId, parentId },
     orderBy: { orderIndex: 'desc' },
     select: { orderIndex: true },
   });
@@ -49,6 +57,7 @@ export async function createTask(
   const newTask = await prisma.adminTask.create({
     data: {
       groupId: data.groupId,
+      parentId,
       title: data.title,
       ownerId: data.ownerId ?? null,
       status: data.status,
@@ -73,6 +82,7 @@ export async function updateTask(
     where: { id },
     data: {
       ...(data.groupId !== undefined && { groupId: data.groupId }),
+      ...(data.parentId !== undefined && { parentId: data.parentId }),
       ...(data.title !== undefined && { title: data.title }),
       ...(data.ownerId !== undefined && { ownerId: data.ownerId }),
       ...(data.status !== undefined && { status: data.status }),
@@ -121,10 +131,16 @@ export async function updateTaskGroup(
       ...(data.title !== undefined && { title: data.title }),
       ...(data.color !== undefined && { color: data.color }),
     },
-    include: { tasks: true },
+    include: {
+      tasks: {
+        where: { parentId: null },
+        orderBy: { orderIndex: 'asc' },
+        include: { children: { orderBy: { orderIndex: 'asc' } } },
+      },
+    },
   });
 
-  return updatedGroup;
+  return updatedGroup as AdminTaskGroupWithTasks;
 }
 
 export async function deleteTask(id: string): Promise<{ success: boolean }> {
@@ -150,8 +166,14 @@ export async function createTaskGroup(
       color: data.color,
       orderIndex: (maxOrder?.orderIndex ?? -1) + 1,
     },
-    include: { tasks: true },
+    include: {
+      tasks: {
+        where: { parentId: null },
+        orderBy: { orderIndex: 'asc' },
+        include: { children: { orderBy: { orderIndex: 'asc' } } },
+      },
+    },
   });
 
-  return newGroup;
+  return newGroup as AdminTaskGroupWithTasks;
 }

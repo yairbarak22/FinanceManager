@@ -1042,6 +1042,7 @@ model AdminTaskGroup {
 model AdminTask {
   id         String            @id @default(cuid())
   groupId    String
+  parentId   String?
   title      String
   ownerId    String?
   status     AdminTaskStatus   @default(NOT_STARTED)
@@ -1052,9 +1053,13 @@ model AdminTask {
   createdAt  DateTime          @default(now())
   updatedAt  DateTime          @updatedAt
   group      AdminTaskGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  parent     AdminTask?        @relation("SubTasks", fields: [parentId], references: [id], onDelete: Cascade)
+  children   AdminTask[]       @relation("SubTasks")
 
   @@index([groupId])
   @@index([groupId, orderIndex])
+  @@index([parentId])
+  @@index([groupId, parentId, orderIndex])
   @@index([status])
   @@index([priority])
 }

@@ -19,14 +19,26 @@ export const AdminTaskPriority = {
   LOW: 'LOW',
 } as const;
 
+// Pipeline sort: NOT_STARTED → WORKING_ON_IT → STUCK → DONE
+export const STATUS_SORT_ORDER: Record<PrismaAdminTaskStatus, number> = {
+  NOT_STARTED: 0,
+  WORKING_ON_IT: 1,
+  STUCK: 2,
+  DONE: 3,
+};
+
 // Types derived from Prisma
 export type AdminTaskStatus = PrismaAdminTaskStatus;
 export type AdminTaskPriority = PrismaAdminTaskPriority;
 export type AdminTaskGroup = PrismaAdminTaskGroup;
 export type AdminTask = PrismaAdminTask;
 
+export type AdminTaskWithChildren = AdminTask & {
+  children: AdminTask[];
+};
+
 export type AdminTaskGroupWithTasks = AdminTaskGroup & {
-  tasks: AdminTask[];
+  tasks: AdminTaskWithChildren[];
 };
 
 export type RoadmapData = {
