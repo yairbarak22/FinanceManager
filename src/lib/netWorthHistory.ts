@@ -68,6 +68,7 @@ async function getTotalLiabilitiesForMonthKey(
     where: {
       userId: { in: userIds },
     },
+    include: { tracks: true },
   });
 
   // Parse monthKey to date (first day of month)
@@ -89,6 +90,19 @@ async function getTotalLiabilitiesForMonthKey(
       loanMethod: liability.loanMethod as 'spitzer' | 'equal_principal',
       hasInterestRebate: liability.hasInterestRebate,
       linkage: liability.linkage as 'none' | 'index' | 'foreign' | undefined,
+      isMortgage: liability.isMortgage,
+      tracks: liability.tracks?.map(t => ({
+        id: t.id,
+        liabilityId: t.liabilityId,
+        trackType: t.trackType,
+        amount: t.amount,
+        termMonths: t.termMonths,
+        termYears: t.termYears ?? undefined,
+        interestRate: t.interestRate,
+        loanMethod: t.loanMethod as 'spitzer' | 'equal_principal',
+        monthlyPayment: t.monthlyPayment,
+        order: t.order,
+      })),
     };
     return sum + getRemainingBalance(liabilityData, targetDate);
   }, 0);

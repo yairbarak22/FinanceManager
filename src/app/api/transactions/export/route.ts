@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAuth, getSharedUserIds } from '@/lib/authHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { buildTransactionsWorkbook } from '@/lib/excel/buildTransactionsWorkbook';
+import type { Liability } from '@/lib/types';
 
 const MAX_RANGE_DAYS = 366;
 
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     const userIds = await getSharedUserIds(userId);
 
-    const [transactions, recurringTransactions, customCategories] = await Promise.all([
+    const [transactions, recurringTransactions, customCategories, rawLiabilities] = await Promise.all([
       prisma.transaction.findMany({
         where: {
           userId: { in: userIds },
@@ -89,6 +90,10 @@ export async function GET(request: NextRequest) {
         where: { userId: { in: userIds } },
         select: { id: true, name: true, type: true, icon: true, color: true },
       }),
+      prisma.liability.findMany({
+        where: { userId: { in: userIds } },
+        include: { tracks: true },
+      }),
     ]);
 
     const recurringParsed = recurringTransactions.map((r) => ({
@@ -96,10 +101,41 @@ export async function GET(request: NextRequest) {
       activeMonths: Array.isArray(r.activeMonths) ? (r.activeMonths as string[]) : null,
     }));
 
+    const liabilities: Liability[] = rawLiabilities.map((l) => ({
+      id: l.id,
+      name: l.name,
+      type: l.type,
+      totalAmount: l.totalAmount,
+      monthlyPayment: l.monthlyPayment,
+      currency: l.currency as 'ILS' | 'USD',
+      interestRate: l.interestRate,
+      loanTermMonths: l.loanTermMonths,
+      startDate: l.startDate.toISOString(),
+      remainingAmount: l.remainingAmount ?? undefined,
+      loanMethod: l.loanMethod as 'spitzer' | 'equal_principal',
+      hasInterestRebate: l.hasInterestRebate,
+      linkage: l.linkage as 'none' | 'index' | 'foreign' | undefined,
+      isActiveInCashFlow: l.isActiveInCashFlow,
+      isMortgage: l.isMortgage,
+      tracks: l.tracks?.map((t) => ({
+        id: t.id,
+        liabilityId: t.liabilityId,
+        trackType: t.trackType,
+        amount: t.amount,
+        termMonths: t.termMonths,
+        termYears: t.termYears ?? undefined,
+        interestRate: t.interestRate,
+        loanMethod: t.loanMethod as 'spitzer' | 'equal_principal',
+        monthlyPayment: t.monthlyPayment,
+        order: t.order,
+      })),
+    }));
+
     const wb = buildTransactionsWorkbook({
       transactions,
       recurringTransactions: recurringParsed,
       customCategories,
+      liabilities,
       startDate,
       endDate,
     });

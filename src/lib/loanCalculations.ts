@@ -116,8 +116,38 @@ export function getCurrentMonthPayment(
     (targetDate.getMonth() - startDate.getMonth());
   
   const currentMonth = monthsPassed + 1;
-  
-  // If loan is finished or not started
+
+  // Multi-track mortgage: sum payment details across individual tracks
+  if (liability.isMortgage && liability.tracks && liability.tracks.length > 0) {
+    let totalPayment = 0;
+    let totalPrincipal = 0;
+    let totalInterest = 0;
+    let anyActive = false;
+
+    for (const track of liability.tracks) {
+      if (currentMonth < 1 || currentMonth > track.termMonths) continue;
+
+      const schedule = generateAmortizationSchedule(
+        track.amount,
+        track.interestRate,
+        track.termMonths,
+        startDate,
+        (track.loanMethod as 'spitzer' | 'equal_principal') || 'spitzer'
+      );
+      const row = schedule[currentMonth - 1];
+      if (row) {
+        totalPayment += row.payment;
+        totalPrincipal += row.principal;
+        totalInterest += row.interest;
+        anyActive = true;
+      }
+    }
+
+    if (!anyActive) return null;
+    return { payment: totalPayment, principal: totalPrincipal, interest: totalInterest, currentMonth };
+  }
+
+  // Single-schedule loan (non-mortgage or mortgage without tracks)
   if (currentMonth < 1 || currentMonth > liability.loanTermMonths) {
     return null;
   }
@@ -201,13 +231,35 @@ export function getRemainingBalance(liability: Liability, asOfDate?: Date): numb
     (targetDate.getMonth() - startDate.getMonth());
   
   const currentMonth = monthsPassed + 1;
-  
-  // If loan hasn't started yet
+
+  // Multi-track mortgage: sum remaining balance across individual tracks
+  if (liability.isMortgage && liability.tracks && liability.tracks.length > 0) {
+    let totalBalance = 0;
+    for (const track of liability.tracks) {
+      if (currentMonth < 1) {
+        totalBalance += track.amount;
+        continue;
+      }
+      if (currentMonth > track.termMonths) continue;
+
+      const schedule = generateAmortizationSchedule(
+        track.amount,
+        track.interestRate,
+        track.termMonths,
+        startDate,
+        (track.loanMethod as 'spitzer' | 'equal_principal') || 'spitzer'
+      );
+      const row = schedule[currentMonth - 1];
+      totalBalance += row ? row.balance : 0;
+    }
+    return totalBalance;
+  }
+
+  // Single-schedule loan
   if (currentMonth < 1) {
     return liability.totalAmount;
   }
   
-  // If loan is finished
   if (currentMonth > liability.loanTermMonths) {
     return 0;
   }

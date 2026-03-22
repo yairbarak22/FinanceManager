@@ -806,6 +806,44 @@ function ExpensesBreakdown({ data }: { data: PeriodicReportData }) {
   );
 }
 
+// ---- Top Expenses by Category (unified view matching monthly summary) ----
+
+function TopExpensesByCategory({ data }: { data: PeriodicReportData }) {
+  if (data.topExpenses.length === 0) return null;
+
+  return (
+    <View style={s.sectionWrap}>
+      <SectionTitle title="הוצאות לפי קטגוריה" />
+      {data.topExpenses.map((item, i) => {
+        const mom = item.momChangePercent;
+        return (
+          <View key={i}>
+            <View style={s.expRow}>
+              <Text style={s.expAmt}>{formatILS(item.amount)}</Text>
+              <Text style={s.expPct}>{item.percentage}%</Text>
+              <Text style={s.expName}>{prepareRtl(item.categoryName)}</Text>
+            </View>
+            {mom !== null && (
+              <View style={s.expCompRow}>
+                <Text
+                  style={[
+                    s.expCompText,
+                    { color: mom > 0 ? C.negative : C.positive },
+                  ]}
+                >
+                  {formatPercent(mom)}
+                  {' :'}
+                  {prepareRtl('חודש קודם')}
+                </Text>
+              </View>
+            )}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 // ---- Balance Sheet ----
 
 function BreakdownColumn({
@@ -1229,6 +1267,7 @@ export default function ReportDocument({ data }: ReportDocumentProps) {
         <CashFlowTable data={data} />
         <IncomeBreakdown data={data} />
         <ExpensesBreakdown data={data} />
+        <TopExpensesByCategory data={data} />
         <ReportFooter />
       </Page>
 

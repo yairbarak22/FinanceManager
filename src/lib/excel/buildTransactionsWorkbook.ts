@@ -4,6 +4,11 @@ import {
   customCategoryToInfo,
   type CategoryInfo,
 } from '@/lib/categories';
+import {
+  getEffectiveMonthlyExpense,
+  isLiabilityActiveInCashFlow,
+} from '@/lib/loanCalculations';
+import type { Liability } from '@/lib/types';
 
 interface TransactionRow {
   id: string;
@@ -36,6 +41,7 @@ interface BuildWorkbookParams {
   transactions: TransactionRow[];
   recurringTransactions: RecurringRow[];
   customCategories: CustomCategoryDB[];
+  liabilities?: Liability[];
   startDate: Date;
   endDate: Date;
 }
@@ -113,11 +119,25 @@ function setupRtlSheet(ws: ExcelJS.Worksheet) {
   ws.views = [{ rightToLeft: true, state: 'normal' }];
 }
 
+function getMonthKeysInRange(start: Date, end: Date): string[] {
+  const keys: string[] = [];
+  const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+  const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+  while (cursor <= endMonth) {
+    keys.push(
+      `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`
+    );
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return keys;
+}
+
 // ── Main Builder ───────────────────────────────────────────────
 export function buildTransactionsWorkbook({
   transactions,
   recurringTransactions,
   customCategories,
+  liabilities = [],
   startDate,
   endDate,
 }: BuildWorkbookParams): ExcelJS.Workbook {
@@ -127,7 +147,7 @@ export function buildTransactionsWorkbook({
 
   const customCats = customCategories.map(customCategoryToInfo);
 
-  buildSummarySheet(wb, transactions, recurringTransactions, customCats, startDate, endDate);
+  buildSummarySheet(wb, transactions, recurringTransactions, liabilities, customCats, startDate, endDate);
   buildTransactionsSheet(wb, transactions, customCats);
   if (recurringTransactions.length > 0) {
     buildRecurringSheet(wb, recurringTransactions, customCats);
@@ -141,6 +161,7 @@ function buildSummarySheet(
   wb: ExcelJS.Workbook,
   transactions: TransactionRow[],
   recurring: RecurringRow[],
+  liabilities: Liability[],
   customCats: CategoryInfo[],
   startDate: Date,
   endDate: Date
@@ -150,13 +171,38 @@ function buildSummarySheet(
 
   ws.columns = [{ width: 32 }, { width: 18 }];
 
+  const monthKeys = getMonthKeysInRange(startDate, endDate);
+  const numMonths = monthKeys.length;
+
   const totalIncome = transactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
   const totalExpense = transactions.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   const netRegular = totalIncome - totalExpense;
 
-  const recurringIncome = recurring.filter((r) => r.type === 'income' && r.isActive).reduce((s, r) => s + r.amount, 0);
-  const recurringExpense = recurring.filter((r) => r.type === 'expense' && r.isActive).reduce((s, r) => s + r.amount, 0);
+  // Recurring: count how many months each item is active within the range
+  let recurringIncome = 0;
+  let recurringExpense = 0;
+  for (const r of recurring) {
+    if (!r.isActive) continue;
+    const activeCount = r.activeMonths && r.activeMonths.length > 0
+      ? monthKeys.filter((mk) => r.activeMonths!.includes(mk)).length
+      : numMonths;
+    if (activeCount === 0) continue;
+    const total = r.amount * activeCount;
+    if (r.type === 'income') recurringIncome += total;
+    else recurringExpense += total;
+  }
   const netRecurring = recurringIncome - recurringExpense;
+
+  // Liability payments: sum per month in range
+  let totalLiabilityPayments = 0;
+  for (const mk of monthKeys) {
+    const [y, m] = mk.split('-').map(Number);
+    const monthDate = new Date(y, m - 1, 1);
+    for (const l of liabilities) {
+      if (!isLiabilityActiveInCashFlow(l, monthDate)) continue;
+      totalLiabilityPayments += getEffectiveMonthlyExpense(l, monthDate);
+    }
+  }
 
   // Title
   const titleRow = ws.addRow(['דוח תנועות פיננסיות']);
@@ -178,26 +224,45 @@ function buildSummarySheet(
 
   ws.addRow([]);
 
-  // Recurring summary
-  if (recurring.length > 0) {
-    addSectionHeader(ws, 'סיכום תנועות קבועות (חודשי)');
+  // Recurring summary (adjusted to range)
+  const hasRecurring = recurring.length > 0;
+  if (hasRecurring) {
+    const periodLabel = numMonths > 1 ? `לתקופה (${numMonths} חודשים)` : '(חודשי)';
+    addSectionHeader(ws, `סיכום תנועות קבועות ${periodLabel}`);
     addSummaryRow(ws, 'סה"כ הכנסות קבועות', recurringIncome, COLORS.green);
     addSummaryRow(ws, 'סה"כ הוצאות קבועות', recurringExpense, COLORS.red);
     addSummaryRow(ws, 'נטו קבוע', netRecurring, netRecurring >= 0 ? COLORS.green : COLORS.red, true);
 
     ws.addRow([]);
+  }
 
-    const totalCombinedIncome = totalIncome + recurringIncome;
-    const totalCombinedExpense = totalExpense + recurringExpense;
-    const netCombined = totalCombinedIncome - totalCombinedExpense;
-
-    addSectionHeader(ws, 'סיכום כולל (שוטפות + קבועות)');
-    addSummaryRow(ws, 'סה"כ הכנסות', totalCombinedIncome, COLORS.green);
-    addSummaryRow(ws, 'סה"כ הוצאות', totalCombinedExpense, COLORS.red);
-    addSummaryRow(ws, 'נטו כולל', netCombined, netCombined >= 0 ? COLORS.green : COLORS.red, true);
+  // Liability payments summary
+  if (totalLiabilityPayments > 0) {
+    const periodLabel = numMonths > 1 ? `לתקופה (${numMonths} חודשים)` : '(חודשי)';
+    addSectionHeader(ws, `תשלומי הלוואות ומשכנתא ${periodLabel}`);
+    addSummaryRow(ws, 'סה"כ תשלומי הלוואות', totalLiabilityPayments, COLORS.red, true);
 
     ws.addRow([]);
   }
+
+  // Combined summary
+  const totalCombinedIncome = totalIncome + recurringIncome;
+  const totalCombinedExpense = totalExpense + recurringExpense + totalLiabilityPayments;
+  const netCombined = totalCombinedIncome - totalCombinedExpense;
+
+  addSectionHeader(ws, 'סיכום כולל (שוטפות + קבועות + התחייבויות)');
+  addSummaryRow(ws, 'סה"כ הכנסות', totalCombinedIncome, COLORS.green);
+  addSummaryRow(ws, 'סה"כ הוצאות (כולל הלוואות)', totalCombinedExpense, COLORS.red);
+  addSummaryRow(ws, 'נטו כולל', netCombined, netCombined >= 0 ? COLORS.green : COLORS.red, true);
+
+  ws.addRow([]);
+
+  // Explanatory note
+  const noteRow = ws.addRow(['* הנטו הכולל כולל תנועות שוטפות, תנועות קבועות (לפי חודשים פעילים בטווח), ותשלומי הלוואות/משכנתא.']);
+  noteRow.font = { name: FONT_NAME, size: 9, italic: true, color: { argb: `FF${COLORS.grayMid}` } };
+  ws.mergeCells(noteRow.number, 1, noteRow.number, 2);
+
+  ws.addRow([]);
 
   // Category breakdowns
   const incomeByCategory = new Map<string, number>();

@@ -431,23 +431,28 @@ export async function aggregatePeriodicReportData(
   );
 
   // --- Financial Insights (Rules Engine) ---
+  // Feature flag: set to true to re-enable insights in the periodic PDF report
+  const PERIODIC_REPORT_INSIGHTS_ENABLED = false;
+
   let insights: import('@/lib/insights/types').FinancialInsight[] = [];
-  try {
-    const insightData = await aggregateFinancialDataForInsights(
-      userId,
-      dateRange,
-      {
-        totalIncome,
-        totalExpenses,
-        netCashflow,
-        fixedExpenses: fixedExpenseItems.reduce((s, i) => s + i.amount, 0),
-        totalAssets,
-        totalLiabilities,
-      }
-    );
-    insights = evaluateRules(insightData, financialRules);
-  } catch (err) {
-    console.error('[Insights Engine] Failed to generate insights:', err);
+  if (PERIODIC_REPORT_INSIGHTS_ENABLED) {
+    try {
+      const insightData = await aggregateFinancialDataForInsights(
+        userId,
+        dateRange,
+        {
+          totalIncome,
+          totalExpenses,
+          netCashflow,
+          fixedExpenses: fixedExpenseItems.reduce((s, i) => s + i.amount, 0),
+          totalAssets,
+          totalLiabilities,
+        }
+      );
+      insights = evaluateRules(insightData, financialRules);
+    } catch (err) {
+      console.error('[Insights Engine] Failed to generate insights:', err);
+    }
   }
 
   return {
