@@ -61,6 +61,7 @@ export default function BudgetCelebrationPlayer({
           compositionHeight={500}
           fps={ANIMATION_FPS}
           autoPlay
+          numberOfSharedAudioTags={0}
           style={{
             width: 400,
             height: 500,

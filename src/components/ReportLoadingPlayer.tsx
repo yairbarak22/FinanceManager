@@ -59,6 +59,7 @@ export default function ReportLoadingPlayer({
         compositionHeight={500}
         fps={ANIMATION_FPS}
         autoPlay
+        numberOfSharedAudioTags={0}
         style={{
           width: '100%',
           height: '100%',

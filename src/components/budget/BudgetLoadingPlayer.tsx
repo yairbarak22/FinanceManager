@@ -53,6 +53,7 @@ export default function BudgetLoadingPlayer({
         fps={ANIMATION_FPS}
         autoPlay
         loop
+        numberOfSharedAudioTags={0}
         style={{
           width: 400,
           height: 500,
