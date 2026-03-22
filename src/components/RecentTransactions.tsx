@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trash2, Receipt, Plus, Upload, CheckSquare, Square, X,
   ChevronDown, ChevronLeft, Check, Loader2, Filter, Search,
   Tag, Calculator, SlidersHorizontal, FileSpreadsheet, ArrowUpDown, Pencil, Phone, Repeat, MessageCircle,
+  EllipsisVertical,
 } from 'lucide-react';
 import ExportExcelModal from './modals/ExportExcelModal';
 import IvrReportModal from './modals/IvrReportModal';
@@ -28,6 +29,11 @@ const SORT_LABELS: Record<SortOption, string> = {
 
 const GRID_COLS = 'grid grid-cols-[minmax(110px,1.2fr)_minmax(130px,2fr)_88px_105px_24px]';
 const GRID_COLS_SELECT = 'grid grid-cols-[36px_minmax(110px,1.2fr)_minmax(130px,2fr)_88px_105px_24px]';
+
+const ACTIONS_MENU_WIDTH = 240;
+const ACTIONS_MENU_MARGIN = 8;
+/** Fallback before menu is mounted or when height cannot be read */
+const ACTIONS_MENU_EST_HEIGHT = 320;
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -106,6 +112,13 @@ export default function RecentTransactions({
   const sortDropdownRef = useRef<HTMLDivElement>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
+  // Actions overflow menu state
+  const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+  const [actionsMenuPos, setActionsMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const actionsMenuBtnRef = useRef<HTMLButtonElement>(null);
+  const actionsMenuRef = useRef<HTMLDivElement>(null);
+  const transactionsScrollRef = useRef<HTMLDivElement>(null);
+
   // Search & filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
@@ -170,6 +183,27 @@ export default function RecentTransactions({
   const quickAddTypeDropdownRef = useRef<HTMLDivElement>(null);
 
   /* ──────────────────────── Effects ──────────────────────── */
+
+  // Close actions menu on click outside or Escape
+  useEffect(() => {
+    if (!isActionsMenuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (actionsMenuRef.current && !actionsMenuRef.current.contains(t) &&
+          actionsMenuBtnRef.current && !actionsMenuBtnRef.current.contains(t)) {
+        setIsActionsMenuOpen(false);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsActionsMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [isActionsMenuOpen]);
 
   // Close sort dropdown on click outside
   useEffect(() => {
@@ -702,6 +736,44 @@ export default function RecentTransactions({
 
   /* ──────────────────────── Toolbar dropdown helpers ──────────────────────── */
 
+  const updateActionsMenuPosition = useCallback(() => {
+    const btn = actionsMenuBtnRef.current;
+    if (!btn) return;
+    const rect = btn.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const menuHeight = actionsMenuRef.current?.offsetHeight || ACTIONS_MENU_EST_HEIGHT;
+
+    let left = rect.right - ACTIONS_MENU_WIDTH;
+    left = Math.max(ACTIONS_MENU_MARGIN, Math.min(left, vw - ACTIONS_MENU_WIDTH - ACTIONS_MENU_MARGIN));
+
+    const spaceBelow = vh - rect.bottom - ACTIONS_MENU_MARGIN;
+    const spaceAbove = rect.top - ACTIONS_MENU_MARGIN;
+    let top: number;
+    if (menuHeight + ACTIONS_MENU_MARGIN <= spaceBelow) {
+      top = rect.bottom + ACTIONS_MENU_MARGIN;
+    } else if (menuHeight + ACTIONS_MENU_MARGIN <= spaceAbove) {
+      top = rect.top - menuHeight - ACTIONS_MENU_MARGIN;
+    } else {
+      top = Math.max(
+        ACTIONS_MENU_MARGIN,
+        Math.min(rect.bottom + ACTIONS_MENU_MARGIN, vh - menuHeight - ACTIONS_MENU_MARGIN),
+      );
+    }
+
+    setActionsMenuPos({ top, left });
+  }, []);
+
+  const handleToggleActionsMenu = useCallback(() => {
+    if (isActionsMenuOpen) {
+      setIsActionsMenuOpen(false);
+      setActionsMenuPos(null);
+    } else {
+      updateActionsMenuPosition();
+      setIsActionsMenuOpen(true);
+    }
+  }, [isActionsMenuOpen, updateActionsMenuPosition]);
+
   const handleToggleSortDropdown = useCallback(() => {
     if (!isSortOpen && sortButtonRef.current) {
       const rect = sortButtonRef.current.getBoundingClientRect();
@@ -717,6 +789,38 @@ export default function RecentTransactions({
     }
     setIsCategoryFilterOpen(prev => !prev);
   }, [isCategoryFilterOpen]);
+
+  // Reposition actions menu after mount (real height) and keep aligned on inner scroll / resize
+  useLayoutEffect(() => {
+    if (!isActionsMenuOpen) return;
+    updateActionsMenuPosition();
+  }, [isActionsMenuOpen, updateActionsMenuPosition]);
+
+  useEffect(() => {
+    if (!isActionsMenuOpen) return;
+    let raf = 0;
+    const scheduleUpdate = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => updateActionsMenuPosition());
+    };
+
+    const scrollEl = transactionsScrollRef.current;
+    scrollEl?.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+    const vv = window.visualViewport;
+    vv?.addEventListener('resize', scheduleUpdate);
+    vv?.addEventListener('scroll', scheduleUpdate);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      scrollEl?.removeEventListener('scroll', scheduleUpdate);
+      window.removeEventListener('scroll', scheduleUpdate);
+      window.removeEventListener('resize', scheduleUpdate);
+      vv?.removeEventListener('resize', scheduleUpdate);
+      vv?.removeEventListener('scroll', scheduleUpdate);
+    };
+  }, [isActionsMenuOpen, updateActionsMenuPosition]);
 
   /* ──────────────────────── Computed grid class ──────────────────────── */
 
@@ -1071,58 +1175,27 @@ export default function RecentTransactions({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          {isSelectMode ? (
-            <>
-              <button onClick={selectAll} className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: '#7E7F90' }}>
-                {selectedIds.size === filteredTransactions.length ? <CheckSquare className="w-4 h-4" strokeWidth={1.5} /> : <Square className="w-4 h-4" strokeWidth={1.5} />}
-                {selectedIds.size === filteredTransactions.length ? 'בטל הכל' : 'בחר הכל'}
-              </button>
-              <button onClick={toggleSelectMode} className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: '#7E7F90' }}>
-                <X className="w-4 h-4" strokeWidth={1.5} />
-                ביטול
-              </button>
-            </>
-          ) : (
-            <>
-              {transactions.length > 0 && onDeleteMultiple && (
-                <button onClick={toggleSelectMode} className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: '#7E7F90' }}>
-                  בחירה
-                  <CheckSquare className="w-4 h-4" strokeWidth={1.5} />
-                </button>
-              )}
-              {onOpenMaaserCalculator && (
-                <button onClick={onOpenMaaserCalculator} className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: '#7E7F90' }}>
-                  מעשרות
-                  <Calculator className="w-4 h-4" strokeWidth={1.5} />
-                </button>
-              )}
-              <button onClick={() => setIsIvrReportModalOpen(true)} className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: '#7E7F90' }}>
-                דיווח בשיחה
-                <Phone className="w-4 h-4" strokeWidth={1.5} />
-              </button>
-              <button onClick={() => setIsWhatsAppReportModalOpen(true)} className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: '#7E7F90' }}>
-                דיווח בווצאפ
-                <MessageCircle className="w-4 h-4" strokeWidth={1.5} />
-              </button>
-              <button onClick={() => setIsExportModalOpen(true)} className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: '#7E7F90' }}>
-                ייצוא
-                <FileSpreadsheet className="w-4 h-4" strokeWidth={1.5} />
-              </button>
-              <button id="btn-import-transactions" onClick={onImport} className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: '#7E7F90' }}>
-                ייבוא
-                <Upload className="w-4 h-4" strokeWidth={1.5} />
-              </button>
-            </>
-          )}
-        </div>
+        {isSelectMode ? (
+          <div className="flex items-center gap-3">
+            <button onClick={selectAll} className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: '#7E7F90' }}>
+              {selectedIds.size === filteredTransactions.length ? <CheckSquare className="w-4 h-4" strokeWidth={1.5} /> : <Square className="w-4 h-4" strokeWidth={1.5} />}
+              {selectedIds.size === filteredTransactions.length ? 'בטל הכל' : 'בחר הכל'}
+            </button>
+            <button onClick={toggleSelectMode} className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity" style={{ color: '#7E7F90' }}>
+              <X className="w-4 h-4" strokeWidth={1.5} />
+              ביטול
+            </button>
+          </div>
+        ) : (
+          <div className="w-10" />
+        )}
       </div>
 
       {/* ── Search & Filter Toolbar ── */}
-      {transactions.length > 0 && (
-        <div className="mb-3 flex-shrink-0 space-y-2">
-          <div className="flex items-center gap-2">
-            {/* Search */}
+      <div className="mb-3 flex-shrink-0 space-y-2">
+        <div className="flex items-center gap-2">
+          {/* Search — only when there are transactions */}
+          {transactions.length > 0 && (
             <div className="relative flex-1 min-w-0">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: '#BDBDCB' }} strokeWidth={1.75} />
               <input
@@ -1143,8 +1216,13 @@ export default function RecentTransactions({
                 </button>
               )}
             </div>
+          )}
 
-            {/* Category Filter Toggle */}
+          {/* When no transactions, push toolbar buttons to the left (end in RTL) */}
+          {transactions.length === 0 && <div className="flex-1" />}
+
+          {/* Category Filter Toggle — only when there are transactions */}
+          {transactions.length > 0 && (
             <button
               ref={categoryFilterBtnRef}
               onClick={handleToggleCategoryFilter}
@@ -1163,8 +1241,10 @@ export default function RecentTransactions({
                 </span>
               )}
             </button>
+          )}
 
-            {/* Sort Toggle */}
+          {/* Sort Toggle — only when there are transactions */}
+          {transactions.length > 0 && (
             <button
               ref={sortButtonRef}
               onClick={handleToggleSortDropdown}
@@ -1183,7 +1263,24 @@ export default function RecentTransactions({
                 </span>
               )}
             </button>
-          </div>
+          )}
+
+          {/* Actions Overflow Menu */}
+          <button
+            ref={actionsMenuBtnRef}
+            onClick={handleToggleActionsMenu}
+            className={cn('p-2.5 rounded-xl transition-all', 'hover:scale-[1.05] active:scale-[0.95]')}
+            style={{
+              border: isActionsMenuOpen ? '1px solid #69ADFF' : '1px solid #E8E8ED',
+              backgroundColor: isActionsMenuOpen ? 'rgba(105, 173, 255, 0.08)' : '#FFFFFF',
+            }}
+            aria-label="פעולות נוספות"
+            aria-haspopup="menu"
+            aria-expanded={isActionsMenuOpen}
+          >
+            <EllipsisVertical className="w-4 h-4" style={{ color: isActionsMenuOpen ? '#69ADFF' : '#7E7F90' }} strokeWidth={1.75} />
+          </button>
+        </div>
 
           {/* Active Filter Chips */}
           <AnimatePresence>
@@ -1223,8 +1320,7 @@ export default function RecentTransactions({
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
-      )}
+      </div>
 
       {/* ── Grid Table ── */}
       <div className="flex-1 min-h-0 flex flex-col">
@@ -1386,7 +1482,7 @@ export default function RecentTransactions({
         )}
 
         {/* Scrollable rows */}
-        <div className="overflow-y-auto flex-1 min-h-0 scrollbar-transactions scrollbar-edge-left scrollbar-fade-bottom">
+        <div ref={transactionsScrollRef} className="overflow-y-auto flex-1 min-h-0 scrollbar-transactions scrollbar-edge-left scrollbar-fade-bottom">
           {/* Grouped by category */}
           {sortBy === 'category' && groupedByCategory.length > 0 && (
             <div>
@@ -1529,6 +1625,125 @@ export default function RecentTransactions({
       />
 
       {/* ══════════ Portal-based Dropdowns ══════════ */}
+
+      {/* Actions Overflow Menu (portal) */}
+      {isActionsMenuOpen && actionsMenuPos && createPortal(
+        <div
+          ref={actionsMenuRef}
+          className="fixed rounded-2xl overflow-hidden"
+          style={{
+            top: actionsMenuPos.top,
+            left: actionsMenuPos.left,
+            width: ACTIONS_MENU_WIDTH,
+            zIndex: 10000,
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #E8E8ED',
+            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.04)',
+          }}
+          dir="rtl"
+          role="menu"
+        >
+          <div className="p-1.5">
+            <button
+              id="btn-import-transactions"
+              onClick={() => { setIsActionsMenuOpen(false); onImport(); }}
+              className="w-full px-3 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors"
+              style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif', color: '#303150' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F7F7F8'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+              role="menuitem"
+            >
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(105, 173, 255, 0.1)' }}>
+                <Upload className="w-4 h-4" style={{ color: '#69ADFF' }} strokeWidth={1.75} />
+              </div>
+              ייבוא עסקאות
+            </button>
+            <button
+              onClick={() => { setIsActionsMenuOpen(false); setIsExportModalOpen(true); }}
+              className="w-full px-3 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors"
+              style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif', color: '#303150' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F7F7F8'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+              role="menuitem"
+            >
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(105, 173, 255, 0.1)' }}>
+                <FileSpreadsheet className="w-4 h-4" style={{ color: '#69ADFF' }} strokeWidth={1.75} />
+              </div>
+              ייצוא לאקסל
+            </button>
+          </div>
+
+          <div className="mx-3" style={{ height: 1, backgroundColor: '#F0F0F4' }} />
+
+          <div className="p-1.5">
+            <button
+              onClick={() => { setIsActionsMenuOpen(false); setIsWhatsAppReportModalOpen(true); }}
+              className="w-full px-3 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors"
+              style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif', color: '#303150' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F7F7F8'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+              role="menuitem"
+            >
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(37, 211, 102, 0.1)' }}>
+                <MessageCircle className="w-4 h-4" style={{ color: '#25D366' }} strokeWidth={1.75} />
+              </div>
+              דיווח בווצאפ
+            </button>
+            <button
+              onClick={() => { setIsActionsMenuOpen(false); setIsIvrReportModalOpen(true); }}
+              className="w-full px-3 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors"
+              style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif', color: '#303150' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F7F7F8'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+              role="menuitem"
+            >
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(105, 173, 255, 0.1)' }}>
+                <Phone className="w-4 h-4" style={{ color: '#69ADFF' }} strokeWidth={1.75} />
+              </div>
+              דיווח בשיחה
+            </button>
+          </div>
+
+          {(onOpenMaaserCalculator || (transactions.length > 0 && onDeleteMultiple)) && (
+            <>
+              <div className="mx-3" style={{ height: 1, backgroundColor: '#F0F0F4' }} />
+              <div className="p-1.5">
+                {onOpenMaaserCalculator && (
+                  <button
+                    onClick={() => { setIsActionsMenuOpen(false); onOpenMaaserCalculator(); }}
+                    className="w-full px-3 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors"
+                    style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif', color: '#303150' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F7F7F8'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                    role="menuitem"
+                  >
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(241, 138, 181, 0.1)' }}>
+                      <Calculator className="w-4 h-4" style={{ color: '#F18AB5' }} strokeWidth={1.75} />
+                    </div>
+                    מעשרות
+                  </button>
+                )}
+                {transactions.length > 0 && onDeleteMultiple && (
+                  <button
+                    onClick={() => { setIsActionsMenuOpen(false); toggleSelectMode(); }}
+                    className="w-full px-3 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors"
+                    style={{ fontFamily: 'var(--font-nunito), system-ui, sans-serif', color: '#303150' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F7F7F8'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                    role="menuitem"
+                  >
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(105, 173, 255, 0.1)' }}>
+                      <CheckSquare className="w-4 h-4" style={{ color: '#69ADFF' }} strokeWidth={1.75} />
+                    </div>
+                    בחירת עסקאות
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>,
+        document.body,
+      )}
 
       {/* Category Filter Dropdown (portal) */}
       {isCategoryFilterOpen && categoryFilterPos && createPortal(
