@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, MessageCircle, Copy, Check, ExternalLink, Shield, Settings } from 'lucide-react';
 
-const WA_NUMBER_RAW = '18147079903';
-const WA_NUMBER_DISPLAY = '+1 (814) 707-9903';
+const WA_NUMBER_RAW = '18392616193';
+const WA_NUMBER_DISPLAY = '+1 (839) 261-6193';
 const WA_LINK = `https://wa.me/${WA_NUMBER_RAW}`;
 
 interface WhatsAppReportModalProps {
@@ -111,7 +111,7 @@ export default function WhatsAppReportModal({ isOpen, onClose, onOpenIvrSettings
                   שלב 3
                 </p>
                 <p className="text-sm" style={{ color: '#303150' }}>
-                  העסקה תיקלט אוטומטית במערכת תוך מספר שניות.
+                  הרישום יתעדכן בטבלת התקציב שלך תוך שניות.
                 </p>
               </div>
             </div>
@@ -132,7 +132,7 @@ export default function WhatsAppReportModal({ isOpen, onClose, onOpenIvrSettings
               </p>
               <div className="space-y-1.5">
                 <p className="text-xs" style={{ color: '#7E7F90' }}>
-                  • <strong style={{ color: '#303150' }}>הוצאה</strong> – סוג הפעולה (הוצאה או הכנסה)
+                  • <strong style={{ color: '#303150' }}>הוצאה</strong> – סוג הרישום (הוצאה או הכנסה)
                 </p>
                 <p className="text-xs" style={{ color: '#7E7F90' }}>
                   • <strong style={{ color: '#303150' }}>מזון</strong> – הקטגוריה
@@ -162,7 +162,7 @@ export default function WhatsAppReportModal({ isOpen, onClose, onOpenIvrSettings
               <Shield className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: '#7E7F90' }} strokeWidth={1.5} />
               <div>
                 <p className="text-xs leading-relaxed" style={{ color: '#7E7F90' }}>
-                  הדיווח מתאפשר רק מ<strong style={{ color: '#303150' }}>מספרי הטלפון המורשים</strong> (עד 3) ובעזרת <strong style={{ color: '#303150' }}>הקוד הסודי</strong> שהגדרתם.
+                  הדיווח מתאפשר רק מ<strong style={{ color: '#303150' }}>מספרי הטלפון המורשים</strong> (עד 3) ובעזרת <strong style={{ color: '#303150' }}>קוד האימות</strong> שהגדרתם.
                 </p>
                 {onOpenIvrSettings && (
                   <button
@@ -172,7 +172,7 @@ export default function WhatsAppReportModal({ isOpen, onClose, onOpenIvrSettings
                     style={{ color: '#69ADFF' }}
                   >
                     <Settings className="w-3 h-3" strokeWidth={1.75} />
-                    הגדרת מספרים וקוד סודי
+                    הגדרת מספרים וקוד אימות
                   </button>
                 )}
               </div>

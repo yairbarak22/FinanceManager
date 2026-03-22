@@ -81,8 +81,8 @@ async function checkAndHandleMonthlyLimit(userId: string): Promise<{
     allowed: false,
     shouldRespond: true,
     message:
-      `⚠️ הגעת למגבלה של ${MONTHLY_WHATSAPP_LIMIT} דיווחים בחודש זה.\n` +
-      "ניתן לדווח מהאפליקציה ללא הגבלה.",
+      `⚠️ הגעת למגבלה של ${MONTHLY_WHATSAPP_LIMIT} עדכונים בחודש זה.\n` +
+      "ניתן לעדכן את התקציב דרך האפליקציה ללא הגבלה.",
   };
 }
 
@@ -180,7 +180,7 @@ async function handleNewReport(
   } else {
     await consumeInvalidAttempt(phoneNumber);
     return respondTwiml(
-      '⚠️ סוג הפעולה חייב להיות "הוצאה" או "הכנסה".'
+      '⚠️ יש לציין "הוצאה" או "הכנסה" בתחילת ההודעה.'
     );
   }
 
@@ -224,8 +224,8 @@ async function handleNewReport(
   );
 
   return respondTwiml(
-    `🔒 היי! זיהיתי דיווח ${typeLabel} עבור ${business.trim()} על סך ${amount} ₪.\n\n` +
-      "לאישור, אנא הקלד את קוד ה-PIN שלך (4 ספרות):"
+    `היי! זיהיתי דיווח ${typeLabel} עבור ${business.trim()} על סך ${amount} ₪.\n\n` +
+      "כדי לשמור את העדכון, הקלד את קוד האימות שלך (4 ספרות) 🔒"
   );
 }
 
@@ -240,14 +240,14 @@ async function handlePinConfirmation(
   if (!ivrPinRecord) {
     await prisma.whatsappSession.delete({ where: { phoneNumber } });
     return respondTwiml(
-      "⚠️ מספר הטלפון אינו רשום במערכת. יש להירשם דרך האפליקציה ולהגדיר PIN."
+      "⚠️ מספר הטלפון לא מקושר לאפליקציה. יש להירשם ולהגדיר קוד אימות דרך האפליקציה."
     );
   }
 
   const isValid = await bcrypt.compare(pin.trim(), ivrPinRecord.hashedPin);
   if (!isValid) {
     await consumeInvalidAttempt(phoneNumber);
-    return respondTwiml("❌ הקוד שגוי, אנא נסה שוב.");
+    return respondTwiml("❌ קוד האימות שגוי, נסה שוב.");
   }
 
   const userId = ivrPinRecord.user.id;
@@ -296,8 +296,9 @@ async function handlePinConfirmation(
       `category=${categoryId}, amount=${session.amount}, business=${session.business}`
   );
 
+  const typeLabel = session.type === 1 ? "ההוצאה" : "ההכנסה";
   return respondTwiml(
-    `✅ מעולה! הפעולה ${session.business} על סך ${session.amount} ₪ נרשמה בהצלחה במערכת.`
+    `מעולה ✅ ${typeLabel} עבור ${session.business} (${session.amount} ₪) עודכנה בהצלחה בטבלת התקציב שלך.`
   );
 }
 
