@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import twilio from "twilio";
 import { prisma } from "@/lib/prisma";
-import { findUserByPhone } from "@/lib/ivr/helpers";
+import { findUserByPhone, normalizePhone } from "@/lib/ivr/helpers";
 import { matchCategory } from "@/lib/ivr/helpers";
 import {
   expenseCategories,
@@ -30,11 +30,7 @@ function respondEmpty(): NextResponse {
 }
 
 function parseWhatsappPhone(from: string): string {
-  const phone = from.replace("whatsapp:", "");
-  if (phone.startsWith("+972")) {
-    return "0" + phone.slice(4);
-  }
-  return phone;
+  return normalizePhone(from);
 }
 
 // ─── Twilio signature validation ──────────────────────────────────

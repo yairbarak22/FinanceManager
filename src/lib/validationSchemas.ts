@@ -267,7 +267,7 @@ export const updateAdminTransactionSchema = z.object({
 
 export const ivrPinSchema = z.object({
   pin: z.string().regex(/^\d{4}$/, 'PIN חייב להיות 4 ספרות'),
-  phoneNumber: z.string().min(9).max(15),
+  phoneNumbers: z.array(z.string().min(9).max(15)).min(1, 'יש להזין לפחות מספר טלפון אחד').max(3, 'ניתן להוסיף עד 3 מספרים'),
 });
 
 // --- Invite schemas ---

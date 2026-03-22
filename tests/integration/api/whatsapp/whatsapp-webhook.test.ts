@@ -13,12 +13,15 @@ vi.mock('@/lib/prisma', () => ({
       upsert: vi.fn().mockResolvedValue({ id: 'session-1' }),
       delete: vi.fn(),
     },
-    ivrPin: {
-      findFirst: vi.fn(),
+    reportingPhone: {
       findUnique: vi.fn(),
     },
     transaction: {
       create: vi.fn().mockResolvedValue({ id: 'tx-1' }),
+    },
+    whatsappMonthlyUsage: {
+      upsert: vi.fn().mockResolvedValue({ id: 'usage-1', count: 0 }),
+      update: vi.fn(),
     },
   },
 }));
@@ -169,19 +172,21 @@ describe('WhatsApp Webhook — Flow 2: PIN Confirmation', () => {
     createdAt: new Date(),
   };
 
-  const ivrPinRecord = {
-    id: 'pin-1',
+  const reportingPhoneRecord = {
+    id: 'rp-1',
     userId: 'user-1',
-    hashedPin: 'hashed-pin',
     phoneNumber: '0501234567',
     createdAt: new Date(),
-    updatedAt: new Date(),
-    user: { id: 'user-1', signupSource: null },
+    user: {
+      id: 'user-1',
+      signupSource: null,
+      ivrPin: { hashedPin: 'hashed-pin' },
+    },
   };
 
   it('should create transaction on valid PIN', async () => {
     mockPrisma.whatsappSession.findUnique.mockResolvedValue(pendingSession as never);
-    mockPrisma.ivrPin.findFirst.mockResolvedValue(ivrPinRecord as never);
+    mockPrisma.reportingPhone.findUnique.mockResolvedValue(reportingPhoneRecord as never);
     mockBcrypt.compare.mockResolvedValue(true as never);
 
     const res = await POST(makeRequest({
@@ -209,7 +214,7 @@ describe('WhatsApp Webhook — Flow 2: PIN Confirmation', () => {
 
   it('should reject wrong PIN', async () => {
     mockPrisma.whatsappSession.findUnique.mockResolvedValue(pendingSession as never);
-    mockPrisma.ivrPin.findFirst.mockResolvedValue(ivrPinRecord as never);
+    mockPrisma.reportingPhone.findUnique.mockResolvedValue(reportingPhoneRecord as never);
     mockBcrypt.compare.mockResolvedValue(false as never);
 
     await POST(makeRequest({
@@ -223,7 +228,7 @@ describe('WhatsApp Webhook — Flow 2: PIN Confirmation', () => {
 
   it('should handle unregistered phone number', async () => {
     mockPrisma.whatsappSession.findUnique.mockResolvedValue(pendingSession as never);
-    mockPrisma.ivrPin.findFirst.mockResolvedValue(null);
+    mockPrisma.reportingPhone.findUnique.mockResolvedValue(null);
 
     await POST(makeRequest({
       From: 'whatsapp:+972501234567',
@@ -239,7 +244,7 @@ describe('WhatsApp Webhook — Flow 2: PIN Confirmation', () => {
   it('income transaction should map correctly', async () => {
     const incomeSession = { ...pendingSession, type: 2, category: 'משכורת', business: 'חברה' };
     mockPrisma.whatsappSession.findUnique.mockResolvedValue(incomeSession as never);
-    mockPrisma.ivrPin.findFirst.mockResolvedValue(ivrPinRecord as never);
+    mockPrisma.reportingPhone.findUnique.mockResolvedValue(reportingPhoneRecord as never);
     mockBcrypt.compare.mockResolvedValue(true as never);
 
     await POST(makeRequest({

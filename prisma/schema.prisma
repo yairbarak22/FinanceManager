@@ -55,6 +55,7 @@ model User {
   passoverSections      PassoverSection[]       // Passover budget planning sections
   ivrCallSessions       IvrCallSession[]       // IVR phone-based expense reports
   ivrPin                IvrPin?                // PIN for IVR authentication
+  reportingPhones       ReportingPhone[]       // Up to 3 phone numbers for IVR/WhatsApp reporting
   whatsappMonthlyUsages WhatsappMonthlyUsage[]
 }
 
@@ -896,15 +897,22 @@ model IvrCallSession {
 }
 
 model IvrPin {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  hashedPin String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ReportingPhone {
   id          String   @id @default(cuid())
-  userId      String   @unique
-  hashedPin   String
-  phoneNumber String
+  userId      String
+  phoneNumber String   @unique
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([phoneNumber])
+  @@index([userId])
 }
 
 // ============================================

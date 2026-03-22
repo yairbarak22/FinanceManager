@@ -90,7 +90,7 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
       );
 
       const ivrPinRecord = await findUserByPhone(apiPhone);
-      if (!ivrPinRecord || ivrPinRecord.phoneNumber !== apiPhone) {
+      if (!ivrPinRecord) {
         console.log(
           `[IVR] Phone ${apiPhone} not found (${Date.now() - dbStart}ms)`
         );

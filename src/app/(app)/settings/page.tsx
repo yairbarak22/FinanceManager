@@ -470,7 +470,7 @@ export default function SettingsPage() {
                     className="text-xs mt-1 mb-5"
                     style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
                   >
-                    הגדרת קוד לדיווח הוצאות דרך שיחה טלפונית
+                    הגדרת קוד ומספרי טלפון מורשים לדיווח הוצאות
                   </p>
 
                   <IvrPinSettings />

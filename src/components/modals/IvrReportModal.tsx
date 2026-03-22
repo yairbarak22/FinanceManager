@@ -11,7 +11,7 @@ const IVR_PHONE_DISPLAY = process.env.NEXT_PUBLIC_IVR_PHONE_NUMBER || '077-252-2
 
 interface IvrPinData {
   hasPin: boolean;
-  phoneNumber: string | null;
+  phoneNumbers: string[];
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -65,7 +65,7 @@ export default function IvrReportModal({ isOpen, onClose, onSuccess }: IvrReport
       if (res.ok) {
         const d: IvrPinData = await res.json();
         setData(d);
-        const phone = d.phoneNumber ?? '';
+        const phone = d.phoneNumbers?.[0] ?? '';
         setPhoneNumber(phone);
         setInitialPhone(phone);
       }
@@ -93,7 +93,7 @@ export default function IvrReportModal({ isOpen, onClose, onSuccess }: IvrReport
       const res = await apiFetch('/api/ivr/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin, phoneNumber }),
+        body: JSON.stringify({ pin, phoneNumbers: [phoneNumber] }),
       });
 
       if (!res.ok) {
@@ -255,7 +255,7 @@ export default function IvrReportModal({ isOpen, onClose, onSuccess }: IvrReport
                   />
                   <p className="text-xs mt-1.5 flex items-center gap-1" style={{ color: '#7E7F90' }}>
                     <Shield className="w-3 h-3" strokeWidth={1.5} />
-                    המערכת תאשר פעולות רק משיחות שיוצאות ממספר זה
+                    המערכת תאשר פעולות רק ממספרים מורשים (ניתן להוסיף עד 3 בהגדרות)
                   </p>
                 </div>
 

@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, Check, Trash2, Eye, EyeOff, Save } from 'lucide-react';
+import { Loader2, Check, Trash2, Eye, EyeOff, Save, Plus, X } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
+
+const MAX_PHONES = 3;
 
 interface IvrPinData {
   hasPin: boolean;
-  phoneNumber: string | null;
+  phoneNumbers: string[];
   createdAt: string | null;
   updatedAt: string | null;
 }
@@ -17,7 +19,7 @@ export default function IvrPinSettings() {
   const [data, setData] = useState<IvrPinData | null>(null);
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumbers, setPhoneNumbers] = useState<string[]>(['']);
   const [showPin, setShowPin] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -31,15 +33,34 @@ export default function IvrPinSettings() {
       setLoading(true);
       const res = await apiFetch('/api/ivr/pin');
       if (res.ok) {
-        const d = await res.json();
+        const d: IvrPinData = await res.json();
         setData(d);
-        if (d.phoneNumber) setPhoneNumber(d.phoneNumber);
+        if (d.phoneNumbers.length > 0) {
+          setPhoneNumbers(d.phoneNumbers);
+        }
       }
     } catch {
       setError('שגיאה בטעינת נתונים');
     } finally {
       setLoading(false);
     }
+  };
+
+  const updatePhone = (index: number, value: string) => {
+    const updated = [...phoneNumbers];
+    updated[index] = value.replace(/\D/g, '');
+    setPhoneNumbers(updated);
+  };
+
+  const addPhone = () => {
+    if (phoneNumbers.length < MAX_PHONES) {
+      setPhoneNumbers([...phoneNumbers, '']);
+    }
+  };
+
+  const removePhone = (index: number) => {
+    if (phoneNumbers.length <= 1) return;
+    setPhoneNumbers(phoneNumbers.filter((_, i) => i !== index));
   };
 
   const handleSave = async () => {
@@ -54,8 +75,16 @@ export default function IvrPinSettings() {
       setError('הקודות אינם תואמים');
       return;
     }
-    if (!phoneNumber || phoneNumber.length < 9) {
-      setError('מספר טלפון לא תקין');
+
+    const validPhones = phoneNumbers.filter((p) => p.length >= 9);
+    if (validPhones.length === 0) {
+      setError('יש להזין לפחות מספר טלפון אחד תקין');
+      return;
+    }
+
+    const uniquePhones = [...new Set(validPhones)];
+    if (uniquePhones.length < validPhones.length) {
+      setError('מספרי טלפון חייבים להיות שונים זה מזה');
       return;
     }
 
@@ -64,7 +93,7 @@ export default function IvrPinSettings() {
       const res = await apiFetch('/api/ivr/pin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin, phoneNumber }),
+        body: JSON.stringify({ pin, phoneNumbers: validPhones }),
       });
 
       if (!res.ok) {
@@ -85,15 +114,15 @@ export default function IvrPinSettings() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('האם אתה בטוח שברצונך למחוק את הקוד?')) return;
+    if (!confirm('האם אתה בטוח שברצונך למחוק את הקוד ואת כל מספרי הטלפון המורשים?')) return;
 
     try {
       setSaving(true);
       const res = await apiFetch('/api/ivr/pin', { method: 'DELETE' });
       if (res.ok) {
         setSuccess('הקוד נמחק');
-        setData({ hasPin: false, phoneNumber: null, createdAt: null, updatedAt: null });
-        setPhoneNumber('');
+        setData({ hasPin: false, phoneNumbers: [], createdAt: null, updatedAt: null });
+        setPhoneNumbers(['']);
       }
     } catch {
       setError('שגיאה במחיקה');
@@ -116,21 +145,39 @@ export default function IvrPinSettings() {
         className="text-xs"
         style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
       >
-        הגדר קוד סודי ומספר טלפון לדיווח הוצאות דרך שיחה טלפונית.
+        הגדירו קוד סודי אחד ועד {MAX_PHONES} מספרי טלפון לדיווח הוצאות, כך שמספר בני משפחה יוכלו לדווח לאותו חשבון.
       </p>
 
-      {data?.hasPin && (
+      {data?.hasPin && data.phoneNumbers.length > 0 && (
         <div
-          className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
+          className="px-3 py-2.5 rounded-xl space-y-1"
           style={{ background: 'rgba(13, 186, 204, 0.08)', border: '1px solid rgba(13, 186, 204, 0.15)' }}
         >
-          <Check className="w-4 h-4" style={{ color: '#0DBACC' }} strokeWidth={2.5} />
-          <span
-            className="text-xs font-medium"
-            style={{ color: '#0DBACC', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-          >
-            קוד מוגדר למספר {data.phoneNumber}
-          </span>
+          <div className="flex items-center gap-2">
+            <Check className="w-4 h-4 shrink-0" style={{ color: '#0DBACC' }} strokeWidth={2.5} />
+            <span
+              className="text-xs font-medium"
+              style={{ color: '#0DBACC', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+            >
+              קוד מוגדר ל-{data.phoneNumbers.length} {data.phoneNumbers.length === 1 ? 'מספר' : 'מספרים'}
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-1.5 ps-6">
+            {data.phoneNumbers.map((phone) => (
+              <span
+                key={phone}
+                className="text-xs px-2 py-0.5 rounded-lg"
+                dir="ltr"
+                style={{
+                  background: 'rgba(13, 186, 204, 0.1)',
+                  color: '#0DBACC',
+                  fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                }}
+              >
+                {phone}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
@@ -162,17 +209,46 @@ export default function IvrPinSettings() {
       )}
 
       <div className="space-y-3">
-        <div>
-          <label className="label">מספר טלפון</label>
-          <input
-            type="tel"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
-            placeholder="0501234567"
-            className="input text-sm"
-            dir="ltr"
-            maxLength={15}
-          />
+        <div className="space-y-2">
+          <label className="label">מספרי טלפון מורשים (עד {MAX_PHONES})</label>
+          {phoneNumbers.map((phone, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => updatePhone(index, e.target.value)}
+                placeholder={`מספר ${index + 1} — 0501234567`}
+                className="input text-sm flex-1"
+                dir="ltr"
+                maxLength={15}
+              />
+              {phoneNumbers.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removePhone(index)}
+                  className="p-1.5 rounded-lg transition-colors shrink-0"
+                  style={{ color: '#BDBDCB' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = '#F18AB5'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = '#BDBDCB'; }}
+                >
+                  <X className="w-4 h-4" strokeWidth={1.75} />
+                </button>
+              )}
+            </div>
+          ))}
+          {phoneNumbers.length < MAX_PHONES && (
+            <button
+              type="button"
+              onClick={addPhone}
+              className="flex items-center gap-1.5 text-xs font-medium py-1 transition-colors"
+              style={{ color: '#69ADFF', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+              onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.8'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+            >
+              <Plus className="w-3.5 h-3.5" strokeWidth={2} />
+              הוסף מספר
+            </button>
+          )}
         </div>
 
         <div>
@@ -222,7 +298,7 @@ export default function IvrPinSettings() {
         <button
           type="button"
           onClick={handleSave}
-          disabled={saving || !pin || !confirmPin || !phoneNumber}
+          disabled={saving || !pin || !confirmPin || phoneNumbers.every((p) => p.length < 9)}
           className="btn-primary flex items-center gap-2"
         >
           {saving ? (
@@ -244,7 +320,7 @@ export default function IvrPinSettings() {
             style={{ color: '#F18AB5' }}
             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(241, 138, 181, 0.1)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
-            title="מחק קוד"
+            title="מחק קוד וכל המספרים"
           >
             <Trash2 className="w-4 h-4" />
           </button>

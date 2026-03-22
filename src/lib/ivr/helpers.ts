@@ -7,13 +7,39 @@ import {
 } from '@/lib/categories';
 
 const BCRYPT_ROUNDS = 10;
+export const MAX_REPORTING_PHONES = 3;
+
+/**
+ * Normalize any phone string to the local Israeli format used in the DB
+ * (e.g. "0501234567"). Handles +972, whatsapp: prefix, dashes/spaces.
+ */
+export function normalizePhone(raw: string): string {
+  let phone = raw.replace(/^whatsapp:/i, '').trim();
+  phone = phone.replace(/[\s\-()]/g, '');
+  if (phone.startsWith('+972')) {
+    phone = '0' + phone.slice(4);
+  }
+  return phone;
+}
 
 export async function findUserByPhone(phoneNumber: string) {
-  const ivrPin = await prisma.ivrPin.findFirst({
-    where: { phoneNumber },
-    include: { user: { select: { id: true, signupSource: true } } },
+  const reportingPhone = await prisma.reportingPhone.findUnique({
+    where: { phoneNumber: normalizePhone(phoneNumber) },
+    include: {
+      user: {
+        select: {
+          id: true,
+          signupSource: true,
+          ivrPin: { select: { hashedPin: true } },
+        },
+      },
+    },
   });
-  return ivrPin;
+  if (!reportingPhone || !reportingPhone.user.ivrPin) return null;
+  return {
+    hashedPin: reportingPhone.user.ivrPin.hashedPin,
+    user: { id: reportingPhone.user.id, signupSource: reportingPhone.user.signupSource },
+  };
 }
 
 export async function hashPin(pin: string): Promise<string> {

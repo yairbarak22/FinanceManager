@@ -8,8 +8,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
+    reportingPhone: {
+      findUnique: vi.fn(),
+    },
     ivrPin: {
-      findFirst: vi.fn(),
       findUnique: vi.fn(),
     },
     ivrCallSession: {
@@ -48,21 +50,22 @@ function makeRequest(params: Record<string, string>) {
   return new NextRequest(url);
 }
 
-const validPinRecord = {
-  id: 'pin-1',
+const validReportingPhone = {
+  id: 'rp-1',
   userId: 'user-1',
-  hashedPin: 'hashed',
   phoneNumber: '0501234567',
   createdAt: new Date(),
-  updatedAt: new Date(),
-  user: { id: 'user-1', signupSource: null },
+  user: {
+    id: 'user-1',
+    signupSource: null,
+    ivrPin: { hashedPin: 'hashed' },
+  },
 } as never;
 
 const validPinUnique = {
   id: 'pin-1',
   userId: 'user-1',
   hashedPin: 'hashed',
-  phoneNumber: '0501234567',
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -100,7 +103,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   // State 1: Validate PIN
   // =====================
   it('State 1: should reject unknown phone with 052 and hangup', async () => {
-    mockPrisma.ivrPin.findFirst.mockResolvedValue(null);
+    mockPrisma.reportingPhone.findUnique.mockResolvedValue(null);
 
     const res = await GET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
     const text = await res.text();
@@ -109,7 +112,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   });
 
   it('State 1: should reject wrong PIN with 052 and hangup', async () => {
-    mockPrisma.ivrPin.findFirst.mockResolvedValue(validPinRecord);
+    mockPrisma.reportingPhone.findUnique.mockResolvedValue(validReportingPhone);
     mockPrisma.ivrPin.findUnique.mockResolvedValue(validPinUnique);
     mockBcrypt.compare.mockResolvedValue(false as never);
 
@@ -120,7 +123,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   });
 
   it('State 1: should accept valid PIN, create session, and ask TxType (M1799)', async () => {
-    mockPrisma.ivrPin.findFirst.mockResolvedValue(validPinRecord);
+    mockPrisma.reportingPhone.findUnique.mockResolvedValue(validReportingPhone);
     mockPrisma.ivrPin.findUnique.mockResolvedValue(validPinUnique);
     mockBcrypt.compare.mockResolvedValue(true as never);
     mockPrisma.ivrCallSession.findFirst.mockResolvedValue(null);
@@ -348,7 +351,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   });
 
   it('TxType read should restrict to digits 1 and 2', async () => {
-    mockPrisma.ivrPin.findFirst.mockResolvedValue(validPinRecord);
+    mockPrisma.reportingPhone.findUnique.mockResolvedValue(validReportingPhone);
     mockPrisma.ivrPin.findUnique.mockResolvedValue(validPinUnique);
     mockBcrypt.compare.mockResolvedValue(true as never);
     mockPrisma.ivrCallSession.findFirst.mockResolvedValue(null);

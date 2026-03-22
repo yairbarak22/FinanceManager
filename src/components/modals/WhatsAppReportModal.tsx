@@ -162,7 +162,7 @@ export default function WhatsAppReportModal({ isOpen, onClose, onOpenIvrSettings
               <Shield className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: '#7E7F90' }} strokeWidth={1.5} />
               <div>
                 <p className="text-xs leading-relaxed" style={{ color: '#7E7F90' }}>
-                  הדיווח מתאפשר רק מ<strong style={{ color: '#303150' }}>מספר הטלפון הרשום</strong> ובעזרת <strong style={{ color: '#303150' }}>הקוד הסודי</strong> שהגדרתם.
+                  הדיווח מתאפשר רק מ<strong style={{ color: '#303150' }}>מספרי הטלפון המורשים</strong> (עד 3) ובעזרת <strong style={{ color: '#303150' }}>הקוד הסודי</strong> שהגדרתם.
                 </p>
                 {onOpenIvrSettings && (
                   <button
@@ -172,7 +172,7 @@ export default function WhatsAppReportModal({ isOpen, onClose, onOpenIvrSettings
                     style={{ color: '#69ADFF' }}
                   >
                     <Settings className="w-3 h-3" strokeWidth={1.75} />
-                    הגדרת מספר וקוד סודי
+                    הגדרת מספרים וקוד סודי
                   </button>
                 )}
               </div>
