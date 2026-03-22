@@ -148,6 +148,21 @@ export async function middleware(request: NextRequest) {
     secret: appConfig.nextAuthSecret,
   });
 
+  // Invite pages: public (both anonymous and authenticated users can visit),
+  // but need CSP nonce for hydration and CSRF cookie for the accept POST.
+  if (pathname.startsWith('/invite')) {
+    response = nextWithCsp(request);
+    if (source && !request.cookies.get(SIGNUP_SOURCE_COOKIE)) {
+      response.cookies.set(SIGNUP_SOURCE_COOKIE, source, {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,
+        sameSite: 'lax',
+      });
+    }
+    attachCsrfCookie(response, request, !!token);
+    return response;
+  }
+
   // /login redirects: authenticated → dashboard, unauthenticated → landing page
   if (pathname === '/login') {
     const target = token ? '/dashboard' : '/';
@@ -175,6 +190,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Landing page: unauthenticated users see it, authenticated users go to dashboard
+  // (or to a safe callbackUrl if present, e.g. after invite OAuth flow)
   if (pathname === '/') {
     if (!token) {
       response = nextWithCsp(request);
@@ -187,7 +203,11 @@ export async function middleware(request: NextRequest) {
       }
       return response;
     } else {
-      response = NextResponse.redirect(new URL('/dashboard', request.url));
+      const callbackUrl = request.nextUrl.searchParams.get('callbackUrl');
+      const target = callbackUrl && isSafePostLoginPath(callbackUrl)
+        ? callbackUrl
+        : '/dashboard';
+      response = NextResponse.redirect(new URL(target, request.url));
       attachCspToRedirect(response);
       if (source) {
         response.cookies.set(SIGNUP_SOURCE_COOKIE, source, {
@@ -322,16 +342,15 @@ export async function middleware(request: NextRequest) {
 }
 
 // Protect all routes except:
-// - /invite/* (invite pages - handle their own auth)
 // - /api/auth/* (NextAuth routes)
 // - /_next/* (Next.js internals)
 // - /favicon.ico, /images/* (static assets)
 // NOTE: /login is NOT excluded — middleware handles it (source cookie + redirect)
+// NOTE: /invite/* IS included — middleware provides CSP nonce + CSRF cookie, then early-returns
 export const config = {
   matcher: [
     /*
      * Match all request paths except:
-     * - /invite/* (invite pages - handle their own auth)
      * - /api/auth (NextAuth.js authentication routes)
      * - /api/webhook/receive, /api/webhooks/resend (webhook endpoints - verify signatures themselves)
      * - /api/cron/* (cron jobs - authenticate via CRON_SECRET query param)
@@ -339,6 +358,6 @@ export const config = {
      * - /_next/image (image optimization)
      * - /favicon.ico, /images, /screenshots, /videos (static assets)
      */
-    '/((?!invite|api/auth|api/webhook|api/cron|api/csp-report|api/marketing/unsubscribe|_next/static|_next/image|favicon.ico|images|screenshots|videos).*)',
+    '/((?!api/auth|api/webhook|api/cron|api/csp-report|api/marketing/unsubscribe|_next/static|_next/image|favicon.ico|images|screenshots|videos).*)',
   ],
 };
