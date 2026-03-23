@@ -8,7 +8,7 @@ import {
   incomeCategories,
 } from "@/lib/categories";
 import bcrypt from "bcryptjs";
-import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit";
+import { checkRateLimit, getRateLimitRemaining, RATE_LIMITS } from "@/lib/rateLimit";
 
 const MONTHLY_WHATSAPP_LIMIT = 30;
 
@@ -127,11 +127,12 @@ async function handleWhatsapp(request: NextRequest): Promise<NextResponse> {
   }
 
   // Layer 4: Circuit breaker — blocked after 5 invalid messages in 24h
-  const invalidResult = await checkRateLimit(
+  // Read-only check; only consumeInvalidAttempt() increments this counter.
+  const invalidRemaining = await getRateLimitRemaining(
     `wa_invalid:${phoneNumber}`,
     RATE_LIMITS.whatsappInvalid
   );
-  if (!invalidResult.success) {
+  if (invalidRemaining <= 0) {
     return respondEmpty();
   }
 

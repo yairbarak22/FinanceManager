@@ -35,6 +35,7 @@ vi.mock('bcryptjs', () => ({
 
 vi.mock('@/lib/rateLimit', () => ({
   checkRateLimit: vi.fn().mockResolvedValue({ success: true, limit: 15, remaining: 14, resetTime: Date.now() + 60000 }),
+  getRateLimitRemaining: vi.fn().mockResolvedValue(5),
   RATE_LIMITS: { whatsapp: { maxRequests: 15, windowSeconds: 60 } },
 }));
 

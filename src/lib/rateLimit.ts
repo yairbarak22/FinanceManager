@@ -280,6 +280,52 @@ function checkRateLimitInMemory(
 }
 
 // ============================================================================
+// READ-ONLY RATE LIMIT CHECK (no increment)
+// ============================================================================
+
+function findLimiter(rateLimitConfig: RateLimitConfig): Ratelimit | null {
+  if (!rateLimiters) return null;
+
+  let presetType = Object.entries(RATE_LIMITS).find(
+    ([_, cfg]) => cfg.maxRequests === rateLimitConfig.maxRequests &&
+                  cfg.windowSeconds === rateLimitConfig.windowSeconds
+  )?.[0];
+
+  if (!presetType) {
+    const ipMatch = Object.entries(IP_RATE_LIMITS).find(
+      ([_, cfg]) => cfg.maxRequests === rateLimitConfig.maxRequests &&
+                    cfg.windowSeconds === rateLimitConfig.windowSeconds
+    )?.[0];
+    if (ipMatch) presetType = `ip_${ipMatch}`;
+  }
+
+  return presetType ? rateLimiters.get(presetType) ?? null : null;
+}
+
+/**
+ * Read-only check: returns remaining quota without consuming a slot.
+ * Use when you need to gate on a counter that is incremented elsewhere.
+ */
+export async function getRateLimitRemaining(
+  identifier: string,
+  rateLimitConfig: RateLimitConfig
+): Promise<number> {
+  if (isUpstashAvailable) {
+    const limiter = findLimiter(rateLimitConfig);
+    if (limiter) {
+      return await limiter.getRemaining(identifier);
+    }
+  }
+
+  // In-memory fallback: read without incrementing
+  const entry = rateLimitStore.get(identifier);
+  if (!entry || entry.resetTime < Date.now()) {
+    return rateLimitConfig.maxRequests;
+  }
+  return Math.max(0, rateLimitConfig.maxRequests - entry.count);
+}
+
+// ============================================================================
 // MAIN RATE LIMIT FUNCTION
 // ============================================================================
 
