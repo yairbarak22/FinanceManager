@@ -1,5 +1,4 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
 
 interface SensitiveDataProps extends React.HTMLAttributes<HTMLElement> {
   children: React.ReactNode;
@@ -8,13 +7,8 @@ interface SensitiveDataProps extends React.HTMLAttributes<HTMLElement> {
 }
 
 /**
- * Wraps sensitive information (prices, balances, names) to mask it in Smartlook recordings.
- * 
- * This component applies:
- * - `data-sl="mask"` - Official Smartlook attribute that replaces text with *
- * - `.sl-mask` class - Backup for dashboard-based masking rules
- * - `data-privacy="masked"` - Custom attribute for additional targeting
- * 
+ * Wraps sensitive information (prices, balances, names) with a semantic privacy marker.
+ *
  * Usage:
  * ```tsx
  * <SensitiveData>{formatCurrency(amount)}</SensitiveData>
@@ -30,8 +24,7 @@ export const SensitiveData = ({
 }: SensitiveDataProps) => {
   return (
     <Component 
-      className={cn("sl-mask", className)} 
-      data-sl="mask"
+      className={className} 
       data-privacy="masked"
       {...rest}
     >

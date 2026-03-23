@@ -524,7 +524,6 @@ export default function Sidebar() {
                 alt=""
                 className="w-10 h-10 rounded-full ring-2 ring-[#F7F7F8] flex-shrink-0"
                 title={isCollapsed ? session.user.name || 'משתמש' : undefined}
-                data-sl="mask"
               />
             ) : (
               <div

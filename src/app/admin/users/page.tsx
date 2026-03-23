@@ -481,7 +481,6 @@ export default function AdminUsersPage() {
                           src={ctaUser.image}
                           alt={ctaUser.name || 'User'}
                           className="w-9 h-9 rounded-full flex-shrink-0"
-                          data-sl="mask"
                         />
                       ) : (
                         <div className="w-9 h-9 rounded-full bg-[#0DBACC]/10 flex items-center justify-center flex-shrink-0">
@@ -539,7 +538,6 @@ export default function AdminUsersPage() {
                         src={user.image}
                         alt={user.name || 'User'}
                         className="w-9 h-9 rounded-full"
-                        data-sl="mask"
                       />
                     ) : (
                       <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center">
@@ -606,7 +604,6 @@ export default function AdminUsersPage() {
                               src={user.image}
                               alt={user.name || 'User'}
                               className="w-10 h-10 rounded-full"
-                              data-sl="mask"
                             />
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">

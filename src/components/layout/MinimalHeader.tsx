@@ -186,7 +186,6 @@ export default function MinimalHeader({
                       src={image}
                       alt=""
                       className="w-7 h-7 rounded-full ring-2 ring-slate-100"
-                      data-sl="mask"
                     />
                   ) : (
                     <div className="w-7 h-7 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">

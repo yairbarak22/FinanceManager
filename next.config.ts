@@ -40,7 +40,7 @@ const nextConfig: NextConfig = {
           // all inline scripts.
           {
             key: 'Cross-Origin-Embedder-Policy',
-            value: 'unsafe-none' // Required: Smartlook/Google SDKs don't send CORP headers
+            value: 'unsafe-none' // Required: Google/Mixpanel SDKs don't send CORP headers
           },
           {
             key: 'Cross-Origin-Resource-Policy',

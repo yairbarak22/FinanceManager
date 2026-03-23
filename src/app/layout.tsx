@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Heebo, Inter, Nunito } from "next/font/google";
-import Script from "next/script";
 import { headers } from "next/headers";
 import Providers from "@/components/Providers";
 import { OnboardingProvider } from "@/context/OnboardingContext";
@@ -119,52 +118,7 @@ export default async function RootLayout({
 
   return (
     <html lang="he" dir="rtl">
-      <head>
-        {/* Smartlook - Session Recording with Privacy Settings */}
-        <Script
-          id="smartlook-init"
-          strategy="afterInteractive"
-          nonce={nonce}
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.smartlook||(function(d) {
-                var o=smartlook=function(){ o.api.push(arguments)},h=d.getElementsByTagName('head')[0];
-                var c=d.createElement('script');o.api=new Array();c.async=true;c.type='text/javascript';
-                c.charset='utf-8';c.src='https://web-sdk.smartlook.com/recorder.js';h.appendChild(c);
-              })(document);
-              smartlook('init', 'ff3850f57f63db3eeb1e38ed64c7c1d592664267', { region: 'eu' });
-              
-              // PRIVACY: Complete anonymization - disable ALL data collection
-              smartlook('record', { 
-                forms: false,    // Don't record form inputs
-                numbers: false,  // Don't collect numbers
-                emails: false,   // Don't collect emails
-                ips: false       // Don't collect IPs
-              });
-              
-              // PRIVACY: Disable IP consent tracking
-              smartlook('consentIP', false);
-              
-              // PRIVACY: Mask user profile images (Google OAuth profile pictures)
-              // Apply masking for all images marked with data-sl="mask" and Google profile images
-              setTimeout(function() {
-                if (typeof window.smartlook === 'function') {
-                  // Mask images explicitly marked for privacy
-                  smartlook('mask', 'img[data-sl="mask"]');
-                  // Mask Google profile images
-                  smartlook('mask', 'img[src*="googleusercontent.com"]');
-                  smartlook('mask', 'img[src*="lh3.googleusercontent.com"]');
-                  // Mask common avatar/profile images
-                  smartlook('mask', 'img[alt*="profile"]');
-                  smartlook('mask', 'img[alt*="avatar"]');
-                  smartlook('mask', 'img[alt*="User"]');
-                  console.debug('[Smartlook] Profile image masking applied');
-                }
-              }, 500);
-            `,
-          }}
-        />
-      </head>
+      <head />
       <body className={`${heebo.variable} ${inter.variable} ${nunito.variable} font-sans antialiased`}>
         <SkipToContent />
         <Providers>

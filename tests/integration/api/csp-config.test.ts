@@ -71,7 +71,6 @@ describe('Middleware CSP — script-src', () => {
     const scriptSrc = getDirective('script-src');
     expect(scriptSrc).toContain('https://accounts.google.com');
     expect(scriptSrc).toContain('https://apis.google.com');
-    expect(scriptSrc).toContain('https://web-sdk.smartlook.com');
     expect(scriptSrc).toContain('https://www.googletagmanager.com');
     expect(scriptSrc).toContain('https://cdn.mxpnl.com');
   });

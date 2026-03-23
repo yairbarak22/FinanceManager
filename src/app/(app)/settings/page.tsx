@@ -190,7 +190,6 @@ export default function SettingsPage() {
                         src={image}
                         alt=""
                         className="w-14 h-14 rounded-2xl ring-2 ring-[#F7F7F8] object-cover"
-                        data-sl="mask"
                       />
                     ) : (
                       <div
@@ -844,7 +843,6 @@ function AccountSettingsInline() {
                   src={member.user.image}
                   alt=""
                   className="w-9 h-9 rounded-xl object-cover"
-                  data-sl="mask"
                 />
               ) : (
                 <div

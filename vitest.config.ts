@@ -46,7 +46,6 @@ export default defineConfig({
       exclude: [
         'src/lib/prisma.ts',      // Prisma client (tested via integration)
         'src/lib/config.ts',      // Config module
-        'src/lib/smartlook.ts',   // Analytics
         'src/lib/mixpanel.ts',    // Analytics
         '**/*.d.ts',
         '**/__tests__/**',

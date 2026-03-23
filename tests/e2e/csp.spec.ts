@@ -67,8 +67,6 @@ test.describe('CSP Header', () => {
 
     // Google OAuth & Analytics
     expect(csp).toContain('https://accounts.google.com');
-    // Smartlook
-    expect(csp).toContain('https://web-sdk.smartlook.com');
     // Google Tag Manager
     expect(csp).toContain('https://www.googletagmanager.com');
   });

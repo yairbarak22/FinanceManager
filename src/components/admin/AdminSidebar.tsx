@@ -280,7 +280,6 @@ export default function AdminSidebar({ isMobileOpen, onMobileClose }: AdminSideb
                 src={session.user.image}
                 alt=""
                 className="w-10 h-10 rounded-full ring-2 ring-[#F7F7F8]"
-                data-sl="mask"
               />
             ) : (
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F7F7F8] to-[#E8E8ED] flex items-center justify-center">

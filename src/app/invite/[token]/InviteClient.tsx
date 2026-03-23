@@ -159,7 +159,6 @@ export default function InviteClient({ inviteStatus, inviterName, token }: Invit
                     src={session.user.image}
                     alt={session.user.name || 'User'}
                     className="w-12 h-12 rounded-full"
-                    data-sl="mask"
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">

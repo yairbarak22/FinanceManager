@@ -2,7 +2,6 @@
 
 import { useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { isSmartlookAvailable, trackSmartlookEvent } from '@/lib/smartlook';
 import { isMixpanelAvailable, trackMixpanelEvent, resetMixpanel, identifyUser } from '@/lib/mixpanel';
 
 // Check if gtag is available
@@ -10,30 +9,12 @@ function isGtagAvailable(): boolean {
   return typeof window !== 'undefined' && typeof window.gtag === 'function';
 }
 
-// Generic event tracking function - sends to GA, Smartlook, and Mixpanel
+// Generic event tracking function - sends to GA and Mixpanel
 function trackEvent(eventName: string, params?: Record<string, unknown>) {
-  // Track in Google Analytics
   if (isGtagAvailable()) {
     window.gtag('event', eventName, params);
   }
 
-  // Track in Smartlook
-  if (isSmartlookAvailable()) {
-    // Convert params to Smartlook-compatible format (string | number | boolean only)
-    const smartlookParams: Record<string, string | number | boolean> = {};
-    if (params) {
-      for (const [key, value] of Object.entries(params)) {
-        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-          smartlookParams[key] = value;
-        } else if (value !== null && value !== undefined) {
-          smartlookParams[key] = String(value);
-        }
-      }
-    }
-    trackSmartlookEvent(eventName, smartlookParams);
-  }
-
-  // Track in Mixpanel
   if (isMixpanelAvailable()) {
     trackMixpanelEvent(eventName, params);
   }

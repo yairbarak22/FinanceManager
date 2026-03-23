@@ -118,14 +118,12 @@ describe('buildCspHeader', () => {
     // Script domains
     expect(csp).toContain('https://accounts.google.com');
     expect(csp).toContain('https://apis.google.com');
-    expect(csp).toContain('https://web-sdk.smartlook.com');
     expect(csp).toContain('https://www.googletagmanager.com');
     expect(csp).toContain('https://cdn.mxpnl.com');
 
     // Connect domains
     expect(csp).toContain('https://api.openai.com');
     expect(csp).toContain('https://*.vercel-storage.com');
-    expect(csp).toContain('https://*.smartlook.com');
     expect(csp).toContain('https://*.google-analytics.com');
     expect(csp).toContain('https://*.mixpanel.com');
 
