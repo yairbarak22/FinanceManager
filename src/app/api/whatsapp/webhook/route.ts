@@ -96,6 +96,9 @@ async function handleWhatsapp(request: NextRequest): Promise<NextResponse> {
 
   // Layer 1: Twilio signature validation
   if (!validateTwilioSignature(request, params)) {
+    // #region agent log
+    console.error("[DEBUG:H4] Twilio signature REJECTED", { url: request.url });
+    // #endregion
     console.error("[WhatsApp] Invalid Twilio signature");
     return new NextResponse("Forbidden", { status: 403 });
   }
@@ -103,6 +106,10 @@ async function handleWhatsapp(request: NextRequest): Promise<NextResponse> {
   const from = params.From || "";
   const body = (params.Body || "").trim();
   const phoneNumber = parseWhatsappPhone(from);
+
+  // #region agent log
+  console.error("[DEBUG:ENTRY] Webhook hit", { phoneNumber, bodyLen: body.length, body: body.slice(0, 60) });
+  // #endregion
 
   if (!phoneNumber || !body) {
     return respondEmpty();
@@ -114,6 +121,9 @@ async function handleWhatsapp(request: NextRequest): Promise<NextResponse> {
     RATE_LIMITS.whatsappGlobal
   );
   if (!globalResult.success) {
+    // #region agent log
+    console.error("[DEBUG:H5] Global rate limit BLOCKED");
+    // #endregion
     return respondEmpty();
   }
 
@@ -123,6 +133,9 @@ async function handleWhatsapp(request: NextRequest): Promise<NextResponse> {
     RATE_LIMITS.whatsapp
   );
   if (!phoneResult.success) {
+    // #region agent log
+    console.error("[DEBUG:H5] Per-phone rate limit BLOCKED", { phoneNumber });
+    // #endregion
     return respondTwiml("⚠️ יותר מדי הודעות. אנא נסה שוב בעוד דקה.");
   }
 
@@ -132,7 +145,13 @@ async function handleWhatsapp(request: NextRequest): Promise<NextResponse> {
     `wa_invalid:${phoneNumber}`,
     RATE_LIMITS.whatsappInvalid
   );
+  // #region agent log
+  console.error("[DEBUG:H1] Circuit breaker check", { phoneNumber, invalidRemaining });
+  // #endregion
   if (invalidRemaining <= 0) {
+    // #region agent log
+    console.error("[DEBUG:H1] Circuit breaker BLOCKED — counter saturated", { phoneNumber, invalidRemaining });
+    // #endregion
     return respondEmpty();
   }
 
@@ -141,12 +160,19 @@ async function handleWhatsapp(request: NextRequest): Promise<NextResponse> {
       where: { phoneNumber },
     });
 
+    // #region agent log
+    console.error("[DEBUG:H2] Session lookup", { phoneNumber, hasSession: !!existingSession, sessionId: existingSession?.id });
+    // #endregion
+
     if (existingSession) {
       return await handlePinConfirmation(phoneNumber, body, existingSession);
     } else {
       return await handleNewReport(phoneNumber, body);
     }
   } catch (error) {
+    // #region agent log
+    console.error("[DEBUG:H3] Webhook CAUGHT ERROR", { error: String(error) });
+    // #endregion
     console.error("[WhatsApp] Webhook error:", error);
     return respondEmpty();
   }
