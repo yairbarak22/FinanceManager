@@ -313,7 +313,8 @@ export async function getRateLimitRemaining(
   if (isUpstashAvailable) {
     const limiter = findLimiter(rateLimitConfig);
     if (limiter) {
-      return await limiter.getRemaining(identifier);
+      const result = await limiter.getRemaining(identifier);
+      return typeof result === 'number' ? result : result.remaining;
     }
   }
 
