@@ -76,14 +76,15 @@ export default function DeleteAllDataModal({ isOpen, onClose }: DeleteAllDataMod
           <ul className="space-y-1.5 text-sm" style={{ color: '#7E7F90' }}>
             {[
               'עסקאות והיסטוריית תזרים',
-              'עסקאות קבועות',
-              'נכסים והיסטוריית ערכים',
-              'התחייבויות והלוואות',
-              'יעדים פיננסיים',
+              'עסקאות קבועות ויעדים פיננסיים',
+              'נכסים, התחייבויות והיסטוריית ערכים',
               'תיק השקעות והחזקות',
+              'מסמכים מצורפים',
               'קטגוריות מותאמות אישית',
-              'פרופיל אישי ועדפות',
-              'היסטוריית שווי נקי',
+              'מעשרות (העדפות וקיזוזים)',
+              'תקציב ותכנון פסח',
+              'דוחות חודשיים',
+              'פרופיל פיננסי והעדפות',
             ].map((item) => (
               <li key={item} className="flex items-center gap-2">
                 <span
@@ -95,6 +96,10 @@ export default function DeleteAllDataModal({ isOpen, onClose }: DeleteAllDataMod
             ))}
           </ul>
 
+          <p className="text-xs leading-relaxed" style={{ color: '#BDBDCB' }}>
+            לא יימחקו: מיפוי סוחרים (סיווג AI), היסטוריית שווי נקי, והגדרות דיווח IVR / וואטסאפ.
+          </p>
+
           <div
             className="p-3 rounded-xl text-sm font-medium"
             style={{
@@ -103,7 +108,7 @@ export default function DeleteAllDataModal({ isOpen, onClose }: DeleteAllDataMod
               color: '#F18AB5',
             }}
           >
-            לאחר המחיקה תנותק אוטומטית ולא ניתן יהיה לשחזר את הנתונים.
+            לאחר המחיקה תנותק אוטומטית ולא ניתן יהיה לשחזר את הנתונים שנמחקו.
           </div>
 
           {error && (
@@ -147,8 +152,8 @@ export default function DeleteAllDataModal({ isOpen, onClose }: DeleteAllDataMod
               </>
             ) : (
               <>
-                <Trash2 className="w-4 h-4" strokeWidth={1.75} />
                 מחק הכל
+                <Trash2 className="w-4 h-4" strokeWidth={1.75} />
               </>
             )}
           </button>

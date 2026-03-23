@@ -11,12 +11,15 @@ import {
   AlertTriangle,
   Trash2,
   Calendar,
+  ChevronDown,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Card from '@/components/ui/Card';
 import StyledSelect from '@/components/ui/StyledSelect';
 import IvrPinSettings from '@/components/IvrPinSettings';
 import { SensitiveData } from '@/components/common/SensitiveData';
+import SelectiveDeletePanel from '@/components/settings/SelectiveDeletePanel';
+import type { DeletionPreviewData } from '@/components/settings/SelectiveDeletePanel';
 import { useMonth } from '@/context/MonthContext';
 import { apiFetch } from '@/lib/utils';
 
@@ -498,39 +501,33 @@ export default function SettingsPage() {
 
 /* ─── Privacy Settings ─── */
 
-const DELETABLE_DATA = [
-  'עסקאות והיסטוריית תזרים',
-  'עסקאות קבועות',
-  'נכסים והיסטוריית ערכים',
-  'התחייבויות והלוואות',
-  'יעדים פיננסיים',
-  'תיק השקעות והחזקות',
-  'קטגוריות מותאמות אישית',
-  'פרופיל אישי ועדפות',
-  'היסטוריית שווי נקי',
-];
-
 function PrivacySettingsInline() {
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<DeletionPreviewData | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(true);
+  const [previewError, setPreviewError] = useState<string | null>(null);
 
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    setError(null);
+  const fetchPreview = useCallback(async () => {
+    setPreviewLoading(true);
+    setPreviewError(null);
     try {
-      const res = await apiFetch('/api/user/delete-all-data', { method: 'DELETE' });
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || 'שגיאה במחיקת הנתונים');
-        setIsDeleting(false);
-        return;
-      }
-      await signOut({ callbackUrl: '/' });
+      const res = await apiFetch('/api/user/data-deletion-preview');
+      if (!res.ok) throw new Error('Failed');
+      setPreviewData(await res.json());
     } catch {
-      setError('שגיאה בחיבור לשרת. נסה שוב.');
-      setIsDeleting(false);
+      setPreviewError('שגיאה בטעינת הנתונים. נסה שוב.');
+    } finally {
+      setPreviewLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    fetchPreview();
+  }, [fetchPreview]);
+
+  const handleDeleteComplete = () => {
+    fetchPreview();
+    setPanelOpen(false);
   };
 
   return (
@@ -550,7 +547,7 @@ function PrivacySettingsInline() {
           className="text-xs mt-1 mb-5"
           style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
         >
-          מחיקת כל הנתונים הפיננסיים מהמערכת
+          בחר אילו נתונים פיננסיים למחוק מהמערכת
         </p>
 
         {/* Warning */}
@@ -578,107 +575,46 @@ function PrivacySettingsInline() {
               className="text-xs mt-1"
               style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
             >
-              לאחר המחיקה תנותק אוטומטית ולא ניתן יהיה לשחזר את הנתונים.
+              נתונים שנמחקו לא ניתנים לשחזור. ניתן לבחור בדיוק מה למחוק.
             </p>
           </div>
         </div>
 
-        {/* Data list */}
-        <p
-          className="text-[0.8125rem] font-medium mb-3"
-          style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+        <motion.button
+          type="button"
+          onClick={() => setPanelOpen((v) => !v)}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          aria-expanded={panelOpen}
+          aria-controls="delete-data-panel"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
+          style={{
+            color: '#F18AB5',
+            background: 'rgba(241, 138, 181, 0.08)',
+            border: '1px solid rgba(241, 138, 181, 0.2)',
+            fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+          }}
         >
-          הנתונים הבאים יימחקו לצמיתות:
-        </p>
-        <div className="space-y-1.5 mb-6">
-          {DELETABLE_DATA.map((item) => (
-            <div key={item} className="flex items-center gap-2.5">
-              <span
-                className="w-1.5 h-1.5 rounded-full shrink-0"
-                style={{ backgroundColor: '#F18AB5' }}
-              />
-              <span
-                className="text-[0.8125rem]"
-                style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
-              >
-                {item}
-              </span>
-            </div>
-          ))}
-        </div>
+          {panelOpen ? 'הסתר' : 'בחר מה למחוק'}
+          <ChevronDown
+            className="w-4 h-4 transition-transform duration-200"
+            style={{ transform: panelOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            strokeWidth={1.75}
+          />
+        </motion.button>
 
-        {/* Error */}
-        {error && (
-          <div
-            className="mb-4 flex items-center gap-2 px-4 py-3 rounded-xl text-sm animate-fade-in"
-            style={{
-              background: 'rgba(241, 138, 181, 0.1)',
-              border: '1px solid rgba(241, 138, 181, 0.3)',
-              color: '#F18AB5',
-              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-            }}
-          >
-            {error}
+        {/* Inline panel — no modal, no overlay */}
+        {panelOpen && (
+          <div className="border-t border-[#F7F7F8] pt-5 mt-5 animate-fade-in">
+            <SelectiveDeletePanel
+              previewData={previewData}
+              previewLoading={previewLoading}
+              previewError={previewError}
+              onRetryPreview={fetchPreview}
+              onCancel={() => setPanelOpen(false)}
+              onDeleteComplete={handleDeleteComplete}
+            />
           </div>
-        )}
-
-        {/* Action */}
-        {!showConfirm ? (
-          <motion.button
-            type="button"
-            onClick={() => setShowConfirm(true)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
-            style={{
-              color: '#F18AB5',
-              background: 'rgba(241, 138, 181, 0.08)',
-              border: '1px solid rgba(241, 138, 181, 0.2)',
-              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-            }}
-          >
-            <Trash2 className="w-4 h-4" strokeWidth={1.75} />
-            מחק כל הנתונים
-          </motion.button>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="flex gap-3"
-          >
-            <button
-              type="button"
-              onClick={() => { setShowConfirm(false); setError(null); }}
-              disabled={isDeleting}
-              className="btn-secondary flex-1"
-            >
-              ביטול
-            </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all duration-200"
-              style={{
-                backgroundColor: isDeleting ? 'rgba(241, 138, 181, 0.5)' : '#F18AB5',
-                cursor: isDeleting ? 'not-allowed' : 'pointer',
-                fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-              }}
-            >
-              {isDeleting ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  מוחק...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="w-4 h-4" strokeWidth={1.75} />
-                  אישור מחיקה
-                </>
-              )}
-            </button>
-          </motion.div>
         )}
       </div>
     </Card>

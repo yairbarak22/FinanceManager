@@ -1,9 +1,10 @@
-import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/authHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
+import { executeFullDeletion } from '@/lib/userDataDeletion';
+import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   try {
     const { userId, error } = await requireAuth();
     if (error) return error;
@@ -13,23 +14,17 @@ export async function DELETE() {
       return NextResponse.json({ error: 'יותר מדי בקשות' }, { status: 429 });
     }
 
-    // Delete in dependency order to avoid FK constraint violations
-    await prisma.assetValueHistory.deleteMany({
-      where: { asset: { userId } },
+    const result = await executeFullDeletion(userId);
+
+    const { ipAddress, userAgent } = getRequestInfo(request.headers);
+    void logAuditEvent({
+      userId,
+      action: AuditAction.BULK_DELETE,
+      entityType: 'UserData',
+      metadata: { scope: 'all', blobErrors: result.blobErrors },
+      ipAddress,
+      userAgent,
     });
-    await prisma.financialGoal.deleteMany({ where: { userId } });
-    await prisma.transaction.deleteMany({ where: { userId } });
-    await prisma.recurringTransaction.deleteMany({ where: { userId } });
-    await prisma.asset.deleteMany({ where: { userId } });
-    await prisma.liability.deleteMany({ where: { userId } });
-    await prisma.netWorthHistory.deleteMany({ where: { userId } });
-    await prisma.holding.deleteMany({ where: { userId } });
-    await prisma.document.deleteMany({ where: { userId } });
-    await prisma.customCategory.deleteMany({ where: { userId } });
-    await prisma.maaserPreference.deleteMany({ where: { userId } });
-    await prisma.merchantCategoryMap.deleteMany({ where: { userId } });
-    await prisma.monthlyReport.deleteMany({ where: { userId } });
-    await prisma.userProfile.deleteMany({ where: { userId } });
 
     return NextResponse.json({ success: true });
   } catch (error) {
