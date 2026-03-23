@@ -1,7 +1,5 @@
 import type { NextConfig } from "next";
 
-const isDev = process.env.NODE_ENV === 'development';
-
 const nextConfig: NextConfig = {
   serverExternalPackages: ['muhammara', '@react-pdf/renderer'],
   async headers() {
@@ -36,42 +34,10 @@ const nextConfig: NextConfig = {
             value: 'same-origin-allow-popups'
           },
           
-          // Content Security Policy
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' https://accounts.google.com https://apis.google.com https://web-sdk.smartlook.com https://www.googletagmanager.com https://cdn.mxpnl.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: https: blob:",
-              "font-src 'self' data: https://fonts.gstatic.com",
-              [
-                "connect-src 'self'",
-                "https://accounts.google.com",
-                "https://api.openai.com",
-                "https://*.vercel-storage.com",
-                "https://*.smartlook.com",
-                "https://*.smartlook.cloud",
-                "https://*.eu.smartlook.cloud",
-                "wss://*.smartlook.com",
-                "wss://*.smartlook.cloud",
-                "wss://*.eu.smartlook.cloud",
-                "https://*.google-analytics.com",
-                "https://analytics.google.com",
-                "https://*.googletagmanager.com",
-                "https://*.mixpanel.com",
-                "https://*.mxpnl.com",
-                ...(isDev ? ["http://localhost:*", "ws://localhost:*"] : []),
-              ].join(' '),
-              "media-src 'self' blob:",
-              "worker-src 'self' blob:",
-              "frame-src 'self' https://accounts.google.com https://iframe.mediadelivery.net https://www.youtube.com https://youtube.com",
-              "frame-ancestors 'none'",
-              "form-action 'self'",
-              "base-uri 'self'",
-              "object-src 'none'",
-            ].join('; ')
-          },
+          // CSP is set dynamically in middleware with per-request nonce (src/lib/csp.ts).
+          // Do NOT add a static Content-Security-Policy here — duplicate CSP headers
+          // cause browsers to enforce both, and the static one (without nonce) blocks
+          // all inline scripts.
           {
             key: 'Cross-Origin-Embedder-Policy',
             value: 'unsafe-none' // Required: Smartlook/Google SDKs don't send CORP headers
@@ -88,8 +54,6 @@ const nextConfig: NextConfig = {
             key: 'X-DNS-Prefetch-Control',
             value: 'off'
           },
-
-          // CSP is set dynamically in middleware with per-request nonce
         ],
       },
     ];
