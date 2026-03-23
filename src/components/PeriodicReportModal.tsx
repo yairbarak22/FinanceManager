@@ -16,7 +16,38 @@ import { useSession } from 'next-auth/react';
 import { HDate } from '@hebcal/core';
 import { getHebrewMonthsForYear, formatHebrewYear } from '@/lib/date/hebrewCalendar';
 import { apiFetch } from '@/lib/utils';
+import {
+  ANIMATION_FPS,
+  ANIMATION_DURATION_FRAMES,
+} from '@/remotion/Root';
 import ReportLoadingPlayer from './ReportLoadingPlayer';
+
+const REPORT_LOADING_FALLBACK_MS =
+  (ANIMATION_DURATION_FRAMES / ANIMATION_FPS) * 1000 + 2000;
+
+function isTransientError(err: unknown): boolean {
+  if (err instanceof TypeError) return true;
+  if (err instanceof DOMException && err.name === 'AbortError') return true;
+  return false;
+}
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries = 2,
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await apiFetch(url, options);
+    } catch (err) {
+      lastError = err;
+      if (!isTransientError(err) || attempt === maxRetries) throw err;
+      await new Promise((r) => setTimeout(r, 300 * 2 ** attempt));
+    }
+  }
+  throw lastError;
+}
 
 const GREGORIAN_MONTHS = [
   { value: 1, label: 'ינואר' },
@@ -294,12 +325,22 @@ export default function PeriodicReportModal({
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  const clearFallbackTimer = useCallback(() => {
+    if (fallbackTimerRef.current !== null) {
+      clearTimeout(fallbackTimerRef.current);
+      fallbackTimerRef.current = null;
+    }
+  }, []);
+
   const finishAfterAnimation = useCallback(() => {
+    clearFallbackTimer();
+
     const result = apiResultRef.current;
     if (!result) return;
 
@@ -330,7 +371,16 @@ export default function PeriodicReportModal({
     apiDoneRef.current = false;
     apiResultRef.current = null;
     setAnimationDone(false);
-  }, [onClose]);
+  }, [onClose, clearFallbackTimer]);
+
+  const scheduleFinishFallback = useCallback(() => {
+    clearFallbackTimer();
+    fallbackTimerRef.current = setTimeout(() => {
+      if (apiResultRef.current) {
+        finishAfterAnimation();
+      }
+    }, REPORT_LOADING_FALLBACK_MS);
+  }, [finishAfterAnimation, clearFallbackTimer]);
 
   const handleAnimationEnd = useCallback(() => {
     setAnimationDone(true);
@@ -352,10 +402,13 @@ export default function PeriodicReportModal({
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen && previousFocusRef.current) {
-      previousFocusRef.current.focus();
+    if (!isOpen) {
+      clearFallbackTimer();
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, clearFallbackTimer]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -447,8 +500,15 @@ export default function PeriodicReportModal({
     setAnimationDone(false);
     apiDoneRef.current = false;
     apiResultRef.current = null;
+    clearFallbackTimer();
     setError(null);
     setSuccess(null);
+
+    const markApiDone = () => {
+      apiDoneRef.current = true;
+      if (animationDone) finishAfterAnimation();
+      scheduleFinishFallback();
+    };
 
     try {
       const payload = {
@@ -462,10 +522,10 @@ export default function PeriodicReportModal({
         password,
       };
 
-      const response = await apiFetch('/api/periodic-reports/generate', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+      const response = await fetchWithRetry(
+        '/api/periodic-reports/generate',
+        { method: 'POST', body: JSON.stringify(payload) },
+      );
 
       if (deliveryMethod === 'download') {
         if (!response.ok) {
@@ -475,8 +535,7 @@ export default function PeriodicReportModal({
               ? 'לא נמצאו נתונים פיננסיים לחודש זה. נסה לבחור תקופה אחרת.'
               : data.error || 'שגיאה ביצירת הדוח';
           apiResultRef.current = { error: msg };
-          apiDoneRef.current = true;
-          if (animationDone) finishAfterAnimation();
+          markApiDone();
           return;
         }
         const blob = await response.blob();
@@ -490,19 +549,16 @@ export default function PeriodicReportModal({
               ? 'לא נמצאו נתונים פיננסיים לחודש זה. נסה לבחור תקופה אחרת.'
               : data.error || 'שגיאה ביצירת הדוח';
           apiResultRef.current = { error: msg };
-          apiDoneRef.current = true;
-          if (animationDone) finishAfterAnimation();
+          markApiDone();
           return;
         }
         apiResultRef.current = { success: data.message || 'הדוח נשלח למייל שלך בצורה מאובטחת.' };
       }
 
-      apiDoneRef.current = true;
-      if (animationDone) finishAfterAnimation();
+      markApiDone();
     } catch {
       apiResultRef.current = { error: 'שגיאה ביצירת הדוח. נסה שוב מאוחר יותר.' };
-      apiDoneRef.current = true;
-      if (animationDone) finishAfterAnimation();
+      markApiDone();
     }
   };
 
