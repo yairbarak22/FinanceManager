@@ -142,7 +142,7 @@ async function handleWhatsapp(request: NextRequest): Promise<NextResponse> {
   // Layer 4: Circuit breaker — blocked after 5 invalid messages in 24h
   // Read-only check; only consumeInvalidAttempt() increments this counter.
   const invalidRemaining = await getRateLimitRemaining(
-    `wa_invalid:${phoneNumber}`,
+    `wa_cb:${phoneNumber}`,
     RATE_LIMITS.whatsappInvalid
   );
   // #region agent log
@@ -333,7 +333,7 @@ async function handlePinConfirmation(
 
 async function consumeInvalidAttempt(phoneNumber: string): Promise<void> {
   await checkRateLimit(
-    `wa_invalid:${phoneNumber}`,
+    `wa_cb:${phoneNumber}`,
     RATE_LIMITS.whatsappInvalid
   );
 }
