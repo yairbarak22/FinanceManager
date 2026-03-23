@@ -5,11 +5,11 @@ import { createPortal } from 'react-dom';
 import {
   X,
   FileText,
-  Download,
   Mail,
   Check,
   Lock,
   ChevronDown,
+  Loader2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from 'next-auth/react';
@@ -237,59 +237,6 @@ function StyledSelect({
   );
 }
 
-function DeliveryCard({
-  selected,
-  onClick,
-  icon: Icon,
-  label,
-}: {
-  selected: boolean;
-  onClick: () => void;
-  icon: typeof Download;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex-1 flex flex-col items-center gap-2.5 p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer"
-      style={{
-        borderColor: selected ? '#0DBACC' : '#E8E8ED',
-        backgroundColor: selected ? 'rgba(13, 186, 204, 0.04)' : '#FFFFFF',
-      }}
-    >
-      <div
-        className="w-10 h-10 rounded-lg flex items-center justify-center transition-colors duration-200"
-        style={{
-          backgroundColor: selected
-            ? 'rgba(13, 186, 204, 0.12)'
-            : '#F7F7F8',
-        }}
-      >
-        <Icon
-          className="w-5 h-5"
-          style={{ color: selected ? '#0DBACC' : '#7E7F90' }}
-          strokeWidth={1.75}
-        />
-      </div>
-      <span
-        className="text-sm font-medium"
-        style={{ color: selected ? '#303150' : '#7E7F90' }}
-      >
-        {label}
-      </span>
-      {selected && (
-        <div
-          className="w-5 h-5 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: '#0DBACC' }}
-        >
-          <Check className="w-3 h-3 text-white" strokeWidth={2.5} />
-        </div>
-      )}
-    </button>
-  );
-}
-
 interface PeriodicReportModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -310,16 +257,12 @@ export default function PeriodicReportModal({
   const [selectedYear, setSelectedYear] = useState<number>(
     () => new Date().getFullYear(),
   );
-  const [deliveryMethod, setDeliveryMethod] = useState<'download' | 'email'>(
-    'download',
-  );
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showAnimation, setShowAnimation] = useState(false);
   const [animationDone, setAnimationDone] = useState(false);
   const apiDoneRef = useRef(false);
   const apiResultRef = useRef<{ success?: string; error?: string } | null>(null);
-  const pendingBlobRef = useRef<Blob | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -343,19 +286,6 @@ export default function PeriodicReportModal({
 
     const result = apiResultRef.current;
     if (!result) return;
-
-    const blob = pendingBlobRef.current;
-    if (blob) {
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'myNETO_report.pdf';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-      pendingBlobRef.current = null;
-    }
 
     if (result.error) {
       setError(result.error);
@@ -515,10 +445,8 @@ export default function PeriodicReportModal({
         calendarType,
         month: selectedMonth,
         year: selectedYear,
-        deliveryMethod,
-        ...(deliveryMethod === 'email' && {
-          email: session?.user?.email || '',
-        }),
+        deliveryMethod: 'email' as const,
+        email: session?.user?.email || '',
         password,
       };
 
@@ -527,33 +455,17 @@ export default function PeriodicReportModal({
         { method: 'POST', body: JSON.stringify(payload) },
       );
 
-      if (deliveryMethod === 'download') {
-        if (!response.ok) {
-          const data = await response.json();
-          const msg =
-            response.status === 404 && data.code === 'NO_DATA'
-              ? 'לא נמצאו נתונים פיננסיים לחודש זה. נסה לבחור תקופה אחרת.'
-              : data.error || 'שגיאה ביצירת הדוח';
-          apiResultRef.current = { error: msg };
-          markApiDone();
-          return;
-        }
-        const blob = await response.blob();
-        pendingBlobRef.current = blob;
-        apiResultRef.current = { success: 'הדוח הורד בהצלחה' };
-      } else {
-        const data = await response.json();
-        if (!response.ok) {
-          const msg =
-            response.status === 404 && data.code === 'NO_DATA'
-              ? 'לא נמצאו נתונים פיננסיים לחודש זה. נסה לבחור תקופה אחרת.'
-              : data.error || 'שגיאה ביצירת הדוח';
-          apiResultRef.current = { error: msg };
-          markApiDone();
-          return;
-        }
-        apiResultRef.current = { success: data.message || 'הדוח נשלח למייל שלך בצורה מאובטחת.' };
+      const data = await response.json();
+      if (!response.ok) {
+        const msg =
+          response.status === 404 && data.code === 'NO_DATA'
+            ? 'לא נמצאו נתונים פיננסיים לחודש זה. נסה לבחור תקופה אחרת.'
+            : data.error || 'שגיאה ביצירת הדוח';
+        apiResultRef.current = { error: msg };
+        markApiDone();
+        return;
       }
+      apiResultRef.current = { success: data.message || 'הדוח נשלח למייל שלך בצורה מאובטחת.' };
 
       markApiDone();
     } catch {
@@ -594,7 +506,7 @@ export default function PeriodicReportModal({
         aria-modal="true"
         aria-labelledby="periodic-report-title"
         dir="rtl"
-        className="modal-content max-w-md rounded-3xl max-h-[85vh] h-[85vh] overflow-hidden flex flex-col relative"
+        className="modal-content max-w-md rounded-3xl max-h-[85vh] overflow-hidden flex flex-col relative"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
@@ -613,13 +525,18 @@ export default function PeriodicReportModal({
                 strokeWidth={1.75}
               />
             </div>
-            <h2
-              id="periodic-report-title"
-              className="text-lg font-semibold"
-              style={{ color: '#303150' }}
-            >
-              הפקת דוח חודשי
-            </h2>
+            <div>
+              <h2
+                id="periodic-report-title"
+                className="text-lg font-semibold"
+                style={{ color: '#303150' }}
+              >
+                הפקת דוח חודשי
+              </h2>
+              <p className="text-xs mt-0.5" style={{ color: '#7E7F90' }}>
+                הדוח יישלח כקובץ PDF מוצפן למייל שלך
+              </p>
+            </div>
           </div>
           <button
             type="button"
@@ -633,7 +550,19 @@ export default function PeriodicReportModal({
         </div>
 
         {/* Body */}
-        <div className="modal-body overflow-y-auto flex-1">
+        <div className="modal-body overflow-y-auto min-h-0">
+          {/* Email destination */}
+          {session?.user?.email && (
+            <div
+              className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm"
+              style={{ backgroundColor: 'rgba(105, 173, 255, 0.06)', color: '#303150' }}
+            >
+              <Mail className="w-4 h-4 flex-shrink-0" style={{ color: '#69ADFF' }} strokeWidth={1.75} />
+              <span style={{ color: '#7E7F90' }}>יישלח אל:</span>
+              <span className="font-medium" dir="ltr">{session.user.email}</span>
+            </div>
+          )}
+
           {/* Calendar Type Toggle */}
           <div>
             <label
@@ -687,36 +616,6 @@ export default function PeriodicReportModal({
             </div>
           </div>
 
-          {/* Delivery Method */}
-          <div>
-            <label
-              className="label"
-              style={{ marginBottom: '0.5rem', display: 'block' }}
-            >
-              אופן קבלת הדוח
-            </label>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <DeliveryCard
-                selected={deliveryMethod === 'download'}
-                onClick={() => {
-                  setDeliveryMethod('download');
-                  setError(null);
-                }}
-                icon={Download}
-                label="הורדה למכשיר"
-              />
-              <DeliveryCard
-                selected={deliveryMethod === 'email'}
-                onClick={() => {
-                  setDeliveryMethod('email');
-                  setError(null);
-                }}
-                icon={Mail}
-                label="שליחה למייל"
-              />
-            </div>
-          </div>
-
           {/* Password Input */}
           <div
             className="rounded-xl p-4"
@@ -749,6 +648,7 @@ export default function PeriodicReportModal({
               minLength={4}
               dir="ltr"
               aria-label="סיסמה להגנת הקובץ"
+              aria-required="true"
             />
           </div>
 
@@ -789,12 +689,13 @@ export default function PeriodicReportModal({
             type="button"
             onClick={handleSubmit}
             disabled={isLoading || !!success}
+            aria-busy={isLoading}
             className="btn-primary w-full"
           >
-            {deliveryMethod === 'download' ? (
+            {isLoading ? (
               <>
-                הורד דוח מאובטח
-                <Download className="w-4 h-4" strokeWidth={1.75} />
+                שולח...
+                <Loader2 className="w-4 h-4 animate-spin" strokeWidth={1.75} />
               </>
             ) : (
               <>

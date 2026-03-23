@@ -8,8 +8,8 @@ export const periodicReportRequestSchema = z
     calendarType: z.enum(['gregorian', 'hebrew']),
     month: z.number().int(),
     year: z.number().int(),
-    deliveryMethod: z.enum(['download', 'email']),
-    email: z.string().email().optional(),
+    deliveryMethod: z.literal('email'),
+    email: z.string().email(),
     password: z.string().min(4),
   })
   .refine(
@@ -29,18 +29,6 @@ export const periodicReportRequestSchema = z
       return data.year >= 5780 && data.year <= 5900;
     },
     { message: 'שנה לא תקינה', path: ['year'] }
-  )
-  .refine(
-    (data) => {
-      if (data.deliveryMethod === 'email') {
-        return !!data.email;
-      }
-      return true;
-    },
-    {
-      message: 'כתובת אימייל נדרשת לשליחה במייל',
-      path: ['email'],
-    }
   );
 
 export type PeriodicReportRequest = z.infer<typeof periodicReportRequestSchema>;

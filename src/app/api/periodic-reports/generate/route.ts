@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { calendarType, month, year, deliveryMethod } = parsed.data;
+    const { calendarType, month, year } = parsed.data;
 
     // Resolve date range based on calendar type
     let dateRange: DateRange;
@@ -114,19 +114,6 @@ export async function POST(request: NextRequest) {
       pdfBuffer = await encryptPdfBuffer(pdfBuffer, pdfPassword);
     }
 
-    if (deliveryMethod === 'download') {
-      const monthName = periodLabel.split(' ')[0];
-      const safeFilename = `myNETO_${month}-${year}.pdf`;
-      const encodedFilename = encodeURIComponent(`myNETO_${monthName}.pdf`);
-      return new NextResponse(new Uint8Array(pdfBuffer), {
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="${safeFilename}"; filename*=UTF-8''${encodedFilename}`,
-        },
-      });
-    }
-
-    // deliveryMethod === 'email'
     const session = await getAuthSession();
     const userEmail = session?.user?.email;
     if (!userEmail) {
