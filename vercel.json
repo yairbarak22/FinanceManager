@@ -13,7 +13,7 @@
     },
     {
       "path": "/api/cron/send-sequences?secret=${CRON_SECRET}",
-      "schedule": "0 * * * *"
+      "schedule": "*/15 * * * *"
     },
     {
       "path": "/api/cron/evaluate-ab-tests?secret=${CRON_SECRET}",
