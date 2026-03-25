@@ -6,6 +6,8 @@ import { useGoals, useCreateGoal, useUpdateGoal, useDeleteGoal } from '@/hooks/u
 import { GoalSimulator, GoalCard, GoalModal, GoalQuickTemplates, GoalsSkeleton } from '@/components/goals';
 import { AppLayout } from '@/components/layout';
 import { SectionHeader } from '@/components/dashboard';
+import { TutorialPill } from '@/components/layout/PageTutorialDrawer';
+import { getSectionTutorialConfig } from '@/lib/pageTutorials';
 import Card from '@/components/ui/Card';
 import ConfirmDialog from '@/components/modals/ConfirmDialog';
 import ToastContainer from '@/components/ui/Toast';
@@ -31,6 +33,7 @@ export default function GoalsPage() {
   } = useMonth();
   
   const toast = useToast();
+  const goalsTutorial = getSectionTutorialConfig('goals');
   
   const [editingGoal, setEditingGoal] = useState<FinancialGoal | null>(null);
   const [deletingGoal, setDeletingGoal] = useState<FinancialGoal | null>(null);
@@ -137,6 +140,7 @@ export default function GoalsPage() {
           <SectionHeader
             title="היעדים שלי"
             subtitle="עקוב אחר ההתקדמות שלך לקראת השגת היעדים הפיננסיים שלך"
+            action={goalsTutorial && <TutorialPill config={goalsTutorial} sectionKey="goals" />}
           />
           
           {isLoading ? (

@@ -458,7 +458,7 @@ export function AddAssetDialog({ isOpen, onClose, onAddAsset, exchangeRate = DEF
 
                       {/* Helper */}
                       <div className="px-4 py-3 border-t border-[#F7F7F8] text-xs text-[#BDBDCB] text-center">
-                        חפש מניות אמריקאיות (AAPL) או ישראליות (מספר ני"ע)
+                        חפש מניות, קרנות וני"ע — אמריקאיות (AAPL) או ישראליות (מספר ני"ע)
                       </div>
                     </Command>
                   </motion.div>

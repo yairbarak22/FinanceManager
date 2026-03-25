@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { ReactFlowProvider } from '@xyflow/react';
 import WorkflowBuilder from '@/components/admin/workflows/WorkflowBuilder';
 
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }
@@ -50,6 +52,7 @@ export default async function WorkflowEditPage({ params }: PageProps) {
           initialEdges={edges as any[]}
           workflowId={id}
           initialStatus={workflow.status}
+          initialPromoteToActive={workflow.promoteToActiveOnComplete}
         />
       </ReactFlowProvider>
     </div>

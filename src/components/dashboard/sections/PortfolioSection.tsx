@@ -2,6 +2,8 @@
 
 import type { RefObject } from 'react';
 import { SectionHeader } from '@/components/dashboard';
+import { TutorialPill } from '@/components/layout/PageTutorialDrawer';
+import { getSectionTutorialConfig } from '@/lib/pageTutorials';
 import Card from '@/components/ui/Card';
 import AssetsSection from '@/components/AssetsSection';
 import LiabilitiesSection from '@/components/LiabilitiesSection';
@@ -71,11 +73,14 @@ export default function PortfolioSection({
   onDeleteRecurring,
   onToggleRecurring,
 }: PortfolioSectionProps) {
+  const portfolioTutorial = getSectionTutorialConfig('portfolio');
+
   return (
     <section>
       <SectionHeader
         title="פירוט תיק"
         subtitle="פירוט מלא של נכסים, התחייבויות ותשלומים קבועים"
+        action={portfolioTutorial && <TutorialPill config={portfolioTutorial} sectionKey="portfolio" />}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

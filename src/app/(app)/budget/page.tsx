@@ -8,6 +8,8 @@ import { useCategories } from '@/hooks/useCategories';
 import { useToast } from '@/hooks/useToast';
 import AppLayout from '@/components/layout/AppLayout';
 import { SectionHeader } from '@/components/dashboard';
+import { TutorialPill } from '@/components/layout/PageTutorialDrawer';
+import { getSectionTutorialConfig } from '@/lib/pageTutorials';
 import MonthSelector from '@/components/monthly-summary/MonthSelector';
 import BudgetSummaryCards from '@/components/budget/BudgetSummaryCards';
 import BudgetVisualCard from '@/components/budget/BudgetVisualCard';
@@ -39,6 +41,7 @@ function getPreviousMonth(month: number, year: number): { month: number; year: n
 export default function BudgetPage() {
   const { selectedMonth, setSelectedMonth, currentMonth, allMonths, monthsWithData } = useMonth();
   const { getCustomByType, addCustomCategory } = useCategories();
+  const budgetTutorial = getSectionTutorialConfig('budget');
   const { toasts, removeToast, success, error: showError } = useToast();
 
   const [budgetData, setBudgetData] = useState<BudgetSummary | null>(null);
@@ -274,6 +277,7 @@ export default function BudgetPage() {
               <SectionHeader
                 title="תקציבים לפי קטגוריה"
                 subtitle="ניהול תקציב לכל קטגוריית הוצאה"
+                action={budgetTutorial && <TutorialPill config={budgetTutorial} sectionKey="budget" />}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {sortedBudgets.map((budget) => (

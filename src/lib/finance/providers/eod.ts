@@ -662,11 +662,24 @@ export class EODProvider implements MarketDataProvider {
   }
 
   /**
-   * Search Tel Aviv exchange for ETFs and Funds
-   * Used when Israeli security number search fails
+   * Search Tel Aviv exchange for ETFs and Funds by security number.
+   * Tries EOD search with exchange=TA filter, then falls back to known mappings.
    */
   private async searchTAExchange(securityNumber: string): Promise<EODSearchResult[]> {
-    // Known Israeli fund number to name mappings (common funds)
+    // Try EOD search with TA exchange filter
+    try {
+      const taResults = await this.fetchEOD<EODSearchResult[]>(
+        `search/${encodeURIComponent(securityNumber)}`,
+        { exchange: 'TA' }
+      );
+      if (Array.isArray(taResults) && taResults.length > 0) {
+        return taResults.slice(0, 10);
+      }
+    } catch {
+      // Continue to fallback
+    }
+
+    // Fallback: known fund number → search term mappings
     const knownFunds: Record<string, string[]> = {
       '1159250': ['S&P 500', 'SPX'],
       '1159235': ['MSCI ACWI', 'ACWI'],
@@ -678,11 +691,9 @@ export class EODProvider implements MarketDataProvider {
 
     const searchTerms = knownFunds[securityNumber];
     if (!searchTerms) {
-      // If not a known fund, try generic search terms based on common patterns
       return [];
     }
 
-    // Search for each term and merge results
     const allResults: EODSearchResult[] = [];
     const seenCodes = new Set<string>();
 

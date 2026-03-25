@@ -28,6 +28,7 @@ export async function GET() {
         name: true,
         status: true,
         triggerType: true,
+        promoteToActiveOnComplete: true,
         createdAt: true,
         _count: { select: { enrollments: true } },
       },

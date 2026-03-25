@@ -31,12 +31,14 @@ export interface SendWorkflowEmailParams {
   userId: string;
   workflowId: string;
   nodeId: string;
+  from?: string;
 }
 
 export interface SendTestEmailParams {
   to: string;
   subject: string;
   html: string;
+  from?: string;
 }
 
 /**
@@ -137,7 +139,7 @@ export async function sendWorkflowEmail(
     const htmlWithUnsubscribe = addUnsubscribeLink(params.html, params.userId, params.to);
 
     const result = await resend.emails.send({
-      from: 'myneto <admin@myneto.co.il>',
+      from: params.from || DEFAULT_FROM,
       to: params.to,
       subject: params.subject,
       html: htmlWithUnsubscribe,
@@ -304,7 +306,7 @@ export async function sendTestEmail(params: SendTestEmailParams): Promise<{ id: 
 
   try {
     const result = await resend.emails.send({
-      from: 'myneto <admin@myneto.co.il>',
+      from: params.from || DEFAULT_FROM,
       to: params.to,
       subject: `[בדיקה] ${params.subject}`,
       html: params.html,

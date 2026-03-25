@@ -2,6 +2,8 @@
 
 import type { RefObject } from 'react';
 import { SectionHeader } from '@/components/dashboard';
+import { TutorialPill } from '@/components/layout/PageTutorialDrawer';
+import { getSectionTutorialConfig } from '@/lib/pageTutorials';
 import Card from '@/components/ui/Card';
 import ExpensesPieChart from '@/components/ExpensesPieChart';
 import RecentTransactions from '@/components/RecentTransactions';
@@ -74,11 +76,14 @@ export default function ActivitySection({
   onDeleteCategory,
   onEditRecurring,
 }: ActivitySectionProps) {
+  const activityTutorial = getSectionTutorialConfig('activity');
+
   return (
     <section>
       <SectionHeader
         title="פעילות"
         subtitle="פילוח הוצאות והכנסות ועסקאות אחרונות"
+        action={activityTutorial && <TutorialPill config={activityTutorial} sectionKey="activity" />}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

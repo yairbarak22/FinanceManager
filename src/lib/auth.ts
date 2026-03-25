@@ -6,32 +6,33 @@ import { prisma } from './prisma';
 import { config } from './config';
 import { logAuditEvent, AuditAction } from './auditLog';
 import { processCalculatorInvites } from './calculatorInvites';
-import { addSubscriberToMailerLite } from './mailerlite';
 import { getGlobalStats } from './globalStats';
-import { addUserToActiveGroup } from './activeGroup';
+import { addUserToOnboardingGroup } from './marketingGroups';
+import { enrollNewUserInRegistrationWorkflows } from './marketingGroups';
 
 // Cookie name for signup source tracking
 const SIGNUP_SOURCE_COOKIE = 'signup_source';
 
 /**
- * Mark user's signup source from cookie
- * Called when a new user is created to record their signup source (e.g., "prog")
+ * Mark user's signup source.
+ * All users are treated as "prog" to enable the full feature set (mortgage tracks, gemach, haredi categories).
+ * The cookie value is logged for attribution tracking but does not affect the stored signupSource.
  */
 async function markUserSignupSource(userId: string): Promise<void> {
   try {
     const cookieStore = await cookies();
     const signupSourceCookie = cookieStore.get(SIGNUP_SOURCE_COOKIE);
-    
+
     if (signupSourceCookie?.value) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { signupSource: signupSourceCookie.value },
-      });
-      console.log(`[Auth] Marked user ${userId} with signup source: ${signupSourceCookie.value}`);
+      console.log(`[Auth] User ${userId} arrived via signup source cookie: ${signupSourceCookie.value}`);
     }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { signupSource: 'prog' },
+    });
   } catch (error) {
     console.error('[Auth] Failed to mark signup source:', error);
-    // Don't block user creation if this fails
   }
 }
 
@@ -108,21 +109,18 @@ export const authOptions: NextAuthOptions = {
         }
       }
 
-      // Add to MailerLite mailing list
-      if (user?.email) {
-        try {
-          await addSubscriberToMailerLite(user.email, user.name);
-        } catch (error) {
-          console.error('[Auth] Failed to add user to MailerLite:', error);
-        }
-      }
-
-      // Add to "פעילים" base group (for marketing segments)
+      // Add to "onboarding" group and enroll in registration workflows
       if (user?.id) {
         try {
-          await addUserToActiveGroup(user.id);
+          await addUserToOnboardingGroup(user.id);
         } catch (error) {
-          console.error('[Auth] Failed to add user to פעילים group:', error);
+          console.error('[Auth] Failed to add user to onboarding group:', error);
+        }
+
+        try {
+          await enrollNewUserInRegistrationWorkflows(user.id);
+        } catch (error) {
+          console.error('[Auth] Failed to enroll user in registration workflows:', error);
         }
       }
 

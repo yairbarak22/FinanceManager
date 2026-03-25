@@ -12,6 +12,8 @@ import {
   BarChart3,
   UserCheck,
   Zap,
+  Landmark,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Chapter, Lesson } from './coursesData';
@@ -25,6 +27,8 @@ const chapterIcons: Record<string, typeof BookOpen> = {
   BarChart3,
   UserCheck,
   Zap,
+  Landmark,
+  ArrowLeftRight,
 };
 
 interface CourseChapterAccordionProps {
@@ -34,6 +38,8 @@ interface CourseChapterAccordionProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
   watchedLessonIds: Set<string>;
+  playlistTitle?: string;
+  showPartnerCTA?: boolean;
 }
 
 function getChapterDuration(lessons: Lesson[]): string {
@@ -128,6 +134,8 @@ export default function CourseChapterAccordion({
   isCollapsed,
   onToggleCollapse,
   watchedLessonIds,
+  playlistTitle = 'תוכן הקורס',
+  showPartnerCTA = true,
 }: CourseChapterAccordionProps) {
   const totalWatched = useMemo(
     () => chapters.reduce((sum, ch) => sum + ch.lessons.filter((l) => watchedLessonIds.has(l.id)).length, 0),
@@ -152,7 +160,7 @@ export default function CourseChapterAccordion({
           <div className="flex items-center gap-2 min-w-0">
             <ListVideo className="w-4 h-4 text-[#69ADFF] flex-shrink-0" strokeWidth={1.75} />
             <h3 className="text-[0.8125rem] font-bold text-[#303150] whitespace-nowrap truncate">
-              תוכן הקורס
+              {playlistTitle}
             </h3>
           </div>
         )}
@@ -216,7 +224,7 @@ export default function CourseChapterAccordion({
               );
             })}
           </div>
-          <AltshulerSidebarCTA isCollapsed={true} />
+          {showPartnerCTA && <AltshulerSidebarCTA isCollapsed={true} />}
         </>
         ) : (
           /* ===== EXPANDED: flat chapter list ===== */
@@ -260,7 +268,7 @@ export default function CourseChapterAccordion({
               );
             })}
           </div>
-          <AltshulerSidebarCTA isCollapsed={false} />
+          {showPartnerCTA && <AltshulerSidebarCTA isCollapsed={false} />}
         </>
         )}
       </div>

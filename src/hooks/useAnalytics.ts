@@ -207,8 +207,8 @@ export function useAnalytics() {
   }, []);
 
   // Video courses
-  const trackVideoLessonViewed = useCallback((lessonId: string, lessonTitle: string, chapterTitle: string, lessonIndex: number) => {
-    trackEvent('Video Lesson Viewed', { lesson_id: lessonId, lesson_title: lessonTitle, chapter_title: chapterTitle, lesson_index: lessonIndex });
+  const trackVideoLessonViewed = useCallback((lessonId: string, lessonTitle: string, chapterTitle: string, lessonIndex: number, courseId?: string) => {
+    trackEvent('Video Lesson Viewed', { lesson_id: lessonId, lesson_title: lessonTitle, chapter_title: chapterTitle, lesson_index: lessonIndex, ...(courseId && { course_id: courseId }) });
   }, []);
 
   const trackOpenTradingAccountClicked = useCallback((source: string) => {

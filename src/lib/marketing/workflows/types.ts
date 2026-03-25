@@ -1,4 +1,9 @@
+import type { TriggerType } from '@prisma/client';
 import { z } from 'zod';
+import {
+  WORKFLOW_SENDER_PROFILE_IDS,
+  DEFAULT_SENDER_PROFILE_ID,
+} from '@/lib/marketing/workflowSenderProfiles';
 
 // ============================================
 // NODE TYPES
@@ -33,6 +38,9 @@ export const TriggerNodeDataSchema = z.object({
 export const EmailNodeDataSchema = z.object({
   subject: z.string().max(200).default(''),
   htmlContent: z.string().default(''),
+  senderProfileId: z
+    .enum(WORKFLOW_SENDER_PROFILE_IDS)
+    .default(DEFAULT_SENDER_PROFILE_ID),
 });
 
 export const DelayNodeDataSchema = z.object({
@@ -140,4 +148,23 @@ export function validateWorkflowGraph(data: unknown): WorkflowGraph {
 
 export function safeParseWorkflowGraph(data: unknown) {
   return WorkflowGraphSchema.safeParse(data);
+}
+
+const DB_TRIGGER_TYPES: TriggerType[] = [
+  'MANUAL',
+  'USER_REGISTERED',
+  'ADDED_TO_GROUP',
+];
+
+/**
+ * Read triggerType from the first TRIGGER node in a validated graph.
+ * Returns undefined if there is no TRIGGER node or value is not a known TriggerType.
+ */
+export function triggerTypeFromWorkflowGraph(
+  graph: WorkflowGraph,
+): TriggerType | undefined {
+  const triggerNode = graph.nodes.find((n) => n.type === 'TRIGGER');
+  if (!triggerNode || triggerNode.type !== 'TRIGGER') return undefined;
+  const t = triggerNode.data.triggerType;
+  return DB_TRIGGER_TYPES.includes(t as TriggerType) ? (t as TriggerType) : undefined;
 }

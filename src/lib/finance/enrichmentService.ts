@@ -12,6 +12,7 @@ import type { AssetData, QuoteData } from './types';
 export interface SecurityEnrichment {
   id: string;
   symbol: string;
+  listingNumber: string | null;
   nameHe: string;
   shortNameHe: string | null;
   sectorHe: string;
@@ -135,13 +136,19 @@ export function enrichQuoteData(
 }
 
 /**
- * Search for a security by Israeli security number (found inside ISIN).
- * ISIN format: IL00XXXXXXX0 where XXXXXXX is the security number.
+ * Search for a security by Israeli security number.
+ * Checks listingNumber (exact), ISIN (contains), and EOD Code (symbol prefix).
  */
 export async function searchBySecurityNumber(securityNumber: string): Promise<SecurityEnrichment | null> {
   try {
     const result = await prisma.securityEnrichment.findFirst({
-      where: { isin: { contains: securityNumber } },
+      where: {
+        OR: [
+          { listingNumber: securityNumber },
+          { isin: { contains: securityNumber } },
+          { symbol: { startsWith: `${securityNumber}.`, mode: 'insensitive' } },
+        ],
+      },
     });
     return result;
   } catch (error) {

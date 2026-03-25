@@ -7,7 +7,7 @@ import { normalizeSymbol } from '@/lib/finance/providers/eod';
 /**
  * GET /api/finance/search
  * Search across all exchanges using EOD Historical Data API
- * Supports: US stocks, Israeli stocks, ETFs, Crypto
+ * Supports: US stocks, Israeli stocks/funds (by security number), ETFs, Crypto
  */
 export async function GET(request: Request) {
   try {

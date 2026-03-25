@@ -17,6 +17,10 @@
 import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables from .env files manually
 // Check .env.local first, then .env
@@ -179,6 +183,13 @@ function determineSector(type: string, name: string): string {
     return 'מניות - ישראל';
   }
   
+  if (upperType === 'FUND') {
+    if (upperName.includes('MONEY MARKET')) return 'קרנות כספיות';
+    if (upperName.includes('BOND') || upperName.includes('TEL BOND')) return 'קרנות - אג"ח';
+    if (upperName.includes('EQUITY') || upperName.includes('STOCK')) return 'קרנות - מניות';
+    return 'קרנות נאמנות';
+  }
+  
   if (upperType === 'BOND') {
     if (upperName.includes('GOV')) return SECTOR_MAPPINGS['BOND_GOV'];
     return SECTOR_MAPPINGS['BOND_CORP'];
@@ -203,6 +214,7 @@ function mapAssetType(eodType: string): string {
     'ETF': 'ETF',
     'Common Stock': 'Stock',
     'Fund': 'Mutual Fund',
+    'FUND': 'Mutual Fund',
     'Bond': 'Bond',
     'Preferred Stock': 'Stock',
   };
@@ -225,6 +237,7 @@ interface EODExchangeSymbol {
 interface SecurityEnrichmentData {
   symbol: string;
   isin: string | null;
+  listingNumber: string | null;
   nameHe: string;
   shortNameHe: string | null;
   sectorHe: string;
@@ -287,10 +300,11 @@ function filterSecurities(
   securities: EODExchangeSymbol[],
   types?: string[]
 ): EODExchangeSymbol[] {
-  const defaultTypes = ['ETF', 'Fund', 'Common Stock', 'Preferred Stock', 'Bond'];
+  const defaultTypes = ['ETF', 'Fund', 'FUND', 'Common Stock', 'Preferred Stock', 'Bond'];
   const filterTypes = types || defaultTypes;
+  const filterTypesLower = filterTypes.map(t => t.toLowerCase());
   
-  const filtered = securities.filter(s => filterTypes.includes(s.Type));
+  const filtered = securities.filter(s => filterTypesLower.includes(s.Type.toLowerCase()));
   
   console.log(`📊 Filtered to ${filtered.length} securities (types: ${filterTypes.join(', ')})`);
   
@@ -329,9 +343,20 @@ function transformSecurities(securities: EODExchangeSymbol[]): SecurityEnrichmen
       shortName = shortName.substring(0, 30).trim();
     }
     
+    // Extract listing number: from ISIN (IL00XXXXXXX0 → XXXXXXX) or from Code if numeric
+    let listingNumber: string | null = null;
+    if (s.Isin && s.Isin.startsWith('IL')) {
+      const digits = s.Isin.replace(/^IL0*/, '').replace(/\d$/, '');
+      if (digits.length >= 5) listingNumber = digits;
+    }
+    if (!listingNumber && /^\d{5,9}$/.test(s.Code)) {
+      listingNumber = s.Code;
+    }
+    
     return {
       symbol,
       isin: s.Isin || null,
+      listingNumber,
       nameHe: translatedName,
       shortNameHe: shortName !== translatedName ? shortName : null,
       sectorHe,
@@ -363,6 +388,7 @@ async function saveToDatabase(securities: SecurityEnrichmentData[]): Promise<{ c
           where: { symbol: data.symbol },
           data: {
             isin: data.isin,
+            listingNumber: data.listingNumber,
             nameHe: data.nameHe,
             shortNameHe: data.shortNameHe,
             sectorHe: data.sectorHe,
@@ -376,6 +402,7 @@ async function saveToDatabase(securities: SecurityEnrichmentData[]): Promise<{ c
           data: {
             symbol: data.symbol,
             isin: data.isin,
+            listingNumber: data.listingNumber,
             nameHe: data.nameHe,
             shortNameHe: data.shortNameHe,
             sectorHe: data.sectorHe,
@@ -523,8 +550,13 @@ async function main() {
   }
 }
 
-// Run if called directly
-if (require.main === module) {
+// Run if called directly (ESM-compatible)
+const isMainModule = process.argv[1] && (
+  process.argv[1] === __filename ||
+  process.argv[1].endsWith('/fetch-ta-securities.ts')
+);
+
+if (isMainModule) {
   main()
     .then(() => {
       console.log('\n✨ Done!');

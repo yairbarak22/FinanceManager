@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/adminHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { sendTestEmail } from '@/lib/marketing/resend';
+import { getWorkflowSenderFromHeader } from '@/lib/marketing/workflowSenderProfiles';
 
 /**
  * POST - Send test email
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { to, subject, html } = body;
+    const { to, subject, html, senderProfileId } = body;
 
     if (!to || !subject || !html) {
       return NextResponse.json(
@@ -29,7 +30,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await sendTestEmail({ to, subject, html });
+    const from = senderProfileId
+      ? getWorkflowSenderFromHeader(senderProfileId)
+      : undefined;
+
+    const result = await sendTestEmail({ to, subject, html, from });
 
     if ('error' in result) {
       return NextResponse.json(

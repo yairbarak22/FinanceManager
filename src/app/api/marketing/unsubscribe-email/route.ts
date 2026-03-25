@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { removeUserFromActiveGroup } from '@/lib/activeGroup';
+import { moveUnsubscribedToInactive } from '@/lib/marketingGroups';
 
 /**
  * Sanitize string for safe HTML insertion (prevent XSS)
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
           marketingUnsubscribedAt: new Date(),
         },
       });
-      await removeUserFromActiveGroup(user.id);
+      await moveUnsubscribedToInactive(user.id);
     }
     // For external emails (not in system) - they won't receive future emails anyway
 

@@ -20,8 +20,8 @@ export default function SectionHeader({
   action
 }: SectionHeaderProps) {
   return (
-    <div className={`flex items-start justify-between gap-4 mb-8 ${className}`}>
-      <div className="flex flex-col gap-1">
+    <div className={`flex flex-col gap-1 mb-8 ${className}`}>
+      <div className="flex items-center gap-3">
         <h2 
           className="text-2xl font-bold leading-tight"
           style={{ 
@@ -31,22 +31,22 @@ export default function SectionHeader({
         >
           {title}
         </h2>
-        {subtitle && (
-          <p 
-            className="text-sm"
-            style={{ 
-              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
-              color: 'var(--text-secondary, #7E7F90)'
-            }}
-          >
-            {subtitle}
-          </p>
+        {action && (
+          <div className="flex-shrink-0">
+            {action}
+          </div>
         )}
       </div>
-      {action && (
-        <div className="flex-shrink-0">
-          {action}
-        </div>
+      {subtitle && (
+        <p 
+          className="text-sm"
+          style={{ 
+            fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+            color: 'var(--text-secondary, #7E7F90)'
+          }}
+        >
+          {subtitle}
+        </p>
       )}
     </div>
   );

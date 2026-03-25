@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { WorkflowStatus, Prisma } from '@prisma/client';
+import { WorkflowStatus, Prisma, type TriggerType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
-import { safeParseWorkflowGraph } from '@/lib/marketing/workflows/types';
+import {
+  safeParseWorkflowGraph,
+  triggerTypeFromWorkflowGraph,
+} from '@/lib/marketing/workflows/types';
 
 const VALID_STATUSES: WorkflowStatus[] = ['DRAFT', 'ACTIVE', 'PAUSED'];
 
@@ -82,7 +85,11 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, status, nodes, edges } = body;
+    const { name, status, nodes, edges, promoteToActiveOnComplete } = body;
+
+    let syncedTriggerType: TriggerType | undefined;
+    let validatedNodes: Prisma.InputJsonValue | undefined;
+    let validatedEdges: Prisma.InputJsonValue | undefined;
 
     // Validate graph structure when nodes or edges are provided
     if (nodes !== undefined || edges !== undefined) {
@@ -106,6 +113,11 @@ export async function PUT(
           { status: 400 },
         );
       }
+
+      validatedNodes = parseResult.data.nodes as unknown as Prisma.InputJsonValue;
+      validatedEdges = parseResult.data.edges as unknown as Prisma.InputJsonValue;
+      syncedTriggerType =
+        triggerTypeFromWorkflowGraph(parseResult.data) ?? existing.triggerType;
     }
 
     if (status !== undefined && !VALID_STATUSES.includes(status)) {
@@ -118,14 +130,22 @@ export async function PUT(
     const updateData: {
       name?: string;
       status?: WorkflowStatus;
+      triggerType?: TriggerType;
       nodes?: Prisma.InputJsonValue;
       edges?: Prisma.InputJsonValue;
+      promoteToActiveOnComplete?: boolean;
     } = {};
 
     if (name !== undefined) updateData.name = name;
     if (status !== undefined) updateData.status = status as WorkflowStatus;
-    if (nodes !== undefined) updateData.nodes = nodes as Prisma.InputJsonValue;
-    if (edges !== undefined) updateData.edges = edges as Prisma.InputJsonValue;
+    if (validatedNodes !== undefined) updateData.nodes = validatedNodes;
+    if (validatedEdges !== undefined) updateData.edges = validatedEdges;
+    if (syncedTriggerType !== undefined) {
+      updateData.triggerType = syncedTriggerType;
+    }
+    if (typeof promoteToActiveOnComplete === 'boolean') {
+      updateData.promoteToActiveOnComplete = promoteToActiveOnComplete;
+    }
 
     const workflow = await prisma.automationWorkflow.update({
       where: { id },

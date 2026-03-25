@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { removeUserFromActiveGroup } from '@/lib/activeGroup';
+import { moveUnsubscribedToInactive } from '@/lib/marketingGroups';
 
 /**
  * GET - Unsubscribe page (redirects to confirmation)
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
         marketingUnsubscribedAt: new Date(),
       },
     });
-    await removeUserFromActiveGroup(userId);
+    await moveUnsubscribedToInactive(userId);
 
     // Return success page
     return new NextResponse(

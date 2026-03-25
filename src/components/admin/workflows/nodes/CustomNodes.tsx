@@ -3,6 +3,7 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { Zap, Mail, Clock, GitBranch } from 'lucide-react';
+import { WORKFLOW_SENDER_PROFILES } from '@/lib/marketing/workflowSenderProfiles';
 
 /* ──────────────────────────────────────────────
    Shared wrapper
@@ -69,7 +70,10 @@ function TriggerNodeComponent({
   selected?: boolean;
 }) {
   const triggerLabel = TRIGGER_TYPE_LABELS[data.triggerType || ''] || 'ידני';
-  const segmentLabel = SEGMENT_TYPE_LABELS[data.segmentFilter?.type || ''] || 'כל המשתמשים';
+  const segmentLabel =
+    data.triggerType === 'USER_REGISTERED'
+      ? 'כל הנרשמים החדשים'
+      : SEGMENT_TYPE_LABELS[data.segmentFilter?.type || ''] || 'כל המשתמשים';
   const timingLabel =
     data.timing === 'scheduled' && data.scheduledAt
       ? `מתוזמן: ${new Date(data.scheduledAt).toLocaleDateString('he-IL')}`
@@ -97,7 +101,10 @@ function TriggerNodeComponent({
    EMAIL NODE
    ────────────────────────────────────────────── */
 
-function EmailNodeComponent({ data, selected }: { data: { subject: string; htmlContent: string }; selected?: boolean }) {
+function EmailNodeComponent({ data, selected }: { data: { subject: string; htmlContent: string; senderProfileId?: string }; selected?: boolean }) {
+  const senderLabel = WORKFLOW_SENDER_PROFILES.find((p) => p.id === data.senderProfileId)?.labelHe
+    ?? WORKFLOW_SENDER_PROFILES[0].labelHe;
+
   return (
     <NodeShell accentColor="#69ADFF" selected={selected}>
       <Handle type="target" position={Position.Top} className="!w-3 !h-3 !bg-[#69ADFF] !border-2 !border-white !-top-1.5" />
@@ -107,9 +114,14 @@ function EmailNodeComponent({ data, selected }: { data: { subject: string; htmlC
         </div>
         <span className="text-sm font-semibold text-[#303150]">אימייל</span>
       </div>
-      <p className="text-xs text-[#7E7F90] truncate ps-9 max-w-[180px]">
-        {data.subject || 'ללא נושא'}
-      </p>
+      <div className="space-y-0.5 ps-9">
+        <p className="text-xs text-[#7E7F90] truncate max-w-[180px]">
+          {data.subject || 'ללא נושא'}
+        </p>
+        <p className="text-[10px] text-[#BDBDCB] truncate max-w-[180px]">
+          מאת {senderLabel}
+        </p>
+      </div>
       <Handle type="source" position={Position.Bottom} className="!w-3 !h-3 !bg-[#69ADFF] !border-2 !border-white !-bottom-1.5" />
     </NodeShell>
   );

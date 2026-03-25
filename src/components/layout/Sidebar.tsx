@@ -19,6 +19,7 @@ import {
   PlayCircle,
   Loader2,
   Wallet,
+  MonitorPlay,
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -96,6 +97,7 @@ function buildNavItems(): NavItem[] {
       subItems: [
         { id: 'general-knowledge', label: 'ידע כללי', path: '/help', icon: BookOpen },
         { id: 'calculators', label: 'מחשבונים', path: '/calculators', icon: Calculator }, // path overridden dynamically for Haredi users
+        { id: 'tutorials', label: 'סרטוני הדרכה', path: '/help/tutorials', icon: MonitorPlay },
       ],
     },
     { 

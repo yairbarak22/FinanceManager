@@ -16,14 +16,20 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { Mail, Clock, GitBranch, Save, X, Play, Pause, Users } from 'lucide-react';
+import { Mail, Clock, GitBranch, Save, X, Play, Pause, Users, Monitor, Smartphone, Send } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { useSession } from 'next-auth/react';
 import { apiFetch } from '@/lib/utils';
 import { useToast } from '@/hooks/useToast';
 import ToastContainer from '@/components/ui/Toast';
+import EmailPreview from '@/components/admin/EmailPreview';
 import SegmentSelector from '@/components/admin/SegmentSelector';
 import UserSelector from '@/components/admin/UserSelector';
 import type { SegmentFilter } from '@/lib/marketing/segment';
+import {
+  WORKFLOW_SENDER_PROFILES,
+  DEFAULT_SENDER_PROFILE_ID,
+} from '@/lib/marketing/workflowSenderProfiles';
 import {
   TriggerNode,
   EmailNode,
@@ -42,6 +48,7 @@ interface WorkflowBuilderProps {
   initialEdges: Edge[];
   workflowId: string;
   initialStatus?: WorkflowStatus;
+  initialPromoteToActive?: boolean;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -53,14 +60,19 @@ export default function WorkflowBuilder({
   initialEdges,
   workflowId,
   initialStatus = 'DRAFT',
+  initialPromoteToActive = false,
 }: WorkflowBuilderProps) {
   const [nodes, setNodes] = useState<Node[]>(initialNodes);
   const [edges, setEdges] = useState<Edge[]>(initialEdges);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<WorkflowStatus>(initialStatus);
+  const [promoteToActive, setPromoteToActive] = useState(initialPromoteToActive);
   const [togglingStatus, setTogglingStatus] = useState(false);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
+  const [emailPreviewMode, setEmailPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
+  const [sendingTest, setSendingTest] = useState(false);
+  const { data: session } = useSession();
   const { toasts, removeToast, success, error: showError } = useToast();
 
   const nodeTypes = useMemo(
@@ -77,6 +89,14 @@ export default function WorkflowBuilder({
     () => nodes.find((n) => n.id === selectedNodeId) ?? null,
     [nodes, selectedNodeId],
   );
+
+  const selectedTriggerType = useMemo(() => {
+    if (!selectedNode || selectedNode.type !== 'TRIGGER') return null;
+    return (
+      ((selectedNode.data as Record<string, unknown>).triggerType as string) ??
+      'MANUAL'
+    );
+  }, [selectedNode]);
 
   // ── React Flow handlers ─────────────────────────────────
 
@@ -122,7 +142,7 @@ export default function WorkflowBuilder({
         id,
         type: 'EMAIL',
         position: pos,
-        data: { subject: '', htmlContent: '' },
+        data: { subject: '', htmlContent: '', senderProfileId: DEFAULT_SENDER_PROFILE_ID },
       },
     ]);
     setSelectedNodeId(id);
@@ -180,7 +200,7 @@ export default function WorkflowBuilder({
         `/api/admin/marketing/workflows/${workflowId}`,
         {
           method: 'PUT',
-          body: JSON.stringify({ nodes, edges }),
+          body: JSON.stringify({ nodes, edges, promoteToActiveOnComplete: promoteToActive }),
         },
       );
       const data = await res.json();
@@ -194,7 +214,7 @@ export default function WorkflowBuilder({
     } finally {
       setSaving(false);
     }
-  }, [nodes, edges, workflowId, success, showError]);
+  }, [nodes, edges, promoteToActive, workflowId, success, showError]);
 
   // ── Status toggle ──────────────────────────────────────
 
@@ -206,7 +226,12 @@ export default function WorkflowBuilder({
         `/api/admin/marketing/workflows/${workflowId}`,
         {
           method: 'PUT',
-          body: JSON.stringify({ status: newStatus }),
+          body: JSON.stringify({
+            status: newStatus,
+            nodes,
+            edges,
+            promoteToActiveOnComplete: promoteToActive,
+          }),
         },
       );
       const data = await res.json();
@@ -221,7 +246,7 @@ export default function WorkflowBuilder({
     } finally {
       setTogglingStatus(false);
     }
-  }, [status, workflowId, success, showError]);
+  }, [status, workflowId, nodes, edges, promoteToActive, success, showError]);
 
   // ── Enroll users ──────────────────────────────────────
 
@@ -297,6 +322,19 @@ export default function WorkflowBuilder({
           </div>
           תנאי
         </button>
+
+        {/* Promote to active on completion */}
+        <label className="flex items-center gap-2 mt-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={promoteToActive}
+            onChange={(e) => setPromoteToActive(e.target.checked)}
+            className="w-4 h-4 accent-[#69ADFF] rounded"
+          />
+          <span className="text-xs text-[#303150] leading-tight">
+            בסיום — העבר לקבוצת &quot;פעילים&quot;
+          </span>
+        </label>
 
         <div className="flex-1" />
 
@@ -404,10 +442,18 @@ export default function WorkflowBuilder({
                   סוג טריגר
                 </label>
                 <select
-                  value={(selectedNode.data as Record<string, unknown>).triggerType as string ?? 'MANUAL'}
-                  onChange={(e) =>
-                    updateNodeData(selectedNode.id, { triggerType: e.target.value })
-                  }
+                  value={selectedTriggerType ?? 'MANUAL'}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === 'USER_REGISTERED') {
+                      updateNodeData(selectedNode.id, {
+                        triggerType: v,
+                        segmentFilter: { type: 'all' },
+                      });
+                    } else {
+                      updateNodeData(selectedNode.id, { triggerType: v });
+                    }
+                  }}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm text-[#303150] focus:outline-none focus:ring-2 focus:ring-[#69ADFF]/30 focus:border-[#69ADFF] bg-white"
                 >
                   <option value="MANUAL">ידני</option>
@@ -416,18 +462,32 @@ export default function WorkflowBuilder({
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-[#7E7F90] mb-1.5">
-                  קהל יעד
-                </label>
-                <SegmentSelector
-                  value={((selectedNode.data as Record<string, unknown>).segmentFilter as SegmentFilter) || { type: 'all' }}
-                  onChange={(filter) =>
-                    updateNodeData(selectedNode.id, { segmentFilter: filter })
-                  }
-                />
-              </div>
+              {selectedTriggerType === 'USER_REGISTERED' ? (
+                <div className="rounded-xl border border-gray-200 bg-[#FAFAFA] px-3 py-2.5">
+                  <p className="text-xs font-medium text-[#303150] mb-1">קהל</p>
+                  <p className="text-xs text-[#7E7F90] leading-relaxed">
+                    התהליך יופעל אוטומטית לכל משתמש חדש שנרשם לאתר. אין צורך לבחור
+                    קבוצה או סגמנט.
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-medium text-[#7E7F90] mb-1.5">
+                    קהל יעד
+                  </label>
+                  <SegmentSelector
+                    value={
+                      ((selectedNode.data as Record<string, unknown>)
+                        .segmentFilter as SegmentFilter) || { type: 'all' }
+                    }
+                    onChange={(filter) =>
+                      updateNodeData(selectedNode.id, { segmentFilter: filter })
+                    }
+                  />
+                </div>
+              )}
 
+              {selectedTriggerType !== 'USER_REGISTERED' && (
               <div>
                 <label className="block text-xs font-medium text-[#7E7F90] mb-1.5">
                   תזמון
@@ -481,19 +541,43 @@ export default function WorkflowBuilder({
                   />
                 )}
               </div>
+              )}
             </div>
           )}
 
           {/* ── EMAIL properties ─── */}
-          {selectedNode.type === 'EMAIL' && (
+          {selectedNode.type === 'EMAIL' && (() => {
+            const emailData = selectedNode.data as Record<string, unknown>;
+            const emailSubject = emailData.subject as string ?? '';
+            const emailHtml = emailData.htmlContent as string ?? '';
+            const emailSenderProfileId = (emailData.senderProfileId as string) || DEFAULT_SENDER_PROFILE_ID;
+            return (
             <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-[#7E7F90] mb-1.5">
+                  שולח
+                </label>
+                <select
+                  value={emailSenderProfileId}
+                  onChange={(e) =>
+                    updateNodeData(selectedNode.id, { senderProfileId: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm text-[#303150] focus:outline-none focus:ring-2 focus:ring-[#69ADFF]/30 focus:border-[#69ADFF] bg-white"
+                >
+                  {WORKFLOW_SENDER_PROFILES.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.labelHe}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <label className="block text-xs font-medium text-[#7E7F90] mb-1.5">
                   נושא
                 </label>
                 <input
                   type="text"
-                  value={(selectedNode.data as Record<string, unknown>).subject as string ?? ''}
+                  value={emailSubject}
                   onChange={(e) =>
                     updateNodeData(selectedNode.id, { subject: e.target.value })
                   }
@@ -506,7 +590,7 @@ export default function WorkflowBuilder({
                   תוכן HTML
                 </label>
                 <textarea
-                  value={(selectedNode.data as Record<string, unknown>).htmlContent as string ?? ''}
+                  value={emailHtml}
                   onChange={(e) =>
                     updateNodeData(selectedNode.id, {
                       htmlContent: e.target.value,
@@ -517,8 +601,88 @@ export default function WorkflowBuilder({
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm text-[#303150] placeholder:text-[#BDBDCB] focus:outline-none focus:ring-2 focus:ring-[#69ADFF]/30 focus:border-[#69ADFF] resize-none"
                 />
               </div>
+
+              <p className="text-[11px] text-[#BDBDCB] leading-relaxed">
+                ניתן לכתוב <code className="bg-gray-100 px-1 rounded text-[#7E7F90]">[שם המשתמש]</code> בנושא או ב-HTML — יוחלף אוטומטית בשם הנמען.
+              </p>
+
+              {/* Preview */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium text-[#7E7F90]">תצוגה מקדימה</label>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setEmailPreviewMode('desktop')}
+                      className={`p-1 rounded-md transition-colors ${emailPreviewMode === 'desktop' ? 'bg-[#69ADFF]/10 text-[#69ADFF]' : 'text-[#BDBDCB] hover:text-[#7E7F90]'}`}
+                      title="שולחן עבודה"
+                    >
+                      <Monitor className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEmailPreviewMode('mobile')}
+                      className={`p-1 rounded-md transition-colors ${emailPreviewMode === 'mobile' ? 'bg-[#69ADFF]/10 text-[#69ADFF]' : 'text-[#BDBDCB] hover:text-[#7E7F90]'}`}
+                      title="מובייל"
+                    >
+                      <Smartphone className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+                {emailHtml ? (
+                  <EmailPreview
+                    htmlContent={emailHtml}
+                    previewMode={emailPreviewMode}
+                    maxHeight="280px"
+                  />
+                ) : (
+                  <div className="rounded-xl border border-dashed border-gray-200 bg-[#FAFAFA] px-3 py-6 text-center">
+                    <p className="text-xs text-[#BDBDCB]">הזן HTML כדי לראות תצוגה מקדימה</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Test email */}
+              <button
+                type="button"
+                disabled={sendingTest || !emailSubject || !emailHtml}
+                onClick={async () => {
+                  const to = session?.user?.email;
+                  if (!to) {
+                    showError('לא נמצאה כתובת אימייל למשתמש המחובר');
+                    return;
+                  }
+                  setSendingTest(true);
+                  try {
+                    const res = await apiFetch('/api/admin/marketing/test-email', {
+                      method: 'POST',
+                      body: JSON.stringify({
+                        to,
+                        subject: emailSubject.replace(/\[שם המשתמש\]/g, session?.user?.name || 'משתמש'),
+                        html: emailHtml.replace(/\[שם המשתמש\]/g, session?.user?.name || 'משתמש'),
+                        senderProfileId: emailSenderProfileId,
+                      }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                      showError(data.error || 'שגיאה בשליחת מייל בדיקה');
+                    } else {
+                      success(`מייל בדיקה נשלח ל-${to}`);
+                    }
+                  } catch {
+                    showError('שגיאה בשליחת מייל בדיקה');
+                  } finally {
+                    setSendingTest(false);
+                  }
+                }}
+                className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl border border-[#69ADFF] text-[#69ADFF] text-xs font-medium hover:bg-[#69ADFF]/5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Send className="w-3.5 h-3.5" />
+                {sendingTest ? 'שולח...' : 'שלח מייל בדיקה'}
+              </button>
             </div>
-          )}
+            );
+          })()}
 
           {/* ── DELAY properties ─── */}
           {selectedNode.type === 'DELAY' && (

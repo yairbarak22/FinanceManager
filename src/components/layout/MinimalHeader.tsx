@@ -100,10 +100,7 @@ export default function MinimalHeader({
                 )}
               </button>
               
-              {/* Page Title */}
-              <div>
-                <h1 className="text-xl font-semibold text-slate-800">{pageTitle}</h1>
-              </div>
+              <h1 className="text-xl font-semibold text-slate-800">{pageTitle}</h1>
             </div>
           </div>
 
@@ -250,6 +247,7 @@ export default function MinimalHeader({
             </button>
           </div>
         </div>
+
       </div>
     </header>
 
@@ -257,6 +255,7 @@ export default function MinimalHeader({
       isOpen={isSupportModalOpen}
       onClose={() => setIsSupportModalOpen(false)}
     />
+
     </>
   );
 }

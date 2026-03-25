@@ -1,6 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import { MarketingEventType } from '@prisma/client';
 import { sendWorkflowEmail as resendWorkflowEmail } from '@/lib/marketing/resend';
+import { getWorkflowSenderFromHeader } from '@/lib/marketing/workflowSenderProfiles';
+import {
+  graduateOnboardingToActive,
+  moveUnsubscribedToInactive,
+} from '@/lib/marketingGroups';
 import type {
   WorkflowGraph,
   WorkflowNode,
@@ -23,6 +28,7 @@ async function sendAndRecordEmail(params: {
   html: string;
   workflowId: string;
   nodeId: string;
+  from?: string;
 }): Promise<{ id: string } | { error: string }> {
   const result = await resendWorkflowEmail({
     to: params.email,
@@ -31,6 +37,7 @@ async function sendAndRecordEmail(params: {
     userId: params.userId,
     workflowId: params.workflowId,
     nodeId: params.nodeId,
+    from: params.from,
   });
 
   if ('error' in result) {
@@ -61,6 +68,18 @@ async function sendAndRecordEmail(params: {
 // ============================================
 // HELPERS
 // ============================================
+
+/**
+ * Replace user-facing merge placeholders (e.g. [שם המשתמש]) with real values,
+ * consistent with the campaign cron in smart-send/route.ts.
+ */
+function applyWorkflowMergeFields(
+  text: string,
+  user: { name: string | null },
+): string {
+  const displayName = user.name?.trim() || 'משתמש';
+  return text.replace(/\[שם המשתמש\]/g, displayName);
+}
 
 function calculateDelayEnd(amount: number, unit: DelayUnit): Date {
   const ms =
@@ -136,6 +155,7 @@ export async function processDueEnrollments(): Promise<{
         where: { id: enrollment.id },
         data: { status: 'CANCELLED', nextWakeupAt: null },
       });
+      await moveUnsubscribedToInactive(enrollment.userId);
       stats.cancelled++;
       console.log(
         `${LOG_PREFIX} Cancelled enrollment ${enrollment.id} — user unsubscribed`,
@@ -162,6 +182,18 @@ export async function processDueEnrollments(): Promise<{
 // ============================================
 // CORE PROCESSING
 // ============================================
+
+async function markCompletedAndGraduate(
+  enrollment: EnrollmentWithRelations,
+): Promise<void> {
+  await prisma.workflowEnrollment.update({
+    where: { id: enrollment.id },
+    data: { status: 'COMPLETED', currentNodeId: null, nextWakeupAt: null },
+  });
+  if (enrollment.workflow.promoteToActiveOnComplete) {
+    await graduateOnboardingToActive(enrollment.userId);
+  }
+}
 
 async function processEnrollment(
   enrollment: EnrollmentWithRelations,
@@ -197,14 +229,7 @@ async function processEnrollment(
     }
 
     if (!currentNode) {
-      await prisma.workflowEnrollment.update({
-        where: { id: enrollment.id },
-        data: {
-          status: 'COMPLETED',
-          currentNodeId: null,
-          nextWakeupAt: null,
-        },
-      });
+      await markCompletedAndGraduate(enrollment);
       return 'COMPLETED';
     }
 
@@ -223,16 +248,22 @@ async function processEnrollment(
             where: { id: enrollment.id },
             data: { status: 'CANCELLED', nextWakeupAt: null },
           });
+          await moveUnsubscribedToInactive(enrollment.userId);
           return 'COMPLETED';
         }
+
+        const mergedSubject = applyWorkflowMergeFields(currentNode.data.subject, enrollment.user);
+        const mergedHtml = applyWorkflowMergeFields(currentNode.data.htmlContent, enrollment.user);
+        const from = getWorkflowSenderFromHeader(currentNode.data.senderProfileId);
 
         const emailResult = await sendAndRecordEmail({
           userId: enrollment.userId,
           email: enrollment.user.email,
-          subject: currentNode.data.subject,
-          html: currentNode.data.htmlContent,
+          subject: mergedSubject,
+          html: mergedHtml,
           workflowId: enrollment.workflowId,
           nodeId: currentNode.id,
+          from,
         });
 
         if ('error' in emailResult) {
@@ -309,14 +340,7 @@ async function processEnrollment(
         nextNode = findNextNode(graph, currentNode.id, handle);
 
         if (!nextNode) {
-          await prisma.workflowEnrollment.update({
-            where: { id: enrollment.id },
-            data: {
-              status: 'COMPLETED',
-              currentNodeId: null,
-              nextWakeupAt: null,
-            },
-          });
+          await markCompletedAndGraduate(enrollment);
           return 'COMPLETED';
         }
         break;
@@ -325,14 +349,7 @@ async function processEnrollment(
 
     // ── Edge traversal ────────────────────────────────────────────
     if (!nextNode) {
-      await prisma.workflowEnrollment.update({
-        where: { id: enrollment.id },
-        data: {
-          status: 'COMPLETED',
-          currentNodeId: null,
-          nextWakeupAt: null,
-        },
-      });
+      await markCompletedAndGraduate(enrollment);
       return 'COMPLETED';
     }
 

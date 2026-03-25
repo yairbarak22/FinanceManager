@@ -34,7 +34,6 @@ export default function AppLayout({
 }: AppLayoutProps) {
   const { openModal, isModalOpen } = useModal();
 
-  // Keyboard shortcut: C or + to open Quick Add modal
   useKeyboardShortcut({
     key: ['c', '+'],
     callback: () => openModal('quick-add'),
@@ -43,12 +42,9 @@ export default function AppLayout({
 
   return (
     <div className="flex min-h-screen bg-[#F5F5F7]">
-      {/* Sidebar - Desktop + Mobile (hamburger menu) */}
       <Sidebar />
 
-      {/* Main Content Area */}
       <div id="main-content-area" className="flex-1 flex flex-col min-h-screen">
-        {/* Header */}
         <MinimalHeader
           pageTitle={pageTitle}
           pageSubtitle={pageSubtitle}
@@ -60,15 +56,12 @@ export default function AppLayout({
           showMonthFilter={showMonthFilter}
         />
 
-        {/* Page Content */}
         <main className="flex-1 p-4 lg:p-6">
           {children}
         </main>
       </div>
 
-      {/* Quick Add FAB - Only show if enabled */}
       {showQuickAddFab && <QuickAddFab />}
-
     </div>
   );
 }

@@ -527,18 +527,20 @@ model AuditLog {
 // SECURITY ENRICHMENT - Hebrew names and sectors for Israeli securities
 // ============================================
 model SecurityEnrichment {
-  id          String   @id @default(cuid())
-  symbol      String   @unique // מפתח הצלבה ל-EOD (למשל: "ISCD.TA")
-  isin        String?  // ISIN code containing Israeli security number (e.g., "IL0011574030")
-  nameHe      String   // השם הרשמי בעברית (למשל: "מגדל (4D) ת"א 125")
-  shortNameHe String?  // שם ידידותי לתצוגה בטבלאות צפופות
-  sectorHe    String   // סקטור מפורט בעברית (למשל: "מניות - תל אביב 125")
-  assetType   String   // סוג: ETF, Mutual Fund, Stock, Bond
-  currency    String?  // מטבע מ-EOD: ILA (אגורות), ILS (שקלים), USD
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  symbol        String   @unique // מפתח הצלבה ל-EOD (למשל: "ISCD.TA")
+  isin          String?  // ISIN code containing Israeli security number (e.g., "IL0011574030")
+  listingNumber String?  // מספר ני"ע בבורסה (למשל: "5138094") — לחיפוש ישיר לפי מספר
+  nameHe        String   // השם הרשמי בעברית (למשל: "מגדל (4D) ת"א 125")
+  shortNameHe   String?  // שם ידידותי לתצוגה בטבלאות צפופות
+  sectorHe      String   // סקטור מפורט בעברית (למשל: "מניות - תל אביב 125")
+  assetType     String   // סוג: ETF, Mutual Fund, Stock, Bond
+  currency      String?  // מטבע מ-EOD: ILA (אגורות), ILS (שקלים), USD
+  updatedAt     DateTime @updatedAt
 
   @@index([symbol])
   @@index([isin])
+  @@index([listingNumber])
   @@index([nameHe])
 }
 
@@ -661,16 +663,17 @@ enum EnrollmentStatus {
 }
 
 model AutomationWorkflow {
-  id              String              @id @default(uuid())
-  name            String
-  status          WorkflowStatus      @default(DRAFT)
-  triggerType     TriggerType         @default(MANUAL)
-  nodes           Json                // React Flow nodes array: [{ id, type, data, position }]
-  edges           Json                // React Flow edges array: [{ id, source, target, type }]
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
-  enrollments     WorkflowEnrollment[]
-  marketingEvents MarketingEvent[]
+  id                       String              @id @default(uuid())
+  name                     String
+  status                   WorkflowStatus      @default(DRAFT)
+  triggerType              TriggerType         @default(MANUAL)
+  promoteToActiveOnComplete Boolean            @default(false)
+  nodes                    Json                // React Flow nodes array: [{ id, type, data, position }]
+  edges                    Json                // React Flow edges array: [{ id, source, target, type }]
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  enrollments              WorkflowEnrollment[]
+  marketingEvents          MarketingEvent[]
 
   @@index([status])
   @@index([triggerType])
