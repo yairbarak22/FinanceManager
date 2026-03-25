@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/adminHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { Prisma } from '@prisma/client';
-import { getGlobalStats } from '@/lib/globalStats';
 
 interface UserRow {
   id: string;
@@ -43,7 +42,7 @@ export async function GET(request: NextRequest) {
     // Step 2: Correlated sub-selects fetch per-user counts only for
     //         the small result set, each hitting the userId index.
     // This avoids the 5-way LEFT JOIN cartesian explosion.
-    const [rows, globalStats] = await Promise.all([
+    const [rows, total] = await Promise.all([
       prisma.$queryRaw<UserRow[]>(Prisma.sql`
         WITH latest_logins AS (
           SELECT
@@ -73,10 +72,8 @@ export async function GET(request: NextRequest) {
         JOIN "User" u ON u.id = ll."userId"
         ORDER BY ll.last_login DESC
       `),
-      getGlobalStats(),
+      prisma.user.count(),
     ]);
-
-    const total = globalStats.totalUsers;
 
     const users = rows.map((u: UserRow) => ({
       id: u.id,

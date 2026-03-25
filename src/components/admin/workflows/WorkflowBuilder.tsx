@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
@@ -16,7 +16,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { Mail, Clock, GitBranch, Save, X, Play, Pause, Users, Monitor, Smartphone, Send } from 'lucide-react';
+import { Mail, Clock, GitBranch, Save, X, Play, Pause, Users, Monitor, Smartphone, Send, Maximize2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useSession } from 'next-auth/react';
 import { apiFetch } from '@/lib/utils';
@@ -72,8 +72,13 @@ export default function WorkflowBuilder({
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [emailPreviewMode, setEmailPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [sendingTest, setSendingTest] = useState(false);
+  const [emailHtmlEditorOpen, setEmailHtmlEditorOpen] = useState(false);
   const { data: session } = useSession();
   const { toasts, removeToast, success, error: showError } = useToast();
+
+  useEffect(() => {
+    setEmailHtmlEditorOpen(false);
+  }, [selectedNodeId]);
 
   const nodeTypes = useMemo(
     () => ({
@@ -586,9 +591,19 @@ export default function WorkflowBuilder({
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-[#7E7F90] mb-1.5">
-                  תוכן HTML
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium text-[#7E7F90]">
+                    תוכן HTML
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setEmailHtmlEditorOpen(true)}
+                    className="flex items-center gap-1 text-[11px] text-[#69ADFF] hover:text-[#5A9EE6] transition-colors"
+                  >
+                    <Maximize2 className="w-3 h-3" />
+                    הרחב עריכה
+                  </button>
+                </div>
                 <textarea
                   value={emailHtml}
                   onChange={(e) =>
@@ -776,6 +791,18 @@ export default function WorkflowBuilder({
         document.body,
       )}
 
+      {/* ── Expanded HTML editor modal ────────────── */}
+      {emailHtmlEditorOpen && selectedNode?.type === 'EMAIL' && createPortal(
+        <ExpandedHtmlEditorModal
+          htmlContent={(selectedNode.data as Record<string, unknown>).htmlContent as string ?? ''}
+          onChange={(value) => updateNodeData(selectedNode.id, { htmlContent: value })}
+          previewMode={emailPreviewMode}
+          onPreviewModeChange={setEmailPreviewMode}
+          onClose={() => setEmailHtmlEditorOpen(false)}
+        />,
+        document.body,
+      )}
+
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
@@ -840,6 +867,101 @@ function EnrollModal({
             >
               {submitting ? 'רושם...' : 'רשום'}
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────
+// Expanded HTML editor modal
+// ────────────────────────────────────────────────────────────
+
+function ExpandedHtmlEditorModal({
+  htmlContent,
+  onChange,
+  previewMode,
+  onPreviewModeChange,
+  onClose,
+}: {
+  htmlContent: string;
+  onChange: (value: string) => void;
+  previewMode: 'desktop' | 'mobile';
+  onPreviewModeChange: (mode: 'desktop' | 'mobile') => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div
+        className="modal-content flex flex-col"
+        style={{ maxWidth: 'min(1200px, 95vw)', maxHeight: '90vh', width: '100%' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4 flex-shrink-0">
+          <h2 className="text-sm font-bold text-[#303150]">עריכת HTML ותצוגה מקדימה</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <X className="w-5 h-5 text-[#7E7F90]" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 min-h-0 overflow-hidden">
+          {/* Editor */}
+          <div className="flex flex-col min-h-0">
+            <label className="text-xs font-medium text-[#7E7F90] mb-1.5 flex-shrink-0">
+              תוכן HTML
+            </label>
+            <textarea
+              value={htmlContent}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder="הכנס תוכן אימייל..."
+              className="flex-1 min-h-[200px] px-3 py-2 rounded-xl border border-gray-200 text-sm text-[#303150] placeholder:text-[#BDBDCB] focus:outline-none focus:ring-2 focus:ring-[#69ADFF]/30 focus:border-[#69ADFF] resize-y font-mono leading-relaxed"
+            />
+            <p className="text-[11px] text-[#BDBDCB] leading-relaxed mt-1.5 flex-shrink-0">
+              ניתן לכתוב <code className="bg-gray-100 px-1 rounded text-[#7E7F90]">[שם המשתמש]</code> — יוחלף אוטומטית בשם הנמען.
+            </p>
+          </div>
+
+          {/* Preview */}
+          <div className="flex flex-col min-h-0">
+            <div className="flex items-center justify-between mb-1.5 flex-shrink-0">
+              <label className="text-xs font-medium text-[#7E7F90]">תצוגה מקדימה</label>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => onPreviewModeChange('desktop')}
+                  className={`p-1 rounded-md transition-colors ${previewMode === 'desktop' ? 'bg-[#69ADFF]/10 text-[#69ADFF]' : 'text-[#BDBDCB] hover:text-[#7E7F90]'}`}
+                  title="שולחן עבודה"
+                >
+                  <Monitor className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onPreviewModeChange('mobile')}
+                  className={`p-1 rounded-md transition-colors ${previewMode === 'mobile' ? 'bg-[#69ADFF]/10 text-[#69ADFF]' : 'text-[#BDBDCB] hover:text-[#7E7F90]'}`}
+                  title="מובייל"
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 min-h-0 overflow-auto rounded-xl border border-[#E8E8ED] bg-[#F7F7F8]">
+              {htmlContent ? (
+                <EmailPreview
+                  htmlContent={htmlContent}
+                  previewMode={previewMode}
+                  maxHeight="720px"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full min-h-[200px]">
+                  <p className="text-xs text-[#BDBDCB]">הזן HTML כדי לראות תצוגה מקדימה</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

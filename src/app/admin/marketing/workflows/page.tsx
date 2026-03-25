@@ -11,6 +11,7 @@ import {
   Pencil,
   Trash2,
   Users,
+  BarChart3,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
 
@@ -199,6 +200,17 @@ export default function WorkflowsPage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 flex-shrink-0">
+                  {wf.status !== 'DRAFT' && (
+                    <button
+                      onClick={() =>
+                        router.push(`/admin/marketing/workflows/${wf.id}/report`)
+                      }
+                      className="p-2 rounded-xl hover:bg-emerald-50 text-[#7E7F90] hover:text-emerald-600 transition-colors"
+                      title="דוח"
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                    </button>
+                  )}
                   <button
                     onClick={() =>
                       router.push(`/admin/marketing/workflows/${wf.id}/edit`)
