@@ -162,7 +162,7 @@ export function TutorialPill({ config, sectionKey }: TutorialPillProps) {
         }}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#69ADFF]/10 text-[#303150] text-[0.75rem] font-medium hover:bg-[#69ADFF]/20 transition-colors cursor-pointer"
       >
-        <span>איך זה עובד?</span>
+        <span>הדרכה קצרה בוידאו</span>
         <Play className="w-3 h-3 text-[#69ADFF]" strokeWidth={2.5} fill="#69ADFF" />
       </button>
 
