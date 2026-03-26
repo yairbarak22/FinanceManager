@@ -8,6 +8,7 @@ import type { WorkspaceTransaction, WorkspaceCategory } from '@/lib/workspace/ty
 
 const querySchema = z.object({
   monthKey: z.string().regex(/^\d{4}-\d{2}$/, 'monthKey must be YYYY-MM'),
+  importSessionId: z.string().optional(),
 });
 
 export async function GET(request: NextRequest) {
@@ -21,7 +22,10 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const parsed = querySchema.safeParse({ monthKey: searchParams.get('monthKey') });
+    const parsed = querySchema.safeParse({
+      monthKey: searchParams.get('monthKey'),
+      importSessionId: searchParams.get('importSessionId') ?? undefined,
+    });
 
     if (!parsed.success) {
       return NextResponse.json(
@@ -30,7 +34,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { monthKey } = parsed.data;
+    const { monthKey, importSessionId } = parsed.data;
     const [yearStr, monthStr] = monthKey.split('-');
     const year = parseInt(yearStr, 10);
     const month = parseInt(monthStr, 10);
@@ -140,7 +144,50 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({ transactions: workspaceTransactions, categories: workspaceCategories, monthKey });
+    // If an import session is specified, load its draft rows
+    let importDraftRows: {
+      id: string;
+      date: string;
+      amount: number;
+      type: string;
+      description: string;
+      suggestedCategory: string | null;
+      matchKind: string;
+      matchedTransactionId: string | null;
+      matchedRecurringId: string | null;
+      userResolution: string;
+      finalCategory: string | null;
+    }[] | undefined;
+
+    if (importSessionId) {
+      const session = await prisma.workspaceImportSession.findUnique({
+        where: { id: importSessionId },
+        include: { rows: true },
+      });
+
+      if (session && session.userId === userId && session.status === 'OPEN') {
+        importDraftRows = session.rows.map(r => ({
+          id: r.id,
+          date: r.date.toISOString(),
+          amount: r.amount,
+          type: r.type,
+          description: r.description,
+          suggestedCategory: r.suggestedCategory,
+          matchKind: r.matchKind,
+          matchedTransactionId: r.matchedTransactionId,
+          matchedRecurringId: r.matchedRecurringId,
+          userResolution: r.userResolution,
+          finalCategory: r.finalCategory,
+        }));
+      }
+    }
+
+    return NextResponse.json({
+      transactions: workspaceTransactions,
+      categories: workspaceCategories,
+      monthKey,
+      ...(importDraftRows ? { importDraftRows } : {}),
+    });
   } catch (err) {
     console.error('[Workspace Session] Error:', err);
     return NextResponse.json({ error: 'שגיאה בטעינת נתוני הסיווג' }, { status: 500 });

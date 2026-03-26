@@ -57,6 +57,8 @@ model User {
   ivrPin                IvrPin?                // PIN for IVR authentication
   reportingPhones       ReportingPhone[]       // Up to 3 phone numbers for IVR/WhatsApp reporting
   whatsappMonthlyUsages WhatsappMonthlyUsage[]
+  importSessions        WorkspaceImportSession[]
+  recurringCoverages    RecurringMonthlyCoverage[]
 }
 
 model Account {
@@ -115,19 +117,20 @@ model Transaction {
 }
 
 model RecurringTransaction {
-  id           String          @id @default(cuid())
-  userId       String
-  type         String
-  amount       Float
-  currency     String          @default("ILS") // ILS | USD
-  category     String
-  name         String
-  isActive     Boolean         @default(true)
-  activeMonths Json?           // JSON array of "YYYY-MM" strings, null = all months
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  goal         FinancialGoal?
+  id               String                    @id @default(cuid())
+  userId           String
+  type             String
+  amount           Float
+  currency         String                    @default("ILS") // ILS | USD
+  category         String
+  name             String
+  isActive         Boolean                   @default(true)
+  activeMonths     Json?                     // JSON array of "YYYY-MM" strings, null = all months
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  user             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal             FinancialGoal?
+  monthlyCoverages RecurringMonthlyCoverage[]
 
   @@index([userId])
   @@index([userId, isActive])
@@ -156,6 +159,75 @@ model FinancialGoal {
 
   @@index([userId])
   @@index([userId, category])
+}
+
+// ============================================
+// WORKSPACE IMPORT - Draft-based import with dedup
+// ============================================
+enum ImportSessionStatus {
+  OPEN
+  FINALIZED
+  ABANDONED
+}
+
+enum ImportRowMatchKind {
+  NEW
+  EXACT_DUPLICATE
+  RECURRING_CANDIDATE
+}
+
+enum ImportRowResolution {
+  PENDING
+  IMPORT_AS_TX
+  LINK_RECURRING
+  SKIP_DUPLICATE
+}
+
+model WorkspaceImportSession {
+  id        String              @id @default(cuid())
+  userId    String
+  monthKey  String              // YYYY-MM
+  status    ImportSessionStatus @default(OPEN)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rows      WorkspaceImportRow[]
+
+  @@index([userId])
+  @@index([userId, status])
+}
+
+model WorkspaceImportRow {
+  id                   String              @id @default(cuid())
+  sessionId            String
+  date                 DateTime
+  amount               Float
+  type                 String              // income | expense
+  description          String
+  suggestedCategory    String?
+  matchKind            ImportRowMatchKind   @default(NEW)
+  matchedTransactionId String?             // FK hint; not enforced to avoid coupling
+  matchedRecurringId   String?
+  userResolution       ImportRowResolution  @default(PENDING)
+  finalCategory        String?             // Category assigned by user via drag-drop
+  session              WorkspaceImportSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([sessionId, matchKind])
+}
+
+model RecurringMonthlyCoverage {
+  id                     String               @id @default(cuid())
+  userId                 String
+  recurringTransactionId String
+  monthKey               String               // YYYY-MM
+  importSessionId        String?              // Which import triggered this
+  createdAt              DateTime             @default(now())
+  user                   User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recurringTransaction   RecurringTransaction @relation(fields: [recurringTransactionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, recurringTransactionId, monthKey])
+  @@index([userId, monthKey])
 }
 
 model Asset {

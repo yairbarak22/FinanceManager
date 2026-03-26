@@ -4,7 +4,15 @@ import type {
   WorkspaceCategory,
   SaveStatus,
   UndoAction,
+  ImportMatchKind,
 } from './types';
+
+export interface ImportStageCounts {
+  total: number;
+  new: number;
+  exactDuplicates: number;
+  recurringCandidates: number;
+}
 
 interface WorkspaceState {
   unassignedTransactions: WorkspaceTransaction[];
@@ -19,6 +27,12 @@ interface WorkspaceState {
 
   totalTransactions: number;
   categorizedCount: number;
+
+  /** Import session tracking */
+  importSessionId: string | null;
+  importCounts: ImportStageCounts | null;
+  recurringCandidates: WorkspaceTransaction[];
+  hiddenDuplicates: WorkspaceTransaction[];
 
   initWorkspace: (txns: WorkspaceTransaction[], cats: WorkspaceCategory[]) => void;
   moveToCategory: (txId: string, catId: string) => void;
@@ -37,6 +51,10 @@ interface WorkspaceState {
   setSaveStatus: (s: SaveStatus) => void;
   setDuplicateIds: (ids: Set<string>) => void;
   removeDuplicates: () => void;
+  setImportSession: (sessionId: string, counts: ImportStageCounts) => void;
+  resolveRecurringCandidate: (txId: string, action: 'link' | 'import') => void;
+  promoteDuplicateToInbox: (txId: string) => void;
+  bulkPromoteDuplicates: (txIds: string[]) => void;
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
@@ -50,10 +68,20 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   duplicateIds: new Set(),
   totalTransactions: 0,
   categorizedCount: 0,
+  importSessionId: null,
+  importCounts: null,
+  recurringCandidates: [],
+  hiddenDuplicates: [],
 
   initWorkspace: (txns, cats) => {
+    const recurringCandidates = txns.filter(
+      (t) => t.matchKind === 'RECURRING_CANDIDATE'
+    );
+    const hiddenDuplicates = txns.filter(
+      (t) => t.matchKind === 'EXACT_DUPLICATE'
+    );
     const unassigned = txns.filter(
-      (t) => t.status === 'UNCATEGORIZED'
+      (t) => t.status === 'UNCATEGORIZED' && t.matchKind !== 'EXACT_DUPLICATE' && t.matchKind !== 'RECURRING_CANDIDATE'
     );
 
     const catsWithTx = cats.map((cat) => ({
@@ -79,6 +107,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       undoHistory: [],
       duplicateIds: new Set(),
       saveStatus: 'idle',
+      recurringCandidates,
+      hiddenDuplicates,
     });
   },
 
@@ -406,5 +436,77 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       categorizedCount: s.categorizedCount - removedFromCats,
       selectedIds: new Set([...s.selectedIds].filter((id) => !idsToRemove.has(id))),
     }));
+  },
+
+  setImportSession: (sessionId, counts) => set({ importSessionId: sessionId, importCounts: counts }),
+
+  resolveRecurringCandidate: (txId, action) => {
+    const { recurringCandidates, unassignedTransactions } = get();
+    const tx = recurringCandidates.find((t) => t.id === txId);
+    if (!tx) return;
+
+    const remaining = recurringCandidates.filter((t) => t.id !== txId);
+
+    if (action === 'import') {
+      const asTx: WorkspaceTransaction = {
+        ...tx,
+        matchKind: 'NEW',
+        status: 'UNCATEGORIZED',
+        categoryId: null,
+      };
+      set({
+        recurringCandidates: remaining,
+        unassignedTransactions: [...unassignedTransactions, asTx],
+      });
+    } else {
+      set({ recurringCandidates: remaining });
+    }
+  },
+
+  promoteDuplicateToInbox: (txId) => {
+    const { hiddenDuplicates, unassignedTransactions, importCounts } = get();
+    const tx = hiddenDuplicates.find((t) => t.id === txId);
+    if (!tx) return;
+
+    const promoted: WorkspaceTransaction = {
+      ...tx,
+      matchKind: 'NEW',
+      status: 'UNCATEGORIZED',
+      categoryId: null,
+    };
+
+    set({
+      hiddenDuplicates: hiddenDuplicates.filter((t) => t.id !== txId),
+      unassignedTransactions: [...unassignedTransactions, promoted],
+      importCounts: importCounts ? {
+        ...importCounts,
+        exactDuplicates: Math.max(0, importCounts.exactDuplicates - 1),
+        new: importCounts.new + 1,
+      } : null,
+    });
+  },
+
+  bulkPromoteDuplicates: (txIds) => {
+    const { hiddenDuplicates, unassignedTransactions, importCounts } = get();
+    const idsSet = new Set(txIds);
+    const toPromote = hiddenDuplicates.filter((t) => idsSet.has(t.id));
+    if (toPromote.length === 0) return;
+
+    const promoted = toPromote.map((tx): WorkspaceTransaction => ({
+      ...tx,
+      matchKind: 'NEW',
+      status: 'UNCATEGORIZED',
+      categoryId: null,
+    }));
+
+    set({
+      hiddenDuplicates: hiddenDuplicates.filter((t) => !idsSet.has(t.id)),
+      unassignedTransactions: [...unassignedTransactions, ...promoted],
+      importCounts: importCounts ? {
+        ...importCounts,
+        exactDuplicates: Math.max(0, importCounts.exactDuplicates - promoted.length),
+        new: importCounts.new + promoted.length,
+      } : null,
+    });
   },
 }));

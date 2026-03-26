@@ -20,6 +20,7 @@ import type {
   WorkspaceTransaction,
   WorkspaceCategory,
   WorkspaceSessionResponse,
+  StageResponse,
 } from '@/lib/workspace/types';
 
 import UploadWizard from './UploadWizard';
@@ -57,7 +58,6 @@ export default function WorkspacePage() {
 
   const deleteTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingDeletions = useRef<string[]>([]);
-  const importedTxIdsRef = useRef<string[]>([]);
   const finalizedRef = useRef(false);
 
   const {
@@ -73,6 +73,10 @@ export default function WorkspacePage() {
     setDuplicateIds,
     removeDuplicates,
     undoLastAction,
+    setImportSession,
+    resolveRecurringCandidate,
+    promoteDuplicateToInbox,
+    bulkPromoteDuplicates,
     selectedIds,
     categorizedCount,
     totalTransactions,
@@ -81,6 +85,7 @@ export default function WorkspacePage() {
     unassignedTransactions,
     categories,
     duplicateIds,
+    importSessionId,
   } = useWorkspaceStore();
 
   const monthKey =
@@ -113,12 +118,12 @@ export default function WorkspacePage() {
 
   useEffect(() => {
     return () => {
-      if (!finalizedRef.current && importedTxIdsRef.current.length > 0) {
-        const ids = [...importedTxIdsRef.current];
-        apiFetch('/api/workspace/delete', {
-          method: 'DELETE',
+      const state = useWorkspaceStore.getState();
+      if (!finalizedRef.current && state.importSessionId) {
+        apiFetch('/api/workspace/import/abandon', {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ transactionIds: ids }),
+          body: JSON.stringify({ sessionId: state.importSessionId }),
         }).catch(() => {});
       }
     };
@@ -135,6 +140,7 @@ export default function WorkspacePage() {
       formData.append('importType', importType);
 
       try {
+        // Step 1: Parse + classify
         const res = await apiFetch('/api/transactions/import', {
           method: 'POST',
           body: formData,
@@ -160,61 +166,42 @@ export default function WorkspacePage() {
           return;
         }
 
-        // Derive months from the imported transactions' actual dates
         const months = getAvailableMonths(allTxns);
         setAvailableMonths(months);
         const importedMonthKey = getDominantKey(months);
         setDerivedMonthKey(importedMonthKey);
 
-        const toSave = allTxns.map((t: { merchantName: string; amount: number; date: string; type: string; category: string | null }) => ({
-          merchantName: t.merchantName,
-          amount: t.amount,
+        // Step 2: Stage — server-side dedup + recurring matching, draft rows only
+        const stageRows = allTxns.map((t: { merchantName: string; amount: number; date: string; type: string; category: string | null }) => ({
           date: typeof t.date === 'string' ? t.date : new Date(t.date).toISOString(),
+          amount: t.amount,
           type: t.type,
-          category: t.category || 'uncategorized',
-          isManualCategory: false,
+          description: t.merchantName,
+          suggestedCategory: t.category || null,
         }));
 
-        // Cleanup any leftover transactions from a previous abandoned import
-        if (importedTxIdsRef.current.length > 0) {
-          const oldIds = [...importedTxIdsRef.current];
-          importedTxIdsRef.current = [];
-          try {
-            await apiFetch('/api/workspace/delete', {
-              method: 'DELETE',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ transactionIds: oldIds }),
-            });
-          } catch { /* proceed even if cleanup fails */ }
-        }
-
-        // Snapshot existing transaction IDs before saving new ones
-        let preExistingIds = new Set<string>();
-        try {
-          const preRes = await apiFetch(`/api/workspace/session?monthKey=${importedMonthKey}`);
-          if (preRes.ok) {
-            const preData: WorkspaceSessionResponse = await preRes.json();
-            preExistingIds = new Set(preData.transactions.map((t) => t.id));
-          }
-        } catch { /* proceed without snapshot */ }
-
-        // Single save call -- always skip server-side duplicate check.
-        // Duplicates are detected client-side after session load.
-        const confirmRes = await apiFetch('/api/transactions/import/confirm', {
+        const stageRes = await apiFetch('/api/workspace/import/stage', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ transactions: toSave, skipDuplicateCheck: true }),
+          body: JSON.stringify({ monthKey: importedMonthKey, rows: stageRows }),
         });
 
-        const confirmData = await confirmRes.json();
-
-        if (!confirmRes.ok) {
-          setErrorMsg(confirmData.error || 'שגיאה בשמירת העסקאות');
+        if (!stageRes.ok) {
+          const stageErr = await stageRes.json();
+          setErrorMsg(stageErr.error || 'שגיאה בהכנת הייבוא');
           setPhase('error');
           return;
         }
 
-        const sessionRes = await apiFetch(`/api/workspace/session?monthKey=${importedMonthKey}`);
+        const stageData: StageResponse = await stageRes.json();
+
+        setImportSession(stageData.sessionId, stageData.counts);
+        finalizedRef.current = false;
+
+        // Step 3: Load existing session data + merge with draft rows
+        const sessionRes = await apiFetch(
+          `/api/workspace/session?monthKey=${importedMonthKey}&importSessionId=${stageData.sessionId}`
+        );
         if (!sessionRes.ok) {
           setErrorMsg('שגיאה בטעינת נתוני הסיווג');
           setPhase('error');
@@ -223,28 +210,13 @@ export default function WorkspacePage() {
 
         const sessionData: WorkspaceSessionResponse = await sessionRes.json();
 
-        // Always detect duplicates client-side by description+amount+date
-        const dupIds = new Set<string>();
-        const seenKeys = new Map<string, string>();
-        for (const tx of sessionData.transactions) {
-          const key = `${tx.description}|${tx.amount}|${new Date(tx.date).toDateString()}`;
-          if (seenKeys.has(key)) {
-            dupIds.add(tx.id);
-          } else {
-            seenKeys.set(key, tx.id);
-          }
-        }
-
-        const importedTransactions: WorkspaceTransaction[] = sessionData.transactions.map((tx) => {
-          const isDup = dupIds.has(tx.id);
-
+        // Build workspace transactions from existing + draft rows
+        const existingTxns: WorkspaceTransaction[] = sessionData.transactions.map((tx) => {
           if (tx.status === 'CONFIRMED' && tx.categoryId) {
-            return { ...tx, isDuplicate: isDup };
+            return { ...tx };
           }
-
           const hasRealCategory =
             tx.categoryId && tx.categoryId !== 'other' && tx.categoryId !== 'uncategorized';
-
           if (hasRealCategory) {
             return {
               ...tx,
@@ -252,7 +224,6 @@ export default function WorkspacePage() {
               aiConfidence: 'HIGH' as const,
               categoryId: null,
               status: 'AI_SUGGESTED' as const,
-              isDuplicate: isDup,
             };
           }
           return {
@@ -261,9 +232,34 @@ export default function WorkspacePage() {
             aiConfidence: 'NONE' as const,
             categoryId: null,
             status: 'UNCATEGORIZED' as const,
-            isDuplicate: isDup,
           };
         });
+
+        // Convert draft rows to WorkspaceTransactions
+        const draftTxns: WorkspaceTransaction[] = stageData.rows.map((row) => {
+          const matchKind = row.matchKind as 'NEW' | 'EXACT_DUPLICATE' | 'RECURRING_CANDIDATE';
+          const hasCat = row.suggestedCategory && row.suggestedCategory !== 'other' && row.suggestedCategory !== 'uncategorized';
+
+          return {
+            id: row.id,
+            date: row.date,
+            description: row.description,
+            amount: row.amount,
+            type: row.type as 'income' | 'expense',
+            currency: 'ILS' as const,
+            categoryId: null,
+            aiSuggestedCategoryId: hasCat ? row.suggestedCategory : null,
+            aiConfidence: hasCat ? 'HIGH' as const : 'NONE' as const,
+            status: hasCat && matchKind === 'NEW' ? 'AI_SUGGESTED' as const : 'UNCATEGORIZED' as const,
+            importRowId: row.id,
+            matchKind,
+            matchedRecurringId: row.matchedRecurringId,
+            matchedRecurringName: row.matchedRecurringName,
+            matchedRecurringCategory: row.matchedRecurringCategory,
+          };
+        });
+
+        const allWorkspaceTxns = [...existingTxns, ...draftTxns];
 
         const cleanCategories: WorkspaceCategory[] = sessionData.categories.map((cat) => ({
           ...cat,
@@ -271,16 +267,7 @@ export default function WorkspacePage() {
           pendingAiTransactions: [],
         }));
 
-        // Track newly imported IDs for cleanup on unmount
-        importedTxIdsRef.current = sessionData.transactions
-          .map((t) => t.id)
-          .filter((id) => !preExistingIds.has(id));
-        finalizedRef.current = false;
-
-        initWorkspace(importedTransactions, cleanCategories);
-        if (dupIds.size > 0) {
-          setDuplicateIds(dupIds);
-        }
+        initWorkspace(allWorkspaceTxns, cleanCategories);
         setPhase('categorize');
       } catch (err) {
         console.error('[Workspace] Import flow error:', err);
@@ -288,7 +275,7 @@ export default function WorkspacePage() {
         setPhase('error');
       }
     },
-    [initWorkspace]
+    [initWorkspace, setImportSession]
   );
 
   // ---------- DnD ----------
@@ -393,35 +380,104 @@ export default function WorkspacePage() {
     }
   }
 
+  const handleResolveRecurring = useCallback(
+    (txId: string, action: 'link' | 'import') => {
+      resolveRecurringCandidate(txId, action);
+    },
+    [resolveRecurringCandidate]
+  );
+
   const handleFinalize = useCallback(async () => {
     setIsFinalizing(true);
     finalizedRef.current = true;
-    importedTxIdsRef.current = [];
     try {
-      const allAssignments: { transactionId: string; categoryId: string }[] = [];
       const state = useWorkspaceStore.getState();
+      const sessionId = state.importSessionId;
+
+      // Categorize existing transactions (non-draft) that were moved to categories
+      const existingAssignments: { transactionId: string; categoryId: string }[] = [];
+      const draftResolutions: { rowId: string; resolution: 'IMPORT_AS_TX' | 'LINK_RECURRING' | 'SKIP_DUPLICATE'; category: string | null }[] = [];
+
       for (const cat of state.categories) {
-        for (const tx of cat.assignedTransactions) {
-          allAssignments.push({ transactionId: tx.id, categoryId: cat.id });
-        }
-        for (const tx of cat.pendingAiTransactions) {
-          allAssignments.push({ transactionId: tx.id, categoryId: cat.id });
+        for (const tx of [...cat.assignedTransactions, ...cat.pendingAiTransactions]) {
+          if (tx.importRowId) {
+            draftResolutions.push({
+              rowId: tx.importRowId,
+              resolution: 'IMPORT_AS_TX',
+              category: cat.id,
+            });
+          } else {
+            existingAssignments.push({ transactionId: tx.id, categoryId: cat.id });
+          }
         }
       }
 
-      if (allAssignments.length > 0) {
-        setSaveStatus('saving');
+      // Unassigned draft rows with no matchKind quirks → import as tx with suggested category
+      for (const tx of state.unassignedTransactions) {
+        if (tx.importRowId) {
+          draftResolutions.push({
+            rowId: tx.importRowId,
+            resolution: 'IMPORT_AS_TX',
+            category: tx.aiSuggestedCategoryId || 'uncategorized',
+          });
+        }
+      }
+
+      // Recurring candidates that were linked (not moved to import)
+      // These are already removed from recurringCandidates by resolveRecurringCandidate('link'),
+      // so we track their resolutions via the hidden candidates
+      // Actually: linked ones were removed from store. We need a different approach.
+      // The remaining recurringCandidates are those NOT yet resolved — default to link.
+      for (const tx of state.recurringCandidates) {
+        if (tx.importRowId) {
+          draftResolutions.push({
+            rowId: tx.importRowId,
+            resolution: 'LINK_RECURRING',
+            category: null,
+          });
+        }
+      }
+
+      // Hidden duplicates — skip
+      for (const tx of state.hiddenDuplicates) {
+        if (tx.importRowId) {
+          draftResolutions.push({
+            rowId: tx.importRowId,
+            resolution: 'SKIP_DUPLICATE',
+            category: null,
+          });
+        }
+      }
+
+      setSaveStatus('saving');
+
+      // 1. Categorize existing transactions
+      if (existingAssignments.length > 0) {
         await apiFetch('/api/workspace/categorize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ assignments: allAssignments }),
+          body: JSON.stringify({ assignments: existingAssignments }),
         });
       }
 
+      // 2. Finalize import session (create transactions + recurring coverages)
+      if (sessionId && draftResolutions.length > 0) {
+        const finalizeRes = await apiFetch('/api/workspace/import/finalize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, resolutions: draftResolutions }),
+        });
+        if (!finalizeRes.ok) {
+          const errData = await finalizeRes.json();
+          console.error('[Workspace] Finalize error:', errData);
+        }
+      }
+
+      // 3. Also call existing finalize for month-level operations
       await apiFetch('/api/workspace/finalize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ monthKey, assignments: allAssignments }),
+        body: JSON.stringify({ monthKey, assignments: existingAssignments }),
       });
 
       setSaveStatus('saved');
@@ -588,6 +644,9 @@ export default function WorkspacePage() {
               onDeleteTx={handleDeleteTx}
               onRemoveDuplicates={handleRemoveDuplicates}
               duplicateCount={duplicateIds.size}
+              onResolveRecurring={handleResolveRecurring}
+              onPromoteDuplicate={promoteDuplicateToInbox}
+              onBulkPromoteDuplicates={bulkPromoteDuplicates}
             />
           </div>
           <div className="flex-1 min-w-0 h-full">
