@@ -21,7 +21,7 @@ const VIDEOS = [
 
 const getThumb = (id: string) => `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
 const getEmbed = (id: string) =>
-  `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&iv_load_policy=3&autoplay=1`;
+  `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&iv_load_policy=3&autoplay=1`;
 
 const BENTO_BENEFITS = [
   {
@@ -1231,6 +1231,7 @@ function VideoCourseSection({ noMotion }: { noMotion: boolean }) {
                         key={`iframe-${activeVideo.id}`}
                         src={getEmbed(activeVideo.id)}
                         className="absolute inset-0 w-full h-full border-0"
+                        referrerPolicy="strict-origin-when-cross-origin"
                         allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
                         allowFullScreen
                         initial={{ opacity: 0 }}
@@ -1338,6 +1339,7 @@ function VideoCourseSection({ noMotion }: { noMotion: boolean }) {
                         key={`m-iframe-${activeVideo.id}`}
                         src={getEmbed(activeVideo.id)}
                         className="absolute inset-0 w-full h-full border-0"
+                        referrerPolicy="strict-origin-when-cross-origin"
                         allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
                         allowFullScreen
                         initial={{ opacity: 0 }}

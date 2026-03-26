@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useCallback, useState } from 'react';
-import { X, Volume2, VolumeX, CheckCircle2, Play } from 'lucide-react';
+import { X, CheckCircle2, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PageTutorialConfig } from '@/lib/pageTutorials';
 import { trackMixpanelEvent } from '@/lib/mixpanel';
@@ -13,8 +13,6 @@ interface PageTutorialDrawerProps {
 }
 
 export default function PageTutorialDrawer({ isOpen, onClose, config }: PageTutorialDrawerProps) {
-  const [isMuted, setIsMuted] = useState(true);
-
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -27,14 +25,6 @@ export default function PageTutorialDrawer({ isOpen, onClose, config }: PageTuto
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, handleKeyDown]);
-
-  useEffect(() => {
-    if (isOpen) setIsMuted(true);
-  }, [isOpen]);
-
-  const videoSrc = isOpen && config.lesson.videoUrl
-    ? `${config.lesson.videoUrl}&autoplay=1&mute=${isMuted ? 1 : 0}`
-    : undefined;
 
   return (
     <AnimatePresence>
@@ -83,37 +73,18 @@ export default function PageTutorialDrawer({ isOpen, onClose, config }: PageTuto
               </button>
             </div>
 
-            {/* Video */}
+            {/* Video — same iframe config as VideoPlayer (no autoplay) */}
             <div className="relative w-full flex-shrink-0" style={{ paddingTop: '56.25%' }}>
-              {videoSrc && (
+              {isOpen && config.lesson.videoUrl && (
                 <iframe
-                  key={isMuted ? 'muted' : 'unmuted'}
-                  src={videoSrc}
+                  src={config.lesson.videoUrl}
+                  loading="lazy"
+                  referrerPolicy="strict-origin-when-cross-origin"
                   className="absolute inset-0 w-full h-full border-0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
                   allowFullScreen
                 />
               )}
-
-              {/* Mute / Unmute toggle */}
-              <button
-                type="button"
-                onClick={() => setIsMuted((v) => !v)}
-                className="absolute bottom-3 left-3 z-10 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[0.6875rem] font-medium text-white cursor-pointer transition-colors"
-                style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)' }}
-              >
-                {isMuted ? (
-                  <>
-                    <VolumeX className="w-3.5 h-3.5" strokeWidth={2} />
-                    <span>הפעלת סאונד</span>
-                  </>
-                ) : (
-                  <>
-                    <Volume2 className="w-3.5 h-3.5" strokeWidth={2} />
-                    <span>השתקה</span>
-                  </>
-                )}
-              </button>
             </div>
 
             {/* Summary bullets */}

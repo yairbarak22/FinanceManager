@@ -16,6 +16,9 @@ import { safeParseWorkflowGraph } from './types';
 
 const MAX_ITERATIONS = 10;
 const LOG_PREFIX = '[Workflow Engine]';
+const RESEND_SEND_GAP_MS = 250;
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 /**
  * Send a workflow email via Resend, then persist a SENT MarketingEvent
@@ -61,6 +64,8 @@ async function sendAndRecordEmail(params: {
   } catch (err) {
     console.error(`${LOG_PREFIX} Failed to record SENT event for email ${result.id}:`, err);
   }
+
+  await sleep(RESEND_SEND_GAP_MS);
 
   return result;
 }

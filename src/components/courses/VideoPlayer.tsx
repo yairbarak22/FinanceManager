@@ -22,7 +22,6 @@ export default function VideoPlayer({ lesson, chapterTitle, lessonNumber, totalL
     <Card padding="none" className="overflow-hidden">
       {/* Video area */}
       {lesson.videoUrl ? (
-        /* ===== Real bunny.net iframe embed ===== */
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -33,6 +32,7 @@ export default function VideoPlayer({ lesson, chapterTitle, lessonNumber, totalL
           <iframe
             src={lesson.videoUrl}
             loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
             className="absolute inset-0 w-full h-full border-0"
             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
             allowFullScreen

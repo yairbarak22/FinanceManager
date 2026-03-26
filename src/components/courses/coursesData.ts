@@ -60,7 +60,7 @@ export const mockCourse: Course = {
       title: 'כדור השלג של הכסף',
       icon: 'Snowflake',
       lessons: [
-        { id: 'l-1', title: 'למה חיסכון בבנק כבר לא מספיק?', duration: '03:24', status: 'active', badge: 'FREE', videoUrl: 'https://www.youtube.com/embed/eSPdAfQmDRA?rel=0&modestbranding=1&iv_load_policy=3', attachedFiles: [] },
+        { id: 'l-1', title: 'למה חיסכון בבנק כבר לא מספיק?', duration: '03:24', status: 'active', badge: 'FREE', videoUrl: 'https://www.youtube-nocookie.com/embed/eSPdAfQmDRA?rel=0&modestbranding=1&iv_load_policy=3', attachedFiles: [] },
       ],
     },
     {
@@ -74,7 +74,7 @@ export const mockCourse: Course = {
           duration: '03:41',
           status: 'active',
           badge: 'BEGINNER',
-          videoUrl: 'https://www.youtube.com/embed/AvmYuJrEF18?rel=0&modestbranding=1&iv_load_policy=3',
+          videoUrl: 'https://www.youtube-nocookie.com/embed/AvmYuJrEF18?rel=0&modestbranding=1&iv_load_policy=3',
           attachedFiles: [
             {
               id: 'f-kosher',
@@ -95,7 +95,7 @@ export const mockCourse: Course = {
       title: 'תכל׳ס - פתיחת חשבון',
       icon: 'UserCheck',
       lessons: [
-        { id: 'l-3', title: 'פותחים חשבון באלטשולר שחם (צעד אחר צעד)', duration: '04:24', status: 'active', badge: 'BEGINNER', videoUrl: 'https://www.youtube.com/embed/SVZnToUSRMg?rel=0&modestbranding=1&iv_load_policy=3', attachedFiles: [] },
+        { id: 'l-3', title: 'פותחים חשבון באלטשולר שחם (צעד אחר צעד)', duration: '04:24', status: 'active', badge: 'BEGINNER', videoUrl: 'https://www.youtube-nocookie.com/embed/SVZnToUSRMg?rel=0&modestbranding=1&iv_load_policy=3', attachedFiles: [] },
       ],
     },
     {
@@ -109,7 +109,7 @@ export const mockCourse: Course = {
           duration: '02:34',
           status: 'active',
           badge: 'INTERMEDIATE',
-          videoUrl: 'https://www.youtube.com/embed/TdA1O5MeifQ?rel=0&modestbranding=1&iv_load_policy=3',
+          videoUrl: 'https://www.youtube-nocookie.com/embed/TdA1O5MeifQ?rel=0&modestbranding=1&iv_load_policy=3',
           attachedFiles: [
             {
               id: 'f-deposit',
