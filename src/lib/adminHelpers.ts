@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from './auth';
+import { requireAuth } from './authHelpers';
 
 /**
  * Get admin emails from environment (safe for client-side)
@@ -45,20 +46,15 @@ export async function requireAdmin(): Promise<{
   email?: never;
   error: NextResponse;
 }> {
+  // Step 1: DB revocation check (verifies user still exists via cache+DB)
+  const { userId, error: authError } = await requireAuth();
+  if (authError) return { error: authError };
+
+  // Step 2: Fetch session for email (needed for isAdmin check)
   const session = await getServerSession(authOptions);
-  
-  // Check if authenticated
-  if (!session?.user?.id) {
-    return {
-      error: NextResponse.json(
-        { error: 'Unauthorized - Not authenticated' },
-        { status: 401 }
-      ),
-    };
-  }
 
   // Check if admin
-  if (!isAdmin(session.user.email)) {
+  if (!isAdmin(session?.user?.email)) {
     return {
       error: NextResponse.json(
         { error: 'Forbidden - Admin access required' },
@@ -68,8 +64,8 @@ export async function requireAdmin(): Promise<{
   }
 
   return {
-    userId: session.user.id,
-    email: session.user.email!,
+    userId,
+    email: session!.user!.email!,
   };
 }
 
