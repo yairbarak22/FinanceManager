@@ -57,6 +57,9 @@ export const RATE_LIMITS = {
   // IVR phone-based expense reporting - per phone number
   ivr: { maxRequests: 10, windowSeconds: 60 } as RateLimitConfig,
 
+  // IVR PIN attempts — strict, per phone number (3 per 15 min)
+  ivrPinAttempt: { maxRequests: 3, windowSeconds: 900 } as RateLimitConfig,
+
   // WhatsApp bot - per phone number
   whatsapp: { maxRequests: 15, windowSeconds: 60 } as RateLimitConfig,
 
@@ -324,6 +327,14 @@ export async function getRateLimitRemaining(
     return rateLimitConfig.maxRequests;
   }
   return Math.max(0, rateLimitConfig.maxRequests - entry.count);
+}
+
+/**
+ * Expose the Upstash Redis client for modules that need raw key/value ops
+ * (e.g. IVR PIN lockout counters). Returns null when Redis is unavailable.
+ */
+export function getUpstashRedis(): Redis | null {
+  return redisClient;
 }
 
 // ============================================================================

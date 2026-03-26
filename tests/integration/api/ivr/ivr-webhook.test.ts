@@ -34,16 +34,36 @@ vi.mock('bcryptjs', () => ({
   },
 }));
 
+vi.mock('@/lib/rateLimit', () => ({
+  checkRateLimit: vi.fn().mockResolvedValue({ success: true, limit: 3, remaining: 2, resetTime: 0 }),
+  RATE_LIMITS: { ivrPinAttempt: { maxRequests: 3, windowSeconds: 900 } },
+  getUpstashRedis: vi.fn().mockReturnValue(null),
+}));
+
+vi.mock('@/lib/ivr/pinBruteForce', () => ({
+  isPhoneLocked: vi.fn().mockResolvedValue(false),
+  recordPinFailure: vi.fn().mockResolvedValue(undefined),
+  clearPinFailures: vi.fn().mockResolvedValue(undefined),
+}));
+
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { checkRateLimit } from '@/lib/rateLimit';
+import { isPhoneLocked, recordPinFailure, clearPinFailures } from '@/lib/ivr/pinBruteForce';
 import { GET } from '@/app/api/ivr/webhook/route';
 import { NextRequest } from 'next/server';
+
+const TEST_WEBHOOK_SECRET = 'test-webhook-secret';
+process.env.YEMOT_WEBHOOK_SECRET = TEST_WEBHOOK_SECRET;
 
 const mockPrisma = vi.mocked(prisma);
 const mockBcrypt = vi.mocked(bcrypt);
 
-function makeRequest(params: Record<string, string>) {
+function makeRequest(params: Record<string, string>, { includeToken = true } = {}) {
   const url = new URL('http://localhost/api/ivr/webhook');
+  if (includeToken) {
+    url.searchParams.set('token', TEST_WEBHOOK_SECRET);
+  }
   for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, v);
   }
@@ -338,6 +358,72 @@ describe('IVR Webhook — DTMF State Machine', () => {
     const text = await res.text();
 
     expect(text).toBe('id_list_message=t-שגיאה במערכת&hangup');
+  });
+
+  // =====================
+  // Security: webhook secret
+  // =====================
+  it('should reject requests without webhook secret', async () => {
+    const res = await GET(makeRequest({ ApiPhone: '0501234567' }, { includeToken: false }));
+    const text = await res.text();
+
+    expect(text).toContain('שגיאה במערכת');
+    expect(text).toContain('hangup');
+  });
+
+  it('should reject requests with wrong webhook secret', async () => {
+    const url = new URL('http://localhost/api/ivr/webhook');
+    url.searchParams.set('token', 'wrong-secret');
+    url.searchParams.set('ApiPhone', '0501234567');
+    const res = await GET(new NextRequest(url));
+    const text = await res.text();
+
+    expect(text).toContain('שגיאה במערכת');
+  });
+
+  // =====================
+  // Security: PIN rate limiting
+  // =====================
+  it('should reject PIN attempt when phone is locked', async () => {
+    vi.mocked(isPhoneLocked).mockResolvedValueOnce(true);
+
+    const res = await GET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
+    const text = await res.text();
+
+    expect(text).toBe('id_list_message=f-052&hangup');
+    expect(isPhoneLocked).toHaveBeenCalledWith('0501234567');
+  });
+
+  it('should reject PIN attempt when rate limited', async () => {
+    vi.mocked(checkRateLimit).mockResolvedValueOnce({
+      success: false, limit: 3, remaining: 0, resetTime: Date.now() + 60000,
+    });
+
+    const res = await GET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
+    const text = await res.text();
+
+    expect(text).toBe('id_list_message=f-052&hangup');
+  });
+
+  it('should record failure on wrong PIN', async () => {
+    mockPrisma.reportingPhone.findUnique.mockResolvedValue(validReportingPhone);
+    mockPrisma.ivrPin.findUnique.mockResolvedValue(validPinUnique);
+    mockBcrypt.compare.mockResolvedValue(false as never);
+
+    await GET(makeRequest({ ApiPhone: '0501234567', PIN: '9999' }));
+
+    expect(recordPinFailure).toHaveBeenCalledWith('0501234567');
+  });
+
+  it('should clear failures on correct PIN', async () => {
+    mockPrisma.reportingPhone.findUnique.mockResolvedValue(validReportingPhone);
+    mockPrisma.ivrPin.findUnique.mockResolvedValue(validPinUnique);
+    mockBcrypt.compare.mockResolvedValue(true as never);
+    mockPrisma.ivrCallSession.findFirst.mockResolvedValue(null);
+
+    await GET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
+
+    expect(clearPinFailures).toHaveBeenCalledWith('0501234567');
   });
 
   // =====================

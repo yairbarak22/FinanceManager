@@ -32,6 +32,9 @@ interface Config {
   upstashRedisRestUrl?: string;
   upstashRedisRestToken?: string;
 
+  // IVR (Yemot HaMashiach / Call2All)
+  yemotWebhookSecret?: string;
+
   // Environment
   nodeEnv: 'development' | 'production' | 'test';
 }
@@ -102,6 +105,9 @@ function loadConfig(): Config {
     // Rate Limiting (Upstash Redis)
     upstashRedisRestUrl: process.env.UPSTASH_REDIS_REST_URL,
     upstashRedisRestToken: process.env.UPSTASH_REDIS_REST_TOKEN,
+
+    // IVR (Yemot HaMashiach / Call2All)
+    yemotWebhookSecret: process.env.YEMOT_WEBHOOK_SECRET,
 
     // Environment
     nodeEnv: (process.env.NODE_ENV as Config['nodeEnv']) || 'development',

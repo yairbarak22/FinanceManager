@@ -8,6 +8,7 @@
 import { Resend } from 'resend';
 import { config } from '@/lib/config';
 import { courseSequenceEmails, stepCtaPaths } from './courseSequenceTemplates';
+import { buildUnsubscribeUrl } from '@/lib/marketing/unsubscribeToken';
 
 let resendClient: Resend | null = null;
 
@@ -18,12 +19,8 @@ function getResend(): Resend | null {
   return resendClient;
 }
 
-function getUnsubscribeUrl(userId: string): string {
-  return `${config.nextAuthUrl}/api/marketing/unsubscribe?userId=${userId}`;
-}
-
 function addUnsubscribeLink(html: string, userId: string): string {
-  const unsubscribeUrl = getUnsubscribeUrl(userId);
+  const unsubscribeUrl = buildUnsubscribeUrl(userId);
   const link = `
     <div style="margin-top:32px;padding-top:24px;border-top:1px solid #F7F7F8;text-align:center;">
       <p style="color:#BDBDCB;font-size:12px;margin:0 0 8px 0;">

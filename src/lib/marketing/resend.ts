@@ -6,6 +6,7 @@
 import { Resend } from 'resend';
 import { config } from '@/lib/config';
 import { getSenderDisplay } from '@/lib/inbox/constants';
+import { buildUnsubscribeUrl } from '@/lib/marketing/unsubscribeToken';
 
 let resendClient: Resend | null = null;
 
@@ -41,15 +42,11 @@ export interface SendTestEmailParams {
   from?: string;
 }
 
-/**
- * Generate unsubscribe URL for a user
- */
 function getUnsubscribeUrl(userId: string | null, email?: string): string {
-  const baseUrl = config.nextAuthUrl;
   if (userId && !userId.startsWith('external-')) {
-    return `${baseUrl}/api/marketing/unsubscribe?userId=${userId}`;
+    return buildUnsubscribeUrl(userId);
   }
-  // For external emails (from CSV), use email-based unsubscribe
+  const baseUrl = config.nextAuthUrl;
   if (email) {
     return `${baseUrl}/api/marketing/unsubscribe-email?email=${encodeURIComponent(email)}`;
   }

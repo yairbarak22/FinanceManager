@@ -21,6 +21,8 @@ export interface IvrWebhookParams {
   CategoryKey?: string;
   Amount?: string;
   hangup?: string;
+  /** Shared secret appended to the webhook URL in Yemot extension config */
+  token?: string;
 }
 
 export type IvrSessionStatus = 'started' | 'completed' | 'failed';

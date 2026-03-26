@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import {
   buildReadTap,
   buildFileAndHangup,
@@ -13,6 +14,16 @@ const HEADERS = {
 
 function respond(body: string): NextResponse {
   return new NextResponse(body, { status: 200, headers: HEADERS });
+}
+
+function verifyWebhookSecret(provided: string | undefined): boolean {
+  const expected = process.env.YEMOT_WEBHOOK_SECRET;
+  if (!expected) return process.env.NODE_ENV !== "production";
+  if (!provided || expected.length !== provided.length) return false;
+  return timingSafeEqual(
+    Buffer.from(expected, "utf8"),
+    Buffer.from(provided, "utf8"),
+  );
 }
 
 /**
@@ -45,6 +56,11 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
     request.method === "POST"
       ? await parsePostParams(request)
       : parseParams(request);
+
+  if (!verifyWebhookSecret(params.token)) {
+    console.warn("[IVR] Invalid or missing webhook secret");
+    return respond(buildTtsAndHangup("שגיאה במערכת"));
+  }
 
   const apiPhone = params.ApiPhone || null;
   const pin = params.PIN || null;
@@ -85,6 +101,24 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
       console.log(`[IVR] State 1: Validating PIN for ${apiPhone}`);
       const dbStart = Date.now();
 
+      const { checkRateLimit, RATE_LIMITS } = await import("@/lib/rateLimit");
+      const { isPhoneLocked, recordPinFailure, clearPinFailures } =
+        await import("@/lib/ivr/pinBruteForce");
+
+      if (await isPhoneLocked(apiPhone)) {
+        console.warn(`[IVR] Phone ${apiPhone} is locked (brute-force)`);
+        return respond(buildFileAndHangup("052"));
+      }
+
+      const rl = await checkRateLimit(
+        `ivr_pin:${apiPhone}`,
+        RATE_LIMITS.ivrPinAttempt,
+      );
+      if (!rl.success) {
+        console.warn(`[IVR] PIN rate limited for ${apiPhone}`);
+        return respond(buildFileAndHangup("052"));
+      }
+
       const { findUserByPhone, validatePin } = await import(
         "@/lib/ivr/helpers"
       );
@@ -94,6 +128,7 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
         console.log(
           `[IVR] Phone ${apiPhone} not found (${Date.now() - dbStart}ms)`
         );
+        await recordPinFailure(apiPhone);
         return respond(buildFileAndHangup("052"));
       }
 
@@ -102,8 +137,11 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
         console.log(
           `[IVR] Invalid PIN for user ${ivrPinRecord.user.id} (${Date.now() - dbStart}ms)`
         );
+        await recordPinFailure(apiPhone);
         return respond(buildFileAndHangup("052"));
       }
+
+      await clearPinFailures(apiPhone);
 
       const { prisma } = await import("@/lib/prisma");
       await prisma.ivrCallSession.upsert({
