@@ -26,11 +26,6 @@ function verifyWebhookSecret(provided: string | undefined): boolean {
   );
 }
 
-/**
- * Parse Yemot parameters from both GET and POST requests.
- * Handles duplicate keys by keeping the last value
- * (mirrors yemot-router2 `shiftDuplicatedValues` behaviour).
- */
 function parseParams(request: NextRequest): IvrWebhookParams {
   return Object.fromEntries(
     request.nextUrl.searchParams.entries()
@@ -50,17 +45,21 @@ async function parsePostParams(
   return parseParams(request);
 }
 
-async function handleIvr(request: NextRequest): Promise<NextResponse> {
+async function handleIvr(
+  request: NextRequest,
+  pathToken: string,
+): Promise<NextResponse> {
   const reqStart = Date.now();
+
+  if (!verifyWebhookSecret(pathToken)) {
+    console.warn("[IVR] Invalid or missing webhook secret");
+    return respond(buildTtsAndHangup("שגיאה במערכת"));
+  }
+
   const params =
     request.method === "POST"
       ? await parsePostParams(request)
       : parseParams(request);
-
-  if (!verifyWebhookSecret(params.token)) {
-    console.warn("[IVR] Invalid or missing webhook secret");
-    return respond(buildTtsAndHangup("שגיאה במערכת"));
-  }
 
   const apiPhone = params.ApiPhone || null;
   const pin = params.PIN || null;
@@ -309,10 +308,18 @@ async function handleIvr(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-export async function GET(request: NextRequest) {
-  return handleIvr(request);
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ token: string }> },
+) {
+  const { token } = await context.params;
+  return handleIvr(request, token);
 }
 
-export async function POST(request: NextRequest) {
-  return handleIvr(request);
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ token: string }> },
+) {
+  const { token } = await context.params;
+  return handleIvr(request, token);
 }

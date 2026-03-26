@@ -50,7 +50,7 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { isPhoneLocked, recordPinFailure, clearPinFailures } from '@/lib/ivr/pinBruteForce';
-import { GET } from '@/app/api/ivr/webhook/route';
+import { GET } from '@/app/api/ivr/webhook/[token]/route';
 import { NextRequest } from 'next/server';
 
 const TEST_WEBHOOK_SECRET = 'test-webhook-secret';
@@ -59,15 +59,20 @@ process.env.YEMOT_WEBHOOK_SECRET = TEST_WEBHOOK_SECRET;
 const mockPrisma = vi.mocked(prisma);
 const mockBcrypt = vi.mocked(bcrypt);
 
-function makeRequest(params: Record<string, string>, { includeToken = true } = {}) {
-  const url = new URL('http://localhost/api/ivr/webhook');
-  if (includeToken) {
-    url.searchParams.set('token', TEST_WEBHOOK_SECRET);
-  }
+function ctx(token: string) {
+  return { params: Promise.resolve({ token }) };
+}
+
+function makeRequest(params: Record<string, string>) {
+  const url = new URL(`http://localhost/api/ivr/webhook/${TEST_WEBHOOK_SECRET}`);
   for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, v);
   }
   return new NextRequest(url);
+}
+
+function callGET(request: NextRequest, token = TEST_WEBHOOK_SECRET) {
+  return GET(request, ctx(token));
 }
 
 const validReportingPhone = {
@@ -112,7 +117,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   // State 0: Ask for PIN
   // =====================
   it('State 0: should ask for PIN (M1798) when only ApiPhone is provided', async () => {
-    const res = await GET(makeRequest({ ApiPhone: '0501234567' }));
+    const res = await callGET(makeRequest({ ApiPhone: '0501234567' }));
     const text = await res.text();
 
     expect(res.status).toBe(200);
@@ -125,7 +130,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   it('State 1: should reject unknown phone with 052 and hangup', async () => {
     mockPrisma.reportingPhone.findUnique.mockResolvedValue(null);
 
-    const res = await GET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
+    const res = await callGET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
     const text = await res.text();
 
     expect(text).toBe('id_list_message=f-052&hangup');
@@ -136,7 +141,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
     mockPrisma.ivrPin.findUnique.mockResolvedValue(validPinUnique);
     mockBcrypt.compare.mockResolvedValue(false as never);
 
-    const res = await GET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
+    const res = await callGET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
     const text = await res.text();
 
     expect(text).toBe('id_list_message=f-052&hangup');
@@ -148,7 +153,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
     mockBcrypt.compare.mockResolvedValue(true as never);
     mockPrisma.ivrCallSession.findFirst.mockResolvedValue(null);
 
-    const res = await GET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
+    const res = await callGET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
     const text = await res.text();
 
     expect(text).toContain('M1799');
@@ -170,7 +175,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   it('State 2: expense (TxType=1) should ask CategoryKey with M1802', async () => {
     mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
 
-    const res = await GET(makeRequest({
+    const res = await callGET(makeRequest({
       ApiPhone: '0501234567',
       PIN: '1234',
       TxType: '1',
@@ -189,7 +194,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   it('State 2: income (TxType=2) should ask CategoryKey with M1803', async () => {
     mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
 
-    const res = await GET(makeRequest({
+    const res = await callGET(makeRequest({
       ApiPhone: '0501234567',
       PIN: '1234',
       TxType: '2',
@@ -206,7 +211,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   it('State 3: should ask Amount (M1804) after CategoryKey', async () => {
     mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
 
-    const res = await GET(makeRequest({
+    const res = await callGET(makeRequest({
       ApiPhone: '0501234567',
       PIN: '1234',
       TxType: '1',
@@ -229,7 +234,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   it('State 4: should create transaction with source=ivr and needsDetailsReview=true', async () => {
     mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
 
-    const res = await GET(makeRequest({
+    const res = await callGET(makeRequest({
       ApiPhone: '0501234567',
       PIN: '1234',
       TxType: '1',
@@ -269,7 +274,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   it('State 4: income transaction should use income category map', async () => {
     mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
 
-    const res = await GET(makeRequest({
+    const res = await callGET(makeRequest({
       ApiPhone: '0501234567',
       PIN: '1234',
       TxType: '2',
@@ -294,7 +299,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   it('State 4: should reject invalid amount (zero)', async () => {
     mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
 
-    const res = await GET(makeRequest({
+    const res = await callGET(makeRequest({
       ApiPhone: '0501234567',
       PIN: '1234',
       TxType: '1',
@@ -311,7 +316,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   it('State 4: should reject NaN amount', async () => {
     mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
 
-    const res = await GET(makeRequest({
+    const res = await callGET(makeRequest({
       ApiPhone: '0501234567',
       PIN: '1234',
       TxType: '1',
@@ -326,7 +331,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   it('State 4: should handle missing session gracefully', async () => {
     mockPrisma.ivrCallSession.findFirst.mockResolvedValue(null);
 
-    const res = await GET(makeRequest({
+    const res = await callGET(makeRequest({
       ApiPhone: '0501234567',
       PIN: '1234',
       TxType: '1',
@@ -344,7 +349,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   // Edge cases
   // =====================
   it('should handle hangup signal', async () => {
-    const res = await GET(makeRequest({
+    const res = await callGET(makeRequest({
       ApiPhone: '0501234567',
       hangup: 'yes',
     }));
@@ -354,7 +359,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   });
 
   it('should return error for missing ApiPhone', async () => {
-    const res = await GET(makeRequest({}));
+    const res = await callGET(makeRequest({}));
     const text = await res.text();
 
     expect(text).toBe('id_list_message=t-שגיאה במערכת&hangup');
@@ -364,7 +369,8 @@ describe('IVR Webhook — DTMF State Machine', () => {
   // Security: webhook secret
   // =====================
   it('should reject requests without webhook secret', async () => {
-    const res = await GET(makeRequest({ ApiPhone: '0501234567' }, { includeToken: false }));
+    const req = makeRequest({ ApiPhone: '0501234567' });
+    const res = await callGET(req, '');
     const text = await res.text();
 
     expect(text).toContain('שגיאה במערכת');
@@ -372,10 +378,8 @@ describe('IVR Webhook — DTMF State Machine', () => {
   });
 
   it('should reject requests with wrong webhook secret', async () => {
-    const url = new URL('http://localhost/api/ivr/webhook');
-    url.searchParams.set('token', 'wrong-secret');
-    url.searchParams.set('ApiPhone', '0501234567');
-    const res = await GET(new NextRequest(url));
+    const req = makeRequest({ ApiPhone: '0501234567' });
+    const res = await callGET(req, 'wrong-secret');
     const text = await res.text();
 
     expect(text).toContain('שגיאה במערכת');
@@ -387,7 +391,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   it('should reject PIN attempt when phone is locked', async () => {
     vi.mocked(isPhoneLocked).mockResolvedValueOnce(true);
 
-    const res = await GET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
+    const res = await callGET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
     const text = await res.text();
 
     expect(text).toBe('id_list_message=f-052&hangup');
@@ -399,7 +403,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
       success: false, limit: 3, remaining: 0, resetTime: Date.now() + 60000,
     });
 
-    const res = await GET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
+    const res = await callGET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
     const text = await res.text();
 
     expect(text).toBe('id_list_message=f-052&hangup');
@@ -410,7 +414,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
     mockPrisma.ivrPin.findUnique.mockResolvedValue(validPinUnique);
     mockBcrypt.compare.mockResolvedValue(false as never);
 
-    await GET(makeRequest({ ApiPhone: '0501234567', PIN: '9999' }));
+    await callGET(makeRequest({ ApiPhone: '0501234567', PIN: '9999' }));
 
     expect(recordPinFailure).toHaveBeenCalledWith('0501234567');
   });
@@ -421,7 +425,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
     mockBcrypt.compare.mockResolvedValue(true as never);
     mockPrisma.ivrCallSession.findFirst.mockResolvedValue(null);
 
-    await GET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
+    await callGET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
 
     expect(clearPinFailures).toHaveBeenCalledWith('0501234567');
   });
@@ -430,7 +434,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   // Exact read format verification
   // =====================
   it('PIN read should have exact correct format', async () => {
-    const res = await GET(makeRequest({ ApiPhone: '0501234567' }));
+    const res = await callGET(makeRequest({ ApiPhone: '0501234567' }));
     const text = await res.text();
 
     expect(text).toBe('read=f-M1798=PIN,no,4,4,7,No,no,no,,,,,,');
@@ -442,7 +446,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
     mockBcrypt.compare.mockResolvedValue(true as never);
     mockPrisma.ivrCallSession.findFirst.mockResolvedValue(null);
 
-    const res = await GET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
+    const res = await callGET(makeRequest({ ApiPhone: '0501234567', PIN: '1234' }));
     const text = await res.text();
 
     expect(text).toBe('read=f-M1799=TxType,no,1,1,7,No,no,no,,1.2,,,,');
@@ -451,7 +455,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   it('CategoryKey read should allow all digits (empty digits_allowed)', async () => {
     mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
 
-    const res = await GET(makeRequest({
+    const res = await callGET(makeRequest({
       ApiPhone: '0501234567',
       PIN: '1234',
       TxType: '1',
@@ -464,7 +468,7 @@ describe('IVR Webhook — DTMF State Machine', () => {
   it('Amount read should have max_digits=7, min_digits=1 (not reversed)', async () => {
     mockPrisma.ivrCallSession.findFirst.mockResolvedValue(activeSession as never);
 
-    const res = await GET(makeRequest({
+    const res = await callGET(makeRequest({
       ApiPhone: '0501234567',
       PIN: '1234',
       TxType: '1',

@@ -5,7 +5,6 @@ import { config as appConfig } from './lib/config';
 import {
   CSRF_COOKIE_NAME,
   CSRF_HEADER_NAME,
-  CSRF_LEGACY_HEADER,
   CSRF_TOKEN_MAX_AGE,
   generateCsrfToken,
   isValidCsrfToken,
@@ -118,7 +117,7 @@ export async function middleware(request: NextRequest) {
     pathname === '/api/webhooks/resend' ||
     pathname === '/api/marketing/unsubscribe' ||
     pathname === '/api/marketing/unsubscribe-email' ||
-    pathname === '/api/ivr/webhook' ||
+    pathname.startsWith('/api/ivr/webhook/') ||
     pathname === '/api/whatsapp/webhook'
   ) {
     return NextResponse.next();
@@ -245,7 +244,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // SECURITY: CSRF Protection for API routes (Double Submit Cookie + Origin check)
-  // Require valid CSRF token OR legacy header for all non-safe HTTP methods
+  // Require valid CSRF token (X-CSRF-Token matching csrf-token cookie) for all non-safe HTTP methods
   const isSafeMethod = ['GET', 'HEAD', 'OPTIONS'].includes(request.method);
   const isApiRoute = pathname.startsWith('/api/');
   const isAuthRoute = pathname.startsWith('/api/auth/');
@@ -253,12 +252,10 @@ export async function middleware(request: NextRequest) {
   const isPublicMarketingRoute = pathname === '/api/marketing/unsubscribe' || pathname === '/api/marketing/unsubscribe-email';
 
   if (!isSafeMethod && isApiRoute && !isAuthRoute && !isWebhookRoute && !isPublicMarketingRoute) {
-    const newToken    = request.headers.get(CSRF_HEADER_NAME);          // X-CSRF-Token
-    const legacyToken = request.headers.get(CSRF_LEGACY_HEADER);        // X-CSRF-Protection
+    const csrfHeader  = request.headers.get(CSRF_HEADER_NAME);
     const cookieToken = request.cookies.get(CSRF_COOKIE_NAME)?.value;
 
-    const newTokenValid    = isValidCsrfToken(newToken, cookieToken);
-    const legacyTokenValid = legacyToken === '1'; // backward compat (remove in stage B)
+    const csrfValid = isValidCsrfToken(csrfHeader, cookieToken);
 
     const originValid = isValidOrigin(
       request.headers.get('Origin'),
@@ -266,8 +263,7 @@ export async function middleware(request: NextRequest) {
       appConfig.nextAuthUrl,
     );
 
-    if ((!newTokenValid && !legacyTokenValid) || !originValid) {
-      // Audit log: CSRF violation (edge-safe, no Prisma)
+    if (!csrfValid || !originValid) {
       const { ipAddress, userAgent } = getRequestInfo(request.headers);
       logAuditEventEdge({
         userId: token?.sub,
@@ -275,8 +271,7 @@ export async function middleware(request: NextRequest) {
         metadata: {
           path: pathname,
           method: request.method,
-          newTokenPresent: !!newToken,
-          legacyTokenPresent: !!legacyToken,
+          csrfHeaderPresent: !!csrfHeader,
           cookiePresent: !!cookieToken,
           originValid,
           origin: request.headers.get('Origin'),
