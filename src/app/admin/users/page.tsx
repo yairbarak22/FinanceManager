@@ -117,6 +117,12 @@ export default function AdminUsersPage() {
     }
 
     fetchData();
+
+    // Auto-refresh stats every 30 seconds
+    const interval = setInterval(() => {
+      fetchStats();
+    }, 30_000);
+    return () => clearInterval(interval);
   }, [session, status]);
 
   const fetchData = async () => {

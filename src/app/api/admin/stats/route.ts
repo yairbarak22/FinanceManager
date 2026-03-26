@@ -4,7 +4,8 @@ import { requireAdmin } from '@/lib/adminHelpers';
 import { cleanupOldAuditLogs } from '@/lib/auditLog';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { Prisma } from '@prisma/client';
-import { getGlobalStats, refreshTodayStats } from '@/lib/globalStats';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
@@ -21,24 +22,16 @@ export async function GET() {
 
     cleanupOldAuditLogs().catch(() => {});
 
-    // Read cached totals + today stats from GlobalStats singleton
-    let stats = await getGlobalStats();
-
-    // Lazy-refresh today counters when the calendar day rolls over
-    const todayStr = new Date().toISOString().slice(0, 10);
-    if (stats.todayDate !== todayStr) {
-      stats = await refreshTodayStats();
-    }
-
     const now = new Date();
     const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
     const startOfTomorrow = new Date(startOfToday);
     startOfTomorrow.setUTCDate(startOfTomorrow.getUTCDate() + 1);
 
-    // Live counts for totals + activity + IVR
+    // All counts computed live — no cached GlobalStats
     const [
       totalUsers, totalTransactions, totalAssets, totalLiabilities,
       budgetsCount, goalsCount,
+      todayTransactions, todayAssets, todayLiabilities, todayNewUsers,
       multipleLoginUsers, todayUniqueLogins, usersWithMultipleLoginDays,
       usersWithPhone, ivrExpenses,
     ] = await Promise.all([
@@ -48,6 +41,10 @@ export async function GET() {
       prisma.liability.count(),
       prisma.budget.count(),
       prisma.financialGoal.count(),
+      prisma.transaction.count({ where: { createdAt: { gte: startOfToday, lt: startOfTomorrow } } }),
+      prisma.asset.count({ where: { createdAt: { gte: startOfToday, lt: startOfTomorrow } } }),
+      prisma.liability.count({ where: { createdAt: { gte: startOfToday, lt: startOfTomorrow } } }),
+      countTodayNewUsers(startOfToday, startOfTomorrow),
       getMultipleLoginUsersCount(),
       getTodayUniqueLoginsCount(startOfToday, startOfTomorrow),
       getUsersWithMultipleLoginDaysCount(),
@@ -67,10 +64,10 @@ export async function GET() {
         goals: goalsCount,
       },
       today: {
-        assets: stats.todayAssets,
-        liabilities: stats.todayLiabilities,
-        transactions: stats.todayTransactions,
-        users: stats.todayUsers,
+        assets: todayAssets,
+        liabilities: todayLiabilities,
+        transactions: todayTransactions,
+        users: todayNewUsers,
       },
       activity: {
         multipleLoginUsers,
@@ -88,6 +85,32 @@ export async function GET() {
       { error: 'Failed to fetch statistics' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Count users whose first-ever login falls within today's range ("new users today")
+ */
+async function countTodayNewUsers(startOfToday: Date, startOfTomorrow: Date): Promise<number> {
+  try {
+    const result = await prisma.$queryRaw<Array<{ count: bigint }>>(Prisma.sql`
+      SELECT COUNT(DISTINCT al."userId")::bigint AS count
+      FROM "AuditLog" al
+      WHERE al.action IN ('LOGIN', 'OAUTH_LOGIN')
+        AND al."userId" IS NOT NULL
+        AND al."createdAt" >= ${startOfToday}
+        AND al."createdAt" < ${startOfTomorrow}
+        AND NOT EXISTS (
+          SELECT 1
+          FROM "AuditLog" al2
+          WHERE al2."userId" = al."userId"
+            AND al2.action IN ('LOGIN', 'OAUTH_LOGIN')
+            AND al2."createdAt" < ${startOfToday}
+        )
+    `);
+    return Number(result[0]?.count ?? 0);
+  } catch {
+    return 0;
   }
 }
 
