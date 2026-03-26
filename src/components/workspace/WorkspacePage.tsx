@@ -124,6 +124,7 @@ export default function WorkspacePage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId: state.importSessionId }),
+          keepalive: true,
         }).catch(() => {});
       }
     };
@@ -389,7 +390,6 @@ export default function WorkspacePage() {
 
   const handleFinalize = useCallback(async () => {
     setIsFinalizing(true);
-    finalizedRef.current = true;
     try {
       const state = useWorkspaceStore.getState();
       const sessionId = state.importSessionId;
@@ -458,11 +458,12 @@ export default function WorkspacePage() {
 
       // 1. Categorize existing transactions
       if (existingAssignments.length > 0) {
-        await apiFetch('/api/workspace/categorize', {
+        const categorizeRes = await apiFetch('/api/workspace/categorize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ assignments: existingAssignments }),
         });
+        if (!categorizeRes.ok) throw new Error('Categorize failed');
       }
 
       // 2. Finalize import session (create transactions + recurring coverages)
@@ -472,22 +473,22 @@ export default function WorkspacePage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId, resolutions: draftResolutions }),
         });
-        if (!finalizeRes.ok) {
-          const errData = await finalizeRes.json();
-          console.error('[Workspace] Finalize error:', errData);
-        }
+        if (!finalizeRes.ok) throw new Error('Import finalize failed');
       }
 
       // 3. Also call existing finalize for month-level operations
-      await apiFetch('/api/workspace/finalize', {
+      const monthFinalizeRes = await apiFetch('/api/workspace/finalize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ monthKey, assignments: existingAssignments }),
       });
+      if (!monthFinalizeRes.ok) throw new Error('Month finalize failed');
 
+      finalizedRef.current = true;
       setSaveStatus('saved');
       setPhase('done');
     } catch {
+      finalizedRef.current = false;
       setSaveStatus('error');
     } finally {
       setIsFinalizing(false);

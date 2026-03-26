@@ -70,9 +70,10 @@ export const RECURRING_AMOUNT_RELATIVE_TOLERANCE = 0.01;
  * Uses same-day + same type + same amount + normalized description.
  */
 function duplicateKey(date: Date, type: string, amount: number, description: string): string {
-  const day = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const day = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
+  const amt = Math.round(amount * 100);
   const norm = description.toLowerCase().trim();
-  return `${day}|${type}|${amount}|${norm}`;
+  return `${day}|${type}|${amt}|${norm}`;
 }
 
 /**
