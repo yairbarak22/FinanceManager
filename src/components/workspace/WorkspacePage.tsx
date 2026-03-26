@@ -423,11 +423,7 @@ export default function WorkspacePage() {
         }
       }
 
-      // Recurring candidates that were linked (not moved to import)
-      // These are already removed from recurringCandidates by resolveRecurringCandidate('link'),
-      // so we track their resolutions via the hidden candidates
-      // Actually: linked ones were removed from store. We need a different approach.
-      // The remaining recurringCandidates are those NOT yet resolved — default to link.
+      // Unresolved recurring candidates still in the list — default to link
       for (const tx of state.recurringCandidates) {
         if (tx.importRowId) {
           draftResolutions.push({
@@ -436,6 +432,15 @@ export default function WorkspacePage() {
             category: null,
           });
         }
+      }
+
+      // Recurring candidates the user explicitly confirmed as linked
+      for (const rowId of state.linkedRecurringRowIds) {
+        draftResolutions.push({
+          rowId,
+          resolution: 'LINK_RECURRING',
+          category: null,
+        });
       }
 
       // Hidden duplicates — skip

@@ -32,6 +32,7 @@ interface WorkspaceState {
   importSessionId: string | null;
   importCounts: ImportStageCounts | null;
   recurringCandidates: WorkspaceTransaction[];
+  linkedRecurringRowIds: string[];
   hiddenDuplicates: WorkspaceTransaction[];
 
   initWorkspace: (txns: WorkspaceTransaction[], cats: WorkspaceCategory[]) => void;
@@ -71,6 +72,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   importSessionId: null,
   importCounts: null,
   recurringCandidates: [],
+  linkedRecurringRowIds: [],
   hiddenDuplicates: [],
 
   initWorkspace: (txns, cats) => {
@@ -108,6 +110,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       duplicateIds: new Set(),
       saveStatus: 'idle',
       recurringCandidates,
+      linkedRecurringRowIds: [],
       hiddenDuplicates,
     });
   },
@@ -459,7 +462,12 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         unassignedTransactions: [...unassignedTransactions, asTx],
       });
     } else {
-      set({ recurringCandidates: remaining });
+      set((s) => ({
+        recurringCandidates: remaining,
+        ...(tx.importRowId
+          ? { linkedRecurringRowIds: [...s.linkedRecurringRowIds, tx.importRowId] }
+          : {}),
+      }));
     }
   },
 
