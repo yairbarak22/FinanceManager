@@ -70,6 +70,14 @@ describe('encrypt/decrypt', () => {
     expect(decrypt('a:b')).toBe('a:b');
     expect(decrypt('a:b:c:d')).toBe('a:b:c:d');
   });
+
+  it('should throw on tampered ciphertext', () => {
+    const valid = encrypt('test');
+    const parts = valid.split(':');
+    parts[2] = 'AAAA';
+    const tampered = parts.join(':');
+    expect(() => decrypt(tampered)).toThrow('Decryption failed');
+  });
 });
 
 describe('encryptFields', () => {

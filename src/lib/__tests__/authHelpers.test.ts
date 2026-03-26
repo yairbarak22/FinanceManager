@@ -191,11 +191,29 @@ describe('checkPermission', () => {
     expect(result.allowed).toBe(false);
   });
 
-  it('should allow when no membership found (new user)', async () => {
-    mockPrisma.sharedAccountMember.findFirst.mockResolvedValue(null as never);
+  it('should create membership and allow new user as OWNER', async () => {
+    mockPrisma.sharedAccountMember.findFirst
+      .mockResolvedValueOnce(null as never) // getOrCreateSharedAccount: no membership yet
+      .mockResolvedValueOnce({              // checkPermission: re-query after creation
+        role: MemberRole.OWNER,
+        canEdit: true,
+        canDelete: true,
+        canInvite: true,
+      } as never);
+    mockPrisma.sharedAccount.create.mockResolvedValue({ id: 'sa-1' } as never);
 
     const result = await checkPermission('user-1', 'canEdit');
     expect(result.allowed).toBe(true);
+    expect(mockPrisma.sharedAccount.create).toHaveBeenCalled();
+  });
+
+  it('should deny when membership is still null after creation (fail-closed)', async () => {
+    mockPrisma.sharedAccountMember.findFirst.mockResolvedValue(null as never);
+    mockPrisma.sharedAccount.create.mockResolvedValue({ id: 'sa-1' } as never);
+
+    const result = await checkPermission('user-1', 'canEdit');
+    expect(result.allowed).toBe(false);
+    expect(result.error).toBeInstanceOf(NextResponse);
   });
 });
 

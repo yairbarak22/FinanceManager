@@ -60,6 +60,11 @@ export function encrypt(plaintext: string): string {
 /**
  * Decrypt a string value
  * Expects format: iv:authTag:ciphertext (all base64)
+ *
+ * SECURITY: Throws on tampered/corrupted data instead of returning ciphertext.
+ * If ENCRYPTION_KEY is rotated without re-encrypting stored data, all encrypted
+ * fields will hard-fail (500) until a data migration re-encrypts them with the
+ * new key. This is intentional — silent fallback would leak ciphertext to clients.
  */
 export function decrypt(ciphertext: string): string {
   if (!ciphertext) return ciphertext;
@@ -89,10 +94,8 @@ export function decrypt(ciphertext: string): string {
     decrypted += decipher.final('utf8');
     
     return decrypted;
-  } catch (error) {
-    console.error('Decryption failed:', error);
-    // Return original value if decryption fails
-    return ciphertext;
+  } catch {
+    throw new Error('Decryption failed');
   }
 }
 
