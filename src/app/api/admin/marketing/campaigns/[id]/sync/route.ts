@@ -22,6 +22,7 @@ const EVENT_HIERARCHY: Record<string, MarketingEventType[]> = {
   clicked: [MarketingEventType.SENT, MarketingEventType.DELIVERED, MarketingEventType.OPENED, MarketingEventType.CLICKED],
   bounced: [MarketingEventType.SENT, MarketingEventType.BOUNCED],
   complained: [MarketingEventType.SENT, MarketingEventType.DELIVERED, MarketingEventType.COMPLAINED],
+  unsubscribed: [MarketingEventType.SENT, MarketingEventType.DELIVERED, MarketingEventType.UNSUBSCRIBED],
   delivery_delayed: [MarketingEventType.SENT],
   failed: [MarketingEventType.SENT],
   queued: [],

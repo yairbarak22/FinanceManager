@@ -47,6 +47,7 @@ function mapEventType(resendType: string): MarketingEventType | null {
     'email.clicked': MarketingEventType.CLICKED,
     'email.bounced': MarketingEventType.BOUNCED,
     'email.complained': MarketingEventType.COMPLAINED,
+    'email.unsubscribed': MarketingEventType.UNSUBSCRIBED,
   };
 
   return mapping[resendType] || null;
