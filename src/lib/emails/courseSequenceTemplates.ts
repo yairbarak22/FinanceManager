@@ -44,7 +44,7 @@ function baseWrapper(body: string, step: number): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>myneto</title>
+  <title>MyNeto</title>
   <!--[if mso]>
   <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
   <![endif]-->
@@ -71,7 +71,7 @@ function baseWrapper(body: string, step: number): string {
               <table role="presentation" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="font-family:'Heebo',sans-serif;font-size:26px;font-weight:800;color:#303150;letter-spacing:-0.5px;">
-                    my<span style="color:${meta.accent};">NETO</span>
+                    My<span style="color:${meta.accent};">Neto</span>
                   </td>
                 </tr>
               </table>
@@ -116,8 +116,8 @@ function baseWrapper(body: string, step: number): string {
                 <tr>
                   <td style="text-align:center;padding:16px;">
                     <p style="font-family:'Heebo',sans-serif;font-size:12px;color:#BDBDCB;margin:0;line-height:1.8;">
-                      קיבלת מייל זה כי נרשמת ל-myNETO<br>
-                      &copy; ${new Date().getFullYear()} myNETO. כל הזכויות שמורות.
+                      קיבלת מייל זה כי נרשמת ל-MyNeto<br>
+                      &copy; ${new Date().getFullYear()} MyNeto. כל הזכויות שמורות.
                     </p>
                   </td>
                 </tr>
@@ -202,7 +202,7 @@ export const courseSequenceEmails: SequenceEmail[] = [
           <td style="padding:20px 32px 0 32px;">
             <p style="font-family:'Heebo',sans-serif;font-size:15px;color:#4A4A5A;line-height:1.8;margin:0;">
               צפייה מועילה,<br>
-              <strong style="color:#303150;">צוות myNETO</strong>
+              <strong style="color:#303150;">צוות MyNeto</strong>
             </p>
           </td>
         </tr>`,
@@ -250,7 +250,7 @@ export const courseSequenceEmails: SequenceEmail[] = [
           <td style="padding:20px 32px 0 32px;">
             <p style="font-family:'Heebo',sans-serif;font-size:15px;color:#4A4A5A;line-height:1.8;margin:0;">
               שלך,<br>
-              <strong style="color:#303150;">צוות myNETO</strong>
+              <strong style="color:#303150;">צוות MyNeto</strong>
             </p>
           </td>
         </tr>`,
@@ -297,7 +297,7 @@ export const courseSequenceEmails: SequenceEmail[] = [
         <tr>
           <td style="padding:20px 32px 0 32px;">
             <p style="font-family:'Heebo',sans-serif;font-size:15px;color:#4A4A5A;line-height:1.8;margin:0;">
-              <strong style="color:#303150;">צוות myNETO</strong>
+              <strong style="color:#303150;">צוות MyNeto</strong>
             </p>
           </td>
         </tr>`,
@@ -344,7 +344,7 @@ export const courseSequenceEmails: SequenceEmail[] = [
           <td style="padding:20px 32px 0 32px;">
             <p style="font-family:'Heebo',sans-serif;font-size:15px;color:#4A4A5A;line-height:1.8;margin:0;">
               בשורות טובות,<br>
-              <strong style="color:#303150;">צוות myNETO</strong>
+              <strong style="color:#303150;">צוות MyNeto</strong>
             </p>
           </td>
         </tr>`,
@@ -395,7 +395,7 @@ export const courseSequenceEmails: SequenceEmail[] = [
             </p>
             <p style="font-family:'Heebo',sans-serif;font-size:15px;color:#4A4A5A;line-height:1.8;margin:0;">
               שלך,<br>
-              <strong style="color:#303150;">צוות myNETO</strong>
+              <strong style="color:#303150;">צוות MyNeto</strong>
             </p>
           </td>
         </tr>`,

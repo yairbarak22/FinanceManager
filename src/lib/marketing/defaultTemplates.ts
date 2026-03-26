@@ -70,7 +70,7 @@ const logoHeader = `<!-- Logo Header -->
     <table role="presentation" cellpadding="0" cellspacing="0">
       <tr>
         <td style="font-family: 'Nunito', sans-serif; font-size: 28px; font-weight: 700; color: #303150; letter-spacing: -0.5px;">
-          myneto
+          MyNeto
         </td>
       </tr>
     </table>
@@ -84,8 +84,8 @@ const footerBlock = `<!-- Footer -->
       <tr>
         <td class="content-cell" style="padding: 24px 32px; text-align: center;">
           <p style="font-family: 'Nunito', sans-serif; font-size: 12px; color: #BDBDCB; margin: 0; line-height: 1.8;">
-            קיבלת מייל זה כי נרשמת לmyneto<br>
-            © ${new Date().getFullYear()} myneto. כל הזכויות שמורות.
+            קיבלת מייל זה כי נרשמת ל-MyNeto<br>
+            © ${new Date().getFullYear()} MyNeto. כל הזכויות שמורות.
           </p>
         </td>
       </tr>
@@ -114,7 +114,7 @@ const newsletterTemplate: DefaultTemplate = {
                 {{title}}
               </h1>
               <p style="font-family: 'Nunito', sans-serif; font-size: 15px; color: rgba(255,255,255,0.85); margin: 0;">
-                עדכונים חדשים מ-myneto
+                עדכונים חדשים מ-MyNeto
               </p>
             </td>
           </tr>
@@ -275,7 +275,7 @@ const productLaunchTemplate: DefaultTemplate = {
           <tr>
             <td style="padding: 48px 32px 24px 32px; text-align: center;">
               <p style="font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 600; color: #0DBACC; margin: 0 0 8px 0;">
-                🚀 חדש ב-myneto
+                🚀 חדש ב-MyNeto
               </p>
               <h1 class="hero-title" style="font-family: 'Nunito', sans-serif; font-size: 30px; font-weight: 700; color: #303150; margin: 0;">
                 {{title}}
@@ -492,7 +492,7 @@ const courseLesson1Template: DefaultTemplate = {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>myneto</title>
+  <title>MyNeto</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;800&display=swap');
     * { margin:0; padding:0; box-sizing:border-box; }
@@ -515,7 +515,7 @@ const courseLesson1Template: DefaultTemplate = {
               <table role="presentation" cellpadding="0" cellspacing="0">
                 <tr>
                   <td style="font-family:'Heebo',sans-serif;font-size:26px;font-weight:800;color:#303150;letter-spacing:-0.5px;">
-                    my<span style="color:#69ADFF;">NETO</span>
+                    My<span style="color:#69ADFF;">Neto</span>
                   </td>
                 </tr>
               </table>
@@ -585,7 +585,7 @@ const courseLesson1Template: DefaultTemplate = {
           <td style="padding:20px 32px 0 32px;">
             <p style="font-family:'Heebo',sans-serif;font-size:15px;color:#4A4A5A;line-height:1.8;margin:0;">
               צפייה מועילה,<br>
-              <strong style="color:#303150;">צוות myNETO</strong>
+              <strong style="color:#303150;">צוות MyNeto</strong>
             </p>
           </td>
         </tr>
@@ -607,8 +607,8 @@ const courseLesson1Template: DefaultTemplate = {
                 <tr>
                   <td style="text-align:center;padding:16px;">
                     <p style="font-family:'Heebo',sans-serif;font-size:12px;color:#BDBDCB;margin:0;line-height:1.8;">
-                      קיבלת מייל זה כי נרשמת ל-myNETO<br>
-                      &copy; 2026 myNETO. כל הזכויות שמורות.
+                      קיבלת מייל זה כי נרשמת ל-MyNeto<br>
+                      &copy; 2026 MyNeto. כל הזכויות שמורות.
                     </p>
                   </td>
                 </tr>

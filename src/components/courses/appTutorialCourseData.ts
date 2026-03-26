@@ -2,10 +2,10 @@ import type { Course } from './coursesData';
 
 export const appTutorialCourse: Course = {
   id: 'app-tutorial-course',
-  title: 'איך להשתמש ב-myNETO',
+  title: 'איך להשתמש ב-MyNeto',
   description: 'סרטוני הדרכה קצרים שיעזרו לך להכיר את המערכת ולהתחיל להשתמש בכל הכלים שלה.',
   author: {
-    name: 'מערכת myNETO',
+    name: 'מערכת MyNeto',
     title: '',
     initials: 'mN',
   },

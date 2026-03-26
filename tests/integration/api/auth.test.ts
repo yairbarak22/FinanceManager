@@ -37,14 +37,15 @@ describe('Test environment safety', () => {
 // ============================================================================
 
 describe('CSRF Protection', () => {
-  it('should require X-CSRF-Protection header for POST requests', () => {
+  it('should allow passing X-CSRF-Token header for POST requests', () => {
+    const csrfToken = 'a'.repeat(64);
     const request = createMockRequest('/api/transactions', {
       method: 'POST',
       body: { type: 'expense', amount: 100 },
+      headers: { 'X-CSRF-Token': csrfToken },
     });
 
-    // Our createMockRequest automatically adds the header
-    expect(request.headers.get('X-CSRF-Protection')).toBe('1');
+    expect(request.headers.get('X-CSRF-Token')).toBe(csrfToken);
   });
 
   it('should not require CSRF for GET requests', () => {
@@ -52,18 +53,18 @@ describe('CSRF Protection', () => {
       method: 'GET',
     });
 
-    // GET requests shouldn't have CSRF header
-    expect(request.headers.get('X-CSRF-Protection')).toBeNull();
+    expect(request.headers.get('X-CSRF-Token')).toBeNull();
   });
 
-  it('should add CSRF header for PUT/DELETE/PATCH requests', () => {
-    const putReq = createMockRequest('/api/transactions/1', { method: 'PUT', body: {} });
-    const deleteReq = createMockRequest('/api/transactions/1', { method: 'DELETE' });
-    const patchReq = createMockRequest('/api/transactions/1', { method: 'PATCH', body: {} });
+  it('should allow passing X-CSRF-Token header for PUT/DELETE/PATCH requests', () => {
+    const csrfToken = 'b'.repeat(64);
+    const putReq = createMockRequest('/api/transactions/1', { method: 'PUT', body: {}, headers: { 'X-CSRF-Token': csrfToken } });
+    const deleteReq = createMockRequest('/api/transactions/1', { method: 'DELETE', headers: { 'X-CSRF-Token': csrfToken } });
+    const patchReq = createMockRequest('/api/transactions/1', { method: 'PATCH', body: {}, headers: { 'X-CSRF-Token': csrfToken } });
 
-    expect(putReq.headers.get('X-CSRF-Protection')).toBe('1');
-    expect(deleteReq.headers.get('X-CSRF-Protection')).toBe('1');
-    expect(patchReq.headers.get('X-CSRF-Protection')).toBe('1');
+    expect(putReq.headers.get('X-CSRF-Token')).toBe(csrfToken);
+    expect(deleteReq.headers.get('X-CSRF-Token')).toBe(csrfToken);
+    expect(patchReq.headers.get('X-CSRF-Token')).toBe(csrfToken);
   });
 });
 

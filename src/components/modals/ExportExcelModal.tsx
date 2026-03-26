@@ -48,9 +48,7 @@ export default function ExportExcelModal({ isOpen, onClose }: ExportExcelModalPr
         includeRecurring: String(includeRecurring),
       });
 
-      const res = await fetch(`/api/transactions/export?${params}`, {
-        headers: { 'x-csrf-protection': '1' },
-      });
+      const res = await fetch(`/api/transactions/export?${params}`);
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -60,7 +58,7 @@ export default function ExportExcelModal({ isOpen, onClose }: ExportExcelModalPr
       const blob = await res.blob();
       const contentDisposition = res.headers.get('Content-Disposition') ?? '';
       const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
-      const filename = filenameMatch?.[1] ?? `myneto-export-${startDate}-to-${endDate}.xlsx`;
+      const filename = filenameMatch?.[1] ?? `MyNeto-export-${startDate}-to-${endDate}.xlsx`;
 
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

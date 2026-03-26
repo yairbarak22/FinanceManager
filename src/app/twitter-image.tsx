@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 
 /**
- * Twitter Card Image for NETO
+ * Twitter Card Image for MyNeto
  *
  * Same as the OG image but exported for Twitter specifically.
  *
@@ -10,7 +10,7 @@ import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
-export const alt = 'NETO - ניהול הון חכם';
+export const alt = 'MyNeto - ניהול הון חכם';
 export const size = {
   width: 1200,
   height: 630,
@@ -91,7 +91,7 @@ export default async function TwitterImage() {
               letterSpacing: '-2px',
             }}
           >
-            NETO
+            MyNeto
           </span>
         </div>
 
@@ -164,7 +164,7 @@ export default async function TwitterImage() {
               color: 'rgba(255, 255, 255, 0.6)',
             }}
           >
-            neto.co.il
+            myneto.co.il
           </span>
         </div>
       </div>

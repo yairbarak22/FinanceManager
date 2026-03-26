@@ -5,10 +5,10 @@
 
 // Allowed sender addresses for replying from the admin inbox
 export const SENDER_ADDRESSES = [
-  { email: 'admin@myneto.co.il', label: 'Admin', display: 'myneto <admin@myneto.co.il>' },
-  { email: 'support@myneto.co.il', label: 'Support', display: 'myneto <support@myneto.co.il>' },
-  { email: 'info@myneto.co.il', label: 'Info', display: 'myneto <info@myneto.co.il>' },
-  { email: 'hello@myneto.co.il', label: 'Hello', display: 'myneto <hello@myneto.co.il>' },
+  { email: 'admin@myneto.co.il', label: 'Admin', display: 'MyNeto <admin@myneto.co.il>' },
+  { email: 'support@myneto.co.il', label: 'Support', display: 'MyNeto <support@myneto.co.il>' },
+  { email: 'info@myneto.co.il', label: 'Info', display: 'MyNeto <info@myneto.co.il>' },
+  { email: 'hello@myneto.co.il', label: 'Hello', display: 'MyNeto <hello@myneto.co.il>' },
 ] as const;
 
 export const DEFAULT_SENDER = SENDER_ADDRESSES[0];
@@ -57,6 +57,6 @@ export function isValidSenderAddress(email: string): boolean {
  */
 export function getSenderDisplay(email: string): string {
   const sender = SENDER_ADDRESSES.find(s => s.email === email);
-  return sender ? sender.display : `myneto <${email}>`;
+  return sender ? sender.display : `MyNeto <${email}>`;
 }
 

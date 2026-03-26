@@ -344,7 +344,7 @@ export default function EditCampaignPage() {
                   disabled={campaignStatus !== 'DRAFT'}
                   className="w-full flex items-center justify-between px-4 py-3 rounded-xl border border-[#E8E8ED] text-sm text-[#303150] hover:border-[#69ADFF] transition-colors disabled:opacity-50"
                 >
-                  <span className="truncate">myneto &lt;{senderEmail}&gt;</span>
+                  <span className="truncate">MyNeto &lt;{senderEmail}&gt;</span>
                   <ChevronDown className={`w-4 h-4 text-[#7E7F90] transition-transform flex-shrink-0 mr-2 ${showSenderDropdown ? 'rotate-180' : ''}`} />
                 </button>
                 {showSenderDropdown && (
@@ -580,7 +580,7 @@ export default function EditCampaignPage() {
                       {variants.find(v => v.id === activeVariantTab)?.htmlContent ? (
                         <div>
                           <div className="px-4 pt-3 pb-2 border-b border-[#F7F7F8]">
-                            <p className="text-xs text-[#BDBDCB]">מ: myneto &lt;{senderEmail}&gt;</p>
+                            <p className="text-xs text-[#BDBDCB]">מ: MyNeto &lt;{senderEmail}&gt;</p>
                             <p className="text-xs text-[#BDBDCB]">נושא: {variants.find(v => v.id === activeVariantTab)?.subject || '(ללא נושא)'}</p>
                           </div>
                           <EmailPreview
@@ -645,7 +645,7 @@ export default function EditCampaignPage() {
                       {content ? (
                         <div>
                           <div className="px-4 pt-3 pb-2 border-b border-[#F7F7F8]">
-                            <p className="text-xs text-[#BDBDCB]">מ: myneto &lt;{senderEmail}&gt;</p>
+                            <p className="text-xs text-[#BDBDCB]">מ: MyNeto &lt;{senderEmail}&gt;</p>
                             <p className="text-xs text-[#BDBDCB]">נושא: {subject || '(ללא נושא)'}</p>
                           </div>
                           <EmailPreview

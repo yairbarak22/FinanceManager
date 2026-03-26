@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import WhatIsInvestingPage from '@/components/funnel/WhatIsInvestingPage';
 
 export const metadata = {
-  title: 'myNETO — מה זה השקעה? | מדריך מעשי להשקעה חכמה',
+  title: 'MyNeto — מה זה השקעה? | מדריך מעשי להשקעה חכמה',
   description:
     'מדריך מקיף שמסביר מהי השקעה, ריבית דריבית, השקעה פסיבית ואיך להתחיל — בלי ידע מוקדם ובכשרות מלאה',
 };

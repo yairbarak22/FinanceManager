@@ -8,7 +8,7 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { trackCtaClickServer } from '@/lib/utils';
 
 const PARTNER_URL =
-  'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=Myneto&utm_medium=Link';
+  'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=MyNeto&utm_medium=Link';
 
 const benefits = [
   { text: 'פתיחת חשבון מ-', highlight: '5,000 ₪', suffix: 'בלבד' },
@@ -141,7 +141,7 @@ export default function AltshulerCTA() {
                   ההטבות בתוקף לפותחי חשבון דרך MyNeto בלבד
                 </p>
                 <p className="text-center text-[0.625rem] text-[#BDBDCB]/70 mt-2 leading-relaxed">
-                  האמור אינו מהווה ייעוץ השקעות או שיווק השקעות ואינו תחליף לייעוץ אישי. מערכת myNETO אינה בעלת רישיון ייעוץ השקעות.
+                  האמור אינו מהווה ייעוץ השקעות או שיווק השקעות ואינו תחליף לייעוץ אישי. מערכת MyNeto אינה בעלת רישיון ייעוץ השקעות.
                 </p>
               </div>
             </motion.div>

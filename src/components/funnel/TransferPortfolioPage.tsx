@@ -23,7 +23,7 @@ import { trackCtaClickServer } from '@/lib/utils';
 /* ── Constants ─────────────────────────────────────────── */
 
 const PARTNER_URL =
-  'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=Myneto&utm_medium=Link';
+  'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=MyNeto&utm_medium=Link';
 
 const GRADIENT_STYLE = {
   background: 'linear-gradient(135deg, #2B4699, #0DBACC)',
@@ -119,7 +119,7 @@ function HeroSection({ noMotion }: { noMotion: boolean }) {
           style={{ color: '#BDBDCB', ...FONT }}
           {...(noMotion ? {} : fadeUp(0.35))}
         >
-          ההטבות בתוקף לפותחי חשבון דרך myNETO בלבד · אינו מהווה ייעוץ השקעות
+          ההטבות בתוקף לפותחי חשבון דרך MyNeto בלבד · אינו מהווה ייעוץ השקעות
         </motion.p>
       </div>
 
@@ -181,7 +181,7 @@ const TRANSFER_BENEFITS = [
     accent: '#69ADFF',
     value: '200₪',
     title: 'מתנת הצטרפות',
-    body: 'מקבלים 200₪ ישר לחשבון, רק בפתיחה דרך myNETO. בלי תנאים נסתרים.',
+    body: 'מקבלים 200₪ ישר לחשבון, רק בפתיחה דרך MyNeto. בלי תנאים נסתרים.',
   },
   {
     icon: RefreshCw,
@@ -471,7 +471,7 @@ function FeeSavingsSection({ noMotion }: { noMotion: boolean }) {
           <div className="mt-8">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-[12px] font-bold shrink-0 w-28 text-end" style={{ color: '#0DBACC', ...FONT }}>
-                דרך myNETO
+                דרך MyNeto
               </span>
               <div className="flex-1 relative h-7 rounded-lg overflow-hidden" style={{ background: 'rgba(13,186,204,0.06)' }}>
                 <motion.div
@@ -893,7 +893,7 @@ function FinalCtaSection({ noMotion }: { noMotion: boolean }) {
         >
           <BadgeCheck className="w-3.5 h-3.5" style={{ color: '#0DBACC' }} strokeWidth={2} />
           <span className="text-[12px] font-bold" style={{ color: '#0DBACC', ...FONT }}>
-            הטבה בלעדית דרך myNETO
+            הטבה בלעדית דרך MyNeto
           </span>
         </motion.div>
 
@@ -965,7 +965,7 @@ function FinalCtaSection({ noMotion }: { noMotion: boolean }) {
           style={{ color: '#BDBDCB', ...FONT }}
           {...(noMotion ? {} : fadeUp(0.34))}
         >
-          ההטבות בתוקף לפותחי חשבון דרך myNETO בלבד · אינו מהווה ייעוץ השקעות
+          ההטבות בתוקף לפותחי חשבון דרך MyNeto בלבד · אינו מהווה ייעוץ השקעות
         </motion.p>
       </div>
 
@@ -1001,7 +1001,7 @@ function MiniFooter() {
         style={{ color: '#BDBDCB', ...FONT }}
       >
         האמור אינו מהווה ייעוץ השקעות או שיווק השקעות ואינו תחליף לייעוץ אישי.
-        מערכת myNETO אינה בעלת רישיון ייעוץ השקעות. תשואות עבר אינן מעידות על תשואות עתידיות.
+        מערכת MyNeto אינה בעלת רישיון ייעוץ השקעות. תשואות עבר אינן מעידות על תשואות עתידיות.
       </p>
     </footer>
   );

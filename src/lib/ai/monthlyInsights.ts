@@ -11,7 +11,7 @@ const monthlyInsightsSchema = z.object({
 
 export type MonthlyInsights = z.infer<typeof monthlyInsightsSchema>;
 
-const SYSTEM_PROMPT = `אתה היועץ הפיננסי של Myneto – אפליקציית ניהול תקציב אישי.
+const SYSTEM_PROMPT = `אתה היועץ הפיננסי של MyNeto – אפליקציית ניהול תקציב אישי.
 הסגנון שלך: מינימליסטי, חם, ובגובה העיניים. אתה לא מרצה ולא מאשים.
 כללי כתיבה:
 - כל תובנה = משפט אחד בלבד (עד 20 מילים).

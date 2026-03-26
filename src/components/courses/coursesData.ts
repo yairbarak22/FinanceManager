@@ -50,7 +50,7 @@ export const mockCourse: Course = {
   title: 'המסלול הבטוח: מחיסכון להשקעה חכמה (ב-4 צעדים)',
   description: 'קורס מעשי שמסביר איך לעבור מחיסכון בבנק להשקעה חכמה. ללא מושגים באוויר, עם דגש על אחריות כלכלית ודאגה לעתיד המשפחה.',
   author: {
-    name: 'מערכת myNETO',
+    name: 'מערכת MyNeto',
     title: '',
     initials: 'mN',
   },

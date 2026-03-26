@@ -94,15 +94,15 @@ async function sendContactEmail(submission: ContactSubmission): Promise<boolean>
 
   try {
     await resendClient.emails.send({
-      from: 'NETO Contact <onboarding@resend.dev>',
+      from: 'MyNeto Contact <onboarding@resend.dev>',
       to: SUPPORT_EMAIL,
       replyTo: submission.userEmail || undefined,
-      subject: `[NETO צור קשר] ${getCategoryLabel(submission.category)}: ${submission.subject}`,
+      subject: `[MyNeto צור קשר] ${getCategoryLabel(submission.category)}: ${submission.subject}`,
       html: `
         <div dir="rtl" style="font-family: 'Segoe UI', Tahoma, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 16px; overflow: hidden;">
           <!-- Header -->
           <div style="background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #8b5cf6 100%); padding: 24px; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 800;">NETO</h1>
+            <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 800;">MyNeto</h1>
             <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px;">פנייה חדשה</p>
           </div>
           
@@ -150,7 +150,7 @@ async function sendContactEmail(submission: ContactSubmission): Promise<boolean>
           <!-- Footer -->
           <div style="background: rgba(0,0,0,0.2); padding: 16px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05);">
             <p style="color: #475569; font-size: 11px; margin: 0;">
-              © ${new Date().getFullYear()} NETO - ניהול הון חכם
+              © ${new Date().getFullYear()} MyNeto - ניהול הון חכם
             </p>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 /**
- * Dynamic Sitemap Generator for NETO
+ * Dynamic Sitemap Generator for MyNeto
  *
  * This sitemap includes only public, indexable pages.
  * Private pages (dashboard, admin, invite) are excluded.
@@ -9,7 +9,7 @@ import { MetadataRoute } from 'next';
  * @see https://nextjs.org/docs/app/api-reference/file-conventions/sitemap
  */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://neto.co.il';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://myneto.co.il';
 
   // Static public pages
   const staticPages: MetadataRoute.Sitemap = [

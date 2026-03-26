@@ -580,7 +580,7 @@ export default function VideoShowcaseSection() {
           transition={{ duration: 0.4, delay: 0.46 }}
         >
           <motion.a
-            href="https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=Myneto&utm_medium=Link"
+            href="https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=MyNeto&utm_medium=Link"
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackCtaClickServer('landing_video_cta')}
@@ -612,7 +612,7 @@ export default function VideoShowcaseSection() {
           animate={isInView ? { opacity: 1 } : undefined}
           transition={{ duration: 0.4, delay: 0.55 }}
         >
-          ההטבות בתוקף לפותחי חשבון דרך myNETO בלבד · אינו מהווה ייעוץ השקעות
+          ההטבות בתוקף לפותחי חשבון דרך MyNeto בלבד · אינו מהווה ייעוץ השקעות
         </motion.p>
       </div>
 

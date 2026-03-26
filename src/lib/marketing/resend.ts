@@ -93,7 +93,7 @@ export async function sendCampaignEmail(
     const htmlWithUnsubscribe = addUnsubscribeLink(params.html, params.userId, params.to);
 
     const result = await resend.emails.send({
-      from: 'myneto <admin@myneto.co.il>',
+      from: 'MyNeto <admin@myneto.co.il>',
       to: params.to,
       subject: params.subject,
       html: htmlWithUnsubscribe,
@@ -169,7 +169,7 @@ export interface SendBatchOptions {
   spreadDurationMinutes?: number;
   /** Emails sent in parallel per chunk (default 2; gradual mode defaults to 1) */
   concurrency?: number;
-  /** Resend "from" display string, e.g. "myneto <support@myneto.co.il>" */
+  /** Resend "from" display string, e.g. "MyNeto <support@myneto.co.il>" */
   from?: string;
 }
 
@@ -181,7 +181,7 @@ const MAX_RETRIES = 3;
 /**
  * Send a single email with retry on 429 (rate limit)
  */
-const DEFAULT_FROM = 'myneto <admin@myneto.co.il>';
+const DEFAULT_FROM = 'MyNeto <admin@myneto.co.il>';
 
 async function sendSingleWithRetry(
   resend: Resend,

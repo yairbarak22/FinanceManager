@@ -6,8 +6,8 @@
 export const WORKFLOW_SENDER_PROFILES = [
   {
     id: 'admin',
-    labelHe: 'myNETO',
-    from: 'myNETO <admin@myneto.co.il>',
+    labelHe: 'MyNeto',
+    from: 'MyNeto <admin@myneto.co.il>',
   },
   {
     id: 'yair',

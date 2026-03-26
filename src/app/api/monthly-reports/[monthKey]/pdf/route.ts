@@ -77,8 +77,8 @@ export async function GET(
       )
     );
 
-    const safeFilename = `myNETO_${monthKey}.pdf`;
-    const encodedFilename = encodeURIComponent(`myNETO_${monthName}_${year}.pdf`);
+    const safeFilename = `MyNeto_${monthKey}.pdf`;
+    const encodedFilename = encodeURIComponent(`MyNeto_${monthName}_${year}.pdf`);
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {

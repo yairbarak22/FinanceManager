@@ -38,13 +38,11 @@ test.describe('Smoke Tests', () => {
     expect([301, 302, 303, 307, 308]).toContain(response.status());
   });
 
-  test('should block API POST without CSRF header', async ({ request }) => {
-    // Create a fresh request context WITHOUT the global CSRF header
+  test('should block API POST without CSRF token', async ({ request }) => {
     const response = await request.post('/api/transactions', {
       data: { type: 'expense', amount: 100 },
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-Protection': '', // Override global header to empty
       },
       maxRedirects: 0,
     });

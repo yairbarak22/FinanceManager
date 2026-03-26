@@ -257,7 +257,7 @@ export default function TemplateDetailPage() {
           </div>
           {/* Email header preview */}
           <div className="mx-4 lg:mx-6 mt-3 lg:mt-4 p-3 bg-[#F5F5F7] rounded-xl">
-            <p className="text-xs text-[#7E7F90] mb-1">מאת: myneto &lt;admin@myneto.co.il&gt;</p>
+            <p className="text-xs text-[#7E7F90] mb-1">מאת: MyNeto &lt;admin@myneto.co.il&gt;</p>
             <p className="text-sm font-semibold text-[#303150]">{template.subject}</p>
           </div>
           <div className="p-4 lg:p-6 flex justify-center">

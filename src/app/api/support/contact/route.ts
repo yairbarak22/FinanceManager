@@ -46,14 +46,14 @@ async function sendSupportEmail(params: {
 
   try {
     const result = await resendClient.emails.send({
-      from: 'NETO Support <support@myneto.co.il>',
+      from: 'MyNeto Support <support@myneto.co.il>',
       to: SUPPORT_EMAIL,
       replyTo: params.userEmail || undefined,
       subject: 'פנייה חדשה לתמיכה',
       html: `
         <div dir="rtl" style="font-family: 'Nunito', 'Segoe UI', Tahoma, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #F5F5F7; border-radius: 24px; overflow: hidden;">
           <div style="background: linear-gradient(135deg, #0DBACC, #69ADFF); padding: 32px; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 800;">NETO</h1>
+            <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 800;">MyNeto</h1>
             <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px;">פנייה חדשה לתמיכה</p>
           </div>
 
@@ -88,7 +88,7 @@ async function sendSupportEmail(params: {
 
           <div style="padding: 20px; text-align: center; border-top: 1px solid #F7F7F8;">
             <p style="color: #BDBDCB; font-size: 11px; margin: 0;">
-              &copy; ${new Date().getFullYear()} NETO - ניהול הון חכם
+              &copy; ${new Date().getFullYear()} MyNeto - ניהול הון חכם
             </p>
           </div>
         </div>

@@ -56,12 +56,11 @@ test.describe('Authentication Redirects', () => {
 });
 
 test.describe('CSRF Protection', () => {
-  test('API POST without CSRF header is blocked', async ({ request }) => {
+  test('API POST without CSRF token is blocked', async ({ request }) => {
     const response = await request.post('/api/transactions', {
       data: { type: 'expense', amount: 100, category: 'Test', description: 'test', date: '2024-01-01' },
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-Protection': '', // Override global
       },
       maxRedirects: 0,
     });

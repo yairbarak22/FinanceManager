@@ -21,7 +21,7 @@ import { trackCtaClickServer } from '@/lib/utils';
 /* ── Constants ─────────────────────────────────────────── */
 
 const PARTNER_URL =
-  'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=Myneto&utm_medium=Link';
+  'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=MyNeto&utm_medium=Link';
 
 const GRADIENT_STYLE = {
   background: 'linear-gradient(135deg, #2B4699, #0DBACC)',
@@ -1535,7 +1535,7 @@ function MiniFooter() {
         style={{ color: '#BDBDCB', ...FONT }}
       >
         האמור אינו מהווה ייעוץ השקעות או שיווק השקעות ואינו תחליף לייעוץ אישי.
-        מערכת myNETO אינה בעלת רישיון ייעוץ השקעות. תשואות עבר אינן מעידות על
+        מערכת MyNeto אינה בעלת רישיון ייעוץ השקעות. תשואות עבר אינן מעידות על
         תשואות עתידיות.
       </p>
     </footer>

@@ -144,7 +144,7 @@ export async function GET(request: NextRequest) {
 
     const startStr = startDate.toISOString().split('T')[0];
     const endStr = endDate.toISOString().split('T')[0];
-    const filename = `myneto-export-${startStr}-to-${endStr}.xlsx`;
+    const filename = `MyNeto-export-${startStr}-to-${endStr}.xlsx`;
 
     return new NextResponse(Buffer.from(buf), {
       status: 200,

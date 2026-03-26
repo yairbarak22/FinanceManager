@@ -10,7 +10,7 @@ export function getResendClient(): Resend | null {
   return resendClient;
 }
 
-const SENDER = 'myneto <admin@myneto.co.il>';
+const SENDER = 'MyNeto <admin@myneto.co.il>';
 
 export interface SendReportEmailParams {
   to: string;

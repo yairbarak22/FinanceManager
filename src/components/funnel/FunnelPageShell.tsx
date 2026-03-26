@@ -5,7 +5,7 @@ import { PieChart, ArrowLeft, Construction } from 'lucide-react';
 import { trackCtaClickServer } from '@/lib/utils';
 
 const PARTNER_URL =
-  'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=Myneto&utm_medium=Link';
+  'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=MyNeto&utm_medium=Link';
 
 function handleCtaClick() {
   trackCtaClickServer('funnel_placeholder_cta');
@@ -152,7 +152,7 @@ export default function FunnelPageShell({ title, subtitle }: FunnelPageShellProp
           style={{ color: '#BDBDCB', fontFamily: 'var(--font-heebo)' }}
         >
           האמור אינו מהווה ייעוץ השקעות או שיווק השקעות ואינו תחליף לייעוץ אישי.
-          מערכת myNETO אינה בעלת רישיון ייעוץ השקעות. תשואות עבר אינן מעידות על תשואות עתידיות.
+          מערכת MyNeto אינה בעלת רישיון ייעוץ השקעות. תשואות עבר אינן מעידות על תשואות עתידיות.
         </p>
       </footer>
     </>

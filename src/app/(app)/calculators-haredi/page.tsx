@@ -159,7 +159,7 @@ export default function HarediCalculatorsPage() {
                 ? 'כל הכלים פתוחים עבורך. תהנה!'
                 : pendingInvites > 0
                   ? `יש לך ${pendingInvites} הזמנות ממתינות. הגישה תיפתח כשחבר יירשם.`
-                  : 'הזמן חבר ל-NETO כדי לפתוח את כל המחשבונים'
+                  : 'הזמן חבר ל-MyNeto כדי לפתוח את כל המחשבונים'
               }
             </p>
           </div>

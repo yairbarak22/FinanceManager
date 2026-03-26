@@ -23,7 +23,7 @@ export function generateReportEmailHTML(
           <!-- Header -->
           <tr>
             <td style="background-color: #3A5BA0; padding: 28px 32px; text-align: center;">
-              <span style="color: #ffffff; font-size: 24px; font-weight: 700; letter-spacing: 1px;">myneto</span>
+              <span style="color: #ffffff; font-size: 24px; font-weight: 700; letter-spacing: 1px;">MyNeto</span>
             </td>
           </tr>
 
@@ -55,7 +55,7 @@ export function generateReportEmailHTML(
                 בברכה,
               </p>
               <p style="margin: 0; font-size: 15px; color: #333333; font-weight: 600;">
-                צוות myneto
+                צוות MyNeto
               </p>
             </td>
           </tr>
@@ -64,7 +64,7 @@ export function generateReportEmailHTML(
           <tr>
             <td style="padding: 20px 32px; border-top: 1px solid #e5e5e5; text-align: center;">
               <p style="margin: 0; font-size: 12px; color: #888888; line-height: 1.5;">
-                הודעה זו נשלחה באופן אוטומטי ממערכת myneto.
+                הודעה זו נשלחה באופן אוטומטי ממערכת MyNeto.
                 <br>
                 אין להשיב להודעה זו.
               </p>

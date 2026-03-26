@@ -410,7 +410,7 @@ export default function EditTemplatePage() {
 
             {subject && (
               <div className="mx-3 sm:mx-6 mt-3 sm:mt-4 p-3 bg-[#F5F5F7] rounded-xl">
-                <p className="text-xs text-[#7E7F90] mb-1">מאת: myneto &lt;admin@myneto.co.il&gt;</p>
+                <p className="text-xs text-[#7E7F90] mb-1">מאת: MyNeto &lt;admin@myneto.co.il&gt;</p>
                 <p className="text-sm font-semibold text-[#303150]">{subject}</p>
               </div>
             )}

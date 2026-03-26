@@ -38,26 +38,26 @@ export async function sendCalculatorInviteEmail(params: SendInviteEmailParams): 
 
   try {
     await resendClient.emails.send({
-      from: 'NETO <invite@myneto.co.il>',
+      from: 'MyNeto <invite@myneto.co.il>',
       to: to.toLowerCase(),
       subject: `${inviterName} מזמין אותך להצטרף ולעשות סדר בכסף`,
       html: `
         <div dir="rtl" style="font-family: 'Segoe UI', Tahoma, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 16px; overflow: hidden;">
           <!-- Header -->
           <div style="background: linear-gradient(135deg, #0DBACC 0%, #69ADFF 50%, #9F7FE0 100%); padding: 32px; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 36px; font-weight: 800; letter-spacing: -1px;">NETO</h1>
+            <h1 style="color: white; margin: 0; font-size: 36px; font-weight: 800; letter-spacing: -1px;">MyNeto</h1>
             <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 14px;">ניהול הון חכם</p>
           </div>
           
           <!-- Content -->
           <div style="padding: 32px;">
             <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-              <h2 style="color: #f1f5f9; margin: 0 0 16px 0; font-size: 20px;">🎉 חבר הזמין אותך ל-NETO</h2>
+              <h2 style="color: #f1f5f9; margin: 0 0 16px 0; font-size: 20px;">🎉 חבר הזמין אותך ל-MyNeto</h2>
               <p style="color: #94a3b8; line-height: 1.7; margin: 0 0 12px 0;">
                 <strong style="color: #e2e8f0;">${inviterName}</strong> שולח לך הזמנה אישית, מתוך רצון לעזור לך לנהל את הכסף ברוגע ובבהירות.
               </p>
               <p style="color: #94a3b8; line-height: 1.7; margin: 0;">
-                ב-NETO אפשר לעקוב אחרי הוצאות והכנסות, לתכנן קדימה ולקבל תמונה פשוטה וברורה של המצב הכלכלי בבית.
+                ב-MyNeto אפשר לעקוב אחרי הוצאות והכנסות, לתכנן קדימה ולקבל תמונה פשוטה וברורה של המצב הכלכלי בבית.
               </p>
             </div>
             
@@ -95,7 +95,7 @@ export async function sendCalculatorInviteEmail(params: SendInviteEmailParams): 
               אם לא ביקשת הזמנה זו, ניתן להתעלם ממייל זה.
             </p>
             <p style="color: #475569; font-size: 11px; margin: 12px 0 0 0;">
-              © ${new Date().getFullYear()} NETO - ניהול הון חכם
+              © ${new Date().getFullYear()} MyNeto - ניהול הון חכם
             </p>
           </div>
         </div>

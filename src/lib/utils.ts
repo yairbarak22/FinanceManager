@@ -251,9 +251,8 @@ function readCsrfCookie(): string | null {
 }
 
 /**
- * Fetch wrapper that automatically adds CSRF protection headers.
- * Sends both the new X-CSRF-Token (from cookie) and the legacy
- * X-CSRF-Protection: '1' header for backward compatibility.
+ * Fetch wrapper that automatically adds the X-CSRF-Token header
+ * (read from the csrf-token cookie) for non-safe HTTP methods.
  *
  * Use this instead of raw fetch() for all API calls.
  *
@@ -280,11 +279,8 @@ export async function apiFetch(
     // For FormData: only add CSRF header, let browser handle Content-Type
     const headers = new Headers(options?.headers);
     if (!isSafeMethod) {
-      // NEW: send the real per-session token
       const csrfToken = readCsrfCookie();
       if (csrfToken) headers.set(CSRF_HEADER_NAME, csrfToken);
-      // LEGACY: keep old header during migration (remove after stage B)
-      headers.set('X-CSRF-Protection', '1');
     }
     return fetch(url, {
       ...options,
@@ -295,11 +291,8 @@ export async function apiFetch(
     const headers = new Headers(options?.headers);
 
     if (!isSafeMethod) {
-      // NEW: send the real per-session token
       const csrfToken = readCsrfCookie();
       if (csrfToken) headers.set(CSRF_HEADER_NAME, csrfToken);
-      // LEGACY: keep old header during migration (remove after stage B)
-      headers.set('X-CSRF-Protection', '1');
     }
 
     // Ensure Content-Type is set for JSON payloads

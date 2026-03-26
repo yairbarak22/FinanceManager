@@ -10,7 +10,7 @@
  *   - tests/e2e/smoke.spec.ts → "should block API POST without CSRF header"
  *   - tests/e2e/file-upload-flow.spec.ts → "should reject upload without CSRF header"
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   generateCsrfToken,
   isValidCsrfToken,
@@ -93,17 +93,37 @@ describe('isValidOrigin — attack scenarios', () => {
 });
 
 // ============================================================================
-// Vercel preview deployments
+// Vercel preview deployments (strict: only VERCEL_URL / VERCEL_PROJECT_PRODUCTION_URL)
 // ============================================================================
 describe('isValidOrigin — Vercel previews', () => {
   const appUrl = 'https://www.myneto.co.il';
 
-  it('allows any *.vercel.app origin', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('allows origin that exactly matches VERCEL_URL', () => {
+    vi.stubEnv('VERCEL_URL', 'my-branch-abc123.vercel.app');
     expect(isValidOrigin('https://my-branch-abc123.vercel.app', null, appUrl)).toBe(true);
   });
 
+  it('allows origin that matches VERCEL_PROJECT_PRODUCTION_URL', () => {
+    vi.stubEnv('VERCEL_PROJECT_PRODUCTION_URL', 'myneto-prod.vercel.app');
+    expect(isValidOrigin('https://myneto-prod.vercel.app', null, appUrl)).toBe(true);
+  });
+
+  it('rejects arbitrary vercel.app origin not matching env', () => {
+    vi.stubEnv('VERCEL_URL', 'myneto-real-deploy.vercel.app');
+    expect(isValidOrigin('https://attacker-deploy-xyz.vercel.app', null, appUrl)).toBe(false);
+  });
+
+  it('rejects vercel.app origin when VERCEL_URL is unset', () => {
+    delete process.env.VERCEL_URL;
+    delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    expect(isValidOrigin('https://my-branch-abc123.vercel.app', null, appUrl)).toBe(false);
+  });
+
   it('rejects fake vercel.app suffix on another domain', () => {
-    // "evil-vercel.app" does not END with ".vercel.app"
     expect(isValidOrigin('https://evil-vercel.app', null, appUrl)).toBe(false);
   });
 });

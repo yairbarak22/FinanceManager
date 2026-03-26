@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import InvestFunnelPage from '@/components/funnel/InvestFunnelPage';
 
 export const metadata = {
-  title: 'myNETO — מדריך השקעות | פתח חשבון מסחר',
+  title: 'MyNeto — מדריך השקעות | פתח חשבון מסחר',
   description:
     'למד איך להשקיע בצורה חכמה ופתח חשבון מסחר באלטשולר שחם עם הטבות בלעדיות',
 };

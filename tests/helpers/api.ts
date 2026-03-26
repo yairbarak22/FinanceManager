@@ -33,7 +33,8 @@ export function createMockRequest(
   };
 
   if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method.toUpperCase())) {
-    defaultHeaders['X-CSRF-Protection'] = '1';
+    // CSRF token header is set by apiFetch from the csrf-token cookie in prod;
+    // tests that need CSRF should pass X-CSRF-Token + cookie explicitly.
   }
 
   const allHeaders = { ...defaultHeaders, ...headers };
@@ -68,7 +69,6 @@ export function createMockFormDataRequest(
   return new NextRequest(fullUrl, {
     method,
     headers: {
-      'X-CSRF-Protection': '1',
       ...headers,
     },
     body: formData,

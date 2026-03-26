@@ -105,7 +105,7 @@ export default function UnlockOverlay({ onInviteSent, pendingInvites = 0 }: Unlo
               ההזמנה נשלחה בהצלחה! 🎉
             </h3>
             <p className="text-sm text-[#7E7F90] mb-4 max-w-sm mx-auto">
-              שלחנו הזמנה לחבר שלך. ברגע שהוא יירשם ל-NETO, כל המחשבונים ייפתחו לך אוטומטית.
+              שלחנו הזמנה לחבר שלך. ברגע שהוא יירשם ל-MyNeto, כל המחשבונים ייפתחו לך אוטומטית.
             </p>
             <button
               onClick={() => setSuccess(false)}
@@ -126,7 +126,7 @@ export default function UnlockOverlay({ onInviteSent, pendingInvites = 0 }: Unlo
                   פתח גישה ל-6 מחשבונים פיננסיים
                 </h3>
                 <p className="text-sm text-[#7E7F90]">
-                  הזמן חבר להצטרף ל-NETO וקבל גישה מלאה לכל הכלים שלנו - בחינם!
+                  הזמן חבר להצטרף ל-MyNeto וקבל גישה מלאה לכל הכלים שלנו - בחינם!
                 </p>
               </div>
             </div>

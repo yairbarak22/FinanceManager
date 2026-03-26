@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 /**
- * Robots.txt Generator for NETO
+ * Robots.txt Generator for MyNeto
  *
  * Controls search engine crawling behavior:
  * - Allows: Landing page (/)
@@ -10,7 +10,7 @@ import { MetadataRoute } from 'next';
  * @see https://nextjs.org/docs/app/api-reference/file-conventions/robots-txt
  */
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://neto.co.il';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://myneto.co.il';
 
   return {
     rules: [

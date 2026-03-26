@@ -7,7 +7,7 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { trackCtaClickServer } from '@/lib/utils';
 
 const PARTNER_URL =
-  'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=Myneto&utm_medium=Link';
+  'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=MyNeto&utm_medium=Link';
 
 const benefits = [
   { text: 'פתיחת חשבון מ-', highlight: '5,000 ₪', suffix: 'בלבד' },
@@ -128,7 +128,7 @@ export default function AltshulerSidebarCTA({ isCollapsed }: AltshulerSidebarCTA
               </a>
 
               <p className="text-center text-[0.5625rem] text-[#BDBDCB]/70 mt-2 leading-relaxed">
-                אינו מהווה ייעוץ השקעות. myNETO אינה בעלת רישיון ייעוץ.
+                אינו מהווה ייעוץ השקעות. MyNeto אינה בעלת רישיון ייעוץ.
               </p>
             </div>
           </motion.div>

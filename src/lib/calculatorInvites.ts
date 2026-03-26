@@ -143,7 +143,7 @@ export async function createCalculatorInvite(
   });
 
   if (existingUser) {
-    return { success: false, error: 'משתמש זה כבר רשום ל-NETO' };
+    return { success: false, error: 'משתמש זה כבר רשום ל-MyNeto' };
   }
 
   // Rate limit: max 10 invites per day

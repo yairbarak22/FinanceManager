@@ -191,7 +191,7 @@ async function main() {
   console.log('✅ User and all related data deleted successfully!');
   console.log('='.repeat(60));
   console.log(`\nThe email ${TARGET_EMAIL} can now register again as a new user.`);
-  console.log(`Use: https://neto.co.il/login?source=prog to register as Haredi.\n`);
+  console.log(`Use: https://myneto.co.il/login?source=prog to register as Haredi.\n`);
 }
 
 main()

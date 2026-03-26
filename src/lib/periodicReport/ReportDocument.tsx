@@ -435,7 +435,7 @@ function Header({ periodLabel }: { periodLabel: string }) {
   return (
     <View style={s.headerBanner} fixed>
       <View style={s.headerRow}>
-        <Text style={s.brand}>myNETO</Text>
+        <Text style={s.brand}>MyNeto</Text>
         <View style={s.titleBlock}>
           <Text style={s.title}>
             {prepareRtl(`תמונת מצב פיננסית - ${monthName}`)}
@@ -1232,7 +1232,7 @@ function ReportFooter() {
   return (
     <View style={s.footer} fixed>
       <Text style={s.footerTxt}>
-        {prepareRtl('דוח זה הוכן על ידי myNETO')}
+        {prepareRtl('דוח זה הוכן על ידי MyNeto')}
       </Text>
       <Text style={[s.footerTxt, { marginTop: 4 }]}>
         {prepareRtl('דוח זה אינו מהווה ייעוץ פיננסי ואינו תחליף לייעוץ מקצועי')}
@@ -1257,8 +1257,8 @@ export default function ReportDocument({ data }: ReportDocumentProps) {
   return (
     <Document
       title={`Financial Report - ${data.period.label}`}
-      author="myneto"
-      creator="myneto"
+      author="MyNeto"
+      creator="MyNeto"
     >
       <Page size="A4" style={s.page} wrap>
         <Header periodLabel={data.period.label} />

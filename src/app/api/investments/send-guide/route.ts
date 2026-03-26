@@ -126,15 +126,15 @@ export async function POST(request: NextRequest) {
     const greeting = safeUserName ? `שלום ${safeUserName},` : 'שלום,';
 
     await resendClient.emails.send({
-      from: 'NETO Investments <invest@myneto.co.il>',
+      from: 'MyNeto Investments <invest@myneto.co.il>',
       to: userEmail.toLowerCase(),
       replyTo: 'invest@myneto.co.il',
-      subject: 'מדריך מפורט לפתיחת תיק מסחר - NETO',
+      subject: 'מדריך מפורט לפתיחת תיק מסחר - MyNeto',
       html: `
         <div dir="rtl" style="font-family: 'Nunito', 'Segoe UI', Tahoma, Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #F5F5F7; border-radius: 24px; overflow: hidden;">
           <!-- Header -->
           <div style="background: linear-gradient(135deg, #0DBACC, #69ADFF); padding: 40px 32px; text-align: center;">
-            <h1 style="color: white; margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -1px;">NETO</h1>
+            <h1 style="color: white; margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -1px;">MyNeto</h1>
             <p style="color: rgba(255,255,255,0.9); margin: 12px 0 0 0; font-size: 16px; font-weight: 600;">מדריך מפורט לפתיחת תיק מסחר</p>
           </div>
 
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
             <div style="background: #FFFFFF; border-radius: 24px; padding: 28px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
               <h2 style="color: #303150; margin: 0 0 16px 0; font-size: 20px; font-weight: 700;">${greeting}</h2>
               <p style="color: #7E7F90; line-height: 1.8; margin: 0 0 16px 0; font-size: 15px;">
-                תודה שבחרת להתחיל את המסע להשקעה חכמה עם NETO!
+                תודה שבחרת להתחיל את המסע להשקעה חכמה עם MyNeto!
               </p>
               <p style="color: #7E7F90; line-height: 1.8; margin: 0; font-size: 15px;">
                 כדי שנוכל לבנות עבורך מדריך מותאם אישית לפתיחת תיק מסחר, חשוב קודם כל להשלים את השלבים הבסיסיים במערכת.
@@ -212,10 +212,10 @@ export async function POST(request: NextRequest) {
           <!-- Footer -->
           <div style="padding: 24px; text-align: center; border-top: 1px solid #F7F7F8;">
             <p style="color: #7E7F90; font-size: 12px; margin: 0 0 8px 0;">
-              המייל נשלח מ-NETO – פלטפורמה לניהול הון חכם
+              המייל נשלח מ-MyNeto – פלטפורמה לניהול הון חכם
             </p>
             <p style="color: #BDBDCB; font-size: 11px; margin: 0;">
-              &copy; ${new Date().getFullYear()} NETO - ניהול הון חכם
+              &copy; ${new Date().getFullYear()} MyNeto - ניהול הון חכם
             </p>
           </div>
         </div>

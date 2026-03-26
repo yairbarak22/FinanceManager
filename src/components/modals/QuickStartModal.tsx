@@ -197,7 +197,7 @@ export default function QuickStartModal({ isOpen, onClose, onImport }: QuickStar
                     initial="hidden"
                     animate="visible"
                   >
-                    ברוכים הבאים ל-<span style={{ color: '#69ADFF' }}>myNETO</span>
+                    ברוכים הבאים ל-<span style={{ color: '#69ADFF' }}>MyNeto</span>
                   </motion.h2>
                   <motion.p
                     className="text-sm font-medium mb-3"

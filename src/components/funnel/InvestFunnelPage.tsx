@@ -10,7 +10,7 @@ import { trackCtaClickServer } from '@/lib/utils';
 /* ── Constants ─────────────────────────────────────────── */
 
 const PARTNER_URL =
-  'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=Myneto&utm_medium=Link';
+  'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=MyNeto&utm_medium=Link';
 
 const VIDEOS = [
   { id: 'eSPdAfQmDRA', title: 'למה חיסכון בבנק כבר לא מספיק?', duration: '03:24', chapter: 'כדור השלג של הכסף' },
@@ -1469,7 +1469,7 @@ function VideoCourseSection({ noMotion }: { noMotion: boolean }) {
           animate={isInView ? { opacity: 1 } : undefined}
           transition={{ duration: 0.4, delay: 0.55 }}
         >
-          ההטבות בתוקף לפותחי חשבון דרך myNETO בלבד · אינו מהווה ייעוץ השקעות
+          ההטבות בתוקף לפותחי חשבון דרך MyNeto בלבד · אינו מהווה ייעוץ השקעות
         </motion.p>
       </div>
 
@@ -1587,7 +1587,7 @@ function BenefitsSection({ noMotion }: { noMotion: boolean }) {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.12 }}
             >
-              הטבות בלעדיות שלא תמצאו בשום מקום אחר, רק למצטרפים דרך myNETO.
+              הטבות בלעדיות שלא תמצאו בשום מקום אחר, רק למצטרפים דרך MyNeto.
             </motion.p>
 
             {/* CTA */}
@@ -1715,7 +1715,7 @@ function BenefitsSection({ noMotion }: { noMotion: boolean }) {
           viewport={{ once: true }}
           transition={{ duration: 0.4, delay: 0.3 }}
         >
-          ההטבות בתוקף לפותחי חשבון דרך myNETO בלבד · אינו מהווה ייעוץ השקעות
+          ההטבות בתוקף לפותחי חשבון דרך MyNeto בלבד · אינו מהווה ייעוץ השקעות
         </motion.p>
       </div>
 
@@ -1790,7 +1790,7 @@ function FinalCTASection({ noMotion }: { noMotion: boolean }) {
           className="text-[11px] mt-8 leading-relaxed"
           style={{ color: '#BDBDCB', fontFamily: 'var(--font-heebo)' }}
         >
-          ההטבות בתוקף לפותחי חשבון דרך myNETO בלבד · אינו מהווה ייעוץ השקעות
+          ההטבות בתוקף לפותחי חשבון דרך MyNeto בלבד · אינו מהווה ייעוץ השקעות
         </p>
       </div>
     </section>
@@ -1819,7 +1819,7 @@ function MiniFooter() {
         style={{ color: '#BDBDCB', fontFamily: 'var(--font-heebo)' }}
       >
         האמור אינו מהווה ייעוץ השקעות או שיווק השקעות ואינו תחליף לייעוץ אישי.
-        מערכת myNETO אינה בעלת רישיון ייעוץ השקעות. תשואות עבר אינן מעידות על תשואות עתידיות.
+        מערכת MyNeto אינה בעלת רישיון ייעוץ השקעות. תשואות עבר אינן מעידות על תשואות עתידיות.
       </p>
     </footer>
   );

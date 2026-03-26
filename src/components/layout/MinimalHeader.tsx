@@ -79,7 +79,7 @@ export default function MinimalHeader({
                 <PieChart className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-bold text-slate-800" style={{ fontFamily: 'var(--font-heebo)' }}>
-                NETO
+                MyNeto
               </span>
             </div>
             

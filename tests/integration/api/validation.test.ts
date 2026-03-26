@@ -131,7 +131,6 @@ function jsonRequest(url: string, body: unknown): NextRequest {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-CSRF-Protection': '1',
     },
     body: JSON.stringify(body),
   });
@@ -142,7 +141,6 @@ function putRequest(url: string, body: unknown): NextRequest {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      'X-CSRF-Protection': '1',
     },
     body: JSON.stringify(body),
   });

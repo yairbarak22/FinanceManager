@@ -96,7 +96,7 @@ export async function sendSequenceStepEmail(
 
   try {
     const result = await resend.emails.send({
-      from: 'myneto <invest@myneto.co.il>',
+      from: 'MyNeto <invest@myneto.co.il>',
       to: params.to,
       subject,
       html: htmlWithUnsubscribe,

@@ -153,7 +153,7 @@ export default function PlatformOverview() {
           animate={isInView ? { opacity: 1, y: 0 } : undefined}
           transition={{ duration: 0.5, delay: 0.15 }}
         >
-          מעבר למיפוי, תכנית והשקעה — myNETO כולל כלים נוספים לניהול כספים נכון
+          מעבר למיפוי, תכנית והשקעה — MyNeto כולל כלים נוספים לניהול כספים נכון
         </motion.p>
 
         {/* ── Desktop: Arch with auto-cycling spotlight ── */}

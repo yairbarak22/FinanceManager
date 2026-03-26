@@ -259,7 +259,7 @@ export default function Sidebar() {
                 className="text-xl font-bold text-slate-800 tracking-tight whitespace-nowrap"
                 style={{ fontFamily: 'var(--font-heebo)' }}
               >
-                NETO
+                MyNeto
               </span>
             )}
           </button>

@@ -44,9 +44,7 @@ export default defineConfig({
     video: 'on-first-retry',
 
     // Extra HTTP headers
-    extraHTTPHeaders: {
-      'X-CSRF-Protection': '1',
-    },
+    extraHTTPHeaders: {},
   },
 
   // Browser projects

@@ -182,7 +182,6 @@ describe('POST /api/user/delete-selected-data', () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-Protection': '1',
       },
       body: JSON.stringify({ domains: ['transactions', 'holdings'] }),
     });

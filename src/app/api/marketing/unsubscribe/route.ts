@@ -68,7 +68,7 @@ function htmlPage(body: string, status = 200): NextResponse {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ביטול מנוי - NETO</title>
+  <title>ביטול מנוי - MyNeto</title>
   <style>${PAGE_STYLE}</style>
 </head>
 <body>
@@ -94,7 +94,7 @@ function expiredLinkPage(): NextResponse {
 function confirmPage(userId: string, token: string): NextResponse {
   return htmlPage(
     `<h1>ביטול מנוי לדיוור שיווקי</h1>
-     <p>האם אתה בטוח שברצונך לבטל את המנוי לדיוור שיווקי מ-NETO?</p>
+     <p>האם אתה בטוח שברצונך לבטל את המנוי לדיוור שיווקי מ-MyNeto?</p>
      <p style="font-size: 13px; color: #BDBDCB;">לא תקבל עוד מיילים שיווקיים, אך תמשיך לקבל הודעות מערכת חשובות.</p>
      <form method="POST" action="/api/marketing/unsubscribe">
        <input type="hidden" name="userId" value="${userId}">
@@ -108,7 +108,7 @@ function successPage(): NextResponse {
   return htmlPage(
     `<h1>ביטול מנוי הושלם</h1>
      <p class="success">✓ ביטלת בהצלחה את המנוי לדיוור שיווקי</p>
-     <p>לא תקבל עוד מיילים שיווקיים מ-NETO. תוכל תמיד לחזור ולהרשם מחדש מהגדרות החשבון.</p>`,
+     <p>לא תקבל עוד מיילים שיווקיים מ-MyNeto. תוכל תמיד לחזור ולהרשם מחדש מהגדרות החשבון.</p>`,
   );
 }
 

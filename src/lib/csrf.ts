@@ -18,7 +18,6 @@
 
 export const CSRF_COOKIE_NAME    = 'csrf-token';
 export const CSRF_HEADER_NAME    = 'X-CSRF-Token';
-export const CSRF_LEGACY_HEADER  = 'X-CSRF-Protection'; // kept for backward compat
 export const CSRF_TOKEN_BYTES    = 32;                   // → 64 hex chars
 export const CSRF_TOKEN_MAX_AGE  = 60 * 60 * 24;        // 24 h in seconds
 
@@ -80,9 +79,26 @@ export function normalizeDomain(hostname: string): string {
 }
 
 /**
+ * Extract hostname from a Vercel system env var (e.g. VERCEL_URL).
+ * These vars contain a bare host (no scheme), so we prepend https://
+ * to parse safely. Returns lowercase hostname, or null if unset/invalid.
+ */
+function vercelEnvHostname(envVar: string | undefined): string | null {
+  if (!envVar) return null;
+  try {
+    return new URL(`https://${envVar}`).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Validate the request Origin (with Referer fallback) against the app URL.
- * Handles production, localhost (dev), Vercel preview deployments,
- * and www vs non-www domain variants.
+ * Handles production, localhost (dev), and www vs non-www domain variants.
+ *
+ * Vercel preview deployments are allowed only when the candidate hostname
+ * exactly matches VERCEL_URL or VERCEL_PROJECT_PRODUCTION_URL — arbitrary
+ * *.vercel.app subdomains are rejected.
  *
  * If neither Origin nor Referer is present we allow the request —
  * same-origin browser navigations may omit both headers, and the
@@ -94,6 +110,9 @@ export function isValidOrigin(
   appUrl: string,
 ): boolean {
   const allowedUrl = new URL(appUrl);
+
+  const vercelUrl = vercelEnvHostname(process.env.VERCEL_URL);
+  const vercelProdUrl = vercelEnvHostname(process.env.VERCEL_PROJECT_PRODUCTION_URL);
 
   function matches(candidate: string): boolean {
     try {
@@ -127,8 +146,10 @@ export function isValidOrigin(
         return true;
       }
 
-      // Vercel preview deployments (same Vercel account)
-      if (candidateUrl.hostname.endsWith('.vercel.app')) return true;
+      // Vercel deployments: strict match against this project's env vars only
+      const candidateHost = candidateUrl.hostname.toLowerCase();
+      if (vercelUrl && candidateHost === vercelUrl) return true;
+      if (vercelProdUrl && candidateHost === vercelProdUrl) return true;
 
       return false;
     } catch {

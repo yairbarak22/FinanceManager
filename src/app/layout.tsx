@@ -31,10 +31,10 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://neto.co.il'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://myneto.co.il'),
   title: {
-    default: 'NETO - ניהול הון חכם',
-    template: '%s | NETO',
+    default: 'MyNeto - ניהול הון חכם',
+    template: '%s | MyNeto',
   },
   description: 'המקום שלך לצמוח כלכלית. ניהול הוצאות, השקעות ותכנון פיננסי חכם - בחינם.',
   keywords: [
@@ -49,9 +49,9 @@ export const metadata: Metadata = {
     'תכנון פרישה',
     'שווי נקי',
   ],
-  authors: [{ name: 'NETO' }],
-  creator: 'NETO',
-  publisher: 'NETO',
+  authors: [{ name: 'MyNeto' }],
+  creator: 'MyNeto',
+  publisher: 'MyNeto',
   formatDetection: {
     telephone: false,
     email: false,
@@ -59,21 +59,21 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'he_IL',
-    siteName: 'NETO',
-    title: 'NETO - ניהול הון חכם',
+    siteName: 'MyNeto',
+    title: 'MyNeto - ניהול הון חכם',
     description: 'המקום שלך לצמוח כלכלית. ניהול הוצאות, השקעות ותכנון פיננסי חכם.',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'NETO - ניהול הון חכם',
+        alt: 'MyNeto - ניהול הון חכם',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'NETO - ניהול הון חכם',
+    title: 'MyNeto - ניהול הון חכם',
     description: 'המקום שלך לצמוח כלכלית. ניהול הוצאות, השקעות ותכנון פיננסי חכם.',
     images: ['/og-image.png'],
   },

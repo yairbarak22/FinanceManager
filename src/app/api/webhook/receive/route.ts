@@ -260,7 +260,7 @@ ${emailContent.text || emailContent.html?.replace(/<[^>]*>/g, '') || '(לא ני
 
   // Send forwarded email
   const result = await resend.emails.send({
-    from: 'NETO <onboarding@resend.dev>',
+    from: 'MyNeto <onboarding@resend.dev>',
     to: forwardTo,
     replyTo: senderEmail,
     subject: `[myneto.co.il] ${subject}`,

@@ -2,9 +2,9 @@ import { Suspense } from 'react';
 import TransferPortfolioPage from '@/components/funnel/TransferPortfolioPage';
 
 export const metadata = {
-  title: 'myNETO — העברת תיק השקעות קיים | 0₪ דמי ניהול לכל החיים',
+  title: 'MyNeto — העברת תיק השקעות קיים | 0₪ דמי ניהול לכל החיים',
   description:
-    'איך להעביר תיק השקעות קיים לאלטשולר שחם דרך myNETO — 0₪ דמי ניהול לכל החיים, 200₪ מתנה, ומדריך פרקטי צעד אחר צעד',
+    'איך להעביר תיק השקעות קיים לאלטשולר שחם דרך MyNeto — 0₪ דמי ניהול לכל החיים, 200₪ מתנה, ומדריך פרקטי צעד אחר צעד',
 };
 
 export default function TransferPortfolioRoute() {

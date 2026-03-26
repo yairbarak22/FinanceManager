@@ -85,17 +85,18 @@ export default function Navbar({ callbackUrl }: NavbarProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
-            <div className="flex items-center gap-0">
-              <PieChart
-                className="w-8 h-8 md:w-9 md:h-9"
-                style={{ color: '#2B4699' }}
-                strokeWidth={3}
-              />
+            <div className="flex items-center">
+            <PieChart
+                  className="w-6 h-6 md:w-7 md:h-7 -ms-0.5"
+                  style={{ color: '#2B4699' }}
+                  strokeWidth={2.5}
+                />
               <span
-                className="text-2xl md:text-3xl font-black tracking-tight"
+                className="text-2xl md:text-3xl font-black tracking-tight inline-flex items-center"
                 style={{ color: '#1D1D1F', fontFamily: 'var(--font-heebo)' }}
               >
-                NET
+                <span style={{ color: '#2B4699' }}>Net</span>My
+                
               </span>
             </div>
 

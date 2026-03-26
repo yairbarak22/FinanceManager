@@ -14,7 +14,7 @@ import { trackCtaClickServer } from '@/lib/utils';
 type CourseVariant = 'investments' | 'appTutorials';
 
 const PARTNER_URL =
-  'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=Myneto&utm_medium=Link';
+  'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=MyNeto&utm_medium=Link';
 
 interface CourseExperienceProps {
   course: Course;
@@ -231,14 +231,14 @@ export default function CourseExperience({ course, variant, storageKey }: Course
             <>
               <AlertTriangle className="w-3.5 h-3.5 text-[#BDBDCB] flex-shrink-0 mt-0.5" strokeWidth={1.75} />
               <p className="text-[0.6875rem] text-[#BDBDCB] leading-relaxed">
-                האמור בקורס זה אינו מהווה ייעוץ השקעות, שיווק השקעות, ייעוץ מס, או תחליף לייעוץ אישי המותאם לנתוני כל אדם. אין לראות באמור המלצה לביצוע עסקאות בניירות ערך או מוצרים פיננסיים. מערכת myNETO אינה בעלת רישיון ייעוץ השקעות.
+                האמור בקורס זה אינו מהווה ייעוץ השקעות, שיווק השקעות, ייעוץ מס, או תחליף לייעוץ אישי המותאם לנתוני כל אדם. אין לראות באמור המלצה לביצוע עסקאות בניירות ערך או מוצרים פיננסיים. מערכת MyNeto אינה בעלת רישיון ייעוץ השקעות.
               </p>
             </>
           ) : (
             <>
               <Info className="w-3.5 h-3.5 text-[#BDBDCB] flex-shrink-0 mt-0.5" strokeWidth={1.75} />
               <p className="text-[0.6875rem] text-[#BDBDCB] leading-relaxed">
-                תוכן הסברי על השימוש במערכת myNETO בלבד. אינו מהווה ייעוץ פיננסי מכל סוג שהוא.
+                תוכן הסברי על השימוש במערכת MyNeto בלבד. אינו מהווה ייעוץ פיננסי מכל סוג שהוא.
               </p>
             </>
           )}

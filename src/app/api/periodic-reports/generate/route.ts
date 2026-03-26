@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
       subject: `סיכום פיננסי - ${periodLabel}`,
       html: emailHtml,
       pdfBuffer,
-      filename: `myNETO_${periodLabel.split(' ')[0]}.pdf`,
+      filename: `MyNeto_${periodLabel.split(' ')[0]}.pdf`,
     });
 
     if ('error' in emailResult) {

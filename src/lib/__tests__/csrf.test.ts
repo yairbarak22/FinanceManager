@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   generateCsrfToken,
   isValidCsrfToken,
@@ -6,7 +6,6 @@ import {
   normalizeDomain,
   CSRF_COOKIE_NAME,
   CSRF_HEADER_NAME,
-  CSRF_LEGACY_HEADER,
   CSRF_TOKEN_BYTES,
   CSRF_TOKEN_MAX_AGE,
 } from '../csrf';
@@ -120,6 +119,10 @@ describe('normalizeDomain', () => {
 describe('isValidOrigin', () => {
   const appUrl = 'https://www.myneto.co.il';
 
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('allows matching production origin', () => {
     expect(isValidOrigin('https://www.myneto.co.il', null, appUrl)).toBe(true);
   });
@@ -149,12 +152,20 @@ describe('isValidOrigin', () => {
     expect(isValidOrigin('http://127.0.0.1:3000', null, appUrl)).toBe(true);
   });
 
-  it('allows Vercel preview deployment URLs', () => {
+  it('allows Vercel preview URL matching VERCEL_URL', () => {
+    vi.stubEnv('VERCEL_URL', 'myneto-abc123.vercel.app');
     expect(isValidOrigin('https://myneto-abc123.vercel.app', null, appUrl)).toBe(true);
   });
 
-  it('allows any vercel.app subdomain', () => {
-    expect(isValidOrigin('https://random-preview-123.vercel.app', null, appUrl)).toBe(true);
+  it('rejects arbitrary vercel.app subdomain when VERCEL_URL does not match', () => {
+    vi.stubEnv('VERCEL_URL', 'myneto-real-deploy.vercel.app');
+    expect(isValidOrigin('https://random-preview-123.vercel.app', null, appUrl)).toBe(false);
+  });
+
+  it('rejects vercel.app origin when VERCEL_URL is unset', () => {
+    delete process.env.VERCEL_URL;
+    delete process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    expect(isValidOrigin('https://random-preview-123.vercel.app', null, appUrl)).toBe(false);
   });
 
   it('falls back to Referer when Origin is null', () => {
@@ -226,10 +237,6 @@ describe('CSRF constants', () => {
 
   it('has correct header name', () => {
     expect(CSRF_HEADER_NAME).toBe('X-CSRF-Token');
-  });
-
-  it('has correct legacy header name', () => {
-    expect(CSRF_LEGACY_HEADER).toBe('X-CSRF-Protection');
   });
 
   it('token max age is 24 hours', () => {

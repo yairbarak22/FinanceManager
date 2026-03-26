@@ -26,9 +26,6 @@ test.describe('File Upload API', () => {
         entityType: 'asset',
         entityId: 'test-asset-1',
       },
-      headers: {
-        'X-CSRF-Protection': '1',
-      },
       maxRedirects: 0,
     });
 
@@ -36,7 +33,7 @@ test.describe('File Upload API', () => {
     expect([301, 302, 303, 307, 308]).toContain(response.status());
   });
 
-  test('should reject upload without CSRF header', async ({ request }) => {
+  test('should reject upload without CSRF token', async ({ request }) => {
     const buffer = Buffer.from('%PDF-1.4 test content');
 
     const response = await request.post('/api/documents', {
@@ -48,9 +45,6 @@ test.describe('File Upload API', () => {
         },
         entityType: 'asset',
         entityId: 'test-asset-1',
-      },
-      headers: {
-        'X-CSRF-Protection': '', // Override global header to empty
       },
       maxRedirects: 0,
     });

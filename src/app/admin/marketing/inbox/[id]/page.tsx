@@ -311,7 +311,7 @@ export default function MessageThreadPage({
               className="w-full flex items-center justify-between px-3 sm:px-4 py-2.5 rounded-xl border border-[#E8E8ED] text-xs sm:text-sm text-[#303150] hover:border-[#69ADFF] transition-colors"
             >
               <span className="truncate">
-                myneto &lt;{replyFromAddress}&gt;
+                MyNeto &lt;{replyFromAddress}&gt;
               </span>
               <ChevronDown
                 className={`w-4 h-4 text-[#7E7F90] transition-transform flex-shrink-0 mr-2 ${
