@@ -792,6 +792,8 @@ export default function DashboardPage() {
         setEditingRecurring(r);
         setIsRecurringModalOpen(true);
       },
+      exchangeRate,
+      monthsCount,
     },
     portfolio: {
       assets,
@@ -890,7 +892,7 @@ export default function DashboardPage() {
     handleCategoryClick, handleClearCategoryFilter, effectiveMonth, transactionsRef,
     handleDeleteTransaction, handleDeleteMultipleTransactions,
     handleUpdateTransaction, handleBulkUpdateCategory,
-    handleAddTransaction, router, toast,
+    handleAddTransaction, router, toast, exchangeRate, monthsCount,
     addCustomCategory, handleDeleteCategory,
     selectedMonth, assetHistory, liabilities, isHaredi,
     assetsRef, liabilitiesRef, recurringRef,

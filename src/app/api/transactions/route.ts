@@ -6,10 +6,13 @@ import { recalculateDeadline } from '@/lib/goalCalculations';
 import { validateRequest } from '@/lib/validateRequest';
 import { createTransactionSchema } from '@/lib/validationSchemas';
 import { getFinancialMonthBounds } from '@/lib/utils';
+import { expenseIdToGoalCategories } from '@/lib/goalCategoryMapping';
 
 // Helper function to find a goal by category ID (handles both default and custom categories)
 async function findGoalByCategory(userId: string, categoryId: string) {
-  // First, try to find goal with category matching the ID directly (for default categories)
+  // 1. Direct match: goal.category === categoryId (works for preset goal keys
+  //    stored as-is, e.g. "home", "saving", and for legacy rows where
+  //    category was stored as the goal name)
   let goal = await prisma.financialGoal.findFirst({
     where: {
       userId,
@@ -20,31 +23,51 @@ async function findGoalByCategory(userId: string, categoryId: string) {
     },
   });
 
-  // If not found, it might be a custom category - find by name
-  if (!goal) {
-    const customCategory = await prisma.customCategory.findFirst({
+  if (goal) return goal;
+
+  // 2. Reverse-map: the transaction's expense category ID may map to one or
+  //    more goal category keys (e.g. expense "savings" → goal keys "saving", "emergency")
+  const goalKeys = expenseIdToGoalCategories(categoryId);
+  if (goalKeys.length > 0) {
+    goal = await prisma.financialGoal.findFirst({
       where: {
-        id: categoryId,
         userId,
-        type: 'expense',
+        category: { in: goalKeys },
+      },
+      include: {
+        recurringTransaction: true,
       },
     });
-
-    if (customCategory) {
-      // Find goal with category matching the custom category name
-      goal = await prisma.financialGoal.findFirst({
-        where: {
-          userId,
-          category: customCategory.name, // Goal category = custom category name
-        },
-        include: {
-          recurringTransaction: true,
-        },
-      });
-    }
+    if (goal) return goal;
   }
 
-  return goal;
+  // 3. Custom category fallback: categoryId is a cuid — look up its name
+  //    and find a goal whose name matches the custom category name
+  //    (goal name drives the CustomCategory that the recurring expense uses)
+  const customCategory = await prisma.customCategory.findFirst({
+    where: {
+      id: categoryId,
+      userId,
+      type: 'expense',
+    },
+  });
+
+  if (customCategory) {
+    goal = await prisma.financialGoal.findFirst({
+      where: {
+        userId,
+        OR: [
+          { category: customCategory.name },
+          { name: customCategory.name },
+        ],
+      },
+      include: {
+        recurringTransaction: true,
+      },
+    });
+  }
+
+  return goal ?? null;
 }
 
 // Helper function to update goal when a transaction with matching category is created

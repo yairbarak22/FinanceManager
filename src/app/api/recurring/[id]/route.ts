@@ -4,10 +4,12 @@ import { requireAuth, withSharedAccountId, checkPermission, getSharedUserIds } f
 import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
 import { recalculateDeadline } from '@/lib/goalCalculations';
 import { validateActiveMonths } from '@/lib/utils';
+import { expenseIdToGoalCategories } from '@/lib/goalCategoryMapping';
 
 /**
  * Auto-link a goal to a recurring transaction if:
  * 1. Goal has the same category as the recurring transaction
+ *    (direct match OR via the goal-category ↔ expense-category mapping)
  * 2. Goal doesn't have a linked recurring transaction
  * 3. The recurring transaction is not already linked to another goal
  */
@@ -19,12 +21,30 @@ export async function autoLinkGoalToRecurring(
   // Get all user IDs in the shared account
   const userIds = await getSharedUserIds(userId);
   
-  // Find goal with matching category that has no linked recurring transaction
+  // Build list of category values that could match: the recurring's own
+  // category plus any goal-category keys that map to it via the mapping.
+  const possibleGoalCategories = [
+    recurringCategory,
+    ...expenseIdToGoalCategories(recurringCategory),
+  ];
+
+  // If recurringCategory is a custom category id, also match by goal name
+  let customCategoryName: string | null = null;
+  const customCat = await prisma.customCategory.findFirst({
+    where: { id: recurringCategory, type: 'expense' },
+    select: { name: true },
+  });
+  if (customCat) customCategoryName = customCat.name;
+
+  // Find goal with matching category or name that has no linked recurring
   const goal = await prisma.financialGoal.findFirst({
     where: {
       userId: { in: userIds },
-      category: recurringCategory,
       recurringTransactionId: null,
+      OR: [
+        { category: { in: possibleGoalCategories } },
+        ...(customCategoryName ? [{ name: customCategoryName }] : []),
+      ],
     },
   });
 

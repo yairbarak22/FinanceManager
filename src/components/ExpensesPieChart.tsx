@@ -4,7 +4,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { PieChart as PieChartIcon } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getAmountInILS, isRecurringActiveInMonth } from '@/lib/utils';
 import { Transaction, RecurringTransaction } from '@/lib/types';
 import { getCategoryInfo, CategoryInfo } from '@/lib/categories';
 import { getChartColor } from '@/lib/chartColors';
@@ -19,6 +19,9 @@ interface ExpensesPieChartProps {
   customIncomeCategories?: CategoryInfo[];
   selectedCategory?: string | null;
   onCategoryClick?: (category: string) => void;
+  effectiveMonth?: string;
+  exchangeRate?: number;
+  monthsCount?: number;
 }
 
 const MODE_CONFIG = {
@@ -79,6 +82,9 @@ export default function ExpensesPieChart({
   customIncomeCategories = [],
   selectedCategory = null,
   onCategoryClick,
+  effectiveMonth,
+  exchangeRate = 1,
+  monthsCount = 1,
 }: ExpensesPieChartProps) {
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
   const [mode, setMode] = useState<BreakdownMode>('expense');
@@ -97,14 +103,15 @@ export default function ExpensesPieChart({
     const byCategory = transactions
       .filter((t) => t.type === 'expense')
       .reduce((acc, t) => {
-        acc[t.category] = (acc[t.category] || 0) + t.amount;
+        acc[t.category] = (acc[t.category] || 0) + getAmountInILS(t.amount, t.currency || 'ILS', exchangeRate);
         return acc;
       }, {} as Record<string, number>);
 
     recurringExpenses
-      .filter((r) => r.type === 'expense' && r.isActive)
+      .filter((r) => r.type === 'expense' && (!effectiveMonth || isRecurringActiveInMonth(r, effectiveMonth)))
       .forEach((r) => {
-        byCategory[r.category] = (byCategory[r.category] || 0) + r.amount;
+        const amt = getAmountInILS(r.amount, (r.currency as string) || 'ILS', exchangeRate) * monthsCount;
+        byCategory[r.category] = (byCategory[r.category] || 0) + amt;
       });
 
     const total = Object.values(byCategory).reduce((a, b) => a + b, 0);
@@ -124,20 +131,21 @@ export default function ExpensesPieChart({
       .map((item, index) => ({ ...item, color: getChartColor(index) }));
 
     return { data: chartData, total };
-  }, [transactions, recurringExpenses, allCustomCategories]);
+  }, [transactions, recurringExpenses, allCustomCategories, exchangeRate, effectiveMonth, monthsCount]);
 
   const { data: incomeData, total: totalIncome } = useMemo(() => {
     const byCategory = transactions
       .filter((t) => t.type === 'income')
       .reduce((acc, t) => {
-        acc[t.category] = (acc[t.category] || 0) + t.amount;
+        acc[t.category] = (acc[t.category] || 0) + getAmountInILS(t.amount, t.currency || 'ILS', exchangeRate);
         return acc;
       }, {} as Record<string, number>);
 
     recurringExpenses
-      .filter((r) => r.type === 'income' && r.isActive)
+      .filter((r) => r.type === 'income' && (!effectiveMonth || isRecurringActiveInMonth(r, effectiveMonth)))
       .forEach((r) => {
-        byCategory[r.category] = (byCategory[r.category] || 0) + r.amount;
+        const amt = getAmountInILS(r.amount, (r.currency as string) || 'ILS', exchangeRate) * monthsCount;
+        byCategory[r.category] = (byCategory[r.category] || 0) + amt;
       });
 
     const total = Object.values(byCategory).reduce((a, b) => a + b, 0);
@@ -157,7 +165,7 @@ export default function ExpensesPieChart({
       .map((item, index) => ({ ...item, color: getChartColor(index) }));
 
     return { data: chartData, total };
-  }, [transactions, recurringExpenses, allCustomCategories]);
+  }, [transactions, recurringExpenses, allCustomCategories, exchangeRate, effectiveMonth, monthsCount]);
 
   const data = mode === 'expense' ? expenseData : incomeData;
   const total = mode === 'expense' ? totalExpenses : totalIncome;

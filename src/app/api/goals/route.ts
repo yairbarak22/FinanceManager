@@ -5,9 +5,7 @@ import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { calculateMonthlyContribution, calculateMonthlyContributionWithInterest } from '@/lib/goalCalculations';
 import { validateRequest } from '@/lib/validateRequest';
 import { createGoalSchema } from '@/lib/validationSchemas';
-
-// Goal category color
-const GOAL_CATEGORY_COLOR = '#0DBACC';
+import { resolveExpenseCategoryForGoalName } from '@/lib/resolveGoalExpenseCategory';
 
 // GET - Fetch all financial goals
 export async function GET() {
@@ -82,43 +80,26 @@ export async function POST(request: NextRequest) {
 
     // Use Prisma transaction to create everything atomically
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Create RecurringTransaction with goal name
+      // Resolve expense category from the goal's name:
+      // matches a default category (by id or Hebrew name), an existing custom
+      // category, or creates a new one.
+      const expenseCategoryId = await resolveExpenseCategoryForGoalName(
+        goalName, userId, data.icon, tx,
+      );
+
+      // 1. Create RecurringTransaction with the resolved expense category
       const recurringTransaction = await tx.recurringTransaction.create({
         data: {
           userId,
-          name: `חיסכון: ${goalName}`,
+          name: `חיסכון ליעד - ${goalName}`,
           type: 'expense',
-          category: goalName, // Use goal name as category
+          category: expenseCategoryId,
           amount: monthlyContributionAmount,
           isActive: true,
         },
       });
 
-      // 2. Create CustomCategory for the goal (if doesn't exist)
-      // Use upsert to avoid duplicates
-      await tx.customCategory.upsert({
-        where: {
-          userId_name_type: {
-            userId,
-            name: goalName,
-            type: 'expense',
-          },
-        },
-        update: {
-          // Update color/icon if needed
-          color: GOAL_CATEGORY_COLOR,
-          icon: data.icon || 'Target',
-        },
-        create: {
-          userId,
-          name: goalName,
-          type: 'expense',
-          color: GOAL_CATEGORY_COLOR,
-          icon: data.icon || 'Target',
-        },
-      });
-
-      // 3. Create the FinancialGoal linked to the RecurringTransaction
+      // 2. Create the FinancialGoal linked to the RecurringTransaction
       const goal = await tx.financialGoal.create({
         data: {
           userId,
@@ -126,7 +107,7 @@ export async function POST(request: NextRequest) {
           targetAmount: data.targetAmount,
           currentAmount,
           deadline,
-          category: goalName, // Use goal name as category for matching transactions
+          category,
           icon: data.icon || null,
           recurringTransactionId: recurringTransaction.id,
         },

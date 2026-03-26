@@ -99,7 +99,7 @@ export default function GoalCreationInfoModal({
                     className="text-xs"
                     style={{ color: '#7E7F90' }}
                   >
-                    הוצאה חודשית של <strong style={{ color: '#69ADFF' }}>{formatCurrency(monthlyContribution)}</strong> תתווסף אוטומטית עם שם היעד
+                    הוצאה חודשית של <strong style={{ color: '#69ADFF' }}>{formatCurrency(monthlyContribution)}</strong> בשם <strong style={{ color: '#303150' }}>&quot;חיסכון ליעד - {goalName}&quot;</strong> תתווסף אוטומטית
                   </p>
                 </div>
               </div>

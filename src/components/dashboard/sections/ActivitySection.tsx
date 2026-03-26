@@ -50,6 +50,8 @@ export interface ActivitySectionProps {
   onAddCategory: (name: string, type: 'expense' | 'income') => Promise<CategoryInfo | void>;
   onDeleteCategory: (categoryId: string, type: string) => Promise<void>;
   onEditRecurring: (r: RecurringTransaction) => void;
+  exchangeRate?: number;
+  monthsCount?: number;
 }
 
 export default function ActivitySection({
@@ -75,6 +77,8 @@ export default function ActivitySection({
   onAddCategory,
   onDeleteCategory,
   onEditRecurring,
+  exchangeRate,
+  monthsCount,
 }: ActivitySectionProps) {
   const activityTutorial = getSectionTutorialConfig('activity');
 
@@ -95,6 +99,9 @@ export default function ActivitySection({
             customIncomeCategories={customIncomeCategories}
             selectedCategory={selectedCategory}
             onCategoryClick={onCategoryClick}
+            effectiveMonth={effectiveMonth}
+            exchangeRate={exchangeRate}
+            monthsCount={monthsCount}
           />
         </Card>
 
