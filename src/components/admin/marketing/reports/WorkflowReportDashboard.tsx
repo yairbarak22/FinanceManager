@@ -8,6 +8,7 @@ import {
   Play,
   CheckCircle,
   XCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/utils';
@@ -220,31 +221,56 @@ export default function WorkflowReportDashboard({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+  async function fetchReport() {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await apiFetch(
+        `/api/admin/marketing/workflows/${workflowId}/report`,
+      );
+      if (!res.ok) {
+        if (res.status === 404) throw new Error('תהליך עבודה לא נמצא');
+        throw new Error('שגיאה בטעינת הדוח');
+      }
+      const json = await res.json();
+      setData(json);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'שגיאה בטעינת הדוח',
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function fetchReport() {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await apiFetch(
-          `/api/admin/marketing/workflows/${workflowId}/report`,
-        );
-        if (!res.ok) {
-          if (res.status === 404) throw new Error('תהליך עבודה לא נמצא');
-          throw new Error('שגיאה בטעינת הדוח');
-        }
-        const json = await res.json();
-        setData(json);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : 'שגיאה בטעינת הדוח',
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchReport();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [workflowId]);
+
+  async function handleSync() {
+    setSyncing(true);
+    setSyncMessage(null);
+    try {
+      const res = await apiFetch(
+        `/api/admin/marketing/workflows/${workflowId}/sync`,
+        { method: 'POST' },
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'שגיאה בסנכרון');
+      setSyncMessage(json.message || 'הסנכרון הושלם');
+      await fetchReport();
+    } catch (err) {
+      setSyncMessage(
+        err instanceof Error ? err.message : 'שגיאה בסנכרון',
+      );
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   const nodeNames = useMemo(() => {
     if (!data) return {};
@@ -321,7 +347,7 @@ export default function WorkflowReportDashboard({
           חזרה לתהליכי עבודה
         </button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <h1 className="text-2xl lg:text-3xl font-bold text-[#303150]">
             {workflow.name}
           </h1>
@@ -330,7 +356,18 @@ export default function WorkflowReportDashboard({
           >
             {statusCfg.label}
           </span>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="ms-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#303150] bg-white border border-[#E8E8ED] rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'מסנכרן...' : 'סנכרן עם Resend'}
+          </button>
         </div>
+        {syncMessage && (
+          <p className="text-xs text-[#7E7F90] mt-1">{syncMessage}</p>
+        )}
       </div>
 
       {/* ── Summary cards ───────────────────────────────── */}

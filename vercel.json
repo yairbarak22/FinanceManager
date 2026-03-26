@@ -4,7 +4,7 @@
   "outputDirectory": ".next",
   "crons": [
     {
-      "path": "/api/goals/cron-update?secret=${CRON_SECRET}",
+      "path": "/api/goals/cron-update",
       "schedule": "0 0 1 * *"
     },
     {
@@ -12,15 +12,15 @@
       "schedule": "0 3 * * *"
     },
     {
-      "path": "/api/cron/send-sequences?secret=${CRON_SECRET}",
+      "path": "/api/cron/send-sequences",
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/cron/evaluate-ab-tests?secret=${CRON_SECRET}",
+      "path": "/api/cron/evaluate-ab-tests",
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/cron/smart-send?secret=${CRON_SECRET}",
+      "path": "/api/cron/smart-send",
       "schedule": "*/2 * * * *"
     }
   ]

@@ -16,18 +16,14 @@ import { prisma } from '@/lib/prisma';
 import { QuarantineStatus } from '@prisma/client';
 import { del } from '@vercel/blob';
 import { logAuditEvent, AuditAction } from '@/lib/auditLog';
+import { isAuthorizedCronRequest } from '@/lib/cronAuth';
 
 // Files pending for more than 30 days are auto-rejected and deleted
 const AUTO_REJECT_AFTER_DAYS = 30;
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify cron secret (Vercel sends this header)
-    const authHeader = request.headers.get('authorization');
-    if (
-      process.env.CRON_SECRET &&
-      authHeader !== `Bearer ${process.env.CRON_SECRET}`
-    ) {
+    if (!isAuthorizedCronRequest(request)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

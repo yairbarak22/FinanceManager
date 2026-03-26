@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/authHelpers';
 import { syncPortfolioAsset, syncAllPortfolioAssets } from '@/lib/portfolioAssetSync';
+import { isAuthorizedCronRequest } from '@/lib/cronAuth';
 
 /**
  * POST /api/portfolio/sync-asset
@@ -45,15 +46,9 @@ export async function POST(request: Request) {
  * Sync all portfolio assets for all users (for cron jobs)
  * In production, this should be protected with a secret key
  */
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    // Check for cron secret (optional security measure)
-    const { searchParams } = new URL(request.url);
-    const cronSecret = searchParams.get('secret');
-    const expectedSecret = process.env.CRON_SECRET;
-
-    // If CRON_SECRET is set, require it
-    if (expectedSecret && cronSecret !== expectedSecret) {
+    if (!isAuthorizedCronRequest(request)) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

@@ -164,6 +164,19 @@ export async function GET(
       };
     }
 
+    const emptyMetrics = {
+      sent: 0,
+      opened: { count: 0, rate: 0 },
+      clicked: { count: 0, rate: 0 },
+      bounced: 0,
+      unsubscribed: 0,
+    };
+    for (const node of workflow.nodes as Array<{ id: string; type: string }>) {
+      if (node.type === 'EMAIL' && !perNode[node.id]) {
+        perNode[node.id] = emptyMetrics;
+      }
+    }
+
     const totalSent = allSent.size;
     const totalOpened = allOpened.size;
     const totalClicked = allClicked.size;

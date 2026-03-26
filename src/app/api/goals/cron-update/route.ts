@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { recalculateDeadline } from '@/lib/goalCalculations';
+import { isAuthorizedCronRequest } from '@/lib/cronAuth';
 
 /**
  * GET /api/goals/cron-update
@@ -11,13 +12,7 @@ import { recalculateDeadline } from '@/lib/goalCalculations';
  */
 export async function GET(request: NextRequest) {
   try {
-    // Check for cron secret (security measure)
-    const { searchParams } = new URL(request.url);
-    const cronSecret = searchParams.get('secret');
-    const expectedSecret = process.env.CRON_SECRET;
-
-    // If CRON_SECRET is set, require it
-    if (expectedSecret && cronSecret !== expectedSecret) {
+    if (!isAuthorizedCronRequest(request)) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }

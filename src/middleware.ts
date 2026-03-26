@@ -353,7 +353,7 @@ export const config = {
      * Match all request paths except:
      * - /api/auth (NextAuth.js authentication routes)
      * - /api/webhook/receive, /api/webhooks/resend (webhook endpoints - verify signatures themselves)
-     * - /api/cron/* (cron jobs - authenticate via CRON_SECRET query param)
+     * - /api/cron/* (cron jobs - authenticate via Authorization: Bearer header or ?secret= query param)
      * - /_next/static (static files)
      * - /_next/image (image optimization)
      * - /favicon.ico, /images, /screenshots, /videos (static assets)
