@@ -120,12 +120,10 @@ export default function WorkspacePage() {
     return () => {
       const state = useWorkspaceStore.getState();
       if (!finalizedRef.current && state.importSessionId) {
-        apiFetch('/api/workspace/import/abandon', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId: state.importSessionId }),
-          keepalive: true,
-        }).catch(() => {});
+        navigator.sendBeacon(
+          '/api/workspace/import/abandon',
+          JSON.stringify({ sessionId: state.importSessionId })
+        );
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps

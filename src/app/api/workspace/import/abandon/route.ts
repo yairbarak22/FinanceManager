@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'יותר מדי בקשות. אנא המתן.' }, { status: 429 });
     }
 
-    const body = await request.json();
+    const body = JSON.parse(await request.text());
     const parsed = bodySchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: 'נתונים לא תקינים' }, { status: 400 });

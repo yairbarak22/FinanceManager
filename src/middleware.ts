@@ -250,8 +250,9 @@ export async function middleware(request: NextRequest) {
   const isAuthRoute = pathname.startsWith('/api/auth/');
   const isWebhookRoute = pathname === '/api/webhook/receive' || pathname === '/api/webhooks/resend';
   const isPublicMarketingRoute = pathname === '/api/marketing/unsubscribe' || pathname === '/api/marketing/unsubscribe-email';
+  const isBeaconRoute = pathname === '/api/workspace/import/abandon'; // sendBeacon cannot set custom headers
 
-  if (!isSafeMethod && isApiRoute && !isAuthRoute && !isWebhookRoute && !isPublicMarketingRoute) {
+  if (!isSafeMethod && isApiRoute && !isAuthRoute && !isWebhookRoute && !isPublicMarketingRoute && !isBeaconRoute) {
     const csrfHeader  = request.headers.get(CSRF_HEADER_NAME);
     const cookieToken = request.cookies.get(CSRF_COOKIE_NAME)?.value;
 
