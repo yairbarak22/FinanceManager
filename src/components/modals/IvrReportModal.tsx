@@ -248,7 +248,7 @@ export default function IvrReportModal({ isOpen, onClose, onSuccess }: IvrReport
                     type="tel"
                     value={formatPhoneDisplay(phoneNumber)}
                     onChange={(e) => setPhoneNumber(formatPhoneInput(e.target.value))}
-                    placeholder="052-4475804"
+                    placeholder="052-3456789"
                     className="input text-sm"
                     dir="ltr"
                     maxLength={12}

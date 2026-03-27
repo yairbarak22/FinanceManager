@@ -8,6 +8,12 @@ import { trackCtaClickServer } from '@/lib/utils';
 /* ── Video data ──────────────────────────────────────── */
 const videos = [
   {
+    id: 'GKvai7LmEUg',
+    title: 'הסבר כללי על המערכת',
+    duration: '01:37',
+    chapter: 'הקדמה',
+  },
+  {
     id: 'eSPdAfQmDRA',
     title: 'למה חיסכון בבנק כבר לא מספיק?',
     duration: '03:24',
@@ -37,12 +43,13 @@ const getThumb = (id: string) => `https://img.youtube.com/vi/${id}/hqdefault.jpg
 const getEmbed = (id: string) =>
   `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&iv_load_policy=3&autoplay=1`;
 
-/* ── Fixed positions for all 4 thumbnails (desktop) ──── */
-const thumbPositions = [
-  { top: '-1%', right: '0%' },
-  { bottom: '0%', right: '1%' },
-  { bottom: '-3%', left: '0%' },
-  { top: '2%', left: '1%' },
+/* ── Fixed positions for thumbnails (desktop): 3 right, 2 left ── */
+const thumbPositions: Record<string, string>[] = [
+  { top: '-2%', right: '0%' },
+  { top: '30%', right: '-2%' },
+  { bottom: '-5%', right: '2%' },
+  { top: '0%', left: '0%' },
+  { bottom: '-1%', left: '1%' },
 ];
 
 /* ── Per-thumb breathing animation (always running) ──── */
@@ -66,6 +73,11 @@ const breatheKeyframes = [
     y: [0, 7, 0, -5, 0],
     scale: [1, 0.97, 1, 1.03, 1],
     transition: { duration: 6.5, repeat: Infinity, ease: 'easeInOut' as const },
+  },
+  {
+    y: [0, -5, 0, 6, 0],
+    scale: [1, 1.02, 1, 0.98, 1],
+    transition: { duration: 7, repeat: Infinity, ease: 'easeInOut' as const },
   },
 ];
 
@@ -251,7 +263,7 @@ export default function VideoShowcaseSection() {
               backgroundClip: 'text',
             }}
           >
-            ב-4 צעדים
+            ב-{videos.length} צעדים
           </span>
         </motion.h2>
         <motion.p
@@ -354,7 +366,7 @@ export default function VideoShowcaseSection() {
                               className="text-[12px] font-bold text-white/80"
                               style={{ fontFamily: 'var(--font-heebo)' }}
                             >
-                              מתוך 4
+                              מתוך {videos.length}
                             </span>
                           </div>
                         </div>
@@ -395,7 +407,7 @@ export default function VideoShowcaseSection() {
               </div>
             </motion.div>
 
-            {/* ── All 4 thumbnails — always visible, breathing ── */}
+            {/* ── All thumbnails — always visible, breathing ── */}
             {videos.map((video, i) => {
               const pos = thumbPositions[i];
               return (
@@ -496,7 +508,7 @@ export default function VideoShowcaseSection() {
                               {activeIndex + 1}
                             </span>
                             <span className="text-[11px] font-bold text-white/70" style={{ fontFamily: 'var(--font-heebo)' }}>
-                              מתוך 4
+                              מתוך {videos.length}
                             </span>
                           </div>
                         </div>
@@ -517,7 +529,7 @@ export default function VideoShowcaseSection() {
               </div>
             </motion.div>
 
-            {/* Thumbnail row — all 4 always visible */}
+            {/* Thumbnail row — always visible */}
             <div
               className="flex gap-3 overflow-x-auto pb-1 px-0.5"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' as React.CSSProperties['msOverflowStyle'] }}
