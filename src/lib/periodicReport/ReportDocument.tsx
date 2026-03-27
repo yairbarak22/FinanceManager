@@ -15,6 +15,7 @@ import type {
   LiabilityBreakdownItem,
 } from './types';
 import type { FinancialInsight, InsightTone } from '@/lib/insights/types';
+import type { TipsReportData, SelectedTip, ScoreTier } from '@/lib/tips/types';
 import { prepareRtl, formatILS, formatPercent } from './rtlUtils';
 
 // ---------------------------------------------------------------------------
@@ -115,7 +116,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     marginHorizontal: 4,
   },
-  cardValueLg: { fontWeight: 700, fontSize: 20, textAlign: 'center' },
+  cardValueLg: { fontWeight: 700, fontSize: 15, textAlign: 'center' },
   cardValue: { fontWeight: 700, fontSize: 16, textAlign: 'center' },
   cardSub: { fontSize: 8, textAlign: 'center', marginTop: 2 },
   cardLabel: {
@@ -673,9 +674,7 @@ function IncomeBreakdown({ data }: { data: PeriodicReportData }) {
                             { color: prevDelta >= 0 ? C.positive : C.negative },
                           ]}
                         >
-                          {formatPercent(prevDelta)}
-                          {' :'}
-                          {prepareRtl('חודש קודם')}
+                          {prepareRtl(`חודש קודם: ${formatPercent(prevDelta)}`)}
                         </Text>
                       )}
                       {yearDelta !== null && (
@@ -685,9 +684,7 @@ function IncomeBreakdown({ data }: { data: PeriodicReportData }) {
                             { color: yearDelta >= 0 ? C.positive : C.negative },
                           ]}
                         >
-                          {formatPercent(yearDelta)}
-                          {' :'}
-                          {prepareRtl('שנה קודמת')}
+                          {prepareRtl(`שנה קודמת: ${formatPercent(yearDelta)}`)}
                         </Text>
                       )}
                     </View>
@@ -763,9 +760,7 @@ function ExpensesBreakdown({ data }: { data: PeriodicReportData }) {
                             { color: prevDelta > 0 ? C.negative : C.positive },
                           ]}
                         >
-                          {formatPercent(prevDelta)}
-                          {' :'}
-                          {prepareRtl('חודש קודם')}
+                          {prepareRtl(`חודש קודם: ${formatPercent(prevDelta)}`)}
                         </Text>
                       )}
                       {yearDelta !== null && (
@@ -775,9 +770,7 @@ function ExpensesBreakdown({ data }: { data: PeriodicReportData }) {
                             { color: yearDelta > 0 ? C.negative : C.positive },
                           ]}
                         >
-                          {formatPercent(yearDelta)}
-                          {' :'}
-                          {prepareRtl('שנה קודמת')}
+                          {prepareRtl(`שנה קודמת: ${formatPercent(yearDelta)}`)}
                         </Text>
                       )}
                     </View>
@@ -831,9 +824,7 @@ function TopExpensesByCategory({ data }: { data: PeriodicReportData }) {
                     { color: mom > 0 ? C.negative : C.positive },
                   ]}
                 >
-                  {formatPercent(mom)}
-                  {' :'}
-                  {prepareRtl('חודש קודם')}
+                  {prepareRtl(`חודש קודם: ${formatPercent(mom)}`)}
                 </Text>
               </View>
             )}
@@ -906,8 +897,7 @@ function BalanceSheet({ data }: { data: PeriodicReportData }) {
           {formatILS(data.netWorth)}
         </Text>
         <Text style={{ fontSize: 9, color: C.black, textAlign: 'right' }}>
-          {' :'}
-          {prepareRtl('שווי נקי')}
+          {prepareRtl('שווי נקי:')}
         </Text>
       </View>
     </View>
@@ -1019,34 +1009,20 @@ function GoalsProjections({ data }: { data: PeriodicReportData }) {
                 </Text>
                 {goal.projectedCompletionDate && goal.status !== 'completed' && (
                   <Text style={s.goalDetail}>
-                    {formatProjectedDate(goal.projectedCompletionDate)}
-                    {' :'}
-                    {prepareRtl('צפי הגעה')}
+                    {prepareRtl(`צפי הגעה: ${formatProjectedDate(goal.projectedCompletionDate)}`)}
                   </Text>
                 )}
                 <Text style={s.goalDetail}>
-                  {formatILS(goal.requiredMonthly)}
-                  {' :'}
-                  {prepareRtl('נדרש')}
-                  {' / '}
-                  {formatILS(goal.monthlyContribution)}
-                  {' :'}
-                  {prepareRtl('הפרשה')}
+                  {prepareRtl(`הפרשה: ${formatILS(goal.monthlyContribution)} / נדרש: ${formatILS(goal.requiredMonthly)}`)}
                 </Text>
                 <Text style={s.goalDetail}>
-                  {goal.contributedThisMonth ? prepareRtl('כן') : prepareRtl('לא')}
-                  {' :'}
-                  {prepareRtl('הופרש החודש')}
+                  {prepareRtl(`הופרש החודש: ${goal.contributedThisMonth ? 'כן' : 'לא'}`)}
                 </Text>
               </View>
 
               <View style={[s.goalDetailsRow, { marginTop: 1 }]}>
                 <Text style={s.goalDetail}>
-                  {formatILS(goal.targetAmount)}
-                  {' '}
-                  {prepareRtl('מתוך')}
-                  {' '}
-                  {formatILS(goal.currentAmount)}
+                  {prepareRtl(`${formatILS(goal.currentAmount)} מתוך ${formatILS(goal.targetAmount)}`)}
                 </Text>
               </View>
             </View>
@@ -1056,19 +1032,11 @@ function GoalsProjections({ data }: { data: PeriodicReportData }) {
       {hasProj && (
         <View style={{ marginTop: hasGoals ? 4 : 0 }}>
           <Text style={s.projTxt}>
-            {formatILS(data.projections.totalProjected)}
-            {' :'}
-            {prepareRtl('צפי הוצאות קבועות לחודש הבא')}
+            {prepareRtl(`צפי הוצאות קבועות לחודש הבא: ${formatILS(data.projections.totalProjected)}`)}
           </Text>
           {data.projections.nextMonthLiabilityPayments > 0 && (
             <Text style={s.projDetail}>
-              {formatILS(data.projections.nextMonthFixedExpenses)}
-              {' :'}
-              {prepareRtl('הוצאות קבועות')}
-              {' | '}
-              {formatILS(data.projections.nextMonthLiabilityPayments)}
-              {' :'}
-              {prepareRtl('מתוכם תשלומי הלוואות')}
+              {prepareRtl(`הוצאות קבועות: ${formatILS(data.projections.nextMonthFixedExpenses)} | מתוכם תשלומי הלוואות: ${formatILS(data.projections.nextMonthLiabilityPayments)}`)}
             </Text>
           )}
         </View>
@@ -1121,7 +1089,308 @@ function InsightMiniCards({ insights }: { insights: FinancialInsight[] }) {
   );
 }
 
+// ---- Tips Mini Preview (shown on first page after Executive Summary) ----
+
+function TipsMiniPreview({ tipsReport }: { tipsReport: TipsReportData }) {
+  const { score, urgent } = tipsReport;
+  const colors = SCORE_TIER_COLORS[score.tier];
+  const top3 = urgent.slice(0, 3);
+
+  return (
+    <View style={s.insightsMiniWrap} wrap={false}>
+      {/* Title */}
+      <Text style={s.insightsMiniTitle}>
+        {prepareRtl('בריאות פיננסית')}
+      </Text>
+
+      {/* Score circle + tier label */}
+      <View style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+        marginBottom: 8,
+        gap: 6,
+      }}>
+        <Text style={{
+          fontSize: 8,
+          fontWeight: 700,
+          color: colors.main,
+        }}>
+          {prepareRtl(score.tierLabel)}
+        </Text>
+        <View style={{
+          width: 32,
+          height: 32,
+          borderRadius: 16,
+          borderWidth: 2,
+          borderColor: colors.main,
+          backgroundColor: colors.bg,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <Text style={{
+            fontWeight: 700,
+            fontSize: 13,
+            color: colors.main,
+            textAlign: 'center',
+          }}>
+            {`${score.overall}`}
+          </Text>
+        </View>
+      </View>
+
+      {/* Top 3 urgent items */}
+      {top3.map((tip, i) => (
+        <View
+          key={tip.id}
+          style={[
+            s.insightMiniCard,
+            {
+              borderRightColor: TIPS_TONE_THEME.urgent.accent,
+              backgroundColor: TIPS_TONE_THEME.urgent.bg,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              s.insightMiniBadge,
+              {
+                backgroundColor: TIPS_TONE_THEME.urgent.badgeBg,
+                color: TIPS_TONE_THEME.urgent.badgeText,
+              },
+            ]}
+          >
+            {prepareRtl(TIPS_TONE_THEME.urgent.label)}
+          </Text>
+          <Text style={[s.insightMiniText, { color: C.darkGrey }]}>
+            {prepareRtl(truncateMessage(tip.text, 85))}
+          </Text>
+        </View>
+      ))}
+
+      {/* Reference to full tips page */}
+      <Text style={{
+        fontSize: 7,
+        color: C.mediumGrey,
+        textAlign: 'right',
+        marginTop: 4,
+      }}>
+        {prepareRtl('פירוט מלא בעמוד בריאות פיננסית בהמשך הדוח')}
+      </Text>
+    </View>
+  );
+}
+
 // ---- Full Insights Section (dedicated page) ----
+
+// ---------------------------------------------------------------------------
+// Financial Tips Page
+// ---------------------------------------------------------------------------
+
+const SCORE_TIER_COLORS: Record<ScoreTier, { main: string; bg: string }> = {
+  excellent: { main: '#16A34A', bg: '#DCFCE7' },
+  good: { main: '#2E7D5B', bg: '#F0FAF0' },
+  fair: { main: '#D48A0A', bg: '#FFF8E6' },
+  needs_work: { main: '#EA580C', bg: '#FFF1E6' },
+  critical: { main: '#C0392B', bg: '#FFF5F5' },
+};
+
+const TIPS_TONE_THEME = {
+  positive: {
+    accent: C.positive,
+    bg: '#F0FAF0',
+    badgeBg: '#D4EDDA',
+    badgeText: C.positive,
+    label: 'חיזוק חיובי',
+    groupTitle: 'חיזוקים חיוביים',
+  },
+  urgent: {
+    accent: C.negative,
+    bg: '#FFF5F5',
+    badgeBg: '#FDDEDE',
+    badgeText: C.negative,
+    label: 'דורש טיפול',
+    groupTitle: 'דברים שדורשים טיפול דחוף',
+  },
+  recommendation: {
+    accent: '#D48A0A',
+    bg: '#FFF8E6',
+    badgeBg: '#FFF0C2',
+    badgeText: '#8B5E00',
+    label: 'המלצה',
+    groupTitle: 'המלצות',
+  },
+} as const;
+
+function ScoreGauge({ score, tier, tierLabel }: {
+  score: number;
+  tier: ScoreTier;
+  tierLabel: string;
+}) {
+  const colors = SCORE_TIER_COLORS[tier];
+  return (
+    <View style={{
+      alignItems: 'center',
+      paddingVertical: 16,
+      marginBottom: 12,
+    }}>
+      <View style={{
+        width: 90,
+        height: 90,
+        borderRadius: 45,
+        borderWidth: 4,
+        borderColor: colors.main,
+        backgroundColor: colors.bg,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 8,
+      }}>
+        <Text style={{
+          fontWeight: 700,
+          fontSize: 28,
+          color: colors.main,
+          textAlign: 'center',
+        }}>
+          {`${score}`}
+        </Text>
+      </View>
+      <Text style={{
+        fontWeight: 700,
+        fontSize: 12,
+        color: colors.main,
+        textAlign: 'center',
+      }}>
+        {prepareRtl(tierLabel)}
+      </Text>
+    </View>
+  );
+}
+
+function DimensionBar({ label, score, weight }: {
+  label: string;
+  score: number;
+  weight: number;
+}) {
+  const barColor = score >= 70 ? C.positive : score >= 40 ? '#D48A0A' : C.negative;
+  return (
+    <View style={{
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 5,
+      paddingHorizontal: 20,
+    }}>
+      <Text style={{ fontSize: 7, color: C.mediumGrey, width: 30, textAlign: 'left' }}>
+        {`${Math.round(weight * 100)}%`}
+      </Text>
+      <View style={{
+        flex: 1,
+        height: 8,
+        backgroundColor: C.progressBg,
+        borderRadius: 4,
+        marginHorizontal: 6,
+      }}>
+        <View style={{
+          width: `${Math.min(score, 100)}%`,
+          height: 8,
+          backgroundColor: barColor,
+          borderRadius: 4,
+        }} />
+      </View>
+      <Text style={{ fontSize: 7, fontWeight: 700, width: 20, textAlign: 'center' }}>
+        {`${score}`}
+      </Text>
+      <Text style={{ fontSize: 8, color: C.darkGrey, textAlign: 'right', width: 70 }}>
+        {prepareRtl(label)}
+      </Text>
+    </View>
+  );
+}
+
+function TipCard({ tip, index, tone }: {
+  tip: SelectedTip;
+  index: number;
+  tone: keyof typeof TIPS_TONE_THEME;
+}) {
+  const theme = TIPS_TONE_THEME[tone];
+  return (
+    <View
+      style={[
+        s.insightCard,
+        { borderRightColor: theme.accent, backgroundColor: theme.bg },
+      ]}
+      wrap={false}
+    >
+      <View style={s.insightCardHeader}>
+        <Text style={[
+          s.insightBadge,
+          { backgroundColor: theme.badgeBg, color: theme.badgeText },
+        ]}>
+          {prepareRtl(theme.label)}
+        </Text>
+        <Text style={[s.insightNumber, { color: theme.accent }]}>
+          {`.${index + 1}`}
+        </Text>
+      </View>
+      <Text style={[s.insightMessage, { color: C.darkGrey }]}>
+        {prepareRtl(tip.text)}
+      </Text>
+    </View>
+  );
+}
+
+function TipGroup({ tips, tone }: {
+  tips: SelectedTip[];
+  tone: keyof typeof TIPS_TONE_THEME;
+}) {
+  if (tips.length === 0) return null;
+  const theme = TIPS_TONE_THEME[tone];
+  return (
+    <View>
+      <Text style={[
+        s.insightGroupTitle,
+        { color: theme.accent, borderBottomColor: theme.accent },
+      ]}>
+        {prepareRtl(theme.groupTitle)}
+      </Text>
+      {tips.map((tip, idx) => (
+        <TipCard key={tip.id} tip={tip} index={idx} tone={tone} />
+      ))}
+    </View>
+  );
+}
+
+function FinancialTipsPage({ tipsReport }: { tipsReport: TipsReportData }) {
+  const { score, positive, urgent, recommendations } = tipsReport;
+
+  return (
+    <View style={s.sectionWrap}>
+      <SectionTitle title="בריאות פיננסית" />
+
+      <ScoreGauge
+        score={score.overall}
+        tier={score.tier}
+        tierLabel={score.tierLabel}
+      />
+
+      {/* Dimension breakdown */}
+      <View style={{ marginBottom: 16 }}>
+        {score.dimensions.map((dim) => (
+          <DimensionBar
+            key={dim.dimension}
+            label={dim.label}
+            score={dim.score}
+            weight={dim.weight}
+          />
+        ))}
+      </View>
+
+      {/* Tip sections: urgent first, then recommendations, then positive */}
+      <TipGroup tips={urgent} tone="urgent" />
+      <TipGroup tips={recommendations} tone="recommendation" />
+      <TipGroup tips={positive} tone="positive" />
+    </View>
+  );
+}
 
 const TONE_ORDER: InsightTone[] = ['alert', 'recommendation', 'positive'];
 const TONE_GROUP_TITLES: Record<InsightTone, string> = {
@@ -1253,6 +1522,7 @@ export default function ReportDocument({ data }: ReportDocumentProps) {
   const hasGoalsOrProjections =
     data.goals.length > 0 || data.projections.totalProjected > 0;
   const hasInsights = data.insights && data.insights.length > 0;
+  const hasTips = data.tipsReport !== null;
 
   return (
     <Document
@@ -1263,7 +1533,8 @@ export default function ReportDocument({ data }: ReportDocumentProps) {
       <Page size="A4" style={s.page} wrap>
         <Header periodLabel={data.period.label} />
         <ExecutiveSummary data={data} />
-        {hasInsights && <InsightMiniCards insights={data.insights} />}
+        {hasTips && <TipsMiniPreview tipsReport={data.tipsReport!} />}
+        {!hasTips && hasInsights && <InsightMiniCards insights={data.insights} />}
         <CashFlowTable data={data} />
         <IncomeBreakdown data={data} />
         <ExpensesBreakdown data={data} />
@@ -1282,6 +1553,14 @@ export default function ReportDocument({ data }: ReportDocumentProps) {
         <Page size="A4" style={s.page} wrap>
           <Header periodLabel={data.period.label} />
           <GoalsProjections data={data} />
+          <ReportFooter />
+        </Page>
+      )}
+
+      {hasTips && (
+        <Page size="A4" style={s.page} wrap>
+          <Header periodLabel={data.period.label} />
+          <FinancialTipsPage tipsReport={data.tipsReport!} />
           <ReportFooter />
         </Page>
       )}

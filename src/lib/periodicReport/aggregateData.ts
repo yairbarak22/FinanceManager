@@ -36,6 +36,8 @@ import type {
 import { aggregateFinancialDataForInsights } from '@/lib/insights/aggregateFinancialData';
 import { evaluateRules } from '@/lib/insights/engine';
 import { financialRules } from '@/lib/insights/rules';
+import { buildTipsReport } from '@/lib/tips/integration/buildTipsReport';
+import type { TipsReportData } from '@/lib/tips/types';
 
 // ---------------------------------------------------------------------------
 // Asset category → logical group mapping
@@ -455,6 +457,22 @@ export async function aggregatePeriodicReportData(
     }
   }
 
+  // --- Financial Tips & Score ---
+  let tipsReport: TipsReportData | null = null;
+  try {
+    tipsReport = await buildTipsReport(userId, dateRange, {
+      totalIncome,
+      totalExpenses,
+      netCashflow,
+      fixedExpenses: fixedExpenseItems.reduce((s, i) => s + i.amount, 0),
+      totalAssets,
+      totalLiabilities,
+      netWorth,
+    });
+  } catch (err) {
+    console.error('[Tips Engine] Failed to generate tips report:', err);
+  }
+
   return {
     period: periodInfo,
     netWorth,
@@ -475,6 +493,7 @@ export async function aggregatePeriodicReportData(
     projections,
     tradingPortfolio,
     insights,
+    tipsReport,
   };
 }
 

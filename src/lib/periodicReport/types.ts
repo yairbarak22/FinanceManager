@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { FinancialInsight } from '@/lib/insights/types';
+import type { TipsReportData } from '@/lib/tips/types';
 
 // --- Request Types ---
 
@@ -189,4 +190,5 @@ export interface PeriodicReportData {
   projections: ProjectionData;
   tradingPortfolio: TradingPortfolioData;
   insights: FinancialInsight[];
+  tipsReport: TipsReportData | null;
 }
