@@ -5,6 +5,7 @@ import { saveAssetHistoryIfChanged } from '@/lib/assetHistory';
 import { saveCurrentMonthNetWorth } from '@/lib/netWorthHistory';
 import { isPortfolioSyncAsset } from '@/lib/portfolioAssetSync';
 import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 export async function PUT(
   request: NextRequest,
@@ -13,6 +14,11 @@ export async function PUT(
   try {
     const { userId, error } = await requireAuth();
     if (error) return error;
+
+    const rateLimitResult = await checkRateLimit(`api:${userId}`, RATE_LIMITS.api);
+    if (!rateLimitResult.success) {
+      return NextResponse.json({ error: 'יותר מדי בקשות' }, { status: 429 });
+    }
 
     // Check edit permission for shared accounts
     const editPermission = await checkPermission(userId, 'canEdit');
@@ -147,6 +153,11 @@ export async function DELETE(
     const { userId, error } = await requireAuth();
     if (error) return error;
 
+    const rateLimitResult = await checkRateLimit(`api:${userId}`, RATE_LIMITS.api);
+    if (!rateLimitResult.success) {
+      return NextResponse.json({ error: 'יותר מדי בקשות' }, { status: 429 });
+    }
+
     // Check delete permission for shared accounts
     const deletePermission = await checkPermission(userId, 'canDelete');
     if (!deletePermission.allowed) return deletePermission.error!;
@@ -155,7 +166,7 @@ export async function DELETE(
 
     // Use shared account to allow deleting records from all members
     const sharedWhere = await withSharedAccountId(id, userId);
-    
+
     // Check if this is a portfolio sync asset before deleting
     const assetToDelete = await prisma.asset.findFirst({
       where: sharedWhere,

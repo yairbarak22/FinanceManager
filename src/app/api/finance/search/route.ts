@@ -115,9 +115,8 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('Error searching stocks:', error);
-    const message = error instanceof Error ? error.message : 'Search failed';
     return NextResponse.json(
-      { error: message, results: [] },
+      { error: 'שגיאה בחיפוש ניירות ערך', results: [] },
       { status: 500 }
     );
   }

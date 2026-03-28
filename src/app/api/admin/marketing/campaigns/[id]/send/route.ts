@@ -205,10 +205,7 @@ export async function POST(
       stack: error instanceof Error ? error.stack : undefined,
     });
     return NextResponse.json(
-      {
-        error: 'שגיאה בשליחת הקמפיין',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
+      { error: 'שגיאה בשליחת הקמפיין' },
       { status: 500 }
     );
   }

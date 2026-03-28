@@ -2,7 +2,7 @@
 
 import mixpanel from 'mixpanel-browser';
 
-const MIXPANEL_TOKEN = 'abb39b5aa2c86526ee9ede3dcba1fab8';
+const MIXPANEL_TOKEN = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN || '';
 
 let isInitialized = false;
 let isInitStarted = false; // Guard against React Strict Mode double-init
@@ -80,6 +80,13 @@ function executeIdentify(userId: string, traits?: { name?: string | null; email?
 export function initMixpanel(): void {
   if (isInitStarted) return; // Prevent double-init from React Strict Mode
   if (typeof window === 'undefined') return;
+
+  // Opt-out model: active by default, disabled only if user explicitly opts out
+  const consent = localStorage.getItem('analytics-consent');
+  if (consent === 'false') return;
+
+  if (!MIXPANEL_TOKEN) return;
+
   isInitStarted = true;
 
   try {
@@ -89,7 +96,6 @@ export function initMixpanel(): void {
       persistence: 'localStorage',
       autocapture: true,
       record_sessions_percent: 0, // Disabled temporarily to fix mutex lock errors
-      ignore_dnt: true,
       api_host: 'https://api-eu.mixpanel.com', // EU data residency
       batch_flush_interval_ms: 1000, // Flush every 1 second for faster delivery
       loaded: (mp) => {

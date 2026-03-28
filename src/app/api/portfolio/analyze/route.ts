@@ -126,9 +126,8 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Error analyzing portfolio (POST):', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: `Failed to analyze portfolio: ${errorMessage}` },
+      { error: 'שגיאה בניתוח התיק' },
       { status: 500 }
     );
   }
@@ -251,9 +250,8 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error analyzing portfolio (GET):', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: `Failed to analyze portfolio: ${errorMessage}` },
+      { error: 'שגיאה בניתוח התיק' },
       { status: 500 }
     );
   }

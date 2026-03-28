@@ -38,9 +38,8 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('Error fetching quote:', error);
-    const message = error instanceof Error ? error.message : 'Failed to fetch quote';
     return NextResponse.json(
-      { error: message },
+      { error: 'שגיאה בטעינת נתוני המניה' },
       { status: 500 }
     );
   }

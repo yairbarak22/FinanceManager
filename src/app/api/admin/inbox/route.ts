@@ -4,9 +4,22 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/adminHelpers';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 export async function GET(request: NextRequest) {
   try {
+    const { userId, error } = await requireAdmin();
+    if (error) return error;
+
+    const rateLimitResult = await checkRateLimit(`admin:${userId}`, RATE_LIMITS.admin);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'יותר מדי בקשות. נסה שוב בעוד דקה.' },
+        { status: 429 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '30');

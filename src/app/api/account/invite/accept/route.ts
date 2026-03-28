@@ -3,12 +3,18 @@ import { prisma } from '@/lib/prisma';
 import { MemberRole } from '@prisma/client';
 import { requireAuth, invalidateSharedMembersCache } from '@/lib/authHelpers';
 import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 // POST - Accept an invite
 export async function POST(request: Request) {
   try {
     const { userId, error } = await requireAuth();
     if (error) return error;
+
+    const rateLimitResult = await checkRateLimit(`api:${userId}`, RATE_LIMITS.api);
+    if (!rateLimitResult.success) {
+      return NextResponse.json({ error: 'יותר מדי בקשות' }, { status: 429 });
+    }
 
     const { token } = await request.json();
 

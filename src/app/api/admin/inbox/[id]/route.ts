@@ -4,12 +4,25 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAdmin } from '@/lib/adminHelpers';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { userId, error } = await requireAdmin();
+    if (error) return error;
+
+    const rateLimitResult = await checkRateLimit(`admin:${userId}`, RATE_LIMITS.admin);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'יותר מדי בקשות. נסה שוב בעוד דקה.' },
+        { status: 429 }
+      );
+    }
+
     const { id } = await params;
 
     const message = await prisma.inboxMessage.findUnique({
@@ -51,6 +64,17 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { userId, error } = await requireAdmin();
+    if (error) return error;
+
+    const rateLimitResult = await checkRateLimit(`admin:${userId}`, RATE_LIMITS.admin);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'יותר מדי בקשות. נסה שוב בעוד דקה.' },
+        { status: 429 }
+      );
+    }
+
     const { id } = await params;
     const body = await request.json();
     
@@ -81,6 +105,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { error } = await requireAdmin();
+    if (error) return error;
+
     const { id } = await params;
 
     await prisma.inboxMessage.delete({

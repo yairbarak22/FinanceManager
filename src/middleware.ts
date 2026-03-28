@@ -12,6 +12,7 @@ import {
 } from './lib/csrf';
 import { generateCspNonce, buildCspHeader } from './lib/csp';
 import { isSafePostLoginPath } from './lib/safePostLoginPath';
+import { hashForEdge } from './lib/hashForEdge';
 
 /**
  * Edge-safe request info extraction (no Prisma dependency).
@@ -301,12 +302,15 @@ export async function middleware(request: NextRequest) {
     if (!isAdmin(token.email as string)) {
       // Audit log: Unauthorized admin access attempt (edge-safe, no Prisma)
       const { ipAddress: adminIp, userAgent: adminUa } = getRequestInfo(request.headers);
+      const emailHash = token?.email
+        ? await hashForEdge(token.email as string)
+        : undefined;
       logAuditEventEdge({
         userId: token?.sub,
         action: 'UNAUTHORIZED_ACCESS',
         metadata: {
           path: pathname,
-          email: token?.email,
+          emailHash,
           attemptedResource: 'admin',
         },
         ipAddress: adminIp,

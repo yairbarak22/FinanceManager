@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth, withSharedAccountId, checkPermission } from '@/lib/authHelpers';
 import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { recalculateDeadline } from '@/lib/goalCalculations';
 import { validateRequest } from '@/lib/validateRequest';
 import { updateTransactionSchema } from '@/lib/validationSchemas';
@@ -90,6 +91,11 @@ export async function PUT(
   try {
     const { userId, error } = await requireAuth();
     if (error) return error;
+
+    const rateLimitResult = await checkRateLimit(`api:${userId}`, RATE_LIMITS.api);
+    if (!rateLimitResult.success) {
+      return NextResponse.json({ error: 'יותר מדי בקשות' }, { status: 429 });
+    }
 
     // Check edit permission for shared accounts
     const editPermission = await checkPermission(userId, 'canEdit');
@@ -203,6 +209,11 @@ export async function DELETE(
   try {
     const { userId, error } = await requireAuth();
     if (error) return error;
+
+    const rateLimitResult = await checkRateLimit(`api:${userId}`, RATE_LIMITS.api);
+    if (!rateLimitResult.success) {
+      return NextResponse.json({ error: 'יותר מדי בקשות' }, { status: 429 });
+    }
 
     // Check delete permission for shared accounts
     const deletePermission = await checkPermission(userId, 'canDelete');

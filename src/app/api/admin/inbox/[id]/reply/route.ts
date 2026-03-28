@@ -9,6 +9,7 @@ import { requireAdmin } from '@/lib/adminHelpers';
 import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 import { isValidSenderAddress, getSenderDisplay, generateThreadId, extractEmailAddress } from '@/lib/inbox/constants';
 import { config } from '@/lib/config';
+import { sanitizeEmailHtml, escapeHtml } from '@/lib/sanitize';
 
 export async function POST(
   request: NextRequest,
@@ -75,11 +76,11 @@ export async function POST(
 <html dir="rtl" lang="he">
 <head><meta charset="UTF-8"></head>
 <body style="font-family: 'Nunito', Arial, sans-serif; direction: rtl;">
-  <div>${content}</div>
+  <div>${sanitizeEmailHtml(content)}</div>
   <br>
   <div style="border-right: 2px solid #ccc; padding-right: 12px; margin-top: 16px; color: #666;">
     <p style="font-size: 12px; color: #999;">
-      ב-${new Date(originalMessage.createdAt).toLocaleString('he-IL')}, ${originalMessage.from} כתב/ה:
+      ב-${new Date(originalMessage.createdAt).toLocaleString('he-IL')}, ${escapeHtml(originalMessage.from)} כתב/ה:
     </p>
     <div style="font-size: 14px;">
       ${originalMessage.htmlBody || originalMessage.textBody?.replace(/\n/g, '<br>') || ''}

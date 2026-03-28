@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/authHelpers';
 import { encrypt, decrypt, ENCRYPTED_PROFILE_FIELDS } from '@/lib/encryption';
 import { logAuditEvent, AuditAction, getRequestInfo } from '@/lib/auditLog';
+import { checkRateLimit, RATE_LIMITS } from '@/lib/rateLimit';
 
 // Valid enum values for profile fields
 const VALID_MARITAL_STATUS = ['single', 'married', 'divorced', 'widowed'];
@@ -34,6 +35,11 @@ export async function GET() {
     const { userId, error } = await requireAuth();
     if (error) return error;
 
+    const rateLimitResult = await checkRateLimit(`api:${userId}`, RATE_LIMITS.api);
+    if (!rateLimitResult.success) {
+      return NextResponse.json({ error: 'יותר מדי בקשות' }, { status: 429 });
+    }
+
     let profile = await prisma.userProfile.findUnique({
       where: { userId },
     });
@@ -58,6 +64,11 @@ export async function PUT(request: Request) {
   try {
     const { userId, error } = await requireAuth();
     if (error) return error;
+
+    const rateLimitResult = await checkRateLimit(`api:${userId}`, RATE_LIMITS.api);
+    if (!rateLimitResult.success) {
+      return NextResponse.json({ error: 'יותר מדי בקשות' }, { status: 429 });
+    }
 
     const data = await request.json();
 
