@@ -12,6 +12,7 @@ import {
   Trash2,
   Calendar,
   ChevronDown,
+  RotateCcw,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Card from '@/components/ui/Card';
@@ -491,7 +492,7 @@ export default function SettingsPage() {
 
         {/* Privacy Tab */}
         {activeTab === 'privacy' && (
-          <div className="animate-fade-in">
+          <div className="animate-fade-in space-y-6">
             <PrivacySettingsInline />
           </div>
         )}
@@ -531,6 +532,7 @@ function PrivacySettingsInline() {
   };
 
   return (
+  <>
     <Card padding="none">
       <div className="p-6">
         <h3
@@ -614,6 +616,233 @@ function PrivacySettingsInline() {
               onCancel={() => setPanelOpen(false)}
               onDeleteComplete={handleDeleteComplete}
             />
+          </div>
+        )}
+      </div>
+    </Card>
+
+    {/* Full Reset Section */}
+    <FullResetSection onResetComplete={() => { fetchPreview(); setPanelOpen(false); }} />
+  </>
+  );
+}
+
+function FullResetSection({ onResetComplete }: { onResetComplete: () => void }) {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const [totalDeleted, setTotalDeleted] = useState(0);
+
+  const CONFIRM_PHRASE = 'אפס הכל';
+  const canReset = confirmText === CONFIRM_PHRASE && !isResetting;
+
+  const handleReset = async () => {
+    setIsResetting(true);
+    setError(null);
+    try {
+      const res = await apiFetch('/api/user/reset-all-data', {
+        method: 'POST',
+        body: JSON.stringify({ confirm: CONFIRM_PHRASE }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'שגיאה באיפוס הנתונים');
+        setIsResetting(false);
+        return;
+      }
+      setTotalDeleted(data.totalDeleted ?? 0);
+      setDone(true);
+      onResetComplete();
+    } catch {
+      setError('שגיאה בחיבור לשרת. נסה שוב.');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const handleClose = () => {
+    setShowConfirm(false);
+    setConfirmText('');
+    setError(null);
+    setDone(false);
+    setTotalDeleted(0);
+  };
+
+  return (
+    <Card padding="none">
+      <div className="p-6">
+        <h3
+          className="font-semibold"
+          style={{
+            fontSize: '1.125rem',
+            color: '#303150',
+            fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+          }}
+        >
+          איפוס מלא
+        </h3>
+        <p
+          className="text-xs mt-1 mb-5"
+          style={{ color: '#BDBDCB', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+        >
+          מוחק את כל הנתונים ומתחיל מחדש לגמרי. המשתמש והחשבון נשארים.
+        </p>
+
+        <div
+          className="flex gap-3 p-4 rounded-xl mb-5"
+          style={{
+            background: 'rgba(241, 138, 181, 0.06)',
+            border: '1px solid rgba(241, 138, 181, 0.15)',
+          }}
+        >
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{ backgroundColor: 'rgba(241, 138, 181, 0.12)' }}
+          >
+            <AlertTriangle className="w-[1.125rem] h-[1.125rem]" style={{ color: '#F18AB5' }} strokeWidth={1.75} />
+          </div>
+          <div>
+            <p
+              className="text-[0.8125rem] font-semibold"
+              style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+            >
+              פעולה זו בלתי הפיכה
+            </p>
+            <p
+              className="text-xs mt-1"
+              style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+            >
+              כל הנתונים יימחקו — עסקאות, נכסים, תיק השקעות, תקציבים, דוחות, שווי נקי, ועוד. לא ניתן לשחזר.
+            </p>
+          </div>
+        </div>
+
+        {!showConfirm ? (
+          <motion.button
+            type="button"
+            onClick={() => setShowConfirm(true)}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200"
+            style={{
+              color: '#F18AB5',
+              background: 'rgba(241, 138, 181, 0.08)',
+              border: '1px solid rgba(241, 138, 181, 0.2)',
+              fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+            }}
+          >
+            <RotateCcw className="w-4 h-4" strokeWidth={1.75} />
+            איפוס כל הנתונים
+          </motion.button>
+        ) : (
+          <div className="border-t border-[#F7F7F8] pt-5 mt-1 animate-fade-in">
+            {done ? (
+              /* Success state */
+              <div className="flex flex-col items-center justify-center py-8">
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3"
+                  style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}
+                >
+                  <Check className="w-6 h-6" style={{ color: '#10B981' }} strokeWidth={2} />
+                </div>
+                <p
+                  className="text-[0.9375rem] font-semibold mb-1"
+                  style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                >
+                  האיפוס הושלם בהצלחה
+                </p>
+                <p
+                  className="text-xs mb-4"
+                  style={{ color: '#7E7F90', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                >
+                  {totalDeleted > 0
+                    ? `${totalDeleted.toLocaleString('he-IL')} רשומות נמחקו. החשבון מוכן להתחלה חדשה.`
+                    : 'החשבון מוכן להתחלה חדשה.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
+                  style={{
+                    color: '#303150',
+                    background: 'rgba(48, 49, 80, 0.06)',
+                    fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                  }}
+                >
+                  סגור
+                </button>
+              </div>
+            ) : (
+              /* Confirmation flow */
+              <>
+                <p
+                  className="text-sm mb-3"
+                  style={{ color: '#303150', fontFamily: 'var(--font-nunito), system-ui, sans-serif' }}
+                >
+                  הקלד/י{' '}
+                  <strong style={{ color: '#F18AB5' }}>&quot;{CONFIRM_PHRASE}&quot;</strong>{' '}
+                  לאישור:
+                </p>
+                <input
+                  type="text"
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                  placeholder={CONFIRM_PHRASE}
+                  disabled={isResetting}
+                  className="input w-full mb-4"
+                  dir="rtl"
+                  autoFocus
+                />
+
+                {error && (
+                  <div
+                    className="mb-4 flex items-center gap-2 px-4 py-3 rounded-xl text-sm"
+                    style={{
+                      background: 'rgba(241, 138, 181, 0.1)',
+                      border: '1px solid rgba(241, 138, 181, 0.3)',
+                      color: '#F18AB5',
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    }}
+                  >
+                    <AlertTriangle className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+                    {error}
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleClose}
+                    disabled={isResetting}
+                    className="btn-secondary flex-1"
+                  >
+                    ביטול
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    disabled={!canReset}
+                    className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all duration-200"
+                    style={{
+                      backgroundColor: canReset ? '#F18AB5' : 'rgba(241, 138, 181, 0.3)',
+                      cursor: canReset ? 'pointer' : 'not-allowed',
+                      fontFamily: 'var(--font-nunito), system-ui, sans-serif',
+                    }}
+                  >
+                    {isResetting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        מחק הכל והתחל מחדש
+                        <RotateCcw className="w-4 h-4" strokeWidth={1.75} />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

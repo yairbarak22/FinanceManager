@@ -6,6 +6,7 @@
  */
 
 import { prisma } from './prisma';
+import { Prisma } from '@prisma/client';
 import { del } from '@vercel/blob';
 import { z } from 'zod';
 
@@ -294,4 +295,200 @@ export async function executeFullDeletion(
   userId: string
 ): Promise<DeletionResult> {
   return executeSelectiveDeletion(userId, [...DATA_DOMAINS]);
+}
+
+// ---------------------------------------------------------------------------
+// Full account reset
+// ---------------------------------------------------------------------------
+
+export const fullResetSchema = z.object({
+  confirm: z.literal('אפס הכל'),
+});
+
+export interface FullResetResult {
+  totalDeleted: number;
+  blobErrors: number;
+}
+
+/**
+ * Complete account reset — deletes ALL user data and resets User fields.
+ * Preserves: User record, Account (OAuth), Session, AuditLog.
+ *
+ * This goes beyond executeFullDeletion by also removing models that aren't
+ * part of the 10 selectable DATA_DOMAINS (net-worth history, merchant
+ * mappings, IVR, import sessions, etc.) and resetting User-level fields.
+ */
+export async function executeFullReset(
+  userId: string
+): Promise<FullResetResult> {
+  let blobErrors = 0;
+  let totalDeleted = 0;
+
+  // --- Pre-transaction: clean up Vercel Blob files ---
+  // Documents
+  const docs = await prisma.document.findMany({
+    where: { userId },
+    select: { url: true },
+  });
+  for (const doc of docs) {
+    if (doc.url) {
+      try {
+        await del(doc.url);
+      } catch {
+        blobErrors++;
+      }
+    }
+  }
+
+  // Quarantined files
+  const quarantined = await prisma.quarantinedFile.findMany({
+    where: { userId },
+    select: { url: true },
+  });
+  for (const file of quarantined) {
+    if (file.url) {
+      try {
+        await del(file.url);
+      } catch {
+        blobErrors++;
+      }
+    }
+  }
+
+  // --- Single transaction: delete everything ---
+  await prisma.$transaction(async (tx) => {
+    // FK-ordered deletes: children before parents
+
+    // 1. Asset value history (FK → Asset)
+    const r1 = await tx.assetValueHistory.deleteMany({ where: { asset: { userId } } });
+    totalDeleted += r1.count;
+
+    // 2. Mortgage tracks (FK → Liability)
+    const r2 = await tx.mortgageTrack.deleteMany({ where: { liability: { userId } } });
+    totalDeleted += r2.count;
+
+    // 3. Workspace import rows (FK → WorkspaceImportSession)
+    const r3 = await tx.workspaceImportRow.deleteMany({ where: { session: { userId } } });
+    totalDeleted += r3.count;
+
+    // 4. Financial goals (FK → RecurringTransaction)
+    const r4 = await tx.financialGoal.deleteMany({ where: { userId } });
+    totalDeleted += r4.count;
+
+    // 5. Transactions
+    const r5 = await tx.transaction.deleteMany({ where: { userId } });
+    totalDeleted += r5.count;
+
+    // 6. Recurring monthly coverage (FK → RecurringTransaction)
+    const r6 = await tx.recurringMonthlyCoverage.deleteMany({ where: { userId } });
+    totalDeleted += r6.count;
+
+    // 7. Recurring transactions
+    const r7 = await tx.recurringTransaction.deleteMany({ where: { userId } });
+    totalDeleted += r7.count;
+
+    // 8. Assets
+    const r8 = await tx.asset.deleteMany({ where: { userId } });
+    totalDeleted += r8.count;
+
+    // 9. Liabilities
+    const r9 = await tx.liability.deleteMany({ where: { userId } });
+    totalDeleted += r9.count;
+
+    // 10. Holdings
+    const r10 = await tx.holding.deleteMany({ where: { userId } });
+    totalDeleted += r10.count;
+
+    // 11. Documents (blobs already cleaned above)
+    const r11 = await tx.document.deleteMany({ where: { userId } });
+    totalDeleted += r11.count;
+
+    // 12. Custom categories
+    const r12 = await tx.customCategory.deleteMany({ where: { userId } });
+    totalDeleted += r12.count;
+
+    // 13. Maaser
+    const r13a = await tx.maaserPreference.deleteMany({ where: { userId } });
+    const r13b = await tx.maaserExpenseOffset.deleteMany({ where: { userId } });
+    totalDeleted += r13a.count + r13b.count;
+
+    // 14. Budgets + Passover
+    const r14a = await tx.budget.deleteMany({ where: { userId } });
+    const r14b = await tx.passoverSection.deleteMany({ where: { userId } });
+    totalDeleted += r14a.count + r14b.count;
+
+    // 15. Monthly reports
+    const r15 = await tx.monthlyReport.deleteMany({ where: { userId } });
+    totalDeleted += r15.count;
+
+    // 16. User profile
+    const r16 = await tx.userProfile.deleteMany({ where: { userId } });
+    totalDeleted += r16.count;
+
+    // --- Models not covered by selective deletion ---
+
+    // 17. Net worth history
+    const r17 = await tx.netWorthHistory.deleteMany({ where: { userId } });
+    totalDeleted += r17.count;
+
+    // 18. Merchant category mappings
+    const r18 = await tx.merchantCategoryMap.deleteMany({ where: { userId } });
+    totalDeleted += r18.count;
+
+    // 19. Workspace import sessions (rows already deleted above)
+    const r19 = await tx.workspaceImportSession.deleteMany({ where: { userId } });
+    totalDeleted += r19.count;
+
+    // 20. IVR & reporting
+    const r20a = await tx.ivrCallSession.deleteMany({ where: { userId } });
+    const r20b = await tx.ivrPin.deleteMany({ where: { userId } });
+    const r20c = await tx.reportingPhone.deleteMany({ where: { userId } });
+    totalDeleted += r20a.count + r20b.count + r20c.count;
+
+    // 21. WhatsApp usage
+    const r21 = await tx.whatsappMonthlyUsage.deleteMany({ where: { userId } });
+    totalDeleted += r21.count;
+
+    // 22. Calculator invites
+    const r22 = await tx.calculatorInvite.deleteMany({ where: { inviterId: userId } });
+    totalDeleted += r22.count;
+
+    // 23. Marketing events
+    const r23 = await tx.marketingEvent.deleteMany({ where: { userId } });
+    totalDeleted += r23.count;
+
+    // 24. Workflow enrollments
+    const r24 = await tx.workflowEnrollment.deleteMany({ where: { userId } });
+    totalDeleted += r24.count;
+
+    // 25. CTA clicks
+    const r25 = await tx.ctaClick.deleteMany({ where: { userId } });
+    totalDeleted += r25.count;
+
+    // 26. Quarantined files (blobs already cleaned above)
+    const r26 = await tx.quarantinedFile.deleteMany({ where: { userId } });
+    totalDeleted += r26.count;
+
+    // 27. Shared account memberships
+    const r27 = await tx.sharedAccountMember.deleteMany({ where: { userId } });
+    totalDeleted += r27.count;
+
+    // 28. User group memberships
+    const r28 = await tx.userGroupMember.deleteMany({ where: { userId } });
+    totalDeleted += r28.count;
+
+    // --- Reset User-level fields to defaults ---
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        hasSeenOnboarding: false,
+        monthStartDay: 1,
+        dashboardLayout: Prisma.JsonNull,
+        openHoursLog: [],
+        preferredSendHour: null,
+      },
+    });
+  });
+
+  return { totalDeleted, blobErrors };
 }
