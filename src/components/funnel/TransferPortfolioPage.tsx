@@ -199,7 +199,7 @@ const TRANSFER_BENEFITS = [
   },
 ];
 
-function WhyTransferSection({ noMotion }: { noMotion: boolean }) {
+export function WhyTransferSection({ noMotion }: { noMotion: boolean }) {
   return (
     <section
       className="relative py-24 md:py-36 px-4 sm:px-6"
@@ -301,7 +301,7 @@ function computeFeeSavings(portfolioSize: number, feeRate: number, years: number
   return { totalFees: Math.round(totalFees), endValue: Math.round(total) };
 }
 
-function FeeSavingsSection({ noMotion }: { noMotion: boolean }) {
+export function FeeSavingsSection({ noMotion }: { noMotion: boolean }) {
   const [portfolioSize, setPortfolioSize] = useState(300000);
   const [years, setYears] = useState(15);
   const sectionRef = useRef(null);
@@ -605,7 +605,7 @@ const TRANSFER_STEPS = [
   },
 ];
 
-function TransferStepsSection({ noMotion }: { noMotion: boolean }) {
+export function TransferStepsSection({ noMotion }: { noMotion: boolean }) {
   return (
     <section
       className="relative py-24 md:py-36 px-4 sm:px-6"
@@ -817,7 +817,7 @@ function FaqItem({
   );
 }
 
-function FaqSection({ noMotion }: { noMotion: boolean }) {
+export function FaqSection({ noMotion }: { noMotion: boolean }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
@@ -869,7 +869,7 @@ function FaqSection({ noMotion }: { noMotion: boolean }) {
    Section 6 — Final CTA
    ═══════════════════════════════════════════════════════════ */
 
-function FinalCtaSection({ noMotion }: { noMotion: boolean }) {
+export function FinalCtaSection({ noMotion }: { noMotion: boolean }) {
   return (
     <section
       className="relative py-24 md:py-36 px-4 sm:px-6 text-center overflow-hidden"

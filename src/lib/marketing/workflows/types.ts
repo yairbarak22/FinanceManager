@@ -51,6 +51,7 @@ export const DelayNodeDataSchema = z.object({
 export const ConditionNodeDataSchema = z.object({
   conditionType: ConditionTypeSchema,
   targetEmailNodeId: z.string().optional(),
+  waitHours: z.number().int().min(1).max(720).default(72),
 });
 
 // ============================================

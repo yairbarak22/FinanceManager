@@ -1,17 +1,20 @@
 import { MetadataRoute } from 'next';
+import { articles } from '@/lib/knowledge/articles';
+import { investArticles } from '@/lib/invest/articles';
 
 /**
  * Dynamic Sitemap Generator for MyNeto
  *
- * This sitemap includes only public, indexable pages.
- * Private pages (dashboard, admin, invite) are excluded.
+ * Includes all public, indexable pages:
+ * - Homepage
+ * - Knowledge center + all articles
+ * - Investment center + all articles
  *
  * @see https://nextjs.org/docs/app/api-reference/file-conventions/sitemap
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://myneto.co.il';
 
-  // Static public pages
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
@@ -19,18 +22,33 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly',
       priority: 1.0,
     },
+    {
+      url: `${baseUrl}/knowledge`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
+    {
+      url: `${baseUrl}/invest`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.9,
+    },
   ];
 
-  // Note: When you add public pages like /pricing, /academy, /calculators,
-  // add them here or fetch dynamic slugs from the database:
-  //
-  // const blogPosts = await prisma.post.findMany({ where: { published: true } });
-  // const dynamicPages = blogPosts.map((post) => ({
-  //   url: `${baseUrl}/academy/${post.slug}`,
-  //   lastModified: post.updatedAt,
-  //   changeFrequency: 'weekly' as const,
-  //   priority: 0.6,
-  // }));
+  const knowledgePages: MetadataRoute.Sitemap = articles.map((article) => ({
+    url: `${baseUrl}/knowledge/${article.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }));
 
-  return [...staticPages];
+  const investPages: MetadataRoute.Sitemap = investArticles.map((article) => ({
+    url: `${baseUrl}/invest/${article.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...knowledgePages, ...investPages];
 }

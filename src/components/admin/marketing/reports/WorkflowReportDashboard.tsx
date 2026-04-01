@@ -6,9 +6,13 @@ import {
   AlertCircle,
   Users,
   Play,
+  Pause,
   CheckCircle,
   XCircle,
   RefreshCw,
+  Loader2,
+  Wrench,
+  Send,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/utils';
@@ -58,6 +62,17 @@ interface ReportData {
     ctor: { rate: number };
     unsubscribes: MetricPair;
     bounces: MetricPair;
+  };
+  upcomingSends: {
+    sends: Array<{
+      delayNodeId: string;
+      emailNodeId: string;
+      emailSubject: string;
+      sendDate: string;
+      daysFromNow: number;
+      count: number;
+    }>;
+    waitingAtCondition: number;
   };
 }
 
@@ -223,6 +238,10 @@ export default function WorkflowReportDashboard({
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [togglingStatus, setTogglingStatus] = useState(false);
+  const [fixingTiming, setFixingTiming] = useState(false);
+  const [fixTimingMessage, setFixTimingMessage] = useState<string | null>(null);
+  const [sendingGroup, setSendingGroup] = useState<string | null>(null);
 
   async function fetchReport() {
     try {
@@ -269,6 +288,82 @@ export default function WorkflowReportDashboard({
       );
     } finally {
       setSyncing(false);
+    }
+  }
+
+  async function handleToggleStatus() {
+    if (!data) return;
+    const currentStatus = data.workflow.status;
+    const newStatus = currentStatus === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
+    // Optimistic update
+    setData((prev) =>
+      prev
+        ? { ...prev, workflow: { ...prev.workflow, status: newStatus } }
+        : prev,
+    );
+    setTogglingStatus(true);
+    try {
+      const res = await apiFetch(
+        `/api/admin/marketing/workflows/${workflowId}`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({ status: newStatus }),
+        },
+      );
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.error || 'שגיאה בשינוי סטטוס');
+      }
+    } catch {
+      // Rollback
+      setData((prev) =>
+        prev
+          ? { ...prev, workflow: { ...prev.workflow, status: currentStatus } }
+          : prev,
+      );
+    } finally {
+      setTogglingStatus(false);
+    }
+  }
+
+  async function handleFixTiming() {
+    setFixingTiming(true);
+    setFixTimingMessage(null);
+    try {
+      const res = await apiFetch(
+        `/api/admin/marketing/workflows/${workflowId}/fix-delay-timing`,
+        { method: 'POST' },
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'שגיאה');
+      setFixTimingMessage(json.message);
+      await fetchReport();
+    } catch (err) {
+      setFixTimingMessage(err instanceof Error ? err.message : 'שגיאה');
+    } finally {
+      setFixingTiming(false);
+    }
+  }
+
+  async function handleForceSend(delayNodeId: string, sendDate: string, count: number) {
+    if (!confirm(`לשלוח עכשיו ${count} מיילים?`)) return;
+    const key = `${delayNodeId}::${sendDate}`;
+    setSendingGroup(key);
+    try {
+      const res = await apiFetch(
+        `/api/admin/marketing/workflows/${workflowId}/force-send`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ delayNodeId, sendDate }),
+        },
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'שגיאה');
+      await fetchReport();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'שגיאה בשליחה');
+    } finally {
+      setSendingGroup(null);
     }
   }
 
@@ -356,14 +451,34 @@ export default function WorkflowReportDashboard({
           >
             {statusCfg.label}
           </span>
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            className="ms-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#303150] bg-white border border-[#E8E8ED] rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? 'מסנכרן...' : 'סנכרן עם Resend'}
-          </button>
+          <div className="ms-auto flex items-center gap-2">
+            <button
+              onClick={handleToggleStatus}
+              disabled={togglingStatus}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors disabled:opacity-50 ${
+                workflow.status === 'ACTIVE'
+                  ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                  : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+              }`}
+            >
+              {togglingStatus ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : workflow.status === 'ACTIVE' ? (
+                <Pause className="w-3.5 h-3.5" />
+              ) : (
+                <Play className="w-3.5 h-3.5" />
+              )}
+              {workflow.status === 'ACTIVE' ? 'השהה' : 'הפעל'}
+            </button>
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#303150] bg-white border border-[#E8E8ED] rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? 'מסנכרן...' : 'סנכרן עם Resend'}
+            </button>
+          </div>
         </div>
         {syncMessage && (
           <p className="text-xs text-[#7E7F90] mt-1">{syncMessage}</p>
@@ -461,12 +576,103 @@ export default function WorkflowReportDashboard({
               />
             </div>
           </div>
+
+          {/* Upcoming sends */}
+          {(data.upcomingSends.sends.length > 0 || data.upcomingSends.waitingAtCondition > 0) && (
+            <div className="bg-white border border-[#E8E8ED] rounded-xl shadow-sm overflow-hidden">
+              <div className="px-5 py-4 border-b border-[#E8E8ED] flex items-center justify-between">
+                <h3 className="text-sm font-bold text-[#303150]">
+                  שליחות קרובות
+                </h3>
+                <button
+                  onClick={handleFixTiming}
+                  disabled={fixingTiming}
+                  className="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-medium text-[#7E7F90] bg-white border border-[#E8E8ED] rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  title="תקן זמני עיכוב לפי מועד שליחה מקורי"
+                >
+                  {fixingTiming ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Wrench className="w-3 h-3" />
+                  )}
+                  תקן זמנים
+                </button>
+              </div>
+              {fixTimingMessage && (
+                <div className="px-5 py-2 text-xs text-[#7E7F90] bg-[#FAFAFA] border-b border-[#F7F7F8]">
+                  {fixTimingMessage}
+                </div>
+              )}
+              <div className="divide-y divide-[#F7F7F8]">
+                {data.upcomingSends.sends.map((send, i) => (
+                  <div
+                    key={`${send.emailNodeId}-${send.sendDate}-${i}`}
+                    className="flex items-center gap-3 px-5 py-3"
+                  >
+                    <span
+                      className={`inline-flex items-center justify-center min-w-[80px] px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                        send.daysFromNow <= 1
+                          ? 'bg-rose-50 text-rose-600'
+                          : send.daysFromNow <= 3
+                            ? 'bg-amber-50 text-amber-700'
+                            : 'bg-emerald-50 text-emerald-700'
+                      }`}
+                    >
+                      {send.daysFromNow <= 0
+                        ? 'היום'
+                        : send.daysFromNow === 1
+                          ? 'מחר'
+                          : `עוד ${send.daysFromNow} ימים`}
+                    </span>
+                    <span className="text-sm text-[#303150] truncate flex-1">
+                      {send.emailSubject}
+                    </span>
+                    <span className="text-sm font-semibold text-[#303150] flex-shrink-0">
+                      {send.count.toLocaleString()}
+                    </span>
+                    <span className="text-xs text-[#7E7F90] flex-shrink-0">
+                      אנשים
+                    </span>
+                    <button
+                      onClick={() => handleForceSend(send.delayNodeId, send.sendDate, send.count)}
+                      disabled={sendingGroup !== null}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-[#69ADFF]/10 text-[#69ADFF] hover:bg-[#69ADFF]/20 transition-colors disabled:opacity-50 flex-shrink-0"
+                    >
+                      {sendingGroup === `${send.delayNodeId}::${send.sendDate}` ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Send className="w-3 h-3" />
+                      )}
+                      שלח עכשיו
+                    </button>
+                  </div>
+                ))}
+                {data.upcomingSends.waitingAtCondition > 0 && (
+                  <div className="flex items-center gap-3 px-5 py-3">
+                    <span className="inline-flex items-center justify-center min-w-[80px] px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 text-purple-600">
+                      ממתינים לתנאי
+                    </span>
+                    <span className="text-sm text-[#7E7F90] truncate flex-1">
+                      טרם הוכרע — ייקבע לאחר בדיקת התנאי
+                    </span>
+                    <span className="text-sm font-semibold text-[#303150] flex-shrink-0">
+                      {data.upcomingSends.waitingAtCondition.toLocaleString()}
+                    </span>
+                    <span className="text-xs text-[#7E7F90] flex-shrink-0">
+                      אנשים
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </>
       )}
 
       {activeTab === 'flow' && (
         <>
           <WorkflowFlowStats
+            workflowId={workflowId}
             nodes={workflow.nodes}
             edges={workflow.edges}
             nodeDistribution={data.nodeDistribution}

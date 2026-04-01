@@ -1,9 +1,11 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import { Zap, Mail, Clock, GitBranch } from 'lucide-react';
+import { Zap, Mail, Clock, GitBranch, RefreshCw } from 'lucide-react';
 import { WORKFLOW_SENDER_PROFILES } from '@/lib/marketing/workflowSenderProfiles';
+import { useWorkflowContext } from '../WorkflowContext';
+import { apiFetch } from '@/lib/utils';
 
 /* ──────────────────────────────────────────────
    Shared wrapper
@@ -156,13 +158,43 @@ function DelayNodeComponent({ data, selected }: { data: { amount: number; unit: 
 
 function ConditionNodeComponent({
   data,
+  id,
   selected,
 }: {
-  data: { conditionType: string; targetEmailNodeId?: string };
+  data: { conditionType: string; targetEmailNodeId?: string; waitHours?: number };
+  id: string;
   selected?: boolean;
 }) {
   const label =
     data.conditionType === 'OPENED_EMAIL' ? 'פתח אימייל?' : 'לחץ על קישור?';
+  const waitHours = data.waitHours ?? 72;
+  const ctx = useWorkflowContext();
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  async function handleReevaluate(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!ctx) return;
+    setRunning(true);
+    setResult(null);
+    try {
+      const res = await apiFetch(
+        `/api/admin/marketing/workflows/${ctx.workflowId}/reevaluate`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ nodeId: id }),
+        },
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'שגיאה');
+      setResult(json.message);
+    } catch (err) {
+      setResult(err instanceof Error ? err.message : 'שגיאה');
+    } finally {
+      setRunning(false);
+      setTimeout(() => setResult(null), 4000);
+    }
+  }
 
   return (
     <NodeShell accentColor="#F18AB5" selected={selected}>
@@ -172,8 +204,23 @@ function ConditionNodeComponent({
           <GitBranch className="w-4 h-4 text-[#F18AB5]" />
         </div>
         <span className="text-sm font-semibold text-[#303150]">תנאי</span>
+        {ctx && (
+          <button
+            onClick={handleReevaluate}
+            onMouseDown={(e) => e.stopPropagation()}
+            disabled={running}
+            className="nodrag nopan ms-auto p-1 rounded-lg hover:bg-pink-50 text-[#7E7F90] hover:text-[#F18AB5] transition-colors disabled:opacity-50 cursor-pointer"
+            title="בדוק וחלק עכשיו"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${running ? 'animate-spin' : ''}`} />
+          </button>
+        )}
       </div>
       <p className="text-xs text-[#7E7F90] ps-9">{label}</p>
+      <p className="text-[10px] text-[#BDBDCB] ps-9">המתנה: {waitHours} שעות</p>
+      {result && (
+        <p className="text-[10px] text-[#F18AB5] ps-9 mt-1 leading-tight">{result}</p>
+      )}
 
       {/* Two source handles with labels */}
       <div className="flex justify-between mt-3 px-2 text-[10px] font-medium">

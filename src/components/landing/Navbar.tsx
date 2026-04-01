@@ -10,18 +10,17 @@ const springSnappy = { type: 'spring' as const, stiffness: 200, damping: 22 };
 
 /* ── Nav links ───────────────────────────────────────── */
 const navLinks = [
-  { label: 'איך זה עובד?', href: '#features' },
-  { label: 'כלים', href: '#tools' },
-  { label: 'המערכת שלנו', href: '#screens' },
-  { label: 'קורס פיננסי', href: '#video-showcase' },
-  { label: 'שאלות נפוצות', href: '#faq' },
+  { label: 'המערכת שלנו', href: '/#features' },
+  { label: 'מדריכים ומאמרים', href: '/knowledge' },
+  { label: 'שאלות נפוצות', href: '/knowledge/invest-faq' },
 ];
 
 interface NavbarProps {
   callbackUrl: string;
+  bgColor?: string;
 }
 
-export default function Navbar({ callbackUrl }: NavbarProps) {
+export default function Navbar({ callbackUrl, bgColor }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -37,7 +36,9 @@ export default function Navbar({ callbackUrl }: NavbarProps) {
 
   /* Active section observer */
   useEffect(() => {
-    const ids = navLinks.map((l) => l.href.replace('#', ''));
+    const ids = navLinks
+      .filter((l) => l.href.startsWith('#'))
+      .map((l) => l.href.replace('#', ''));
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -57,8 +58,13 @@ export default function Navbar({ callbackUrl }: NavbarProps) {
     return () => observer.disconnect();
   }, []);
 
-  /* Smooth scroll handler */
+  /* Smooth scroll or navigate handler */
   const scrollTo = useCallback((href: string) => {
+    if (!href.startsWith('#')) {
+      window.location.href = href;
+      setMobileOpen(false);
+      return;
+    }
     const id = href.replace('#', '');
     const el = document.getElementById(id);
     if (el) {
@@ -76,11 +82,17 @@ export default function Navbar({ callbackUrl }: NavbarProps) {
   return (
     <>
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? 'bg-white/90 backdrop-blur-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
-            : 'bg-transparent'
-        }`}
+        className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+        style={{
+          background: bgColor
+            ? bgColor
+            : scrolled
+              ? 'rgba(255,255,255,0.85)'
+              : 'transparent',
+          backdropFilter: !bgColor && scrolled ? 'blur(16px)' : undefined,
+          WebkitBackdropFilter: !bgColor && scrolled ? 'blur(16px)' : undefined,
+          boxShadow: !bgColor && scrolled ? '0 1px 3px rgba(0,0,0,0.06)' : undefined,
+        }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 md:h-20">

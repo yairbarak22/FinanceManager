@@ -722,7 +722,7 @@ function CalcSlider({
   );
 }
 
-function WhyInvestSection({ noMotion }: { noMotion: boolean }) {
+export function WhyInvestSection({ noMotion }: { noMotion: boolean }) {
   const [initialAmount, setInitialAmount] = useState(100000);
   const [monthlyDeposit, setMonthlyDeposit] = useState(1000);
   const [years, setYears] = useState(20);
@@ -1139,7 +1139,7 @@ function VideoThumbnailCard({
   );
 }
 
-function VideoCourseSection({ noMotion }: { noMotion: boolean }) {
+export function VideoCourseSection({ noMotion }: { noMotion: boolean }) {
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, margin: '-80px' });
   const [activeIndex, setActiveIndex] = useState(0);
@@ -1530,7 +1530,7 @@ function BenefitRow({
   );
 }
 
-function BenefitsSection({ noMotion }: { noMotion: boolean }) {
+export function BenefitsSection({ noMotion }: { noMotion: boolean }) {
   return (
     <section
       className="relative overflow-hidden py-24 md:py-36 px-4 sm:px-6"
@@ -1730,7 +1730,7 @@ function BenefitsSection({ noMotion }: { noMotion: boolean }) {
 
 /* ── Section 6: Final CTA ──────────────────────────────── */
 
-function FinalCTASection({ noMotion }: { noMotion: boolean }) {
+export function FinalCTASection({ noMotion }: { noMotion: boolean }) {
   return (
     <section
       className="relative py-20 md:py-28 px-4 sm:px-6 text-center overflow-hidden"

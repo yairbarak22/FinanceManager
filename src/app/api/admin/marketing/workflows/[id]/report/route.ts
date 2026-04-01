@@ -196,6 +196,13 @@ export async function GET(
       },
     };
 
+    // ── Upcoming sends (countdown) ─────────────────────
+    const upcomingSends = await buildUpcomingSends(
+      id,
+      workflow.nodes as Array<{ id: string; type: string; data: Record<string, unknown> }>,
+      workflow.edges as Array<{ source: string; target: string; sourceHandle?: string }>,
+    );
+
     return NextResponse.json({
       success: true,
       workflow: {
@@ -210,6 +217,7 @@ export async function GET(
       nodeDistribution,
       perNode,
       aggregate,
+      upcomingSends,
     });
   } catch (error) {
     console.error('Error fetching workflow report:', error);
@@ -218,4 +226,129 @@ export async function GET(
       { status: 500 },
     );
   }
+}
+
+// ── Upcoming sends helper ──────────────────────────
+
+const ISRAEL_TZ = 'Asia/Jerusalem';
+
+interface GraphNode {
+  id: string;
+  type: string;
+  data: Record<string, unknown>;
+}
+interface GraphEdge {
+  source: string;
+  target: string;
+  sourceHandle?: string;
+}
+
+/**
+ * Walk from a node forward through the graph until we hit an EMAIL node.
+ * Skips DELAY and CONDITION nodes. Returns the EMAIL node or null.
+ */
+function findNextEmailNode(
+  fromNodeId: string,
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  visited = new Set<string>(),
+): GraphNode | null {
+  if (visited.has(fromNodeId)) return null;
+  visited.add(fromNodeId);
+
+  const outEdges = edges.filter((e) => e.source === fromNodeId);
+  for (const edge of outEdges) {
+    const target = nodes.find((n) => n.id === edge.target);
+    if (!target) continue;
+    if (target.type === 'EMAIL') return target;
+    // Skip through DELAY / CONDITION / TRIGGER nodes
+    const deeper = findNextEmailNode(target.id, nodes, edges, visited);
+    if (deeper) return deeper;
+  }
+  return null;
+}
+
+function toIsraelDateStr(date: Date): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: ISRAEL_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+function daysBetween(a: string, b: string): number {
+  const msA = new Date(a + 'T00:00:00Z').getTime();
+  const msB = new Date(b + 'T00:00:00Z').getTime();
+  return Math.round((msB - msA) / (24 * 60 * 60 * 1000));
+}
+
+async function buildUpcomingSends(
+  workflowId: string,
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+) {
+  // Find all ACTIVE enrollments with a future wakeup (at DELAY nodes)
+  const enrollments = await prisma.workflowEnrollment.findMany({
+    where: {
+      workflowId,
+      status: 'ACTIVE',
+      nextWakeupAt: { not: null },
+    },
+    select: {
+      currentNodeId: true,
+      nextWakeupAt: true,
+    },
+  });
+
+  // Also find enrollments waiting at CONDITION nodes
+  const conditionEnrollments = await prisma.workflowEnrollment.count({
+    where: {
+      workflowId,
+      status: 'ACTIVE',
+      conditionWaitingSince: { not: null },
+    },
+  });
+
+  const todayStr = toIsraelDateStr(new Date());
+
+  // Group: nodeId + dayBucket → count, then resolve next EMAIL
+  const buckets = new Map<string, { nodeId: string; emailNode: GraphNode; dateStr: string; count: number }>();
+
+  for (const e of enrollments) {
+    if (!e.currentNodeId || !e.nextWakeupAt) continue;
+    const dateStr = toIsraelDateStr(e.nextWakeupAt);
+    const key = `${e.currentNodeId}::${dateStr}`;
+
+    if (buckets.has(key)) {
+      buckets.get(key)!.count++;
+      continue;
+    }
+
+    const emailNode = findNextEmailNode(e.currentNodeId, nodes, edges);
+    if (!emailNode) continue;
+
+    buckets.set(key, {
+      nodeId: e.currentNodeId,
+      emailNode,
+      dateStr,
+      count: 1,
+    });
+  }
+
+  const sends = [...buckets.values()]
+    .map((b) => ({
+      delayNodeId: b.nodeId,
+      emailNodeId: b.emailNode.id,
+      emailSubject: (b.emailNode.data.subject as string) || 'ללא נושא',
+      sendDate: b.dateStr,
+      daysFromNow: daysBetween(todayStr, b.dateStr),
+      count: b.count,
+    }))
+    .sort((a, b) => a.daysFromNow - b.daysFromNow);
+
+  return {
+    sends,
+    waitingAtCondition: conditionEnrollments,
+  };
 }

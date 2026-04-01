@@ -12,6 +12,8 @@ import {
   Trash2,
   Users,
   BarChart3,
+  Play,
+  Pause,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/utils';
 
@@ -45,6 +47,7 @@ export default function WorkflowsPage() {
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const fetchWorkflows = useCallback(async () => {
     try {
@@ -92,6 +95,30 @@ export default function WorkflowsPage() {
       setError('שגיאה במחיקת תהליך');
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  async function handleToggleStatus(wf: WorkflowItem) {
+    const newStatus = wf.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE';
+    // Optimistic update
+    setWorkflows((prev) =>
+      prev.map((w) => (w.id === wf.id ? { ...w, status: newStatus } : w)),
+    );
+    setTogglingId(wf.id);
+    try {
+      const res = await apiFetch(`/api/admin/marketing/workflows/${wf.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error('Failed to toggle');
+    } catch {
+      // Rollback on error
+      setWorkflows((prev) =>
+        prev.map((w) => (w.id === wf.id ? { ...w, status: wf.status } : w)),
+      );
+      setError('שגיאה בשינוי סטטוס');
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -200,6 +227,26 @@ export default function WorkflowsPage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 flex-shrink-0">
+                  {wf.status !== 'DRAFT' && (
+                    <button
+                      onClick={() => handleToggleStatus(wf)}
+                      disabled={togglingId === wf.id}
+                      className={`p-2 rounded-xl transition-colors disabled:opacity-50 ${
+                        wf.status === 'ACTIVE'
+                          ? 'hover:bg-amber-50 text-[#7E7F90] hover:text-amber-600'
+                          : 'hover:bg-emerald-50 text-[#7E7F90] hover:text-emerald-600'
+                      }`}
+                      title={wf.status === 'ACTIVE' ? 'השהה' : 'הפעל'}
+                    >
+                      {togglingId === wf.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : wf.status === 'ACTIVE' ? (
+                        <Pause className="w-4 h-4" />
+                      ) : (
+                        <Play className="w-4 h-4" />
+                      )}
+                    </button>
+                  )}
                   {wf.status !== 'DRAFT' && (
                     <button
                       onClick={() =>

@@ -33,10 +33,10 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://myneto.co.il'),
   title: {
-    default: 'MyNeto - ניהול הון חכם',
+    default: 'MyNeto — ניהול תקציב, השקעות ותכנון פיננסי | חינם',
     template: '%s | MyNeto',
   },
-  description: 'המקום שלך לצמוח כלכלית. ניהול הוצאות, השקעות ותכנון פיננסי חכם - בחינם.',
+  description: 'אפליקציה חינמית לניהול הכספים האישיים: מעקב הוצאות אוטומטי עם AI, תיק השקעות, תקציב חודשי, יעדי חיסכון ודוחות חכמים — הכל במקום אחד.',
   keywords: [
     'ניהול הון',
     'ניהול הוצאות',
@@ -60,22 +60,13 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'he_IL',
     siteName: 'MyNeto',
-    title: 'MyNeto - ניהול הון חכם',
-    description: 'המקום שלך לצמוח כלכלית. ניהול הוצאות, השקעות ותכנון פיננסי חכם.',
-    images: [
-      {
-        url: '/og-image.png',
-        width: 1200,
-        height: 630,
-        alt: 'MyNeto - ניהול הון חכם',
-      },
-    ],
+    title: 'MyNeto — ניהול תקציב, השקעות ותכנון פיננסי | חינם',
+    description: 'אפליקציה חינמית לניהול הכספים האישיים: מעקב הוצאות, תיק השקעות, תקציב חודשי ויעדי חיסכון.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'MyNeto - ניהול הון חכם',
-    description: 'המקום שלך לצמוח כלכלית. ניהול הוצאות, השקעות ותכנון פיננסי חכם.',
-    images: ['/og-image.png'],
+    title: 'MyNeto — ניהול תקציב, השקעות ותכנון פיננסי | חינם',
+    description: 'אפליקציה חינמית לניהול הכספים האישיים: מעקב הוצאות, תיק השקעות, תקציב חודשי ויעדי חיסכון.',
   },
   robots: {
     index: true,
@@ -118,7 +109,51 @@ export default async function RootLayout({
 
   return (
     <html lang="he" dir="rtl">
-      <head />
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: 'MyNeto',
+              alternateName: 'מיינטו',
+              url: 'https://myneto.co.il',
+              description:
+                'אפליקציה חינמית לניהול הכספים האישיים: מעקב הוצאות אוטומטי עם AI, תיק השקעות, תקציב חודשי, יעדי חיסכון ודוחות חכמים.',
+              inLanguage: 'he',
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'MyNeto',
+              alternateName: 'מיינטו',
+              url: 'https://myneto.co.il',
+              logo: 'https://myneto.co.il/icon.png',
+              description: 'פלטפורמה חינמית לניהול הכספים האישיים בישראל.',
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'SiteNavigationElement',
+              name: ['מרכז הידע', 'מרכז ההשקעות'],
+              url: [
+                'https://myneto.co.il/knowledge',
+                'https://myneto.co.il/invest',
+              ],
+            }),
+          }}
+        />
+      </head>
       <body className={`${heebo.variable} ${inter.variable} ${nunito.variable} font-sans antialiased`}>
         <SkipToContent />
         <Providers>

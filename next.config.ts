@@ -2,6 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['muhammara', '@react-pdf/renderer'],
+  async redirects() {
+    return [
+      {
+        source: '/invest/transfer',
+        destination: '/invest/transfer-portfolio',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

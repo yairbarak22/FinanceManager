@@ -757,18 +757,20 @@ model WorkflowEnrollment {
   workflowId    String
   userId        String
   status        EnrollmentStatus    @default(ACTIVE)
-  currentNodeId String?
-  nextWakeupAt  DateTime?
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  workflow      AutomationWorkflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentNodeId         String?
+  nextWakeupAt          DateTime?
+  conditionWaitingSince DateTime?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  workflow              AutomationWorkflow  @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([workflowId, userId])
   @@index([workflowId])
   @@index([userId])
   @@index([status, nextWakeupAt])
   @@index([currentNodeId])
+  @@index([status, conditionWaitingSince])
 }
 
 // ============================================

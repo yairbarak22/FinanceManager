@@ -124,8 +124,23 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Public funnel pages — no auth required, but need CSP nonce for hydration
-  if (pathname === '/invest' || pathname.startsWith('/invest/')) {
+  // Redirect invest article pages to unified knowledge center
+  if (pathname.startsWith('/invest/') && pathname !== '/invest') {
+    const slug = pathname.replace('/invest/', '');
+    const url = request.nextUrl.clone();
+    url.pathname = `/knowledge/${slug}`;
+    return NextResponse.redirect(url, 301);
+  }
+
+  // Public invest hub — redirect to knowledge center
+  if (pathname === '/invest') {
+    const url = request.nextUrl.clone();
+    url.pathname = '/knowledge';
+    return NextResponse.redirect(url, 301);
+  }
+
+  // Public knowledge center — no auth required
+  if (pathname === '/knowledge' || pathname.startsWith('/knowledge/')) {
     return nextWithCsp(request);
   }
 

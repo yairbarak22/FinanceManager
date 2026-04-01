@@ -229,7 +229,7 @@ const YEARS = 20;
 const BANK_AFTER = Math.round(INITIAL / Math.pow(1 + INFLATION_RATE, YEARS)); // ~55,368
 const INVEST_AFTER = Math.round(INITIAL * Math.pow(1 + INVEST_RATE, YEARS)); // ~386,968
 
-function InflationSection({ noMotion }: { noMotion: boolean }) {
+export function InflationSection({ noMotion }: { noMotion: boolean }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-80px' });
 
@@ -483,7 +483,7 @@ function buildArea(
   return `${linePath} L${lastX.toFixed(1)},${bottom} L${firstX},${bottom} Z`;
 }
 
-function CompoundInterestSection({ noMotion }: { noMotion: boolean }) {
+export function CompoundInterestSection({ noMotion }: { noMotion: boolean }) {
   const [monthly, setMonthly] = useState(2500);
   const sectionRef = useRef(null);
   const isInView = useInView(sectionRef, { once: true, margin: '-60px' });
@@ -876,7 +876,7 @@ const SP_LINE = SP_DATA.map(
 
 const SP_AREA = `${SP_LINE} L${spX(SP_DATA[SP_DATA.length - 1].year).toFixed(1)},${SP_H} L${spX(SP_DATA[0].year).toFixed(1)},${SP_H} Z`;
 
-function ProofSection({ noMotion }: { noMotion: boolean }) {
+export function ProofSection({ noMotion }: { noMotion: boolean }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-60px' });
   const ringRef = useRef(null);
@@ -1168,7 +1168,7 @@ function ProofSection({ noMotion }: { noMotion: boolean }) {
    Section 5, Kashrut
    ═══════════════════════════════════════════════════════════ */
 
-function KashrutSection({ noMotion }: { noMotion: boolean }) {
+export function KashrutSection({ noMotion }: { noMotion: boolean }) {
   return (
     <section
       className="relative py-24 md:py-36 px-4 sm:px-6"
@@ -1315,7 +1315,7 @@ const STEPS = [
   },
 ];
 
-function PracticeSection({ noMotion }: { noMotion: boolean }) {
+export function PracticeSection({ noMotion }: { noMotion: boolean }) {
   return (
     <section
       className="relative py-24 md:py-36 px-4 sm:px-6"
@@ -1425,7 +1425,7 @@ function PracticeSection({ noMotion }: { noMotion: boolean }) {
    Section 7, CTA (single, final)
    ═══════════════════════════════════════════════════════════ */
 
-function CtaSection({ noMotion }: { noMotion: boolean }) {
+export function CtaSection({ noMotion }: { noMotion: boolean }) {
   return (
     <section
       className="relative py-24 md:py-36 px-4 sm:px-6 text-center overflow-hidden"

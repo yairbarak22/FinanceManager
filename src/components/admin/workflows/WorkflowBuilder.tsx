@@ -36,6 +36,7 @@ import {
   DelayNode,
   ConditionNode,
 } from './nodes/CustomNodes';
+import { WorkflowContext } from './WorkflowContext';
 
 // ────────────────────────────────────────────────────────────
 // Types
@@ -289,7 +290,10 @@ export default function WorkflowBuilder({
 
   // ── Render ─────────────────────────────────────────────
 
+  const contextValue = useMemo(() => ({ workflowId }), [workflowId]);
+
   return (
+    <WorkflowContext.Provider value={contextValue}>
     <div className="flex h-[calc(100vh-120px)] rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm">
       {/* ── Left sidebar: add-node toolbar ──────────── */}
       <div className="w-56 flex-shrink-0 border-e border-gray-200 bg-[#FAFAFA] p-4 flex flex-col gap-3">
@@ -777,6 +781,26 @@ export default function WorkflowBuilder({
                   ))}
                 </select>
               </div>
+              <div>
+                <label className="block text-xs font-medium text-[#7E7F90] mb-1.5">
+                  זמן המתנה לפני ניתוב ל&quot;לא&quot; (שעות)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={720}
+                  value={(selectedNode.data as Record<string, unknown>).waitHours as number ?? 72}
+                  onChange={(e) =>
+                    updateNodeData(selectedNode.id, {
+                      waitHours: Math.max(1, Math.min(720, parseInt(e.target.value) || 72)),
+                    })
+                  }
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm text-[#303150] focus:outline-none focus:ring-2 focus:ring-[#69ADFF]/30 focus:border-[#69ADFF] bg-white"
+                />
+                <p className="text-[10px] text-[#BDBDCB] mt-1">
+                  כמה שעות לחכות שהמשתמש יפתח/ילחץ לפני שמנתבים לצד ה&quot;לא&quot;. בדיקה כל שעה.
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -805,6 +829,7 @@ export default function WorkflowBuilder({
 
       <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
+    </WorkflowContext.Provider>
   );
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, memo } from 'react';
+import { useMemo, memo, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -11,7 +11,10 @@ import {
   Position,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Zap, Mail, Clock, GitBranch, Users } from 'lucide-react';
+import { Zap, Mail, Clock, GitBranch, Users, RefreshCw } from 'lucide-react';
+import { useWorkflowContext } from '@/components/admin/workflows/WorkflowContext';
+import { WorkflowContext } from '@/components/admin/workflows/WorkflowContext';
+import { apiFetch } from '@/lib/utils';
 
 // ────────────────────────────────────────────────────────────
 // Types
@@ -26,6 +29,7 @@ interface NodeMetrics {
 }
 
 interface WorkflowFlowStatsProps {
+  workflowId: string;
   nodes: Node[];
   edges: Edge[];
   nodeDistribution: Record<string, number>;
@@ -68,7 +72,7 @@ function StatNodeShell({
   accentColor: string;
 }) {
   return (
-    <div className="min-w-[220px] bg-white rounded-xl px-4 py-3 border border-gray-200 shadow-sm relative">
+    <div className="min-w-[220px] bg-white rounded-xl px-4 py-3 border border-gray-200 shadow-sm relative" style={{ pointerEvents: 'all' }}>
       <div
         className="absolute top-0 left-0 right-0 h-[3px] rounded-t-xl"
         style={{ backgroundColor: accentColor }}
@@ -181,10 +185,34 @@ function StatDelayNodeComponent({ data }: { data: Record<string, unknown> }) {
 // CONDITION node (stats)
 // ────────────────────────────────────────────────────────────
 
-function StatConditionNodeComponent({ data }: { data: Record<string, unknown> }) {
+function StatConditionNodeComponent({ data, id }: { data: Record<string, unknown>; id: string }) {
   const conditionType = (data.conditionType as string) || 'OPENED_EMAIL';
   const label = conditionType === 'OPENED_EMAIL' ? 'פתח אימייל?' : 'לחץ על קישור?';
   const waiting = (data._waiting as number) || 0;
+  const ctx = useWorkflowContext();
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  async function handleReevaluate(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (!ctx) return;
+    setRunning(true);
+    setResult(null);
+    try {
+      const res = await apiFetch(
+        `/api/admin/marketing/workflows/${ctx.workflowId}/reevaluate`,
+        { method: 'POST', body: JSON.stringify({ nodeId: id }) },
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'שגיאה');
+      setResult(json.message);
+    } catch (err) {
+      setResult(err instanceof Error ? err.message : 'שגיאה');
+    } finally {
+      setRunning(false);
+      setTimeout(() => setResult(null), 4000);
+    }
+  }
 
   return (
     <StatNodeShell accentColor="#F18AB5">
@@ -194,12 +222,26 @@ function StatConditionNodeComponent({ data }: { data: Record<string, unknown> })
           <GitBranch className="w-4 h-4 text-[#F18AB5]" />
         </div>
         <span className="text-sm font-semibold text-[#303150]">תנאי</span>
+        {ctx && (
+          <button
+            onClick={handleReevaluate}
+            onMouseDown={(e) => e.stopPropagation()}
+            disabled={running}
+            className="nodrag nopan ms-auto p-1 rounded-lg hover:bg-pink-50 text-[#7E7F90] hover:text-[#F18AB5] transition-colors disabled:opacity-50 cursor-pointer"
+            title="בדוק וחלק עכשיו"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${running ? 'animate-spin' : ''}`} />
+          </button>
+        )}
       </div>
       <p className="text-xs text-[#7E7F90] ps-9 mb-1">{label}</p>
       {waiting > 0 && (
         <div className="ps-9">
           <StatBadge label="" value={`${waiting} ממתינים`} color="#F18AB5" />
         </div>
+      )}
+      {result && (
+        <p className="text-[10px] text-[#F18AB5] ps-9 mt-1 leading-tight">{result}</p>
       )}
       <div className="flex justify-between mt-2 px-2 text-[10px] font-medium">
         <span className="text-emerald-500">כן ✓</span>
@@ -237,12 +279,14 @@ const StatConditionNode = memo(StatConditionNodeComponent);
 // ────────────────────────────────────────────────────────────
 
 export default function WorkflowFlowStats({
+  workflowId,
   nodes: rawNodes,
   edges,
   nodeDistribution,
   perNode,
   totalEnrolled,
 }: WorkflowFlowStatsProps) {
+  const contextValue = useMemo(() => ({ workflowId }), [workflowId]);
   const nodeTypes = useMemo(
     () => ({
       TRIGGER: StatTriggerNode,
@@ -269,6 +313,7 @@ export default function WorkflowFlowStats({
   }, [rawNodes, nodeDistribution, perNode, totalEnrolled]);
 
   return (
+    <WorkflowContext.Provider value={contextValue}>
     <div className="h-[500px] rounded-xl border border-[#E8E8ED] bg-[#FAFAFA] overflow-hidden">
       <ReactFlow
         nodes={annotatedNodes}
@@ -293,5 +338,6 @@ export default function WorkflowFlowStats({
         />
       </ReactFlow>
     </div>
+    </WorkflowContext.Provider>
   );
 }
