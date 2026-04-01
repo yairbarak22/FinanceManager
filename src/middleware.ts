@@ -371,8 +371,8 @@ export const config = {
      * - /api/cron/* (cron jobs - authenticate via Authorization: Bearer header or ?secret= query param)
      * - /_next/static (static files)
      * - /_next/image (image optimization)
-     * - /favicon.ico, /images, /screenshots, /videos (static assets)
+     * - /favicon.ico, /images, /screenshots, /knowledge-screenshots, /videos (static assets)
      */
-    '/((?!api/auth|api/webhook|api/cron|api/csp-report|api/marketing/unsubscribe|_next/static|_next/image|favicon.ico|images|screenshots|videos).*)',
+    '/((?!api/auth|api/webhook|api/cron|api/csp-report|api/marketing/unsubscribe|_next/static|_next/image|favicon.ico|images|screenshots|knowledge-screenshots|videos).*)',
   ],
 };
