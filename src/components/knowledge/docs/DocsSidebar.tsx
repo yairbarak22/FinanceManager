@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import {
-  ChevronDown, X, Search, Send, Lightbulb, LogIn,
+  ChevronDown, ChevronLeft, X, Search, Send, Lightbulb, LogIn, BookOpen,
   Monitor, TrendingUp, Wallet, HelpCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -97,9 +97,10 @@ interface DocsSidebarProps {
   activeSlug?: string;
   isOpen: boolean;
   onClose: () => void;
+  compact?: boolean;
 }
 
-export default function DocsSidebar({ activeSlug, isOpen, onClose }: DocsSidebarProps) {
+export default function DocsSidebar({ activeSlug, isOpen, onClose, compact = false }: DocsSidebarProps) {
   const { status } = useSession();
   const isAuthenticated = status === 'authenticated';
 
@@ -136,6 +137,7 @@ export default function DocsSidebar({ activeSlug, isOpen, onClose }: DocsSidebar
   }, []);
 
   const [query, setQuery] = useState('');
+  const [compactCollapsed, setCompactCollapsed] = useState(false);
   const activeRef = useRef<HTMLAnchorElement>(null);
 
   // Guide request state
@@ -234,7 +236,7 @@ export default function DocsSidebar({ activeSlug, isOpen, onClose }: DocsSidebar
         ref={isActive ? activeRef : null}
         href={`/knowledge/${article.slug}`}
         onClick={onClose}
-        className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+        className={`w-full flex items-center gap-2.5 ${compact ? 'px-3 py-2' : 'px-4 py-2.5'} rounded-lg ${compact ? 'text-[12px]' : 'text-[13px]'} font-medium transition-all duration-150 ${
           isActive
             ? 'bg-indigo-50 text-indigo-700'
             : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
@@ -257,8 +259,8 @@ export default function DocsSidebar({ activeSlug, isOpen, onClose }: DocsSidebar
   /* ── Sidebar content ── */
   const sidebarContent = (
     <div className="h-full overflow-y-auto docs-sidebar-scroll flex flex-col">
-      {/* Search */}
-      <div className="px-4 pt-4 pb-3 flex-shrink-0">
+      {/* Search — hidden in compact mode */}
+      <div className={`px-4 pt-4 pb-3 flex-shrink-0 ${compact ? 'hidden' : ''}`}>
         <div className="relative">
           <Search className="absolute top-1/2 -translate-y-1/2 start-3 w-4 h-4 pointer-events-none text-slate-400" />
           <input
@@ -281,7 +283,7 @@ export default function DocsSidebar({ activeSlug, isOpen, onClose }: DocsSidebar
         </div>
       </div>
 
-      <div className="border-t border-slate-100 mx-4 mb-1" />
+      <div className={`border-t border-slate-100 mx-4 mb-1 ${compact ? 'hidden' : ''}`} />
 
       {/* Navigation */}
       <div className="flex-1 px-4 pb-2 space-y-1">
@@ -309,17 +311,17 @@ export default function DocsSidebar({ activeSlug, isOpen, onClose }: DocsSidebar
                 {/* Group header */}
                 <button
                   onClick={() => toggleGroup(group.id)}
-                  className={`w-full flex items-center gap-3 py-3 px-4 rounded-xl transition-all duration-150 cursor-pointer ${
+                  className={`w-full flex items-center gap-3 ${compact ? 'py-2 px-3' : 'py-3 px-4'} rounded-xl transition-all duration-150 cursor-pointer ${
                     hasActiveChild && !isCollapsed ? 'bg-slate-100' : 'hover:bg-slate-50'
                   }`}
                 >
                   <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                    className={`${compact ? 'w-7 h-7' : 'w-9 h-9'} rounded-lg flex items-center justify-center flex-shrink-0`}
                     style={{ background: group.colorLight }}
                   >
-                    <Icon className="w-[18px] h-[18px]" style={{ color: group.color }} strokeWidth={2} />
+                    <Icon className={compact ? 'w-4 h-4' : 'w-[18px] h-[18px]'} style={{ color: group.color }} strokeWidth={2} />
                   </div>
-                  <span className={`flex-1 text-sm font-medium text-start transition-colors duration-150 ${
+                  <span className={`flex-1 ${compact ? 'text-[13px]' : 'text-sm'} font-medium text-start transition-colors duration-150 ${
                     hasActiveChild ? 'text-slate-900' : 'text-slate-600'
                   }`}>
                     {group.label}
@@ -391,8 +393,8 @@ export default function DocsSidebar({ activeSlug, isOpen, onClose }: DocsSidebar
       </div>
 
       {/* ── Guide Request footer ── */}
-      <div className="flex-shrink-0 border-t border-slate-100 mx-4" />
-      <div className="px-4 py-4 flex-shrink-0">
+      <div className={`flex-shrink-0 border-t border-slate-100 mx-4 ${compact ? 'hidden' : ''}`} />
+      <div className={`px-4 py-4 flex-shrink-0 ${compact ? 'hidden' : ''}`}>
         {requestState === 'sent' ? (
           <div className="flex items-center gap-2 justify-center py-2">
             <Lightbulb className="w-4 h-4 text-[#0DBACC]" />
@@ -449,9 +451,47 @@ export default function DocsSidebar({ activeSlug, isOpen, onClose }: DocsSidebar
   return (
     <>
       {/* Desktop */}
-      <aside className="hidden lg:block w-[288px] fixed top-16 md:top-20 right-0 bg-white border-s border-slate-100 h-[calc(100vh-64px)] md:h-[calc(100vh-80px)] z-20">
-        {sidebarContent}
-      </aside>
+      {/* Desktop: compact mode (inside AppLayout) */}
+      {compact && (
+        <motion.aside
+          initial={false}
+          animate={{ width: compactCollapsed ? 56 : 272 }}
+          transition={{ duration: 0.2, ease: 'easeInOut' }}
+          className="hidden lg:flex flex-col bg-white border-e border-[#F7F7F8] overflow-hidden flex-shrink-0"
+        >
+          {/* Header */}
+          <div className={`flex items-center border-b border-[#F7F7F8] ${compactCollapsed ? 'justify-center py-3.5 px-2' : 'justify-between px-4 py-3.5'}`}>
+            {!compactCollapsed && (
+              <div className="flex items-center gap-2 min-w-0">
+                <BookOpen className="w-4 h-4 text-[#69ADFF] flex-shrink-0" strokeWidth={1.75} />
+                <h3 className="text-[0.8125rem] font-bold text-[#303150] whitespace-nowrap truncate">
+                  תוכן המדריכים
+                </h3>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setCompactCollapsed((p) => !p)}
+              className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[#F7F7F8] transition-colors duration-150 cursor-pointer flex-shrink-0"
+              title={compactCollapsed ? 'הרחב תפריט' : 'כווץ תפריט'}
+            >
+              <motion.div animate={{ rotate: compactCollapsed ? 0 : 180 }} transition={{ duration: 0.2 }}>
+                <ChevronLeft className="w-4 h-4 text-[#BDBDCB]" strokeWidth={1.75} />
+              </motion.div>
+            </button>
+          </div>
+
+          {/* Content — hidden when collapsed */}
+          {!compactCollapsed && sidebarContent}
+        </motion.aside>
+      )}
+
+      {/* Desktop: standalone mode (with landing Navbar) */}
+      {!compact && (
+        <aside className="hidden lg:flex flex-col bg-white border-l border-slate-100 flex-shrink-0 overflow-hidden w-[288px] fixed top-16 md:top-20 right-0 h-[calc(100vh-64px)] md:h-[calc(100vh-80px)] z-20">
+          {sidebarContent}
+        </aside>
+      )}
 
       {/* Mobile */}
       <AnimatePresence>

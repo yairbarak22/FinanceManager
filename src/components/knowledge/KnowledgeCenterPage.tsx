@@ -125,7 +125,7 @@ function FAQItem({
 
 /* ── Main Page ─────────────────────────────────────────── */
 
-export default function KnowledgeCenterPage() {
+export default function KnowledgeCenterPage({ embedded = false }: { embedded?: boolean }) {
   const faqRef = useRef(null);
   const faqInView = useInView(faqRef, { once: true, margin: '-80px' });
   const noMotion = !!useReducedMotion();
@@ -138,8 +138,8 @@ export default function KnowledgeCenterPage() {
 
   return (
     <>
-    <Navbar callbackUrl="/knowledge" bgColor="#FFFFFF" />
-    <DocsLayout>
+    {!embedded && <Navbar callbackUrl="/knowledge" bgColor="#FFFFFF" />}
+    <DocsLayout embedded={embedded}>
       {/* Hero */}
       <div className="text-center py-8 lg:py-12">
         <div
