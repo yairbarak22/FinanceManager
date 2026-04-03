@@ -4,9 +4,10 @@ import { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, BookOpen, Clock, ExternalLink, PieChart, AlertTriangle, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import VideoPlayer from './VideoPlayer';
+import BrokerVideoPlayer from './BrokerVideoPlayer';
 import CourseChapterAccordion from './CourseChapterAccordion';
 import CourseTabBar, { type CourseTab } from './CourseTabBar';
-import AltshulerCTA from './AltshulerCTA';
+import BrokerCTA from './BrokerCTA';
 import type { Course } from './coursesData';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { trackCtaClickServer } from '@/lib/utils';
@@ -169,16 +170,25 @@ export default function CourseExperience({ course, variant, storageKey }: Course
           </div>
         </motion.div>
 
-        {/* Video player */}
-        <VideoPlayer
-          lesson={activeLesson}
-          chapterTitle={activeChapter.title}
-          lessonNumber={currentLessonIndex + 1}
-          totalLessons={totalLessons}
-        />
+        {/* Video player — broker tabs for lesson l-3, regular player otherwise */}
+        {isInvestments && activeLessonId === 'l-3' ? (
+          <BrokerVideoPlayer
+            lesson={activeLesson}
+            chapterTitle={activeChapter.title}
+            lessonNumber={currentLessonIndex + 1}
+            totalLessons={totalLessons}
+          />
+        ) : (
+          <VideoPlayer
+            lesson={activeLesson}
+            chapterTitle={activeChapter.title}
+            lessonNumber={currentLessonIndex + 1}
+            totalLessons={totalLessons}
+          />
+        )}
 
-        {/* Altshuler CTA — investments only */}
-        {isInvestments && (activeLessonId === 'l-3' || activeLessonId === 'l-4') && <AltshulerCTA />}
+        {/* Broker CTA — investments lesson 4 */}
+        {isInvestments && activeLessonId === 'l-4' && <BrokerCTA />}
 
         {/* Author + next lesson */}
         <div className="flex items-center justify-between flex-wrap gap-4">

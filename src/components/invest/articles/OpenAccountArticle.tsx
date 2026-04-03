@@ -13,6 +13,7 @@ import {
   ChevronsDown,
 } from 'lucide-react';
 import Card from '@/components/ui/Card';
+import BrokerComparisonTable from '@/components/invest/BrokerComparisonTable';
 
 /* ── Shared helpers ────────────────────────────────────────── */
 
@@ -162,6 +163,12 @@ export default function OpenAccountArticle() {
               <p className="text-sm font-semibold text-[#0DBACC]">חסכון של ~₪5,000 בשנה</p>
               <p className="text-xs text-[#7E7F90]">על תיק של חצי מיליון ₪ — רק על דמי ניהול.</p>
             </div>
+
+            {/* Broker comparison */}
+            <div className="pt-4 border-t border-[#F7F7F8]">
+              <h3 className="text-sm font-bold text-[#303150] mb-4">השוואת ברוקרים — אלטשולר שחם vs IBI</h3>
+              <BrokerComparisonTable source="open_account_article" />
+            </div>
           </div>
         </Card>
       </AnimatedSection>
@@ -237,10 +244,10 @@ function BenefitItems() {
   const isInView = useInView(ref, { once: false, amount: 0.3 });
 
   const items = [
-    { title: '0₪ דמי ניהול לכל החיים', desc: 'ללא הגבלת זמן. חסכון של אלפי שקלים לאורך השנים.' },
-    { title: '200₪ מתנת הצטרפות', desc: 'לכל פותחי חשבון חדש דרכנו, ישר לחשבון.' },
+    { title: 'עד 300₪ מתנת הצטרפות', desc: 'לכל פותחי חשבון חדש דרכנו, ישר לחשבון.' },
+    { title: 'דמי ניהול מופחתים או אפסיים', desc: 'אלטשולר: 0₪ לכל החיים. IBI: פטור ל-2 שנים.' },
     { title: 'מסלולי השקעה הלכתיים', desc: 'בפיקוח הלכתי מלא, בהכשר מהדרין.' },
-    { title: 'פתיחה דיגיטלית ב-3 דקות', desc: 'בלי ביורוקרטיה, הכל אונליין.' },
+    { title: 'פתיחה דיגיטלית', desc: 'באלטשולר: סלפי + ת"ז. ב-IBI: ללא מצלמה — מתאים לכולם!' },
   ];
 
   return (
@@ -304,11 +311,11 @@ function OpeningSteps() {
 
   return (
     <div ref={ref} className="p-6 space-y-2" dir="rtl">
-      <ProcessStep number={1} icon={<Gift className="w-5 h-5 text-[#69ADFF]" />} iconBg="bg-[#C1DDFF]/30" title="כניסה ללינק ההצטרפות" delay={0.1} isInView={isInView}>
-        <p className="text-sm text-[#7E7F90] leading-relaxed">דרך הקישור באתר MyNeto — כדי לקבל את ההטבות הבלעדיות.</p>
+      <ProcessStep number={1} icon={<Gift className="w-5 h-5 text-[#69ADFF]" />} iconBg="bg-[#C1DDFF]/30" title="בחירת ברוקר וכניסה ללינק" delay={0.1} isInView={isInView}>
+        <p className="text-sm text-[#7E7F90] leading-relaxed">בוחרים בין אלטשולר שחם ל-IBI ונכנסים דרך MyNeto — כדי לקבל את ההטבות.</p>
       </ProcessStep>
       <ProcessStep number={2} icon={<Briefcase className="w-5 h-5 text-[#0DBACC]" />} iconBg="bg-[#E6F9F9]" title="זיהוי דיגיטלי" delay={0.2} isInView={isInView}>
-        <p className="text-sm text-[#7E7F90] leading-relaxed">צילום תעודת זהות + סלפי. הכל אונליין, לוקח דקה.</p>
+        <p className="text-sm text-[#7E7F90] leading-relaxed">באלטשולר: צילום ת&quot;ז + סלפי. ב-IBI: <span className="font-medium text-[#303150]">ללא מצלמה</span>.</p>
       </ProcessStep>
       <ProcessStep number={3} icon={<ShieldCheck className="w-5 h-5 text-[#E9A800]" />} iconBg="bg-[#FFF8E1]" title="בחירת מסלול" delay={0.3} isInView={isInView}>
         <p className="text-sm text-[#7E7F90] leading-relaxed">מסלול רגיל או מסלול הלכתי (כשר למהדרין). שניהם עם 0₪ דמי ניהול.</p>

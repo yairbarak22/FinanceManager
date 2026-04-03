@@ -6,44 +6,75 @@ import { ExternalLink, Check, ChevronDown, TrendingUp } from 'lucide-react';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { trackCtaClickServer } from '@/lib/utils';
 
-const PARTNER_URL =
+const ALTSHULER_URL =
   'https://digitalsolutions.as-invest.co.il/trade_OnBoarding/?utm_source=MyNeto&utm_medium=Link';
+const IBI_URL =
+  'https://onboarding.ibi.co.il/open-account?step=first_name&source__c=OB&UTM_Campaign_Source__c=OB&keyword__c=smart-feature-ob&Coupon__c=IBIYAIRBA&referrer=myNETO';
 
-const benefits = [
-  { text: 'פתיחת חשבון מ-', highlight: '5,000 ₪', suffix: 'בלבד' },
-  { text: '', highlight: '200 ₪', suffix: 'מתנת הצטרפות' },
-  { text: 'קורס היכרות עם שוק ההון', highlight: 'בחינם', suffix: '' },
-  { text: 'שיעורי הדרכה בלייב', highlight: 'בחינם', suffix: '' },
-];
+type BrokerId = 'altshuler' | 'ibi';
 
-interface AltshulerSidebarCTAProps {
+const brokerData: Record<BrokerId, {
+  name: string;
+  url: string;
+  color: string;
+  benefits: { text: string; highlight: string; suffix: string }[];
+  mainBenefit: string;
+  mainBenefitSub: string;
+}> = {
+  altshuler: {
+    name: 'אלטשולר שחם',
+    url: ALTSHULER_URL,
+    color: '#0DBACC',
+    benefits: [
+      { text: 'פתיחת חשבון מ-', highlight: '5,000 ₪', suffix: 'בלבד' },
+      { text: '', highlight: '200 ₪', suffix: 'מתנת הצטרפות' },
+      { text: 'דמי ניהול', highlight: '0₪', suffix: 'לכל החיים' },
+    ],
+    mainBenefit: 'פטור מלא מדמי ניהול!',
+    mainBenefitSub: 'ללא הגבלת זמן',
+  },
+  ibi: {
+    name: 'IBI',
+    url: IBI_URL,
+    color: '#2B4699',
+    benefits: [
+      { text: '', highlight: '300 ₪', suffix: 'מתנת הצטרפות' },
+      { text: 'פטור מדמי ניהול', highlight: 'ל-2 שנים', suffix: '' },
+      { text: 'פתיחה', highlight: 'ללא מצלמה', suffix: '' },
+    ],
+    mainBenefit: 'פתיחה ללא מצלמה!',
+    mainBenefitSub: 'מתאים לכולם',
+  },
+};
+
+interface BrokerSidebarCTAProps {
   isCollapsed: boolean;
 }
 
-export default function AltshulerSidebarCTA({ isCollapsed }: AltshulerSidebarCTAProps) {
+export default function BrokerSidebarCTA({ isCollapsed }: BrokerSidebarCTAProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [activeBroker, setActiveBroker] = useState<BrokerId>('altshuler');
   const { trackOpenTradingAccountClicked } = useAnalytics();
+  const broker = brokerData[activeBroker];
 
   if (isCollapsed) {
     return (
       <div className="flex flex-col items-center py-3 border-t border-[#F7F7F8]">
-        <a
-          href={PARTNER_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => { trackOpenTradingAccountClicked('course_sidebar'); trackCtaClickServer('course_sidebar'); }}
+        <button
+          type="button"
+          onClick={() => setIsExpanded((v) => !v)}
           className="w-8 h-8 rounded-full bg-[#0DBACC]/10 flex items-center justify-center transition-transform duration-150 hover:scale-110"
-          title="פתיחת חשבון מסחר באלטשולר שחם"
+          title="פתיחת חשבון מסחר"
         >
           <TrendingUp className="w-3.5 h-3.5 text-[#0DBACC]" strokeWidth={2} />
-        </a>
+        </button>
       </div>
     );
   }
 
   return (
     <div className="border-t border-[#F7F7F8]">
-      {/* Header — always visible */}
+      {/* Header */}
       <button
         type="button"
         onClick={() => setIsExpanded((v) => !v)}
@@ -57,7 +88,7 @@ export default function AltshulerSidebarCTA({ isCollapsed }: AltshulerSidebarCTA
             פתיחת חשבון מסחר
           </p>
           <p className="text-[0.625rem] text-[#BDBDCB] mt-px truncate">
-            במבצע מיוחד בשיתוף MyNeto
+            אלטשולר שחם או IBI · בשיתוף MyNeto
           </p>
         </div>
         <motion.div
@@ -80,32 +111,45 @@ export default function AltshulerSidebarCTA({ isCollapsed }: AltshulerSidebarCTA
             className="overflow-hidden"
           >
             <div className="px-4 pb-4">
+              {/* Broker tabs */}
+              <div className="flex rounded-lg bg-[#F7F7F8] p-0.5 mb-3">
+                {(Object.keys(brokerData) as BrokerId[]).map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setActiveBroker(id)}
+                    className={`flex-1 py-1.5 px-2 rounded-md text-[0.625rem] font-bold transition-all duration-200 cursor-pointer ${
+                      activeBroker === id
+                        ? 'bg-white text-[#303150] shadow-sm'
+                        : 'text-[#BDBDCB] hover:text-[#7E7F90]'
+                    }`}
+                  >
+                    {brokerData[id].name}
+                  </button>
+                ))}
+              </div>
+
               {/* Main benefit */}
               <div
-                className="py-2.5 px-3 rounded-xl text-center mb-3"
+                className="py-2.5 px-3 rounded-xl text-center mb-3 transition-colors duration-200"
                 style={{
-                  background: 'rgba(13,186,204,0.05)',
-                  border: '1px solid rgba(13,186,204,0.1)',
+                  background: `${broker.color}08`,
+                  border: `1px solid ${broker.color}1A`,
                 }}
               >
                 <p className="text-[0.8125rem] font-bold text-[#303150] leading-snug">
-                  פטור מלא מדמי ניהול!
+                  {broker.mainBenefit}
                 </p>
-                <p className="text-[0.625rem] text-[#0DBACC] font-medium mt-0.5">
-                  ללא הגבלת זמן
+                <p className="text-[0.625rem] font-medium mt-0.5" style={{ color: broker.color }}>
+                  {broker.mainBenefitSub}
                 </p>
               </div>
 
-              {/* Standing order */}
-              <p className="text-[0.6875rem] text-[#7E7F90] leading-relaxed mb-3 px-1">
-                <span className="font-bold text-[#303150]">הוראת קבע פעם אחת</span> — ומהרגע הזה הכסף עובד בשבילך, בלי לגעת במשהו.
-              </p>
-
               {/* Benefits */}
               <div className="space-y-1.5 mb-3">
-                {benefits.map((b, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <Check className="w-3 h-3 text-[#0DBACC] flex-shrink-0" strokeWidth={2.5} />
+                {broker.benefits.map((b, i) => (
+                  <div key={`${activeBroker}-${i}`} className="flex items-center gap-2">
+                    <Check className="w-3 h-3 flex-shrink-0" style={{ color: broker.color }} strokeWidth={2.5} />
                     <p className="text-[0.6875rem] text-[#7E7F90] leading-snug">
                       {b.text}
                       <span className="font-bold text-[#303150]">{b.highlight}</span>
@@ -117,11 +161,12 @@ export default function AltshulerSidebarCTA({ isCollapsed }: AltshulerSidebarCTA
 
               {/* CTA Button */}
               <a
-                href={PARTNER_URL}
+                href={broker.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => { trackOpenTradingAccountClicked('course_sidebar'); trackCtaClickServer('course_sidebar'); }}
-                className="btn-primary flex items-center justify-center gap-1.5 w-full py-2 rounded-xl font-medium text-[0.75rem] text-white"
+                onClick={() => { trackOpenTradingAccountClicked('course_sidebar', activeBroker); trackCtaClickServer(`course_sidebar_${activeBroker}`); }}
+                className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl font-medium text-[0.75rem] text-white transition-colors duration-200"
+                style={{ background: broker.color }}
               >
                 <span>פתיחת חשבון</span>
                 <ExternalLink className="w-3 h-3" strokeWidth={2} />

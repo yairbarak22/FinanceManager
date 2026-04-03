@@ -42,7 +42,7 @@ export const investArticles: InvestArticle[] = [
   },
   {
     slug: 'what-is-investing',
-    title: 'מה זה השקעה? — מדריך מקיף',
+    title: 'מה זה השקעה? מדריך מקיף',
     subtitle:
       'S&P 500, השקעה פסיבית, כשרות הלכתית, DCA ו-3 צעדים מעשיים להתחלה.',
     category: 'invest-basics',
@@ -67,7 +67,7 @@ export const investArticles: InvestArticle[] = [
     slug: 'video-course',
     title: 'קורס השקעות בוידאו',
     subtitle:
-      '4 סרטונים קצרים שילמדו אותך מאפס: למה להשקיע, S&P 500, פתיחת חשבון והוראת קבע.',
+      '4 שיעורים קצרים שילמדו אותך מאפס: למה להשקיע, S&P 500, פתיחת חשבון (אלטשולר או IBI), והוראת קבע.',
     category: 'invest-course',
     icon: Play,
     readingTime: 14,
@@ -80,6 +80,8 @@ export const investArticles: InvestArticle[] = [
       'S&P',
       'חשבון מסחר',
       'הוראת קבע',
+      'IBI',
+      'אי.בי.אי',
     ],
   },
 
@@ -99,6 +101,8 @@ export const investArticles: InvestArticle[] = [
       'דמי ניהול',
       'מתנה',
       'אלטשולר',
+      'IBI',
+      'אי.בי.אי',
       'הטבות',
       'כשר',
     ],

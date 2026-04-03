@@ -37,7 +37,7 @@ export default function InvestCtaBanner() {
             className="text-[13px] leading-relaxed"
             style={{ color: '#7E7F90', fontFamily: 'var(--font-heebo)' }}
           >
-            פתיחת חשבון מסחר באלטשולר שחם · 0₪ דמי ניהול · 200₪ מתנה
+            אלטשולר שחם או IBI · דמי ניהול מופחתים · עד 300₪ מתנה
           </p>
         </div>
         <motion.button

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Chapter, Lesson } from './coursesData';
-import AltshulerSidebarCTA from './AltshulerSidebarCTA';
+import BrokerSidebarCTA from './BrokerSidebarCTA';
 
 const chapterIcons: Record<string, typeof BookOpen> = {
   BookOpen,
@@ -224,7 +224,7 @@ export default function CourseChapterAccordion({
               );
             })}
           </div>
-          {showPartnerCTA && <AltshulerSidebarCTA isCollapsed={true} />}
+          {showPartnerCTA && <BrokerSidebarCTA isCollapsed={true} />}
         </>
         ) : (
           /* ===== EXPANDED: flat chapter list ===== */
@@ -268,7 +268,7 @@ export default function CourseChapterAccordion({
               );
             })}
           </div>
-          {showPartnerCTA && <AltshulerSidebarCTA isCollapsed={false} />}
+          {showPartnerCTA && <BrokerSidebarCTA isCollapsed={false} />}
         </>
         )}
       </div>

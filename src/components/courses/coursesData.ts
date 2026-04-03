@@ -95,7 +95,7 @@ export const mockCourse: Course = {
       title: 'תכל׳ס - פתיחת חשבון',
       icon: 'UserCheck',
       lessons: [
-        { id: 'l-3', title: 'פותחים חשבון באלטשולר שחם (צעד אחר צעד)', duration: '04:24', status: 'active', badge: 'BEGINNER', videoUrl: 'https://www.youtube-nocookie.com/embed/SVZnToUSRMg?rel=0&modestbranding=1&iv_load_policy=3', attachedFiles: [] },
+        { id: 'l-3', title: 'פותחים חשבון מסחר (אלטשולר שחם או IBI)', duration: '04:24', status: 'active', badge: 'BEGINNER', videoUrl: 'https://www.youtube-nocookie.com/embed/SVZnToUSRMg?rel=0&modestbranding=1&iv_load_policy=3', attachedFiles: [] },
       ],
     },
     {

@@ -143,7 +143,7 @@ export const basicsContent: Record<string, ReactNode> = {
 
       <h2 id="three-steps">3 צעדים להתחלה</h2>
       <ol>
-        <li><strong>פותחים חשבון מסחר</strong> – דרך בית השקעות (למשל אלטשולר שחם). לוקח כמה דקות</li>
+        <li><strong>פותחים חשבון מסחר</strong> – דרך בית השקעות (אלטשולר שחם או IBI). לוקח כמה דקות</li>
         <li><strong>בוחרים קרן מחקה S&amp;P 500</strong> – קרן סל פסיבית עם דמי ניהול נמוכים</li>
         <li><strong>מגדירים הוראת קבע חודשית</strong> – סכום קבוע כל חודש, אוטומטית</li>
       </ol>

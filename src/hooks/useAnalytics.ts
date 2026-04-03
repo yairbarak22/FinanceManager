@@ -211,8 +211,8 @@ export function useAnalytics() {
     trackEvent('Video Lesson Viewed', { lesson_id: lessonId, lesson_title: lessonTitle, chapter_title: chapterTitle, lesson_index: lessonIndex, ...(courseId && { course_id: courseId }) });
   }, []);
 
-  const trackOpenTradingAccountClicked = useCallback((source: string) => {
-    trackEvent('Open Trading Account Clicked', { source });
+  const trackOpenTradingAccountClicked = useCallback((source: string, broker?: string) => {
+    trackEvent('Open Trading Account Clicked', { source, ...(broker && { broker }) });
   }, []);
 
   return {

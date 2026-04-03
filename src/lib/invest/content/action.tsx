@@ -10,10 +10,10 @@ export const actionContent: Record<string, ReactNode> = {
       </p>
 
       <h2 id="benefits">הטבות דרך MyNeto</h2>
+      <p>שני ברוקרים עם הטבות בלעדיות:</p>
       <ul>
-        <li><strong>מתנת הצטרפות</strong> – בונוס כספי לפתיחת חשבון</li>
-        <li><strong>ללא דמי ניהול על הנכסים</strong> – חיסכון של אלפי שקלים בשנה</li>
-        <li><strong>מדריכים מעשיים</strong> – ליווי מלא מהרגע הראשון</li>
+        <li><strong>אלטשולר שחם</strong> – 0₪ דמי ניהול לכל החיים, 200₪ מתנה, מינימום 5,000₪</li>
+        <li><strong>IBI</strong> – 300₪ מתנה, פטור מדמי ניהול ל-2 שנים, מינימום 15,000₪, <strong>פתיחה ללא מצלמה</strong></li>
       </ul>
 
       <h2 id="what-is-trading-account">מה זה חשבון מסחר עצמאי?</h2>
@@ -40,7 +40,7 @@ export const actionContent: Record<string, ReactNode> = {
       <ol>
         <li><strong>כניסה לאתר בית ההשקעות</strong> – דרך הקישור ב-MyNeto כדי לקבל את ההטבות</li>
         <li><strong>מילוי פרטים אישיים</strong> – תעודת זהות, כתובת, פרטי בנק</li>
-        <li><strong>אימות זהות</strong> – צילום תעודת זהות ואישור דיגיטלי</li>
+        <li><strong>אימות זהות</strong> – באלטשולר: צילום ת&quot;ז + סלפי. ב-IBI: ללא מצלמה</li>
         <li><strong>הפקדה ראשונה</strong> – העברה בנקאית או הוראת קבע</li>
       </ol>
       <p>התהליך כולו לוקח <strong>כמה דקות</strong> והחשבון נפתח תוך 1-2 ימי עסקים.</p>

@@ -1,12 +1,13 @@
 import type { ReactNode } from 'react';
 import { Lightbulb } from 'lucide-react';
 import VideoEmbed from '@/components/knowledge/VideoEmbed';
+import BrokerVideoTabs from '@/components/invest/BrokerVideoTabs';
 
 export const courseContent: Record<string, ReactNode> = {
   'video-course': (
     <div dir="rtl">
       <p>
-        קורס וידאו קצר (~14 דקות) שמסביר את כל מה שצריך לדעת כדי
+        קורס וידאו קצר שמסביר את כל מה שצריך לדעת כדי
         להתחיל להשקיע. ארבעה שיעורים, מהבסיס ועד ביצוע.
       </p>
 
@@ -34,17 +35,12 @@ export const courseContent: Record<string, ReactNode> = {
         ]}
       />
 
-      <h2 id="lesson-3">שיעור 3: פותחים חשבון</h2>
-      <VideoEmbed
-        youtubeId="SVZnToUSRMg"
-        title="פותחים חשבון באלטשולר שחם"
-        duration="04:24"
-        bullets={[
-          'תהליך פתיחת חשבון מסחר צעד אחר צעד',
-          'איך לבחור מסלול',
-          'מה ההטבות שמקבלים דרך MyNeto',
-        ]}
-      />
+      <h2 id="lesson-3">שיעור 3: פותחים חשבון מסחר</h2>
+      <p>
+        בחרו את המסלול שמתאים לכם — אלטשולר שחם או IBI.
+        כל אחד עם הטבות בלעדיות דרך MyNeto.
+      </p>
+      <BrokerVideoTabs />
 
       <h2 id="lesson-4">שיעור 4: טייס אוטומטי</h2>
       <VideoEmbed
@@ -62,7 +58,7 @@ export const courseContent: Record<string, ReactNode> = {
         <Lightbulb className="callout-icon" />
         <p>
           <strong>טיפ:</strong> צפו בסרטונים לפי הסדר. כל שיעור בונה
-          על הקודם, ותוך 14 דקות תבינו בדיוק מה לעשות.
+          על הקודם, ותבינו בדיוק מה לעשות.
         </p>
       </div>
     </div>
