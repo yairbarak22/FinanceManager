@@ -68,6 +68,9 @@ export const RATE_LIMITS = {
 
   // WhatsApp invalid messages circuit breaker - per phone number, 24h window
   whatsappInvalid: { maxRequests: 5, windowSeconds: 24 * 60 * 60 } as RateLimitConfig,
+
+  // Booking - public appointment reservation (strict to prevent spam)
+  bookReserve: { maxRequests: 5, windowSeconds: 60 } as RateLimitConfig,
 };
 
 // ============================================================================
@@ -97,6 +100,12 @@ export const IP_RATE_LIMITS = {
 
   // General API - moderate per IP
   api: { maxRequests: 200, windowSeconds: 60 } as RateLimitConfig,
+
+  // Booking slots read - moderate per IP
+  bookSlots: { maxRequests: 30, windowSeconds: 60 } as RateLimitConfig,
+
+  // Booking reserve - strict per IP
+  bookReserve: { maxRequests: 5, windowSeconds: 60 } as RateLimitConfig,
 
   // Friend invites per IP - daily cap
   inviteDaily: { maxRequests: 30, windowSeconds: 24 * 60 * 60 } as RateLimitConfig,

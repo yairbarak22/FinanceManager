@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { Users, Mail, Shield, LogOut, ChevronDown, BarChart3, FileText, List, LayoutDashboard, Inbox, X, FolderOpen, Map, DollarSign, Workflow } from 'lucide-react';
+import { Users, Mail, Shield, LogOut, ChevronDown, BarChart3, FileText, List, LayoutDashboard, Inbox, X, FolderOpen, Map, DollarSign, Workflow, CalendarClock } from 'lucide-react';
 import { SensitiveData } from '@/components/common/SensitiveData';
 
 interface SubNavItem {
@@ -40,6 +40,12 @@ const navItems: NavItem[] = [
     label: 'ניהול פיננסי',
     path: '/admin/cfo',
     icon: DollarSign,
+  },
+  {
+    id: 'appointments',
+    label: 'קביעת פגישות',
+    path: '/admin/appointments',
+    icon: CalendarClock,
   },
   {
     id: 'marketing',
