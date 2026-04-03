@@ -21,6 +21,7 @@ import type { AdminSubscription, AdminTransaction } from '@/types/admin-cfo';
 interface CfoAnalyticsProps {
   subscriptions: AdminSubscription[];
   transactions: AdminTransaction[];
+  selectedMonth: string | null; // "YYYY-MM" | null
 }
 
 function formatILS(value: number): string {
@@ -69,7 +70,7 @@ function EmptyState() {
   );
 }
 
-export default function CfoAnalytics({ subscriptions, transactions }: CfoAnalyticsProps) {
+export default function CfoAnalytics({ subscriptions, transactions, selectedMonth }: CfoAnalyticsProps) {
   // ─── Expense breakdown (Donut) ────────────────────────────────
 
   const expenseChartData = useMemo(() => {
@@ -100,16 +101,28 @@ export default function CfoAnalytics({ subscriptions, transactions }: CfoAnalyti
 
   // ─── Cashflow comparison (Bar) ────────────────────────────────
 
-  const { cashflowData, totalIncome, totalExpense } = useMemo(() => {
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  const { cashflowData, totalIncome, totalExpense, barTitle } = useMemo(() => {
+    let monthStart: Date;
+    let monthEnd: Date;
+    let title: string;
+
+    if (selectedMonth) {
+      const [y, m] = selectedMonth.split('-').map(Number);
+      monthStart = new Date(y, m - 1, 1);
+      monthEnd = new Date(y, m, 0, 23, 59, 59);
+      title = new Date(y, m - 1, 1).toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
+    } else {
+      const now = new Date();
+      monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      title = 'חודש נוכחי';
+    }
 
     const activeIncomeSubs = subscriptions
       .filter((s) => s.type === 'INCOME' && s.status === 'ACTIVE')
       .reduce((sum, s) => sum + s.amount, 0);
 
-    const thisMonthIncomeTxns = transactions
+    const rangeIncomeTxns = transactions
       .filter((t) => {
         if (t.type !== 'INCOME' || t.status !== 'COMPLETED') return false;
         const d = new Date(t.date);
@@ -117,13 +130,13 @@ export default function CfoAnalytics({ subscriptions, transactions }: CfoAnalyti
       })
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const income = activeIncomeSubs + thisMonthIncomeTxns;
+    const income = activeIncomeSubs + rangeIncomeTxns;
 
     const activeExpenseSubs = subscriptions
       .filter((s) => s.type === 'EXPENSE' && s.status === 'ACTIVE')
       .reduce((sum, s) => sum + s.amount, 0);
 
-    const thisMonthExpenseTxns = transactions
+    const rangeExpenseTxns = transactions
       .filter((t) => {
         if (t.type !== 'EXPENSE') return false;
         const d = new Date(t.date);
@@ -131,14 +144,15 @@ export default function CfoAnalytics({ subscriptions, transactions }: CfoAnalyti
       })
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const expense = activeExpenseSubs + thisMonthExpenseTxns;
+    const expense = activeExpenseSubs + rangeExpenseTxns;
 
     return {
       cashflowData: [{ name: 'תזרים', הכנסות: income, הוצאות: expense }],
       totalIncome: income,
       totalExpense: expense,
+      barTitle: title,
     };
-  }, [subscriptions, transactions]);
+  }, [subscriptions, transactions, selectedMonth]);
 
   const hasCashflowData = totalIncome > 0 || totalExpense > 0;
 
@@ -180,7 +194,7 @@ export default function CfoAnalytics({ subscriptions, transactions }: CfoAnalyti
 
       {/* Cashflow Comparison Bar */}
       <div className="bg-white border border-[#F7F7F8] rounded-xl p-6 shadow-sm">
-        <h3 className="text-base font-bold text-[#303150] mb-4">הכנסות מול הוצאות - חודש נוכחי</h3>
+        <h3 className="text-base font-bold text-[#303150] mb-4">הכנסות מול הוצאות — {barTitle}</h3>
         {hasCashflowData ? (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={cashflowData} barCategoryGap="30%">

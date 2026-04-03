@@ -1,394 +1,215 @@
-# Architecture Plan: קביעת פגישות ליווי לפתיחת תיק מסחר
+# Architecture Plan: CFO Dashboard — Month Filter + P&L Report
 
 **Date:** 2026-04-03
-**Branch:** `calendar`
 **Status:** Draft — ממתין לאישור לפני מימוש
 
 ---
 
 ## סיכום
 
-פיצ'ר חדש שמאפשר ללקוחות לקבוע שיחת ליווי טלפונית (10 דקות) לפתיחת תיק מסחר.
-שני צדדים:
-1. **עמוד ציבורי** (`/book`) — בחירת יום/שעה, הזנת טלפון + מייל, קביעת פגישה. counter של פגישות שנותרו מתוך 50.
-2. **עמוד ניהול** (`/admin/appointments`) — סטטיסטיקות, הגדרת זמינות (חלונות זמן פתוחים).
+שתי תוספות לדף `/admin/cfo`:
 
-העמוד הציבורי עצמאי לחלוטין (אין צורך ב-auth), הפנייה אליו דרך מייל ייעודי.
+1. **פילטר חודש** — בחירת חודש ספציפי לצפייה בכרטיסי ה-KPI ובגרפים (טרנזקציות חד-פעמיות מסוננות לחודש; מנויים קבועים מוצגים תמיד כ"עלויות קבועות").
+2. **דוח P&L** — תצוגה חדשה (tab) שמציגה רווח והפסד חודש-אחר-חודש בטבלה ובגרף trend, עם סיכום כולל של כל הזמן.
+
+**אין שינויים ב-DB ואין API routes חדשים** — כל החישובים נעשים client-side מהנתונים הקיימים.
 
 ---
 
 ## 1. Architecture & State Management
 
-### מבנה קבצים
+### Component Hierarchy (לפני ואחרי)
 
-#### קבצים חדשים
+**לפני:**
+```
+CfoBoard
+├── CfoSummaryCards(data)        ← hardcoded "current month"
+├── CfoAnalytics(subs, txns)     ← hardcoded "current month"
+├── CfoToolbar(...)
+├── CfoSubscriptionsTable(...)
+└── CfoTransactionsTable(...)
+```
+
+**אחרי:**
+```
+CfoBoard
+├── CfoViewToggle               ← NEW: "תצוגת חודש" | "דוח P&L"
+│
+│ [when view === 'month']
+├── CfoMonthPicker              ← NEW: ← אפריל 2026 → + "כל הזמן"
+├── CfoSummaryCards(data, selectedMonth)   ← UPDATED: month-aware
+├── CfoAnalytics(subs, txns, selectedMonth) ← UPDATED: month-aware
+├── CfoToolbar(...)
+├── CfoSubscriptionsTable(...)
+└── CfoTransactionsTable(txns filtered by month)
+│
+│ [when view === 'pnl']
+└── CfoPnlReport(data)          ← NEW: P&L table + trend chart
+```
+
+### State Changes in `CfoBoard.tsx`
+
+```typescript
+// NEW state:
+const [view, setView] = useState<'month' | 'pnl'>('month');
+const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+// null = "כל הזמן", "YYYY-MM" = חודש ספציפי
+```
+
+### קבצים חדשים
 
 | קובץ | תיאור |
 |-------|-------|
-| `prisma/schema.prisma` | הוספת מודלים `Appointment` ו-`AppointmentSlot` |
-| **עמוד ציבורי** | |
-| `src/app/book/page.tsx` | Server component — SSR עם counter ראשוני |
-| `src/app/book/layout.tsx` | Layout עם metadata + noindex |
-| `src/app/book/BookingClient.tsx` | Client component — הטופס המלא |
-| `src/app/book/BookingSuccess.tsx` | Client component — מסך אישור אחרי קביעה |
-| **API routes** | |
-| `src/app/api/book/slots/route.ts` | `GET` — מחזיר slots פתוחים (ציבורי) |
-| `src/app/api/book/reserve/route.ts` | `POST` — שריין פגישה (ציבורי, rate-limited) |
-| `src/app/api/admin/appointments/route.ts` | `GET` — סטטיסטיקות (admin only) |
-| `src/app/api/admin/appointments/slots/route.ts` | `GET/POST/DELETE` — ניהול slots (admin only) |
-| **עמוד ניהול** | |
-| `src/app/admin/appointments/page.tsx` | דף ניהול ראשי — סטטיסטיקות + ניהול זמנים |
-| `src/app/admin/appointments/AppointmentsAdmin.tsx` | Client component — כל הממשק |
-| **Shared** | |
-| `src/lib/appointments.ts` | Shared types, validation schemas, helpers |
+| `src/components/admin/cfo/CfoViewToggle.tsx` | Toggle tabs: "תצוגת חודש" / "דוח P&L" |
+| `src/components/admin/cfo/CfoMonthPicker.tsx` | ← [חודש שנה] → + כפתור "כל הזמן" |
+| `src/components/admin/cfo/CfoPnlReport.tsx` | טבלת P&L חודשית + גרף trend |
 
-#### קבצים קיימים שצריך לשנות
+### קבצים שמשתנים
 
 | קובץ | שינוי |
 |-------|-------|
-| `prisma/schema.prisma` | הוספת 2 מודלים חדשים |
-| `src/middleware.ts` | הוספת `/book` ו-`/api/book/*` לרשימת routes ציבוריים |
-| `src/components/admin/AdminSidebar.tsx` | הוספת לינק "קביעת פגישות" בסיידבר |
+| `CfoBoard.tsx` | הוספת `view`, `selectedMonth` state; העברתם לילדים |
+| `CfoSummaryCards.tsx` | קבלת `selectedMonth` prop, חישוב KPIs לחודש |
+| `CfoAnalytics.tsx` | קבלת `selectedMonth` prop, פילטור גרפים לחודש |
+| `CfoTransactionsTable.tsx` | קבלת `selectedMonth`, הצגת "ב[חודש]" בכותרת |
 
 ### Data Flow
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  עמוד ציבורי /book                                      │
-│                                                         │
-│  1. SSR: fetch counter (פגישות שנותרו מתוך 50)          │
-│  2. Client: בחירת יום → fetch slots פתוחים ליום         │
-│  3. Client: בחירת שעה → הזנת טלפון + מייל              │
-│  4. Client: POST /api/book/reserve → אישור              │
-│                                                         │
-│  State (local useState, אין צורך ב-Zustand):            │
-│  - selectedDate: Date | null                             │
-│  - selectedSlot: string | null                           │
-│  - formData: { phone, email, name }                      │
-│  - step: 'date' | 'time' | 'details' | 'success'        │
-│  - remainingSlots: number (SSR initial + client update)  │
-└─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│  עמוד ניהול /admin/appointments                         │
-│                                                         │
-│  1. Fetch סטטיסטיקות (total booked, remaining, today)   │
-│  2. Fetch כל ה-slots שהוגדרו                            │
-│  3. הוספה/מחיקה של slots                                │
-│  4. צפייה ברשימת פגישות שנקבעו                          │
-│                                                         │
-│  State (local useState):                                 │
-│  - slots: AppointmentSlot[]                              │
-│  - appointments: Appointment[]                           │
-│  - stats: { total, booked, remaining, todayCount }       │
-└─────────────────────────────────────────────────────────┘
+AdminTransaction[] (all, in memory in CfoBoard)
+         │
+         ├─ [view=month, selectedMonth=null]  → show all
+         ├─ [view=month, selectedMonth=YYYY-MM] → filter by month
+         └─ [view=pnl]  → group by month → P&L table
 ```
 
-### Component Hierarchy
-
-**עמוד ציבורי:**
-```
-book/page.tsx (Server)
-└── BookingClient.tsx (Client)
-    ├── Counter badge (פגישות שנותרו)
-    ├── DatePicker (לוח שנה עברי + לועזי)
-    │   └── DayCell (תא יום עם availability indicator)
-    ├── TimeSlotGrid (רשת שעות פנויות)
-    │   └── TimeSlotButton (כפתור שעה)
-    ├── BookingForm (פרטי יצירת קשר)
-    │   ├── PhoneInput
-    │   ├── EmailInput
-    │   └── NameInput
-    └── BookingSuccess.tsx (מסך אישור)
-```
-
-**עמוד ניהול:**
-```
-admin/appointments/page.tsx (Server)
-└── AppointmentsAdmin.tsx (Client)
-    ├── StatsCards (סטטיסטיקות)
-    ├── SlotManager (הגדרת זמנים פתוחים)
-    │   ├── DatePicker (בחירת יום)
-    │   ├── TimeRangeInput (טווח שעות)
-    │   └── SlotList (רשימת slots קיימים)
-    └── AppointmentsList (פגישות שנקבעו)
-        └── AppointmentCard (פרטי פגישה)
-```
+**הערה קריטית על מנויים:**
+`AdminSubscription` אין לו `startDate` — רק `nextBillingDate` ו-`status`. לכן:
+- **בפילטר חודש**: מנויים תמיד מוצגים כ"עלויות/הכנסות קבועות" בלי קשר לחודש שנבחר (אין לנו היסטוריה)
+- **בדוח P&L**: P&L מבוסס **אך ורק על `AdminTransaction`** (יש תאריך מדויק). מנויים מוצגים בסטריפ נפרד כ"burn rate חודשי נוכחי"
 
 ---
 
 ## 2. Database (Prisma) & Performance
 
-### Schema Changes
+**אין שינויים ב-schema.**
 
-```prisma
-model AppointmentSlot {
-  id        String   @id @default(cuid())
-  date      DateTime // UTC date of the slot
-  startTime String   // "09:00" format (Israel time)
-  endTime   String   // "09:10" format (Israel time)
-  isBooked  Boolean  @default(false)
-  createdAt DateTime @default(now())
+### Query Analysis
 
-  appointment Appointment?
+`getCfoData()` כבר טוענת **את כל** ה-transactions ו-subscriptions פעם אחת עם SSR. כל הפילטור קורה client-side ב-`useMemo` — ללא query נוסף לשרת.
 
-  @@index([date, isBooked])
-  @@index([date])
-}
+**Bottleneck?** `AdminTransaction` — כמה רשומות צפוי שיהיו? כ-10-50 חודשים × עשרות transactions לחודש = מאות רשומות. זה טריוויאלי לפילטור בזיכרון, **אין צורך ב-pagination**.
 
-model Appointment {
-  id        String   @id @default(cuid())
-  slotId    String   @unique
-  slot      AppointmentSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
-
-  name      String
-  email     String
-  phone     String
-  notes     String?
-
-  status    AppointmentStatus @default(CONFIRMED)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([email])
-  @@index([status])
-  @@index([createdAt])
-}
-
-enum AppointmentStatus {
-  CONFIRMED
-  CANCELLED
-  COMPLETED
-}
-```
-
-### Query Optimization
-
-| שאילתה | אסטרטגיה |
-|---------|----------|
-| Counter (פגישות שנותרו) | `count` query עם `where: { isBooked: false }` — O(1), index on `isBooked` |
-| Slots ליום מסוים | `findMany` עם `where: { date, isBooked: false }` — composite index |
-| Reserve slot | Transaction: `update` slot to booked + `create` appointment — atomic |
-| סטטיסטיקות admin | Single `groupBy` query on `Appointment.status` + `count` |
-| רשימת פגישות admin | `findMany` with `include: { slot }`, paginated (take: 20) |
-
-### Race Condition Prevention
-שריון פגישה ישתמש ב-Prisma transaction עם `update` ש-WHERE כולל `isBooked: false`:
+### P&L Aggregation (client-side)
 
 ```typescript
-const result = await prisma.$transaction(async (tx) => {
-  const slot = await tx.appointmentSlot.update({
-    where: { id: slotId, isBooked: false },
-    data: { isBooked: true },
-  });
-  const appointment = await tx.appointment.create({
-    data: { slotId: slot.id, name, email, phone },
-  });
-  return appointment;
+// group transactions by YYYY-MM
+const byMonth = Map<string, { income: number; expense: number; net: number }>
+
+transactions.forEach(t => {
+  const key = t.date.toISOString().slice(0, 7); // "2026-03"
+  const entry = byMonth.get(key) ?? { income: 0, expense: 0, net: 0 };
+  if (t.type === 'INCOME' && t.status === 'COMPLETED') entry.income += t.amount;
+  if (t.type === 'EXPENSE') entry.expense += t.amount;
+  entry.net = entry.income - entry.expense;
+  byMonth.set(key, entry);
 });
 ```
 
-אם שני אנשים ינסו לתפוס אותו slot באותו רגע — אחד יקבל שגיאה (record not found) ונטפל ב-UI.
-
-### Performance Notes
-- **אין N+1** — כל ה-queries מוגדרות מראש עם `include`
-- **אין pagination בצד הציבורי** — מקסימום ~50 slots בכל query
-- **Admin pagination** — `take: 20, skip: offset` לרשימת פגישות
+O(n) — מושלם.
 
 ---
 
 ## 3. Security (Fail-Closed Standard)
 
-### Authentication & Authorization
-
-| Route | Auth | Rate Limit |
-|-------|------|------------|
-| `GET /api/book/slots` | ציבורי (ללא auth) | 30 req/min per IP |
-| `POST /api/book/reserve` | ציבורי (ללא auth) | 5 req/min per IP |
-| `GET /api/admin/appointments` | `requireAdmin()` | Standard |
-| `GET/POST/DELETE /api/admin/appointments/slots` | `requireAdmin()` | Standard |
-| `/book` (page) | ציבורי | — |
-| `/admin/appointments` (page) | Admin (middleware) | — |
-
-### Validation (Zod Schemas)
-
-```typescript
-// Reserve appointment
-const reserveSchema = z.object({
-  slotId: z.string().cuid(),
-  name: z.string().min(2).max(100).trim(),
-  email: z.string().email().max(255).toLowerCase().trim(),
-  phone: z.string().regex(/^0[2-9]\d{7,8}$/, 'מספר טלפון ישראלי לא תקין'),
-});
-
-// Create slot (admin)
-const createSlotSchema = z.object({
-  date: z.string().datetime(),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/),
-  endTime: z.string().regex(/^\d{2}:\d{2}$/),
-});
-
-// Delete slot (admin)
-const deleteSlotSchema = z.object({
-  slotId: z.string().cuid(),
-});
-```
-
-### Vulnerability Checklist
-
-- **CSRF:** API routes ציבוריות (`/api/book/*`) — לא דורשות CSRF token כי אין session, אבל rate-limited בחוזקה. Admin routes מוגנים ע"י middleware CSRF.
-- **IDOR:** Slot IDs הם CUIDs (לא ניתנים לניחוש). Reserve עובד רק על slots עם `isBooked: false`.
-- **XSS:** כל הקלט מנוקה דרך Zod. אין rendering של HTML מ-user input.
-- **Email/Phone exposure:** ה-API הציבורי לא מחזיר מידע על פגישות שנקבעו — רק slots פנויים.
-- **Brute force:** Rate limiting חזק ב-reserve (5/min) מונע spam bookings.
-- **50 slots limit:** Enforced at DB level — `POST reserve` checks total count before allowing.
-
-### Middleware Updates
-
-הוספה ל-public routes:
-```typescript
-// בתוך middleware.ts — רשימת routes ציבוריים
-'/book',
-'/api/book/slots',
-'/api/book/reserve',
-```
+- **אין API routes חדשים** → אין attack surface חדש
+- כל הנתונים כבר עוברים דרך `requireAdmin()` ב-`getCfoData()` ו-Server Action
+- חישוב P&L הוא pure client-side מ-props — אין DB calls נוספים
+- **אין קלט משתמש שנשלח לשרת** — `selectedMonth` הוא state local בלבד
+- **XSS**: אין rendering של HTML מ-user input
+- **CSRF**: לא רלוונטי — לא מוסיפים write operations
 
 ---
 
 ## 4. UI/UX (The "Monday.com" Standard)
 
-### עמוד ציבורי — `/book`
-
-#### Layout
-עמוד עצמאי, **לא** בתוך ה-app shell. עיצוב נקי ופשוט — לוגו למעלה, תוכן במרכז.
+### View Toggle (tabs)
 
 ```
-┌────────────────────────────────────────────────────┐
-│  🔶 MyNeto                                         │
-│                                                    │
-│  ╭──────────────────────────────────────────────╮  │
-│  │  📞 שיחת ליווי אישית לפתיחת תיק מסחר       │  │
-│  │                                              │  │
-│  │  10 דקות · ללא עלות · ליווי מלא             │  │
-│  │                                              │  │
-│  │  ┌──────────────────────────────────────┐    │  │
-│  │  │  ⚡ נותרו 34 מתוך 50 מקומות         │    │  │
-│  │  │  ████████████████░░░░░░░░  68%       │    │  │
-│  │  └──────────────────────────────────────┘    │  │
-│  │                                              │  │
-│  │  ← אפריל 2026 →                             │  │
-│  │  ┌──┬──┬──┬──┬──┬──┬──┐                     │  │
-│  │  │א │ב │ג │ד │ה │ו │ש │                     │  │
-│  │  ├──┼──┼──┼──┼──┼──┼──┤                     │  │
-│  │  │  │  │  │ 1│ 2│ 3│ 4│  ← ימים עם slots   │  │
-│  │  │ 5│●6│●7│ 8│ 9│10│11│     מודגשים בנקודה  │  │
-│  │  │12│13│●14│15│..│..│..│                     │  │
-│  │  └──┴──┴──┴──┴──┴──┴──┘                     │  │
-│  │  ו׳ ניסן תשפ״ו · 3 באפריל 2026             │  │
-│  │                                              │  │
-│  │  שעות פנויות:                                │  │
-│  │  ┌────────┐ ┌────────┐ ┌────────┐           │  │
-│  │  │ 09:00  │ │ 09:30  │ │ 10:00  │           │  │
-│  │  └────────┘ └────────┘ └────────┘           │  │
-│  │  ┌────────┐ ┌────────┐                      │  │
-│  │  │ 14:00  │ │ 14:30  │                      │  │
-│  │  └────────┘ └────────┘                      │  │
-│  │                                              │  │
-│  │  ── פרטים ──                                 │  │
-│  │  שם מלא:    [_____________________]         │  │
-│  │  טלפון:     [_____________________]         │  │
-│  │  מייל:      [_____________________]         │  │
-│  │                                              │  │
-│  │  ┌──────────────────────────────────────┐    │  │
-│  │  │       קביעת שיחת ליווי  →            │    │  │
-│  │  └──────────────────────────────────────┘    │  │
-│  ╰──────────────────────────────────────────────╯  │
-│                                                    │
-│  © MyNeto 2026                                     │
-└────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────┐
+│  [📅 תצוגת חודש]  [📊 דוח רווח והפסד]    │
+└────────────────────────────────────────────┘
 ```
+Pill-style toggle, active tab מודגש בסגול.
 
-#### UX Flow (Single Page, Step-based)
-
-1. **שלב 1 — בחירת יום:** לוח שנה חודשי. ימים עם slots פנויים מודגשים. תאריך עברי מוצג מתחת.
-2. **שלב 2 — בחירת שעה:** Grid של כפתורי שעות פנויות (animate in). הכפתור הנבחר מודגש.
-3. **שלב 3 — פרטים:** טופס קצר (שם, טלפון, מייל). כפתור "קביעת שיחת ליווי".
-4. **שלב 4 — אישור:** מסך הצלחה עם פרטי הפגישה, אנימציית confetti/check, כפתור "הוספה ליומן".
-
-כל השלבים **באותו דף** — scroll smooth או transition בין שלבים. אין מעבר דף.
-
-#### Counter — "נותרו X מקומות"
-
-- **תמיד מוצג** בראש העמוד
-- Progress bar ויזואלי (ירוק → כתום → אדום ככל שנגמרים)
-- כשנותרו < 10: הודעת "כמעט אזלו!" עם pulse animation
-- כשנותרו 0: העמוד כולו עובר למצב "כל המקומות תפוסים" עם אפשרות להשאיר מייל לעדכון
-
-#### תאריך עברי
-- שימוש ב-`Intl.DateTimeFormat` עם `calendar: 'hebrew'` (built-in, no library needed)
-- תצוגה: "ו׳ ניסן תשפ״ו" מתחת לתאריך הלועזי
-
-#### Responsive Design
-- **Mobile-first:** הכל בעמודה אחת, כפתורי שעות full-width
-- **Desktop:** max-width 640px, מרכוז
-
-### עמוד ניהול — `/admin/appointments`
+### Month Picker
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  Admin Sidebar │  קביעת פגישות                          │
-│                │                                        │
-│  ...           │  ┌─────────┐ ┌─────────┐ ┌─────────┐  │
-│                │  │ 50      │ │ 16      │ │ 34      │  │
-│                │  │ סה"כ    │ │ נקבעו   │ │ נותרו   │  │
-│                │  └─────────┘ └─────────┘ └─────────┘  │
-│                │                                        │
-│                │  ── הגדרת זמנים ──                     │
-│                │  תאריך: [____] משעה: [__] עד: [__]     │
-│                │  כל [10] דקות   [+ הוסף slots]        │
-│                │                                        │
-│                │  Slots קיימים:                         │
-│                │  ┌────────────────────────────────┐    │
-│                │  │ 6/4 · 09:00-09:10 · ✅ נקבע   │    │
-│                │  │ 6/4 · 09:10-09:20 · ⬜ פנוי  🗑│    │
-│                │  │ 6/4 · 09:20-09:30 · ⬜ פנוי  🗑│    │
-│                │  │ 7/4 · 10:00-10:10 · ⬜ פנוי  🗑│    │
-│                │  └────────────────────────────────┘    │
-│                │                                        │
-│                │  ── פגישות שנקבעו ──                   │
-│                │  ┌────────────────────────────────┐    │
-│                │  │ ישראל ישראלי · 050-1234567     │    │
-│                │  │ 6/4 · 09:00 · israel@mail.com  │    │
-│                │  │ סטטוס: ✅ מאושר                 │    │
-│                │  └────────────────────────────────┘    │
-│                │                                        │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│  [כל הזמן]  ←  אפריל 2026  →                            │
+└──────────────────────────────────────────────────────────┘
+```
+- כפתור "כל הזמן" מימין — מאפס ל-`selectedMonth = null`
+- חצים ← → מנווטים חודש קדימה/אחורה
+- כפתור [חודש שנה] באמצע — ניתן ללחיצה לפתוח dropdown חודשים (optionally)
+- לא ניתן לנווט אחרי החודש הנוכחי
+
+### KPI Cards (month mode)
+
+כשנבחר חודש ספציפי:
+- **"מאזן כולל"** → "מאזן [חודש]" = הכנסות − הוצאות של החודש
+- **"קצב שריפה חודשי"** → נשאר — זה תמיד ה-burn rate הנוכחי
+- **"מנויים פעילים"** → נשאר
+- **"הכנסות מחזוריות"** → נשאר
+- **"הכנסות חד-פעמיות"** → מציג "בחודש שנבחר" במקום "החודש"
+
+כש-`selectedMonth = null` — הכל כמו היום.
+
+### P&L Report View
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ 📊 דוח רווח והפסד                                        │
+│                                                          │
+│ ┌────────┬──────────┬──────────┬──────────┐             │
+│ │ סה"כ   │ הכנסות   │ הוצאות   │  רווח   │             │
+│ │        │ ₪45,200  │ ₪32,100  │ ₪13,100 │             │
+│ └────────┴──────────┴──────────┴──────────┘             │
+│                                                          │
+│ [גרף קו — net P&L per month, 12 חודשים אחרונים]        │
+│                                                          │
+│ חודש    │ הכנסות  │ הוצאות  │ רווח/הפסד │ מגמה        │
+│ ─────────┼─────────┼─────────┼───────────┼─────────    │
+│ אפריל 26│ ₪4,200  │ ₪2,100  │ +₪2,100  │ ↑           │
+│ מרץ 26  │ ₪3,800  │ ₪2,800  │ +₪1,000  │ ↑           │
+│ פבר 26  │ ₪2,100  │ ₪3,200  │ -₪1,100  │ ↓ (אדום)   │
+│ ...      │         │         │           │              │
+└──────────────────────────────────────────────────────────┘
 ```
 
-#### Admin Features
-- **Stats cards:** סה"כ, נקבעו, נותרו — real-time
-- **Bulk slot creation:** בחירת תאריך + טווח שעות + אינטרוול (10 דק') → יצירת כל ה-slots אוטומטית
-- **Slot management:** רשימת כל ה-slots, מחיקה של slots פנויים בלבד
-- **Appointments list:** רשימת כל הפגישות שנקבעו עם פרטי הלקוח
+**Sparkline בכל שורה** — מחושב כ-running total.
+
+**Trend chart** — `LineChart` עם `recharts`:
+- X axis: חודשים (מסודרים chronologically)
+- 3 lines: הכנסות (ירוק), הוצאות (אדום), נטו (סגול)
+- Tooltip מפורט
 
 ### Loading & Error States
 
-| State | Behavior |
-|-------|----------|
-| **טעינת slots** | Skeleton placeholder בגריד השעות |
-| **שליחת טופס** | כפתור disabled + spinner, optimistic counter update |
-| **Slot נתפס** | Toast: "השעה כבר נתפסה, בחר שעה אחרת" + refresh slots |
-| **Rate limit** | Toast: "יותר מדי ניסיונות, נסה שוב בעוד דקה" |
-| **שגיאת שרת** | Toast: "שגיאה, נסה שוב" |
-| **0 slots remaining** | UI מצב "אזלו" — טופס מוסתר, הודעה + אפשרות waiting list |
+| מצב | Behavior |
+|-----|----------|
+| שינוי חודש | **מיידי** — חישוב local, אין loading |
+| P&L view | **מיידי** — חישוב local |
+| אין נתונים לחודש | "אין תנועות בחודש זה" placeholder |
+| אין נתונים בכלל | Empty state בדוח P&L |
 
 ### RTL Compliance
-כל ה-CSS ישתמש **אך ורק** בתכונות לוגיות:
+
+כל ה-CSS חייב להשתמש ב-logical properties בלבד:
 - `ps-`, `pe-` (לא `pl-`, `pr-`)
 - `ms-`, `me-` (לא `ml-`, `mr-`)
-- `start-0`, `end-0` (לא `left-0`, `right-0`)
-- `text-start`, `text-end` (לא `text-left`, `text-right`)
+- `start-0`, `end-0`
+- `text-start`, `text-end`
 
 ---
 
@@ -398,34 +219,22 @@ const deleteSlotSchema = z.object({
 
 | Edge Case | טיפול |
 |-----------|-------|
-| **שני אנשים בוחרים אותו slot** | Prisma transaction + `where: { isBooked: false }` — הראשון מצליח, השני מקבל "Slot taken" |
-| **Timezone** | כל התאריכים מאוחסנים ב-UTC. שעות מוצגות ב-Israel time (`Asia/Jerusalem`). Conversion בצד ה-client. |
-| **Slot שעבר** | API filter: `date >= today` — לא מציגים slots שעברו |
-| **Admin מוחק slot תפוס** | UI מונע — כפתור מחיקה רק ל-slots פנויים |
-| **50 limit reached** | Check at `POST reserve`: `count({ isBooked: true }) >= 50` → 409 Conflict |
-| **Duplicate booking** | Unique constraint on email? לא — מאפשר לאותו אדם לקבוע כמה פגישות (business decision). Rate limit מונע spam. |
-| **Invalid phone format** | Zod regex: `^0[2-9]\d{7,8}$` — Israeli phones only |
-| **Hebrew date edge cases** | `Intl.DateTimeFormat` עם `he-IL-u-ca-hebrew` — built-in, no edge cases |
-| **Calendar navigation** | מאפשר ניווט רק קדימה (עד 2 חודשים). לא ניתן לבחור תאריך עבר. |
+| **חודש ריק** | P&L row מוצג עם 0s; month filter מראה "אין תנועות" |
+| **מטבע מעורב** | הנתונים כבר מכילים `currency` field — לפשטות, מחשבים הכל ב-ILS (כמו שה-code הנוכחי עושה). נוסיף הערה ב-UI: "כל הסכומים ב-ILS" |
+| **תאריך ב-UTC vs Israel time** | `AdminTransaction.date` מאוחסן ב-UTC. פילטור לפי חודש: `date.toISOString().slice(0,7)` — יתן "YYYY-MM" ב-UTC. לעקביות, שמור כך. אם transaction נרשם ב-31/3 23:30 ישראל → 1/4 00:30 UTC → יופיע באפריל, לא במרץ. זה acceptable ל-admin internal tool. |
+| **חודש עתידי** | Month picker מונע ניווט אחרי החודש הנוכחי |
+| **שנה חדשה** | חישוב month group ע"י `YYYY-MM` string — עובד נכון across years |
+| **P&L חיובי/שלילי** | ערכים שליליים מוצגים באדום עם prefix `-`, חיוביים בירוק עם `+` |
 
 ### סדר ביצוע מומלץ
 
-1. **Schema** — הוספת מודלים ל-`schema.prisma` + `npx prisma db push`
-2. **Shared types** — `src/lib/appointments.ts` (Zod schemas, types, helpers)
-3. **API routes** — `GET slots`, `POST reserve`, admin CRUD
-4. **Middleware** — הוספת public routes
-5. **Admin sidebar** — הוספת לינק
-6. **Admin page** — סטטיסטיקות + ניהול slots
-7. **Public page** — BookingClient עם counter, calendar, time grid, form
-8. **Hebrew dates** — integration ב-calendar component
-9. **Polish** — animations, responsive, edge cases
-
-### Dependencies
-- **אין ספריות חדשות** — הכל עם built-in APIs:
-  - Hebrew dates: `Intl.DateTimeFormat`
-  - Calendar UI: Custom component (פשוט מספיק שלא צריך ספרייה)
-  - Validation: Zod (כבר בפרויקט)
-  - Rate limiting: Upstash Redis (כבר בפרויקט)
+1. **`CfoViewToggle.tsx`** — tabs פשוטים, state ב-CfoBoard
+2. **`CfoMonthPicker.tsx`** — prev/next + "כל הזמן"
+3. **`CfoBoard.tsx`** — הוספת state, העברה לילדים
+4. **`CfoSummaryCards.tsx`** — month-aware props
+5. **`CfoAnalytics.tsx`** — month-aware props
+6. **`CfoTransactionsTable.tsx`** — כותרת עם חודש נבחר
+7. **`CfoPnlReport.tsx`** — הרכיב הגדול: טבלה + גרף
 
 ---
 
@@ -433,8 +242,8 @@ const deleteSlotSchema = z.object({
 
 | Category | Count |
 |----------|-------|
-| קבצים חדשים | 11 |
-| קבצים שנערכים | 3 |
-| מודלי DB חדשים | 2 + 1 enum |
-| API routes חדשים | 4 |
-| ספריות חדשות | 0 |
+| קבצים חדשים | 3 |
+| קבצים שנערכים | 4 |
+| API routes חדשים | 0 |
+| DB schema changes | 0 |
+| ספריות חדשות | 0 (recharts כבר בפרויקט) |

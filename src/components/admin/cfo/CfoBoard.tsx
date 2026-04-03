@@ -17,6 +17,9 @@ import CfoAnalytics from './CfoAnalytics';
 import CfoToolbar from './CfoToolbar';
 import CfoSubscriptionsTable from './CfoSubscriptionsTable';
 import CfoTransactionsTable from './CfoTransactionsTable';
+import CfoViewToggle, { type CfoView } from './CfoViewToggle';
+import CfoMonthPicker from './CfoMonthPicker';
+import CfoPnlReport from './CfoPnlReport';
 import type { AddTransactionRowHandle } from './AddTransactionRow';
 
 export type FilterConfig = {
@@ -43,6 +46,10 @@ export default function CfoBoard({ initialData }: CfoBoardProps) {
   const { toasts, removeToast, error: showError } = useToast();
   const transactionsRef = useRef<HTMLDivElement>(null);
   const addTransactionRef = useRef<AddTransactionRowHandle>(null);
+
+  // ─── View & month state ─────────────────────────────────────────
+  const [view, setView] = useState<CfoView>('month');
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
 
   // ─── Toolbar state ─────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('');
@@ -323,43 +330,61 @@ export default function CfoBoard({ initialData }: CfoBoardProps) {
   }, []);
 
   return (
-    <div className="space-y-8">
-      <CfoSummaryCards data={data} />
-
-      <CfoToolbar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        filterConfig={filterConfig}
-        onFilterChange={setFilterConfig}
-        sortConfigSubs={sortConfigSubs}
-        onSortSubsChange={setSortConfigSubs}
-        sortConfigTxns={sortConfigTxns}
-        onSortTxnsChange={setSortConfigTxns}
-        onClearFilters={clearFilters}
-        availableCategories={availableCategories}
-      />
-
-      <CfoAnalytics
-        subscriptions={filteredSubscriptions}
-        transactions={filteredTransactions}
-      />
-
-      <CfoSubscriptionsTable
-        subscriptions={filteredSubscriptions}
-        onUpdate={handleUpdateSubscription}
-        onCreate={handleCreateSubscription}
-        onDelete={handleDeleteSubscription}
-      />
-
-      <div ref={transactionsRef}>
-        <CfoTransactionsTable
-          transactions={filteredTransactions}
-          onUpdate={handleUpdateTransaction}
-          onCreate={handleCreateTransaction}
-          onDelete={handleDeleteTransaction}
-          addRowRef={addTransactionRef}
-        />
+    <div className="space-y-6">
+      {/* ─── View toggle + month picker ─── */}
+      <div className="flex flex-wrap items-center gap-3" dir="rtl">
+        <CfoViewToggle view={view} onChange={setView} />
+        {view === 'month' && (
+          <CfoMonthPicker selectedMonth={selectedMonth} onChange={setSelectedMonth} />
+        )}
       </div>
+
+      {view === 'pnl' ? (
+        /* ─── P&L Report ─── */
+        <CfoPnlReport data={data} />
+      ) : (
+        /* ─── Month view ─── */
+        <div className="space-y-8">
+          <CfoSummaryCards data={data} selectedMonth={selectedMonth} />
+
+          <CfoToolbar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            filterConfig={filterConfig}
+            onFilterChange={setFilterConfig}
+            sortConfigSubs={sortConfigSubs}
+            onSortSubsChange={setSortConfigSubs}
+            sortConfigTxns={sortConfigTxns}
+            onSortTxnsChange={setSortConfigTxns}
+            onClearFilters={clearFilters}
+            availableCategories={availableCategories}
+          />
+
+          <CfoAnalytics
+            subscriptions={filteredSubscriptions}
+            transactions={filteredTransactions}
+            selectedMonth={selectedMonth}
+          />
+
+          <CfoSubscriptionsTable
+            subscriptions={filteredSubscriptions}
+            onUpdate={handleUpdateSubscription}
+            onCreate={handleCreateSubscription}
+            onDelete={handleDeleteSubscription}
+          />
+
+          <div ref={transactionsRef}>
+            <CfoTransactionsTable
+              transactions={filteredTransactions}
+              onUpdate={handleUpdateTransaction}
+              onCreate={handleCreateTransaction}
+              onDelete={handleDeleteTransaction}
+              addRowRef={addTransactionRef}
+              selectedMonth={selectedMonth}
+            />
+          </div>
+        </div>
+      )}
 
       <ToastContainer toasts={toasts} removeToast={removeToast} />
 

@@ -11,6 +11,7 @@ interface CfoTransactionsTableProps {
   onCreate?: (title: string) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   addRowRef?: RefObject<AddTransactionRowHandle | null>;
+  selectedMonth?: string | null; // "YYYY-MM" | null
 }
 
 const GRID_COLS = 'grid grid-cols-[minmax(180px,_1fr)_120px_120px_140px_140px_140px_100px_40px]';
@@ -32,11 +33,19 @@ export default function CfoTransactionsTable({
   onCreate,
   onDelete,
   addRowRef,
+  selectedMonth,
 }: CfoTransactionsTableProps) {
+  const monthSuffix = selectedMonth
+    ? (() => {
+        const [y, m] = selectedMonth.split('-').map(Number);
+        return ' — ' + new Date(y, m - 1, 1).toLocaleDateString('he-IL', { month: 'long', year: 'numeric' });
+      })()
+    : '';
+
   return (
     <div>
       <h2 className="text-base font-bold text-[#303150] mb-3">
-        ספר קופה (תנועות חד-פעמיות)
+        ספר קופה (תנועות חד-פעמיות){monthSuffix}
       </h2>
 
       <div className="border border-[#E8E8ED] rounded-xl overflow-hidden">
