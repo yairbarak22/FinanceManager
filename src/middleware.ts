@@ -144,6 +144,16 @@ export async function middleware(request: NextRequest) {
     return nextWithCsp(request);
   }
 
+  // Public booking page — no auth required
+  if (pathname === '/book' || pathname.startsWith('/book/')) {
+    return nextWithCsp(request);
+  }
+
+  // Public booking API — no auth required (rate-limited in handlers)
+  if (pathname === '/api/book/slots' || pathname === '/api/book/reserve') {
+    return NextResponse.next();
+  }
+
   // Public CTA click tracking — funnel pages are public, so tracking must be too
   if (pathname === '/api/track/cta-click') {
     return NextResponse.next();

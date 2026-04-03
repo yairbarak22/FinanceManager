@@ -1023,6 +1023,47 @@ model WhatsappMonthlyUsage {
 }
 
 // ============================================
+// APPOINTMENTS - Booking system for trading account setup calls
+// ============================================
+enum AppointmentStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model AppointmentSlot {
+  id        String   @id @default(cuid())
+  date      DateTime // UTC midnight of the slot day
+  startTime String   // "09:00" format (Israel time)
+  endTime   String   // "09:10" format (Israel time)
+  isBooked  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  appointment Appointment?
+
+  @@index([date, isBooked])
+  @@index([date])
+}
+
+model Appointment {
+  id     String @id @default(cuid())
+  slotId String @unique
+  slot   AppointmentSlot @relation(fields: [slotId], references: [id], onDelete: Cascade)
+
+  name   String
+  email  String
+  phone  String
+
+  status    AppointmentStatus @default(CONFIRMED)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============================================
 // GLOBAL MERCHANT STATS - Cross-user consensus classification cache
 // ============================================
 model GlobalMerchantStats {
