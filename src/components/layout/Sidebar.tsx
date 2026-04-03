@@ -95,7 +95,6 @@ function buildNavItems(): NavItem[] {
       iconBg: 'bg-[#E3D6FF]',
       iconColor: 'text-[#9F7FE0]',
       subItems: [
-        { id: 'general-knowledge', label: 'ידע כללי', path: '/help', icon: BookOpen },
         { id: 'knowledge-center', label: 'מרכז הידע', path: '/knowledge', icon: GraduationCap },
         { id: 'calculators', label: 'מחשבונים', path: '/calculators', icon: Calculator }, // path overridden dynamically for Haredi users
         { id: 'tutorials', label: 'סרטוני הדרכה', path: '/help/tutorials', icon: MonitorPlay },
