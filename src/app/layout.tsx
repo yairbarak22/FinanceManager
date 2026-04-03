@@ -33,7 +33,7 @@ const nunito = Nunito({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://myneto.co.il'),
   title: {
-    default: 'MyNeto — ניהול תקציב, השקעות ותכנון פיננסי | חינם',
+    default: 'MyNeto | ניהול תקציב, השקעות ותכנון פיננסי | חינם',
     template: '%s | MyNeto',
   },
   description: 'אפליקציה חינמית לניהול הכספים האישיים: מעקב הוצאות אוטומטי עם AI, תיק השקעות, תקציב חודשי, יעדי חיסכון ודוחות חכמים — הכל במקום אחד.',
@@ -60,12 +60,12 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'he_IL',
     siteName: 'MyNeto',
-    title: 'MyNeto — ניהול תקציב, השקעות ותכנון פיננסי | חינם',
+    title: 'MyNeto | ניהול תקציב, השקעות ותכנון פיננסי | חינם',
     description: 'אפליקציה חינמית לניהול הכספים האישיים: מעקב הוצאות, תיק השקעות, תקציב חודשי ויעדי חיסכון.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'MyNeto — ניהול תקציב, השקעות ותכנון פיננסי | חינם',
+    title: 'MyNeto | ניהול תקציב, השקעות ותכנון פיננסי | חינם',
     description: 'אפליקציה חינמית לניהול הכספים האישיים: מעקב הוצאות, תיק השקעות, תקציב חודשי ויעדי חיסכון.',
   },
   robots: {

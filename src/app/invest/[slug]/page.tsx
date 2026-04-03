@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://myneto.co.il';
 
   return {
-    title: `${article.title} | מרכז ההשקעות — MyNeto`,
+    title: `${article.title} | מרכז ההשקעות | MyNeto`,
     description: article.subtitle,
     keywords: article.keywords.join(', '),
     openGraph: {

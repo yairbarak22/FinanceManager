@@ -7,7 +7,7 @@ import LandingPage from '@/components/landing/LandingPage';
 
 export const metadata: Metadata = {
   title: {
-    absolute: 'MyNeto — ניהול תקציב, השקעות ותכנון פיננסי אישי | חינם',
+    absolute: 'MyNeto | ניהול תקציב, השקעות ותכנון פיננסי אישי | חינם',
   },
   description:
     'MyNeto היא אפליקציה חינמית לניהול הכספים: מעקב הוצאות אוטומטי עם AI, תיק השקעות, תקציב חודשי, יעדי חיסכון, דוחות חכמים ומחשבונים פיננסיים — הכל במקום אחד.',
